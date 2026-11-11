@@ -1,0 +1,20 @@
+[
+ {"js":"(function(){__game.App.start(); return __game.App.mode;})()"},
+ {"wait":2500},
+ {"js":"(function(){const G=__game; window.__s=(n)=>{for(let i=0;i<n;i++)G.stepSim(0.016)}; G.Keys.KeyW=true; __s(120); G.Keys.KeyW=false; G.Court.file({app:{}}, G.car); const P=G.Court.pend; const m0=G.getMoney(); let n=0; while(G.Court.phase==='off' && n<600){ __s(1); n++; } return {steps:n, phase:G.Court.phase, mode:G.App.mode, kind:G.Court.kind, pend:!!P, m0}})()"},
+ {"wait":1500},
+ {"js":"(function(){const G=__game; return {phase:G.Court.phase, card:document.getElementById('cCard').innerHTML.replace(/<[^>]+>/g,' ').slice(0,300), kind:G.Court.kind, lastKind:G.Court.lastKind}})()"},
+ {"click":"[data-c=settle]"},
+ {"wait":1500},
+ {"js":"(function(){const G=__game; return {phase:G.Court.phase, mode:G.App.mode, kind:G.Court.kind, lastKind:G.Court.lastKind, pend:G.Court.pend, money:G.getMoney(), law:G.getLaw()}})()"},
+ {"js":"(function(){const G=__game; __s(200); G.Keys.KeyW=true; __s(100); G.Keys.KeyW=false; G.Court.file({app:{}}, G.car); let n=0; while(G.Court.phase==='off' && n<600){ __s(1); n++; } return {phase:G.Court.phase, kind:G.Court.kind, last:G.Court.lastKind}})()"},
+ {"wait":1000},
+ {"click":"[data-c=fight]"},
+ {"wait":4000},
+ {"js":"(function(){const G=__game; return {phase:G.Court.phase, kind:G.Court.kind, round:G.Court.round, rounds:G.Court.rounds, mode:G.App.mode}})()"},
+ {"shot":"rg1_trial.png"},
+ {"click":"#cSettle"},
+ {"wait":1500},
+ {"js":"(function(){const G=__game; return {phase:G.Court.phase, mode:G.App.mode, law:G.getLaw(), money:G.getMoney()}})()"},
+ {"js":"(function(){const G=__game; G.Keys.KeyW=true; __s(200); G.Keys.KeyW=false; return {sp:G.car.speed.toFixed(1), mode:G.App.mode}})()"}
+]

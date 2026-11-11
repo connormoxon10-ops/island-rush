@@ -1,0 +1,14 @@
+[
+ {"js":"(function(){__game.App.start(); return __game.App.mode;})()"},
+ {"wait":2500},
+ {"js":"(function(){__game.Court.test(); return [__game.App.mode, __game.Court.phase];})()"},
+ {"wait":4000},
+ {"shot":"ct1_notice.png"},
+ {"click":"[data-c=fight]"},
+ {"wait":9000},
+ {"js":"(function(){const C=__game.Court; return [__game.App.mode, C.phase, C.round, C.score, document.getElementById('cTxt').textContent];})()"},
+ {"shot":"ct1_court_a.png"},
+ {"wait":9000},
+ {"js":"(function(){const C=__game.Court; return [C.phase, C.round, C.score, document.getElementById('cTxt').textContent];})()"},
+ {"shot":"ct1_court_b.png"}
+]

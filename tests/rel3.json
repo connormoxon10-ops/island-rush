@@ -1,0 +1,5 @@
+[{"js":"(function(){__game.App.start(); return __game.App.mode;})()"},{"wait":2500},
+{"js":"(function(){const G=__game; G.stepSim(0.016); window.__s=(n)=>{for(let i=0;i<n;i++)G.stepSim(0.016)}; G.save.set.dev=true; G.save.set.cycle=0; const c=G.car; c.speed=0;c.vx=0;c.vz=0; __s(20); G.key('KeyF',true);G.key('KeyF',false); __s(5); const R=G.REL_ROSTER[0]; const p=G.Peds.list.find(q=>!q.keep&&!q.cop&&!q.app.kid&&(q.state==='walk'||q.state==='stand')); G.Rel.make(p,R); p.keep=true; p.state='stand'; p.wait=1e9; p.x=G.Foot.x+Math.sin(G.Foot.yaw+Math.PI)*1.6; p.z=G.Foot.z+Math.cos(G.Foot.yaw+Math.PI)*1.6; p.y=G.Foot.y; window.__p=p; __s(5); G.Talk.open(p); return {on:G.Talk.on, st:p.state, d:Math.hypot(p.x-G.Foot.x,p.z-G.Foot.z), fs:G.Foot.state}})()"},
+{"wait":2500},
+{"js":"(function(){const G=__game; const p=window.__p; return {on:G.Talk.on, st:p.state, d:Math.hypot(p.x-G.Foot.x,p.z-G.Foot.z), fs:G.Foot.state, mode:G.App.mode, hidden:document.getElementById('talk').hidden}})()"},
+{"shot":"rel_t2.png"}]

@@ -1,0 +1,15 @@
+{
+  "name": "island-rush",
+  "version": "40.0.0",
+  "private": true,
+  "description": "Island Rush: an open-world racing, flying and boating game with a rocket-building Workshop and a small solar system. Single-file three.js game.",
+  "scripts": {
+    "build": "bash build.sh",
+    "test:physics": "node tests/vac1.js",
+    "test:regression": "bash tests/regression.sh",
+    "test:flights": "bash tests/flight.sh"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  }
+}

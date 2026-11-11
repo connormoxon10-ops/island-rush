@@ -1,0 +1,6 @@
+[
+ {"js":"(function(){__game.App.start(); return __game.App.mode;})()"},
+ {"wait":2500},
+ {"js":"(function(){const G=__game; window.__s=(n)=>{for(let i=0;i<n;i++)G.stepSim(0.016)}; G.Keys.KeyW=true; __s(150); G.Keys.KeyW=false; const c=G.car; const m0=G.getMoney(); c.health=0; __s(2); return {wrecked:c.wrecked, tow:G.Tow.on, phase:G.Tow.phase, speed:c.speed.toFixed(1), m0}})()"},
+ {"js":"(function(){const G=__game,T=G.Tow,c=G.car; const log=[]; let last=''; for(let i=0;i<2400;i++){ __s(1); if(T.phase!==last||i%100===0){ last=T.phase; log.push([i,T.phase,T.g?+Math.hypot(T.g.position.x-c.x,T.g.position.z-c.z).toFixed(1):null,+c.y.toFixed(2),+c.speed.toFixed(1),c.wrecked>0]); } if(!T.on) break; } return {log, on:T.on, money:G.getMoney(), health:c.health, wrecked:c.wrecked, pos:[c.x.toFixed(0),c.z.toFixed(0)]}})()"}
+]

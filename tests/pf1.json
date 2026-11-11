@@ -1,0 +1,7 @@
+[
+ {"js":"(function(){__game.App.start(); return __game.App.mode;})()"},
+ {"wait":2500},
+ {"js":"(function(){const G=__game; window.__s=(n)=>{for(let i=0;i<n;i++)G.stepSim(0.016)}; __s(20); G.key('KeyF',true);G.key('KeyF',false); __s(5); const F=G.Foot; window.__mk=(mood)=>{ const p=G.Peds.list.find(q=>q.state==='walk'||q.state==='stand'); p.pers=null; const P=(function(){ /* force persona */ return null})(); p.x=F.x+Math.sin(F.yaw)*1.1; p.z=F.z+Math.cos(F.yaw)*1.1; p.y=F.y; p.state='stand'; p.wait=60; p.phone=false; G.Talk.persona(p); if(mood) p.pers.mood=mood; return p;}; return {on:F.on, peds:G.Peds.list.length, yaw:F.yaw}})()"},
+ {"js":"(function(){const G=__game,F=G.Foot; const p=__mk('grumpy'); window.__p=p; G.Fight.punch(); __s(12); const mid=[G.Fight.t, p.state, p.hp]; __s(20); return {mid, state:p.state, own:p.own, hp:p.hp, cool:G.Fight.cool}})()"},
+ {"js":"(function(){const G=__game; const p=__p; const log=[]; for(let i=0;i<260;i++){ __s(1); if(i%20===0) log.push([i, p.state, +Math.hypot(p.x-G.Foot.x,p.z-G.Foot.z).toFixed(2), p.pn.toFixed?+p.pn.toFixed(2):p.pn, G.Fight.taken]); } return log})()"}
+]
