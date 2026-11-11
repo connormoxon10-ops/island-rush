@@ -1,5 +1,29 @@
 # Island Rush
 
+## Local development quick start
+
+Now developed locally from the command line (not the Claude web session). To build and test after making changes:
+
+```bash
+bash build.sh                 # rebuild dist/island-rush.html from js/ sources (needs node)
+open dist/island-rush.html    # launch the game in your default browser (macOS)
+```
+
+The game loads three.js from a CDN, so you need an internet connection. You can also serve it (useful if your browser restricts `file://` pages):
+
+```bash
+python3 -m http.server 8000   # then visit http://localhost:8000/dist/island-rush.html
+```
+
+Quick checks before committing:
+
+```bash
+node tests/vac1.js && node tests/sys4.js              # fast physics unit tests (no browser)
+bash tests/regression.sh && bash tests/flight.sh      # full headless-browser suites (needs: npm install && npx playwright install chromium)
+```
+
+Always edit the files in `js/` (never `dist/`, which is generated) and re-run `bash build.sh`. See [CONTEXT.md](CONTEXT.md) for a full summary of the project architecture and state.
+
 An open-world racing, flying and boating game that runs in a single HTML file, plus a **Workshop** where you build rockets and planes with a real 6-degree-of-freedom physics engine and fly them around a small solar system. Everything is plain JavaScript on [three.js](https://threejs.org) r128; there are no other runtime dependencies and no assets, because all geometry, textures and sound are generated in code.
 
 ## Play it
