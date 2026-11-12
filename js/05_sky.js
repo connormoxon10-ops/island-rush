@@ -11,7 +11,7 @@ let Q = QUAL.high, hasPost = false;
 const SKY_V = `varying vec3 vDir;
 void main(){ vDir=position; vec4 p=modelViewMatrix*vec4(position,1.0); gl_Position=projectionMatrix*p; gl_Position.z=gl_Position.w*0.99999; }`;
 const SKY_F = `varying vec3 vDir;
-uniform vec3 uSunDir,uZen,uHor,uSunCol; uniform float uTime,uDay,uNight,uSpace;
+uniform vec3 uSunDir,uZen,uHor,uSunCol; uniform float uTime,uDay,uNight,uSpace,uHaze;
 float hash(vec2 p){ p=fract(p*vec2(123.34,456.21)); p+=dot(p,p+45.32); return fract(p.x*p.y); }
 float hash3(vec3 p){ p=fract(p*0.3183099+vec3(0.1,0.2,0.3)); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
 float vn(vec2 p){ vec2 i=floor(p),f=fract(p); f=f*f*(3.0-2.0*f); return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y); }
@@ -19,7 +19,7 @@ float fbm(vec2 p){ float v=0.0,a=0.5; for(int i=0;i<5;i++){ v+=a*vn(p); p=p*2.03
 void main(){
   vec3 d=normalize(vDir); float e=d.y;
   float up=clamp(e,0.0,1.0);
-  vec3 col=mix(uHor,uZen,pow(up,0.42))*(1.0-uSpace);
+  vec3 col=mix(uHor,uZen,pow(max(up-uHaze,0.0)/(1.0-uHaze),0.42))*(1.0-uSpace);   // uHaze lifts the horizon-coloured band (the rally stage's fogged valley walls sit in it)
   float sd=dot(d,uSunDir); float above=max(smoothstep(-0.06,0.02,e),uSpace);
   // horizon glow toward sun
   col+=uSunCol*(pow(max(sd,0.0),5.0)*0.18+pow(max(sd,0.0),48.0)*0.35)*above*uDay;
@@ -91,7 +91,7 @@ const SKY_KEYS = [
 function initSky() {
   const g = new THREE.SphereGeometry(1, 40, 20);
   MAT.sky = new THREE.ShaderMaterial({ vertexShader: SKY_V, fragmentShader: SKY_F, side: THREE.BackSide, depthWrite: false, fog: false,
-    uniforms: { uSunDir: { value: env.sunDir }, uZen: { value: env.zen }, uHor: { value: env.hor }, uSunCol: { value: env.sunCol }, uTime: { value: 0 }, uDay: { value: 1 }, uNight: { value: 0 }, uSpace: { value: 0 } } });
+    uniforms: { uSunDir: { value: env.sunDir }, uZen: { value: env.zen }, uHor: { value: env.hor }, uSunCol: { value: env.sunCol }, uTime: { value: 0 }, uDay: { value: 1 }, uNight: { value: 0 }, uSpace: { value: 0 }, uHaze: { value: 0 } } });
   Sky.mesh = new THREE.Mesh(g, MAT.sky); Sky.mesh.scale.setScalar(2000); Sky.mesh.renderOrder = -1000; Sky.mesh.frustumCulled = false; scene.add(Sky.mesh);
   MAT.water = new THREE.ShaderMaterial({ vertexShader: WATER_V, fragmentShader: WATER_F, transparent: true, depthWrite: false, fog: true,
     uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uTime: { value: 0 }, uNight: { value: 0 }, uDay: { value: 1 }, uSunDir: { value: env.sunDir }, uSunCol: { value: env.sunCol }, uSky: { value: env.hor }, uZen: { value: env.zen },

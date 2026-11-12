@@ -89,10 +89,14 @@ function _rygLeafMat() {
       transformed.x += (sin(uWind * 1.7 + ph_) + 0.45 * sin(uWind * 3.3 + ph_ * 2.1)) * w_;
       transformed.z += cos(uWind * 1.4 + ph_ * 1.3) * w_ * 0.7;`);
     sh.fragmentShader = 'uniform vec3 uSunV, uSunCol; uniform float uSunAmt;\n' + sh.fragmentShader
-      .replace('#include <color_fragment>', '#include <color_fragment>\n diffuseColor.rgb *= 0.6;')
+      .replace('#include <color_fragment>', `#include <color_fragment>
+      diffuseColor.rgb *= 0.6;
+      /* cards right in front of the lens (camera pushed into a canopy after a crash) dissolve in a screen-door pattern instead of washing the whole view with one big backlit leaf */
+      float nd_ = length(vViewPosition);
+      if (nd_ < 3.2) { vec2 dq_ = floor(mod(gl_FragCoord.xy, 4.0)); float th_ = (dq_.x * 4.0 + dq_.y + 0.5) / 16.0; if (smoothstep(0.9, 3.2, nd_) < th_) discard; }`)
       .replace('#include <normal_fragment_begin>', THREE.ShaderChunk.normal_fragment_begin.replace('gl_FrontFacing ? 1.0 : - 1.0', '1.0'))
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-      { float bl_ = pow(max(dot(normalize(-vViewPosition), uSunV), 0.0), 3.0); totalEmissiveRadiance += diffuseColor.rgb * uSunCol * bl_ * uSunAmt * 0.5; }`);
+      { float bl_ = pow(max(dot(normalize(-vViewPosition), uSunV), 0.0), 3.0); totalEmissiveRadiance += diffuseColor.rgb * uSunCol * bl_ * uSunAmt * 0.5 * smoothstep(1.5, 8.0, length(vViewPosition)); }`);
   };
   return m;
 }

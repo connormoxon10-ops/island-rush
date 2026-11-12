@@ -144,6 +144,7 @@ Rally.env = function (tod, focus, time) {
   L.sun.position.set(Math.round(f.x * 2) / 2 + env.sunDir.x * 350, f.y + env.sunDir.y * 350, Math.round(f.z * 2) / 2 + env.sunDir.z * 350); L.sun.target.position.set(Math.round(f.x * 2) / 2, f.y, Math.round(f.z * 2) / 2);
   L.moon.position.set(f.x - env.sunDir.x * 300, f.y - env.sunDir.y * 300 + 50, f.z - env.sunDir.z * 300); L.moon.target.position.copy(f);
   env.exposure = lerp(2.1, 1.0, env.day) * Rally.expo;
+  MAT.sky.uniforms.uHaze.value = 0.24;   /* distant ridges and valley walls fade into the sky instead of standing out as pale slabs */
   Wind.t.value = time; MAT.sky.uniforms.uTime.value = time; MAT.sky.uniforms.uDay.value = env.day; MAT.sky.uniforms.uNight.value = env.night;
   Sky.mesh.position.copy(camera.position);
   /* shared sun description for the forest shaders / shafts / particles */
@@ -285,7 +286,7 @@ Rally.again = function () {
 Rally.exit = function (quit) {
   if (!Rally.on) return;
   Rally.on = false; Rally.phase = 'off'; Rally.sndStop(); E.rres.hidden = true; E.rcount.hidden = true; document.body.classList.remove('rally'); if (Rally.el) Rally.el.root.hidden = true;
-  if (RYG.group) RYG.group.visible = false; Rally.showWorld();
+  if (RYG.group) RYG.group.visible = false; Rally.showWorld(); MAT.sky.uniforms.uHaze.value = 0;
   const S = Rally.saved; if (S) { save.set.cycle = S.cycle; App.tod = S.tod; applyCar(S.car, true); car.nitro = S.nitro; Cam.view = S.view; loadAround(S.x, S.z, 14); spawnAt(S.x, S.z, S.yaw); car.health = Math.max(car.health, S.health); }
   if (RYP.ok) for (const P of [RYP.dust, RYP.grit, RYP.leaf]) P.life.fill(0);
   Rally.air = null; scene.fog.density = 0.001; L.sun.intensity = 3; writeSave(); UI.setMode('play');
