@@ -26,7 +26,7 @@ const RY_FEATS = [
   { k: 'jump', e: 30, at: 150, rise: 0.9, up: 16, down: 9, drop: 1.1, land: 34, name: 'Finish jump' }
 ];
 /* breakable plank gates across the road: element index + metres in */
-const RY_WALLS = [{ e: 8, at: 40 }, { e: 14, at: 54 }, { e: 20, at: 52 }, { e: 26, at: 44 }, { e: 29, at: 70 }];
+const RY_WALLS = [{ e: 8, at: 70 }, { e: 10, at: 130 }, { e: 17, at: 190 }, { e: 21, at: 85 }, { e: 26, at: 72 }, { e: 30, at: 70 }];   /* all on straights, a long run-up after the previous corner */
 /* surface sections by distance: 0 hard-packed dirt, 1 loose gravel, 2 wet mud, 3 sand */
 const RY_SECS = [[0, 0], [380, 1], [900, 0], [1180, 2], [1420, 0], [1900, 1], [2400, 3], [2620, 0], [3100, 2], [3300, 1], [3900, 0]];
 

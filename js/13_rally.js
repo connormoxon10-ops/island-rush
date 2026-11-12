@@ -9,10 +9,10 @@ const Rally = {
   saved: null, hidden: [], sun: null, expo: 1, lit: 0.6, resets: 0, smashed: 0, jumpBest: 0, air: null, combo: 0, comboT: 0, stuck: 0, wrong: 0, safeS: 0, safeT: 0, hudT: 0, noteI: 0, tod: 2, loading: false, count: 0, doneT: 0
 };
 const RY_TODS = [
-  { n: 'Dawn mist', tod: 6.9, fog: 0.0074, tint: [0.88, 0.94, 1.02], shaft: 1.0, sun: 3.1, expo: 1.08 },
-  { n: 'Midday', tod: 12.3, fog: 0.0036, tint: [1, 1, 1], shaft: 0.5, sun: 3.5, expo: 1.0 },
-  { n: 'Golden hour', tod: 17.0, fog: 0.0054, tint: [1.04, 0.96, 0.86], shaft: 1.0, sun: 3.7, expo: 1.05 },
-  { n: 'Dusk', tod: 18.95, fog: 0.0058, tint: [0.9, 0.86, 0.95], shaft: 0.55, sun: 2.4, expo: 1.2 }
+  { n: 'Dawn mist', tod: 6.9, fog: 0.0074, tint: [0.88, 0.94, 1.02], shaft: 1.0, sun: 2.5, expo: 1.08 },
+  { n: 'Midday', tod: 12.3, fog: 0.0036, tint: [1, 1, 1], shaft: 0.5, sun: 3.0, expo: 1.0 },
+  { n: 'Golden hour', tod: 17.0, fog: 0.0054, tint: [1.04, 0.96, 0.86], shaft: 1.0, sun: 2.9, expo: 1.05 },
+  { n: 'Dusk', tod: 18.95, fog: 0.0058, tint: [0.9, 0.86, 0.95], shaft: 0.55, sun: 2.0, expo: 1.2 }
 ];
 const RY_DUST = [[0.66, 0.5, 0.33], [0.66, 0.62, 0.54], [0.24, 0.17, 0.11], [0.82, 0.7, 0.5]];
 const RYP = { dust: null, grit: null, leaf: null, ok: false };
@@ -210,7 +210,7 @@ Rally.hud = function (dt) {
 
 /* ---------------- lobby ---------------- */
 const RY_INFO = 'A 3.7 km point-to-point forest stage cut through dense pine and birch. Hard-packed dirt, loose gravel, a wet mud pocket and a sandy cut, with ' +
-  'crests, big jumps and dips. Five plank walls block the road: drive straight through them. Pace notes call the road ahead.';
+  'crests, big jumps and dips. Six plank walls block the road: drive straight through them. Pace notes call the road ahead.';
 Rally.open = function () {
   if (App.mode !== 'rlobby') return; Rally.lobby = true; Rally.tod = clamp(save.rally.tod, 0, 3); Rally.paint(); Snd.beep(620, 0.06);
 };

@@ -32,8 +32,10 @@ function _rygGroundMat() {
       .replace('#include <begin_vertex>', '#include <begin_vertex>\n vRD = aRD; vSec = aSec; vWp = (modelMatrix * vec4(transformed, 1.0)).xyz;');
     sh.fragmentShader = 'uniform float uTime, uDap, uBump, uWet; varying vec2 vRD; varying vec4 vSec; varying vec3 vWp;\n' + RYG_NOISE + '\n' + sh.fragmentShader
       .replace('#include <color_fragment>', `#include <color_fragment>
-      vec2 w_ = vWp.xz; float d_ = vRD.x, e_ = vRD.y, a_ = abs(d_);
-      float n1 = rf_(w_ * 0.21), n2 = rf_(w_ * 0.9 + 3.7), n3 = rn_(w_ * 4.3), n4 = rn_(w_ * 17.0), n5 = rn_(w_ * 61.0);
+      vec2 w_ = vWp.xz + vWp.y * vec2(0.73, 0.52); float d_ = vRD.x, e_ = vRD.y, a_ = abs(d_);
+      float fw_ = length(fwidth(w_));
+      float f3_ = 1.0 - smoothstep(0.17 / 4.3, 0.55 / 4.3, fw_), f4_ = 1.0 - smoothstep(0.17 / 17.0, 0.55 / 17.0, fw_), f5_ = 1.0 - smoothstep(0.17 / 61.0, 0.55 / 61.0, fw_);
+      float n1 = rf_(w_ * 0.21), n2 = rf_(w_ * 0.9 + 3.7), n3 = mix(0.5, rn_(w_ * 4.3), f3_), n4 = mix(0.5, rn_(w_ * 17.0), f4_), n5 = mix(0.5, rn_(w_ * 61.0), f5_);
       vec3 cHard = vec3(0.50, 0.36, 0.22), cGrav = vec3(0.60, 0.55, 0.46), cMud = vec3(0.26, 0.18, 0.11), cSand = vec3(0.72, 0.60, 0.42);
       vec3 road = cHard * vSec.x + cGrav * vSec.y + cMud * vSec.z + cSand * vSec.w;
       road *= 0.76 + 0.5 * n1 + 0.2 * (n3 - 0.5);
@@ -86,6 +88,7 @@ function _rygLeafMat() {
       transformed.x += (sin(uWind * 1.7 + ph_) + 0.45 * sin(uWind * 3.3 + ph_ * 2.1)) * w_;
       transformed.z += cos(uWind * 1.4 + ph_ * 1.3) * w_ * 0.7;`);
     sh.fragmentShader = 'uniform vec3 uSunV, uSunCol; uniform float uSunAmt;\n' + sh.fragmentShader
+      .replace('#include <color_fragment>', '#include <color_fragment>\n diffuseColor.rgb *= 0.6;')
       .replace('#include <normal_fragment_begin>', THREE.ShaderChunk.normal_fragment_begin.replace('gl_FrontFacing ? 1.0 : - 1.0', '1.0'))
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
       { float bl_ = pow(max(dot(normalize(-vViewPosition), uSunV), 0.0), 3.0); totalEmissiveRadiance += diffuseColor.rgb * uSunCol * bl_ * uSunAmt * 0.5; }`);
@@ -373,7 +376,7 @@ RYG.buildGantries = function (group) {
     const beam = new THREE.Mesh(new THREE.BoxGeometry(hw * 2 + 0.8, 0.5, 0.35), new THREE.MeshStandardMaterial({ color: lc(0x2a2d33), roughness: 0.6, metalness: 0.4 }));
     beam.position.set(q.x, y + 6.1, q.z); beam.quaternion.copy(yaw); beam.castShadow = true; group.add(beam);
     const ban = new THREE.Mesh(new THREE.PlaneGeometry(hw * 2 - 0.3, (hw * 2 - 0.3) * 0.19), new THREE.MeshBasicMaterial({ map: _rygBannerTex(label, sub, col), side: THREE.DoubleSide, fog: true, toneMapped: false }));
-    ban.position.set(q.x, y + 5.0, q.z); ban.quaternion.copy(yaw); group.add(ban);
+    ban.position.set(q.x, y + 5.0, q.z); ban.quaternion.copy(yaw).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI)); group.add(ban);  /* text reads from the approach side */
   };
   mk(RY.startS, null, 'WRC-STYLE FOREST STAGE · 3.7 KM', '#d83a1e', 'HOLLOW PINES');
   mk(RY.finishS, null, 'STAGE FINISH · FLYING FINISH', '#1e5fd8', 'FINISH');

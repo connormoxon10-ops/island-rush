@@ -45,4 +45,10 @@ ok(RY.maxSlope < 0.4, 'road gradient stays sane (max ' + RY.maxSlope.toFixed(3) 
   for (const v of [30]) { let sA = 40, bad = []; while (sA < RY.L - 60) { const b = fly(v, sA, sA + 160); if (b && b.t > 0.25) { const near = RY.feats.some((f) => b.s0 > f.s0 - 60 && b.s0 < f.s0 + (f.len || (f.n ? f.n * f.lam : 40)) + 40); if (!near) bad.push(b.s0.toFixed(0)); sA = b.s0 + 160; } else sA += 160; }
     ok(bad.length === 0, 'no unintended air at ' + v + ' m/s' + (bad.length ? ' (at s=' + bad.join(',') + ')' : '')); }
 }
+/* plank walls are for speed: each one sits on a straight with a clear run-up (no bend in the 70 m before it or the 20 m after) and clear of jumps */
+for (const w of RY.walls) {
+  const a = RY.at(w.s - 70, 0, {}), b = RY.at(w.s + 20, 0, {}); let dy = b.yaw - a.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+  ok(Math.abs(dy) < 0.04, 'wall at s=' + w.s.toFixed(0) + ' has a straight run-up (heading change ' + dy.toFixed(3) + ' rad)');
+  ok(RY.feats.every((f) => w.s < f.s0 - 30 || w.s > f.s0 + 70), 'wall at s=' + w.s.toFixed(0) + ' is clear of jumps and dips');
+}
 console.log(fails ? fails + ' FAILED' : 'ALL OK'); process.exit(fails ? 1 : 0);
