@@ -103,10 +103,11 @@ RR.think = function (b, h) {
   if (b.fin && spd < 3) { c.thr = 0; c.brk = 0; c.hand = 1; }
   /* stuck against a trunk or out in the trees: back on the road */
   if (spd < 1.5 && !b.fin) b.stuckT += h; else b.stuckT = Math.max(0, b.stuckT - 2 * h);
-  if (b.dist > hw + 9 && !c.air) b.offRoadT += h; else b.offRoadT = Math.max(0, b.offRoadT - h);
-  if (b.stuckT > 2.2 || b.offRoadT > 3) RR.recover(b);
+  if (b.dist > hw + 9 && !c.air && !b.fin) b.offRoadT += h; else b.offRoadT = Math.max(0, b.offRoadT - h);   /* (a car that has finished may roll off the end of the road) */
+  if (b.stuckT > 2.2 || b.offRoadT > 3) RR.recover(b, b.stuckT > 2.2 ? 'stuck' : 'off the road');
 };
-RR.recover = function (b) {
+RR.recover = function (b, why) {
+  (RR.rlog || (RR.rlog = [])).push([b.name, why, Math.round(b.s), +Rally.clock.toFixed(1), +Math.abs(b.c.speed).toFixed(1), +b.dist.toFixed(1)]);
   const s = b.s + 3; RR.place(b, s, b.off0); const c = b.c; c.vx = Math.sin(c.yaw) * 10; c.vz = Math.cos(c.yaw) * 10; c.speed = 10; c.thr = 0.6; c.brk = 0; c.hand = 0; c.gear = 2; b.resets++;
 };
 
