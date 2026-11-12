@@ -3,7 +3,7 @@
    BufferGeometry with a baked vertex-colour tint (1 = take the instance / material colour as it is; < 1 darker seams, belts, cuffs).
    Used by the street pedestrians (InstancedMesh parts, 07_peds.js) and by the articulated cutscene people (crPerson, 08_courtroom.js).
    Conventions: +z is the front of the person, y is up, limbs hang down -y from their joint, the head's origin is the chin. */
-const Body = { G: null };
+const Body = { G: null, NECK: 0.568 };      // NECK = height of the chin above the spine pivot (the head's origin)
 const _bv = new THREE.Vector3(), _bq = new THREE.Quaternion(), _be = new THREE.Euler(), _bs = new THREE.Vector3();
 const _bt = (c) => (Array.isArray(c) ? c : [c, c, c]);
 function bodyMx(x, y, z, rx, ry, rz, sx, sy, sz) {
@@ -69,6 +69,14 @@ class BB {
   }
 }
 
+/* x-mirrored copy of a (non-indexed) geometry with the winding fixed, for left-hand parts */
+function mirrorGeo(g) {
+  const m = g.clone(), P = m.attributes.position, N = m.attributes.normal, C = m.attributes.color;
+  for (let k = 0; k < P.count; k++) { P.setX(k, -P.getX(k)); if (N) N.setX(k, -N.getX(k)); }
+  for (let k = 0; k + 2 < P.count; k += 3) for (const A of [P, N, C]) if (A) for (let c = 0; c < A.itemSize; c++) { const t = A.array[(k + 1) * A.itemSize + c]; A.array[(k + 1) * A.itemSize + c] = A.array[(k + 2) * A.itemSize + c]; A.array[(k + 2) * A.itemSize + c] = t; }
+  m.computeBoundingBox(); m.computeBoundingSphere(); return m;
+}
+
 Body.init = function () {
   if (Body.G) return Body.G;
   const G = Body.G = { hair: {}, hairH: {}, hairT: {} }, R = (rows) => rows.map((r) => ({ y: r[0], a: r[1], b: r[2], z: r[3], e: r[4], c: r[5] }));
@@ -92,33 +100,54 @@ Body.init = function () {
     const sole = [[-0.062, 0.032, 0.011, -0.065], [-0.04, 0.045, 0.012, -0.065], [0.09, 0.052, 0.012, -0.065], [0.17, 0.047, 0.012, -0.065], [0.206, 0.03, 0.009, -0.065]];
     b.loft(sole.map((r) => ({ y: r[0], a: r[1], b: r[2], v: r[3], e: 3, c: 0.42 })), { seg: 10, axis: 'z' }); G.foot = b.geo(); }
   /* ---- arms: upper arm (shirt part), lower upper arm (sleeve or skin), forearm, hand ---- */
-  { const b = new BB(); b.loft(R([[0.064, 0.028, 0.03, 0, 2, 1], [0.054, 0.046, 0.05, 0, 2, 1], [0.03, 0.062, 0.062, 0, 2, 1], [-0.04, 0.059, 0.06, 0, 2, 1], [-0.1, 0.054, 0.054, 0, 2, 1], [-0.17, 0.05, 0.05, 0, 2, 0.88]]), { seg: 12 }); b.ell(0, 0.0, 0, 0.06, 0.058, 0.06, 1, null, { seg: 10 }); G.uarm = b.geo(); }
-  { const b = new BB(); b.loft(R([[-0.17, 0.05, 0.05, 0, 2, 0.94], [-0.24, 0.046, 0.047, 0, 2, 1], [-0.3, 0.041, 0.042, 0, 2, 1]]), { seg: 12 }); b.ell(0, -0.31, 0, 0.042, 0.04, 0.042, 1, null, { seg: 10 }); G.uarm2 = b.geo(); }
+  { const b = new BB(); b.loft(R([[0.012, 0.028, 0.03, 0, 2, 0.94], [0.004, 0.042, 0.046, 0, 2, 1], [-0.016, 0.052, 0.055, 0, 2, 1], [-0.05, 0.055, 0.057, 0, 2, 1], [-0.1, 0.051, 0.052, 0, 2, 1], [-0.17, 0.047, 0.048, 0, 2, 0.88]]), { seg: 14 }); b.ell(0, -0.018, 0, 0.05, 0.044, 0.052, 1, null, { seg: 10 }); G.uarm = b.geo(); }
+  { const b = new BB(); b.loft(R([[-0.17, 0.047, 0.048, 0, 2, 0.94], [-0.24, 0.045, 0.046, 0, 2, 1], [-0.3, 0.04, 0.041, 0, 2, 1]]), { seg: 12 }); b.ell(0, -0.31, 0, 0.042, 0.04, 0.042, 1, null, { seg: 10 }); G.uarm2 = b.geo(); }
   { const b = new BB(); b.loft(R([[0.012, 0.042, 0.043, 0, 2, 1], [-0.05, 0.046, 0.047, 0, 2, 1], [-0.12, 0.042, 0.043, 0, 2, 1], [-0.22, 0.032, 0.032, 0, 2, 1], [-0.28, 0.028, 0.027, 0, 2, 0.84], [-0.3, 0.028, 0.027, 0, 2, 0.84]]), { seg: 12 }); G.farm = b.geo(); }
-  { const b = new BB();
-    b.loft(R([[0, 0.025, 0.017, 0, 2, 0.95], [-0.03, 0.034, 0.019, 0, 2, 1], [-0.06, 0.035, 0.018, 0, 2, 1], [-0.085, 0.031, 0.015, 0.003, 2, 0.95]]), { seg: 8 });
-    b.ell(0, -0.045, 0.028, 0.012, 0.03, 0.011, 1, [0.5, 0, 0], { seg: 6 }); b.ell(0, -0.095, 0.012, 0.03, 0.016, 0.014, 0.93, null, { seg: 8 }); G.hand = b.geo(); }
-  /* ---- head (origin = chin / neck top), neck included; face detail baked into the same mesh ---- */
+  { const b = new BB();   // hand: flat palm (thin in x, wide in z), four fingers and a thumb; origin at the wrist, hangs down -y, thumb forward (+z), fingers curl toward the body's middle (-x)
+    b.loft(R([[0.01, 0.022, 0.024, 0, 2, 0.95], [-0.01, 0.0175, 0.028, 0.001, 2.2, 1], [-0.04, 0.0135, 0.033, 0.002, 2.4, 1], [-0.077, 0.0105, 0.033, 0.002, 2.6, 0.96]]), { seg: 10 });
+    const fin = (z, len, curl, w) => { const P = [], N = [], W = [], H = [], m = 5; for (let q = 0; q < m; q++) { const s = q / (m - 1), a = curl * s * s, last = q === m - 1; P.push([-a * 0.6 * len, -0.074 - len * s * (1 - 0.12 * s), z]); N.push([1, 0, 0]); W.push(last ? 0 : w * (1 - 0.18 * s)); H.push(last ? 0 : 0.0074 * (1 - 0.2 * s)); } b.tube(P, N, W, H, [0.95, 1], 6); };
+    fin(0.0245, 0.07, 0.35, 0.0072); fin(0.0082, 0.078, 0.45, 0.0074); fin(-0.0085, 0.073, 0.5, 0.0071); fin(-0.0245, 0.058, 0.55, 0.0064);
+    b.tube([[0.001, -0.016, 0.026], [0.0, -0.036, 0.042], [-0.003, -0.053, 0.049], [-0.006, -0.067, 0.05]], [[1, 0, 0], [1, 0, 0], [1, 0, 0], [1, 0, 0]], [0.0112, 0.0102, 0.0092, 0], [0.0095, 0.0088, 0.008, 0], [0.95, 1], 6);
+    G.hand = b.geo(); G.handL = mirrorGeo(G.hand); }
+  /* ---- head (origin = chin / neck top), neck included; face detail baked into the same mesh ----
+     The profile is a smooth (Hermite) curve through these rows, so the hair kit can sit exactly on it; the face is then sculpted with a few soft
+     bumps and dents (eye sockets, brow ridge, cheekbones, cheek hollows, temples, chin, mouth line) before the nose, lips, ears and eyelids go on. */
   const HR = [[0, 0.034, 0.045, 0.05, 2.2, 0.97], [0.012, 0.056, 0.066, 0.04, 2.2, 0.98], [0.035, 0.072, 0.085, 0.022, 2.2, 1], [0.065, 0.079, 0.096, 0.01, 2.2, 1], [0.105, 0.082, 0.102, 0.004, 2.2, 1], [0.14, 0.082, 0.104, 0, 2.2, 1], [0.18, 0.08, 0.101, -0.004, 2.2, 1], [0.215, 0.069, 0.088, -0.008, 2.2, 1], [0.238, 0.044, 0.058, -0.008, 2.2, 1], [0.247, 0.015, 0.022, -0.008, 2.2, 1]];
-  const fz = (y) => { let best = 0.1; for (let k = 0; k < HR.length - 1; k++) { const A = HR[k], B = HR[k + 1]; if (y >= A[0] && y <= B[0]) { const t = (y - A[0]) / (B[0] - A[0]); best = (A[3] + A[2]) * (1 - t) + (B[3] + B[2]) * t; break; } } return best; };
+  Body.HR = HR;
+  const fz = (y) => { const r = headRingAt(HR, y); return r[3] + r[2]; };
+  const gau = (x, y, cx, cy, sx, sy) => Math.exp(-(((x - cx) / sx) ** 2 + ((y - cy) / sy) ** 2));
   { const b = new BB();
-    b.loft(R(HR), { seg: 18 });
-    b.loft(R([[-0.12, 0.05, 0.05, -0.014, 2, 0.96], [-0.06, 0.044, 0.046, -0.012, 2, 1], [0, 0.04, 0.043, -0.008, 2, 0.9], [0.03, 0.04, 0.043, -0.006, 2, 0.9]]), { seg: 12 });
-    b.ell(0, 0.108, fz(0.108) - 0.003, 0.0085, 0.026, 0.0105, 0.99, [-0.35, 0, 0], { seg: 8 });
-    b.ell(0, 0.083, fz(0.083) + 0.009, 0.0115, 0.0095, 0.0125, 0.97, null, { seg: 8 });
-    for (const sx of [-1, 1]) {
-      b.ell(sx * 0.0105, 0.0815, fz(0.08) + 0.002, 0.0065, 0.006, 0.008, 0.9, null, { seg: 6 });
-      b.ell(sx * 0.0815, 0.105, -0.003, 0.0085, 0.026, 0.0165, 0.95, [0, 0, -sx * 0.12], { seg: 8 });
-      b.ell(sx * 0.033, 0.1385, fz(0.1385) - 0.0065, 0.0165, 0.0042, 0.008, 0.86, null, { seg: 8, lat: 4 });
+    const YS = [0, 0.006, 0.013, 0.022, 0.032, 0.044, 0.056, 0.068, 0.08, 0.092, 0.105, 0.118, 0.13, 0.142, 0.155, 0.168, 0.18, 0.192, 0.204, 0.214, 0.223, 0.231, 0.238, 0.243, 0.247];
+    const rows = YS.map((y) => { const r = headRingAt(HR, y); let c = 1; for (let k = 0; k < HR.length - 1; k++) if (y >= HR[k][0] && y <= HR[k + 1][0]) { c = HR[k][5] + (HR[k + 1][5] - HR[k][5]) * (y - HR[k][0]) / (HR[k + 1][0] - HR[k][0]); break; } return [y, r[1], r[2], r[3], r[4], c]; });
+    b.loft(R(rows), { seg: 28 });
+    for (let k = 0; k < b.p.length / 3; k++) {            // sculpt the face
+      const x = b.p[k * 3], y = b.p[k * 3 + 1], z = b.p[k * 3 + 2], rz = z - headRingAt(HR, Math.min(y, 0.247))[3], ang = Math.atan2(x, rz), m = Math.max(0, 1 - Math.abs(ang) / 1.15), mm = m * m * (3 - 2 * m);
+      let d = 0, dk = 0;
+      for (const sx of [-1, 1]) { d -= 0.0046 * gau(x, y, sx * 0.033, 0.128, 0.021, 0.0165) * mm; dk += 0.1 * gau(x, y, sx * 0.033, 0.128, 0.02, 0.016) * mm; d += 0.0033 * gau(x, y, sx * 0.06, 0.092, 0.02, 0.017) * mm; d -= 0.0021 * gau(x, y, sx * 0.05, 0.06, 0.018, 0.017) * mm; d -= 0.0026 * gau(x, y, sx * 0.075, 0.15, 0.012, 0.02); }
+      d += 0.0042 * Math.exp(-(((y - 0.1475) / 0.0125) ** 2)) * Math.exp(-((x / 0.058) ** 4)) * mm;
+      d += 0.0028 * gau(x, y, 0, 0.004, 0.022, 0.016) * mm;
+      d -= 0.0018 * Math.exp(-(((y - 0.0455) / 0.004) ** 2)) * Math.exp(-((x / 0.021) ** 4)) * mm;
+      const hl = Math.hypot(x, rz) || 1; b.p[k * 3] += x / hl * d; b.p[k * 3 + 2] += rz / hl * d; if (dk) { const c = 1 - dk; b.c[k * 3] *= c; b.c[k * 3 + 1] *= c; b.c[k * 3 + 2] *= c; }
     }
-    b.ell(0, 0.052, fz(0.052) - 0.0055, 0.024, 0.006, 0.0085, [0.97, 0.66, 0.66], null, { seg: 8 });
-    b.ell(0, 0.04, fz(0.04) - 0.0065, 0.02, 0.006, 0.0085, [0.95, 0.6, 0.6], null, { seg: 8 });
-    b.ell(0, 0.0455, fz(0.0455) - 0.0035, 0.019, 0.0016, 0.006, 0.5, null, { seg: 8 });
+    b.loft(R([[-0.16, 0.058, 0.054, -0.016, 2, 0.96], [-0.1, 0.055, 0.052, -0.013, 2, 1], [-0.04, 0.05, 0.048, -0.01, 2, 0.94], [0.0, 0.045, 0.046, -0.006, 2, 0.9], [0.03, 0.042, 0.045, -0.004, 2, 0.9]]), { seg: 14 });
+    b.ell(0, 0.108, fz(0.108) - 0.003, 0.0085, 0.026, 0.0105, 0.99, [-0.35, 0, 0], { seg: 8 });                     // nose bridge
+    b.ell(0, 0.083, fz(0.083) + 0.009, 0.0115, 0.0095, 0.0125, 0.97, null, { seg: 8 });                            // nose tip
+    for (const sx of [-1, 1]) {
+      b.ell(sx * 0.0105, 0.0815, fz(0.08) + 0.002, 0.0065, 0.006, 0.008, 0.9, null, { seg: 6 });                    // nostril wing
+      b.ell(sx * 0.0072, 0.0745, fz(0.0745) + 0.0158, 0.0042, 0.0026, 0.0048, 0.42, null, { seg: 6, lat: 3 });      // nostril
+      b.ell(sx * 0.0815, 0.105, -0.003, 0.0085, 0.026, 0.0165, 0.95, [0, 0, -sx * 0.12], { seg: 8 });               // ear
+      b.ell(sx * 0.0845, 0.108, 0.0, 0.0045, 0.016, 0.009, 0.8, [0, 0, -sx * 0.12], { seg: 6, lat: 3 });            // ear hollow
+      b.ell(sx * 0.033, 0.1315, fz(0.1315) - 0.0082, 0.0148, 0.0105, 0.0095, 0.965, null, { seg: 10, lat: 4, t0: Math.PI * 0.68, t1: Math.PI });  // upper eyelid
+      b.ell(sx * 0.033, 0.1235, fz(0.1235) - 0.0085, 0.0145, 0.0042, 0.0085, 0.95, null, { seg: 10, lat: 3, t0: 0, t1: Math.PI * 0.3 });          // lower lid
+    }
+    b.ell(0, 0.052, fz(0.052) - 0.0055, 0.024, 0.006, 0.0085, [0.97, 0.66, 0.66], null, { seg: 8 });               // upper lip
+    b.ell(0, 0.04, fz(0.04) - 0.0065, 0.02, 0.006, 0.0085, [0.95, 0.6, 0.6], null, { seg: 8 });                     // lower lip
+    b.ell(0, 0.0455, fz(0.0455) - 0.0035, 0.019, 0.0016, 0.006, 0.5, null, { seg: 8 });                             // mouth line
     G.head = b.geo(); }
-  { const b = new BB();   // eyes: white + iris (absolute colours, instance colour stays white)
-    for (const sx of [-1, 1]) { const z = fz(0.128) - 0.0065; b.ell(sx * 0.033, 0.128, z, 0.0135, 0.0088, 0.0075, [0.86, 0.84, 0.8], null, { seg: 8 }); b.ell(sx * 0.033, 0.128, z + 0.0018, 0.0068, 0.0068, 0.0075, [0.05, 0.034, 0.028], null, { seg: 8 }); }
+  { const b = new BB();   // eyes: white + iris + pupil (absolute colours, instance colour stays white), sunk a little into the sockets
+    for (const sx of [-1, 1]) { const z = fz(0.128) - 0.0098; b.ell(sx * 0.033, 0.128, z, 0.0135, 0.0088, 0.0075, [0.88, 0.86, 0.82], null, { seg: 10 }); b.ell(sx * 0.033, 0.128, z + 0.0018, 0.0068, 0.0068, 0.0075, [0.1, 0.07, 0.05], null, { seg: 8 }); b.ell(sx * 0.033, 0.128, z + 0.0034, 0.0032, 0.0032, 0.0075, [0.01, 0.01, 0.01], null, { seg: 6, lat: 4 }); }
     G.eyes = b.geo(); }
-  { const b = new BB(); for (const sx of [-1, 1]) b.ell(sx * 0.034, 0.151, fz(0.151) - 0.0045, 0.026, 0.0048, 0.0075, 1, [0, 0, -sx * 0.14], { seg: 8, lat: 4 }); G.brow = b.geo(); }
+  { const b = new BB(); for (const sx of [-1, 1]) b.ell(sx * 0.034, 0.1535, fz(0.1535) - 0.0012, 0.026, 0.0048, 0.0075, 1, [0, 0, -sx * 0.14], { seg: 8, lat: 4 }); G.brow = b.geo(); }
   /* ---- hair: built on the real scalp surface, see 06_hair.js (G.hair = merged, G.hairH = head part, G.hairT = swinging tail segments) ---- */
   buildHair(G, HR);
   { const b = new BB(), ra = (y) => { for (let k = 0; k < HR.length - 1; k++) if (y >= HR[k][0] && y <= HR[k + 1][0]) { const t = (y - HR[k][0]) / (HR[k + 1][0] - HR[k][0]); return [HR[k][1] * (1 - t) + HR[k + 1][1] * t, HR[k][2] * (1 - t) + HR[k + 1][2] * t, HR[k][3] * (1 - t) + HR[k + 1][3] * t]; } return [0.05, 0.05, 0]; };

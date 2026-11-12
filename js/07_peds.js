@@ -31,7 +31,7 @@ function initPeds() {
   mk('beard', B.beard);
   mk('torsoM', B.torsoM, true); mk('torsoF', B.torsoF, true); mk('torsoC', B.torsoC, true); mk('hips', B.hips, true); mk('skirt', B.skirt, true);
   mk('thigh', B.thigh, true); mk('shin', B.shin, true); mk('foot', B.foot, true);
-  mk('uarm', B.uarm, true); mk('uarm2', B.uarm2, true); mk('farm', B.farm, true); mk('hand', B.hand);
+  mk('uarm', B.uarm, true); mk('uarm2', B.uarm2, true); mk('farm', B.farm, true); mk('hand', B.hand); mk('handL', B.handL);
   mk('bag', B.bag, true);
   mk('hdome', new THREE.SphereGeometry(0.12, 12, 8, 0, TAU, 0, Math.PI * 0.55), true); mk('hbrim', new THREE.CylinderGeometry(0.6, 1, 0.05, 20));
   mk('gls', B.gls); mk('lens', B.lens);
@@ -412,7 +412,7 @@ function writePed(p, time, hideHead, far) {
   /* head */
   if (!hideHead) {
     const hy = gyaw - (hipYaw + torYaw + twist * 0.5) * 0.85;
-    relMX(_pF, _pT, 0, 0.545, 0.004, nod - lean * 0.7 + gpit, hy, hroll - roll * 0.3, a.hs, a.hs, a.hs);
+    relMX(_pF, _pT, 0, Body.NECK, 0.004, nod - lean * 0.7 + gpit, hy, hroll - roll * 0.3, a.hs, a.hs, a.hs);
     pput('head', _pF, sk);
     if (!far) { pput('eyes', _pF, _pw); pput('brow', _pF, a.hair); }
     const hs = a.hat && HAT[a.hat.k], hst = a.hst || 'short';
@@ -425,12 +425,12 @@ function writePed(p, time, hideHead, far) {
     if (a.beard && !far) pput('beard', _pF, a.hair);
     if (a.glasses && !far) { pput('gls', _pF, a.glassC || PGLASS); if (a.glassC || a.sun) pput('lens', _pF, a.glassC || PGLASS); }
   }
-  const shx = a.fem ? 0.18 : 0.198, slv = a.sleeve || a.coat ? a.shirt : sk, legSk = hasSk && !a.tights || a.shorts;
+  const shx = a.fem ? 0.172 : 0.19, slv = a.sleeve || a.coat ? a.shirt : sk, legSk = hasSk && !a.tights || a.shorts;
   for (let sdd = 0; sdd < 2; sdd++) {
     const sg = sdd ? 1 : -1, th = sdd ? thR : thL, bn = sdd ? bnR : bnL, ar = sdd ? aR : aL, el = sdd ? eR : eL, ey = sdd ? eyR : eyL, wr = sdd ? wrR : wrL, tz = sdd ? toR : toL;
-    relMX(_pA, _pT, sg * shx, 0.46, 0, -ar, 0, sg * spread, 1, 1, 1); pput('uarm', _pA, a.shirt); pput('uarm2', _pA, slv);
+    relMX(_pA, _pT, sg * shx, 0.458, 0, -ar, 0, sg * spread, 1, 1, 1); pput('uarm', _pA, a.shirt); pput('uarm2', _pA, slv);
     relMX(_pB, _pA, 0, -0.31, 0, -el, ey, 0, 1, 1, 1); pput('farm', _pB, slv);
-    if (!far) { relMX(_pJ, _pB, 0, -0.3, 0, -wr, 0, sg * 0.04, 1, 1, 1); pput('hand', _pJ, sk); }
+    if (!far) { relMX(_pJ, _pB, 0, -0.3, 0, -wr, 0, sg * 0.04, 1, 1, 1); pput(sdd ? 'hand' : 'handL', _pJ, sk); }
     relMX(_pC, _pH, sg * 0.098, -0.02, 0, -th, 0, sg * 0.03, 1, 1, 1); pput('thigh', _pC, hasSk && !a.tights ? sk : a.pants);
     relMX(_pD, _pC, 0, -0.43, 0, bn, 0, 0, 1, 1, 1); pput('shin', _pD, legSk ? sk : a.pants);
     relMX(_pG, _pD, 0, -0.43, 0, (th - bn) * 0.9 + tz * 0.6, sg * 0.1, 0, 1, 1, 1); pput('foot', _pG, a.shoe);

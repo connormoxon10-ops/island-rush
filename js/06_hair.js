@@ -21,13 +21,18 @@ function hairY(Y, ph) {
   for (let k = 0; k < _hK.length - 1; k++) if (a <= _hK[k + 1]) { y = Y[k] + (Y[k + 1] - Y[k]) * _hSm((a - _hK[k]) / (_hK[k + 1] - _hK[k])); break; }
   return y + 0.0022 * Math.sin(ph * 19 + 0.7) + 0.0012 * Math.sin(ph * 37 + 2.1);
 }
+/* head ring parameters at any height: a smooth (Hermite) curve through the rows [y, a, b, z, e, c], so the scalp and the head mesh agree */
+function headRingAt(HR, y) {
+  const n = HR.length; y = Math.max(HR[0][0], Math.min(HR[n - 1][0], y));
+  let k = 0; while (k < n - 2 && y > HR[k + 1][0]) k++;
+  const A = HR[k], B = HR[k + 1], h = B[0] - A[0], u = (y - A[0]) / h, u2 = u * u, u3 = u2 * u, h00 = 2 * u3 - 3 * u2 + 1, h10 = u3 - 2 * u2 + u, h01 = -2 * u3 + 3 * u2, h11 = u3 - u2, out = [y];
+  const sl = (i, p) => { const i0 = Math.max(0, i - 1), i1 = Math.min(n - 1, i + 1); return (HR[i1][p] - HR[i0][p]) / (HR[i1][0] - HR[i0][0]); };
+  for (let p = 1; p <= 4; p++) out.push(h00 * A[p] + h10 * h * sl(k, p) + h01 * B[p] + h11 * h * sl(k + 1, p));
+  out[1] = Math.max(0.0005, out[1]); out[2] = Math.max(0.0005, out[2]); return out;
+}
 /* the scalp: head rings interpolated at any height; pt(y, t) / nrm(y, t) with t the column angle (x = cos t, z = sin t; the face is at t = PI / 2) */
 function HeadSurf(HR) { this.HR = HR; this.top = HR[HR.length - 1][0]; }
-HeadSurf.prototype.ring = function (y) {
-  const H = this.HR, n = H.length; if (y <= H[0][0]) return H[0]; if (y >= H[n - 1][0]) return H[n - 1];
-  let k = 0; while (y > H[k + 1][0]) k++;
-  const A = H[k], B = H[k + 1], t = (y - A[0]) / (B[0] - A[0]); return [y, A[1] + (B[1] - A[1]) * t, A[2] + (B[2] - A[2]) * t, A[3] + (B[3] - A[3]) * t, A[4] + (B[4] - A[4]) * t];
-};
+HeadSurf.prototype.ring = function (y) { return headRingAt(this.HR, y); };
 HeadSurf.prototype.pt = function (y, t) {
   const r = this.ring(y), k = 2 / r[4], cs = Math.cos(t), sn = Math.sin(t);
   return [r[1] * Math.sign(cs) * Math.pow(Math.abs(cs), k), y, r[3] + r[2] * Math.sign(sn) * Math.pow(Math.abs(sn), k)];
@@ -110,7 +115,7 @@ function hairLocks(b, S, Y, o, rnd) {
 /* the torso's back surface at head-local height y and sideways offset x (for hair that hangs behind the neck); Infinity above the neck */
 const _hTF = [[-0.03, 0.178, 0.108, -0.004], [0.01, 0.176, 0.107, -0.004], [0.10, 0.132, 0.092, -0.002], [0.21, 0.15, 0.1, 0.002], [0.30, 0.168, 0.116, 0.016], [0.36, 0.172, 0.118, 0.02], [0.42, 0.172, 0.104, 0.006], [0.46, 0.172, 0.088, -0.002], [0.495, 0.136, 0.072, -0.006], [0.515, 0.07, 0.054, -0.008], [0.53, 0.054, 0.05, -0.006]];
 function hairTorsoBack(y, x) {
-  const yt = y + 0.545; if (yt >= 0.53) return Infinity; if (yt < -0.03) return -0.2;
+  const yt = y + Body.NECK; if (yt >= 0.53) return Infinity; if (yt < -0.03) return -0.2;
   let k = 0; while (k < _hTF.length - 2 && yt > _hTF[k + 1][0]) k++;
   const A = _hTF[k], B = _hTF[k + 1], u = (yt - A[0]) / (B[0] - A[0]), a = A[1] + (B[1] - A[1]) * u, bb = A[2] + (B[2] - A[2]) * u, z = A[3] + (B[3] - A[3]) * u;
   const r = Math.min(0.98, Math.abs(x) / a); return z - 0.004 - bb * Math.pow(Math.max(0, 1 - Math.pow(r, 2.5)), 0.4);

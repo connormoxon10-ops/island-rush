@@ -48,7 +48,7 @@ function crPerson(o) {
       crObx(g, -0.065 * w, 0.43, zf * (w + 1) / 2 + 0.012, 0.055, 0.12, 0.01, jacket, 0, 0, 0, 0.42); crObx(g, 0.065 * w, 0.43, zf * (w + 1) / 2 + 0.012, 0.055, 0.12, 0.01, jacket, 0, 0, 0, -0.42);
     } else if (o.robe) { crObx(g, 0, 0.33, 0.12 * (w + 1) / 2, 0.16, 0.3, 0.012, lc(0xf2f2f2), 0); crObx(g, 0, 0.5, 0.0, 0.16, 0.05, 0.12, lc(0xf2f2f2), 0); }
   }));
-  const head = new THREE.Group(); head.position.set(0, 0.545, 0.004); tor.add(head);
+  const head = new THREE.Group(); head.position.set(0, Body.NECK, 0.004); tor.add(head);
   head.add(M((g) => {
     B(g, 'head', skin); B(g, 'eyes', _crW); B(g, 'brow', hair);
     const st = o.hairStyle || 'short', hk = st === 'slick' ? 'buzz' : st === 'bald' ? '' : o.hat && !o.hat.isColor ? 'rim' : st;
@@ -64,7 +64,7 @@ function crPerson(o) {
     if (o.hat) { if (o.hat.isColor) { crCyl(g, 0, 0.14, 0, 0.12, 0.03, 0.125, o.hat, 0.2); crObx(g, 0, 0.12, 0.1, 0.22, 0.02, 0.1, o.hat, 0.2); } else crHat(g, o.hat); }
   }));
   const arm = (sx) => {
-    const sh = new THREE.Group(); sh.position.set(sx * 0.198 * w, 0.46, 0); tor.add(sh);
+    const sh = new THREE.Group(); sh.position.set(sx * 0.19 * w, 0.458, 0); tor.add(sh);
     const wide = o.robe ? _crS.makeScale(1.3, 1, 1.3) : null, lower = o.shortSl ? skin : sleeve;
     sh.add(M((g) => { B(g, 'uarm', sleeve, wide); B(g, 'uarm2', lower, wide); }));
     const el = new THREE.Group(); el.position.y = -0.31; sh.add(el);
