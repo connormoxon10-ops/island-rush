@@ -1,1 +1,7 @@
 CONTEXT.md
+node_modules
+dist/game.js
+dist/test.html
+tests/*.log
+tests/*.done
+*.png

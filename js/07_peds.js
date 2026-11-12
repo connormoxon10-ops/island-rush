@@ -19,14 +19,15 @@ function initPeds() {
   const mat = new THREE.MeshStandardMaterial({ roughness: 0.84, metalness: 0, vertexColors: true });
   const g = Peds.group = new THREE.Group(), cap = (Peds.cap + 2) * 2;
   const white = (geo) => { if (!geo.attributes.color) geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count * 3).fill(1), 3)); return geo; };
-  const mk = (name, geo, shadow) => {
-    const m = new THREE.InstancedMesh(white(geo), mat, cap); m.frustumCulled = false; m.castShadow = !!shadow; m.receiveShadow = false;
+  const hmat = new THREE.MeshStandardMaterial({ roughness: 0.58, metalness: 0, vertexColors: true });
+  const mk = (name, geo, shadow, mt) => {
+    const m = new THREE.InstancedMesh(white(geo), mt || mat, cap); m.frustumCulled = false; m.castShadow = !!shadow; m.receiveShadow = false;
     m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.setColorAt(0, _pw); m.instanceColor.setUsage(THREE.DynamicDrawUsage);
     m.count = 0; m.visible = false; g.add(m); Peds.mesh[name] = { m, n: 0 };
   };
   /* every part is its own InstancedMesh, filled each frame with only the people who have it (compacted slots, one draw call per part) */
   mk('head', B.head, true); mk('eyes', B.eyes); mk('brow', B.brow);
-  for (const k in B.hair) mk('h_' + k, B.hair[k], true);
+  for (const k in B.hairH) { mk('h_' + k, B.hairH[k], true, hmat); B.hairT[k].forEach((tl, i) => mk('ht_' + k + i, tl.geo, true, hmat)); }
   mk('beard', B.beard);
   mk('torsoM', B.torsoM, true); mk('torsoF', B.torsoF, true); mk('torsoC', B.torsoC, true); mk('hips', B.hips, true); mk('skirt', B.skirt, true);
   mk('thigh', B.thigh, true); mk('shin', B.shin, true); mk('foot', B.foot, true);
@@ -420,6 +421,7 @@ function writePed(p, time, hideHead, far) {
       relMS(_pM, _pF, 0, hs.y + 0.004, hs.z, hs.rx, hs.sx * 0.95, hs.sy * 1.14, hs.sz * 0.95); pput('hdome', _pM, a.hat.c);
       if (hs.br) { relMS(_pM, _pF, 0, hs.by - 0.012, hs.bz, 0, hs.br[0], 1, hs.br[1]); pput('hbrim', _pM, a.hat.bc || a.hat.c); }
     } else if (hst !== 'bald') pput('h_' + hst, _pF, a.hair);
+    { const TL = Body.G.hairT[hst]; if (hst !== 'bald' && TL && TL.length) { let par = _pF; for (let ti = 0; ti < TL.length; ti++) { relMX(ti ? _pA : _pB, par, TL[ti].pv[0], TL[ti].pv[1], TL[ti].pv[2], 0, 0, 0, 1, 1, 1); par = ti ? _pA : _pB; pput('ht_' + hst + ti, par, a.hair); } } }
     if (a.beard && !far) pput('beard', _pF, a.hair);
     if (a.glasses && !far) { pput('gls', _pF, a.glassC || PGLASS); if (a.glassC || a.sun) pput('lens', _pF, a.glassC || PGLASS); }
   }
