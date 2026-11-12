@@ -75,7 +75,7 @@ Race.start = function () {
   const slots = []; for (let i = 0; i <= n; i++) slots.push(i);
   for (let i = 0; i <= n; i++) {
     if (i === playerSlot) { Track.slot(i, _ro); pe.slot = i; Race.slotO = Object.assign({}, _ro); continue; }
-    const bi = k++, def = CARS[RACE_ORDER[clamp(pr - D.off[bi % D.off.length], 0, BASE_N - 1)]], hex = PAINTS[hexes[(bi * 3 + 1) % hexes.length]];
+    const bi = k++, def = CARS[RACE_ORDER[clamp(pr - D.off[bi % D.off.length], 0, RACE_ORDER.length - 1)]], hex = PAINTS[hexes[(bi * 3 + 1) % hexes.length]];
     const b = Bots.make(def, hex, RACE_NAMES[bi % RACE_NAMES.length], clamp(D.sk + (Math.random() - 0.5) * 0.03, 0.7, 1), bi); Bots.tier(b, D);
     Track.slot(i, _ro); Bots.place(b, _ro); b.slot = i; Bots.list.push(b); b.e = { bot: b, name: b.name, def, prog: b.prog, k: -1, cross: [], laps: [], best: 0, fin: false, tFin: 0, pos: 0, speed: 0 }; Race.ents.push(b.e);
   }
