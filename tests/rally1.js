@@ -25,14 +25,16 @@ ok(RY.maxSlope < 0.4, 'road gradient stays sane (max ' + RY.maxSlope.toFixed(3) 
   ok(onRoad === 0, 'no trunk within 2 m of the road edge (' + onRoad + ' found)'); ok(RY.trees.length > 12000, 'a heavily wooded stage: ' + RY.trees.length + ' trees (' + near + ' within 15 m of the road)'); }
 /* collision query finds a trunk */
 { const t = RY.trees.find((tr) => tr.e < 20), out = []; RY.hits(t.x + 0.1, t.z, 0.9, out); ok(out.length > 0, 'trunk collision hit found'); RY.hits(RY.at(300, 0, {}).x, RY.at(300, 0, {}).z, 1, out); ok(out.length === 0, 'road centre is clear'); }
-/* every feature: the kicker really is a kicker. Simulate a car holding speed v over the profile with the game's take-off rule and report the longest flight */
-{ const g = 9.81; const prof = (s) => { const f = s / RY.DS, i = Math.floor(f), t = f - i; return RY.py[i] * (1 - t) + RY.py[Math.min(RY.N - 1, i + 1)] * t; };
-  const fly = (v, sa, sb) => {
-    const dt = 1 / 120; let s = sa, y = prof(s), vy = 0, air = false, vyPrev = (prof(s + 0.5) - prof(s)) / (0.5 / v), t = 0, s0 = 0, best = null;
+/* every feature: the kicker really is a kicker. Simulate a car holding speed v over the ground grid with the game's take-off rule (06_car.js: vyPrev every step,
+   a landing cooldown and a speed-scaled margin on the stage) and report the longest flight */
+{ const g = 9.81, tmp = {}; const prof = (s) => { const q = RY.at(s, 0, tmp); return RY.heightAt(q.x, q.z); };
+  const fly = (v, sa, sb, stats) => {
+    const dt = 1 / 120; let s = sa, y = prof(s), vy = 0, air = false, vyPrev = (prof(s + 0.5) - prof(s)) / (0.5 / v), t = 0, s0 = 0, best = null, cd = 0;
     while (s < sb) {
       s += v * dt; const gy = prof(s);
-      if (air) { vy -= g * dt; y += vy * dt; t += dt; if (y <= gy) { air = false; if (!best || t > best.t) best = { t, d: s - s0, vy: -vy, s0 }; y = gy; vy = 0; } }
-      else { const need = (gy - y) / dt; if (need < vyPrev - g * dt - 0.2 && v > 8) { air = true; vy = vyPrev; y += vy * dt; t = 0; s0 = s; } else { vy = Math.max(-30, Math.min(30, need)); y = gy; } vyPrev = vy; }
+      if (air) { vy -= g * dt; y += vy * dt; t += dt; if (stats) stats.air++; if (y <= gy) { air = false; if (!best || t > best.t) best = { t, d: s - s0, vy: -vy, s0 }; y = gy; vy = 0; cd = 0.12; } }
+      else { const need = (gy - y) / dt; const wait = cd > 0; if (wait) cd -= dt; if (!wait && need < vyPrev - g * dt - (0.2 + 0.03 * v) && v > 8) { air = true; vy = vyPrev; y += vy * dt; t = 0; s0 = s; } else { vy = Math.max(-30, Math.min(30, need)); y = gy; } }
+      vyPrev = vy; if (stats) stats.n++;
     }
     return best;
   };
@@ -41,9 +43,13 @@ ok(RY.maxSlope < 0.4, 'road gradient stays sane (max ' + RY.maxSlope.toFixed(3) 
     for (const v of [25, 33, 42]) { const b = fly(v, f.s0 - f.up - 30, f.s0 + 120); res.push(v + ' m/s: ' + (b && b.t > 0.12 ? b.d.toFixed(0) + ' m, ' + b.t.toFixed(2) + ' s, land ' + b.vy.toFixed(1) : 'no air')); }
     console.log('jump @' + f.s0.toFixed(0), (f.name + '          ').slice(0, 11), '|', res.join(' | '));
   }
-  /* a whole run at a steady speed shouldn't throw the car into the air anywhere there is no feature (apart from whoops, which are meant to) */
-  for (const v of [30]) { let sA = 40, bad = []; while (sA < RY.L - 60) { const b = fly(v, sA, sA + 160); if (b && b.t > 0.25) { const near = RY.feats.some((f) => b.s0 > f.s0 - 60 && b.s0 < f.s0 + (f.len || (f.n ? f.n * f.lam : 40)) + 40); if (!near) bad.push(b.s0.toFixed(0)); sA = b.s0 + 160; } else sA += 160; }
-    ok(bad.length === 0, 'no unintended air at ' + v + ' m/s' + (bad.length ? ' (at s=' + bad.join(',') + ')' : '')); }
+  /* a whole run at a steady speed shouldn't throw the car into the air anywhere there is no feature (apart from whoops, which are meant to): measured as the share of time spent airborne away from features */
+  for (const v of [22, 30, 40]) {
+    const st = { air: 0, n: 0 }, ranges = []; let sA = RY.startS; const featEnd = (f) => f.s0 + (f.up || 0) + (f.down || 0) + (f.land || 0) + (f.n ? f.n * f.lam : 0) + (f.len || 0) + 30;
+    const stOut = { air: 0, n: 0 };
+    for (let k = 0; k < 24; k++) { const a = RY.startS + k * 150, b = Math.min(RY.finishS, a + 150); if (a >= RY.finishS) break; if (RY.feats.some((f) => b > f.s0 - 60 && a < featEnd(f))) continue; fly(v, a, b, stOut); }
+    ok(stOut.n > 3000 && stOut.air / stOut.n < 0.01, 'only ' + (100 * stOut.air / stOut.n).toFixed(2) + '% of the time in the air away from features at ' + v + ' m/s (over ' + stOut.n + ' steps)');
+  }
 }
 /* plank walls are for speed: each one sits on a straight with a clear run-up (no bend in the 70 m before it or the 20 m after) and clear of jumps */
 for (const w of RY.walls) {

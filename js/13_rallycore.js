@@ -14,16 +14,16 @@ const RY_ELEMS = [
 ];
 /* height features: kind, element index, metres into that element, parameters. jump = kicker ramp then a landing slope; dip = hollow; whoops = rollers */
 const RY_FEATS = [
-  { k: 'jump', e: 6, at: 56, rise: 0.7, up: 16, down: 8, drop: 0.7, land: 26, name: 'Jump' },
+  { k: 'jump', e: 6, at: 56, rise: 0.95, up: 16, down: 11, drop: 0.9, land: 28, name: 'Jump' },
   { k: 'whoops', e: 10, at: 24, n: 4, lam: 14, amp: 0.55 },
   { k: 'dip', e: 12, at: 14, depth: 1.5, len: 24 },
-  { k: 'jump', e: 12, at: 66, rise: 0.55, up: 14, down: 8, drop: 0.5, land: 28, name: 'Blind crest' },
-  { k: 'jump', e: 17, at: 96, rise: 1.0, up: 16, down: 10, drop: 1.3, land: 36, name: 'Big air' },
+  { k: 'jump', e: 12, at: 66, rise: 0.75, up: 14, down: 11, drop: 0.65, land: 30, name: 'Blind crest' },
+  { k: 'jump', e: 17, at: 96, rise: 1.3, up: 16, down: 13, drop: 1.6, land: 40, name: 'Big air' },
   { k: 'whoops', e: 22, at: 10, n: 3, lam: 12, amp: 0.5 },
   { k: 'dip', e: 24, at: 34, depth: 1.3, len: 22 },
-  { k: 'jump', e: 24, at: 78, rise: 0.8, up: 14, down: 8, drop: 0.9, land: 30, name: 'Jump' },
+  { k: 'jump', e: 24, at: 78, rise: 1.05, up: 14, down: 11, drop: 1.1, land: 32, name: 'Jump' },
   { k: 'whoops', e: 27, at: 30, n: 5, lam: 13, amp: 0.45 },
-  { k: 'jump', e: 30, at: 150, rise: 0.9, up: 16, down: 9, drop: 1.1, land: 34, name: 'Finish jump' }
+  { k: 'jump', e: 30, at: 150, rise: 1.35, up: 18, down: 12, drop: 1.5, land: 40, name: 'Finish jump' }
 ];
 /* breakable plank gates across the road: element index + metres in */
 const RY_WALLS = [{ e: 8, at: 70 }, { e: 10, at: 130 }, { e: 17, at: 190 }, { e: 21, at: 85 }, { e: 26, at: 72 }, { e: 30, at: 70 }];   /* all on straights, a long run-up after the previous corner */

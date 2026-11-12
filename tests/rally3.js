@@ -4,7 +4,7 @@
 const { chromium } = require('playwright');
 const path = require('path');
 const G = path.resolve(__dirname, '../dist/test.html');
-const TOD = +(process.env.TOD || 2), MAXT = +(process.env.MAXT || 260), SHOTS = (process.env.SHOTS || '').split(',').filter(Boolean).map(Number);
+const TRACE = process.env.TRACE ? process.env.TRACE.split(',').map(Number) : null, TOD = +(process.env.TOD || 2), MAXT = +(process.env.MAXT || 260), SHOTS = (process.env.SHOTS || '').split(',').filter(Boolean).map(Number);
 const OUT = process.env.OUT || __dirname;
 (async () => {
   const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'] });
@@ -14,11 +14,11 @@ const OUT = process.env.OUT || __dirname;
   page.on('pageerror', (e) => logs.push('PAGEERROR: ' + String(e.stack || e).slice(0, 600)));
   await page.route('**/three.min.js', (r) => r.fulfill({ path: path.resolve(__dirname, 'three.min.js'), contentType: 'application/javascript' }));
   await page.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
-  await page.addInitScript(() => { window.__noAdapt = true; try { localStorage.setItem('island-rush-v1', JSON.stringify({ set: { quality: 'low' } })); } catch (e) { /* ignore */ } });
+  await page.addInitScript((ay) => { window.__AY = ay; window.__noAdapt = true; try { localStorage.setItem('island-rush-v1', JSON.stringify({ set: { quality: 'low' } })); } catch (e) { /* ignore */ } }, +(process.env.AY || 0.8));
   await page.goto('file://' + G);
   await page.waitForFunction(() => window.__ready || window.__bootError, null, { timeout: 170000 });
   console.log('boot err', await page.evaluate(() => window.__bootError || null));
-  const res = await page.evaluate(async ([tod, maxT, shots]) => {
+  const res = await page.evaluate(async ([tod, maxT, shots, TRACE]) => {
     const g = window.__game, R = g.Rally, RY = g.RY, car = g.car, out = { log: [], marks: [], events: [] };
     g.App.mode = 'rlobby'; g.save.rally.tod = tod; R.tod = tod; await R.start();
     /* fake analog gamepad: axes[0] = -steer, buttons 7 = throttle, 6 = brake */
@@ -48,11 +48,13 @@ const OUT = process.env.OUT || __dirname;
       const st = Math.max(-1, Math.min(1, dd / maxS * 1.15));
       const vt = vAt(R.s + spd * 0.35), th = Math.max(0, Math.min(1, (vt - spd) * 0.6 + 0.3)), br = spd > vt + 1.5 ? Math.min(1, (spd - vt - 1.5) * 0.3) : 0;
       set(st, br > 0 ? 0 : th, br);
+      if (TRACE && R.s >= TRACE[0] && R.s <= TRACE[1] && n % 6 === 0) { const tg = RY.at(R.s, 0, {}); let ye = car.yaw - tg.yaw; ye = Math.atan2(Math.sin(ye), Math.cos(ye)); const vf = car.vx * Math.sin(car.yaw) + car.vz * Math.cos(car.yaw), vl = car.vx * Math.cos(car.yaw) - car.vz * Math.sin(car.yaw); out.trace = out.trace || []; out.trace.push([+t.toFixed(2), +R.s.toFixed(0), +R.lat.toFixed(1), +vf.toFixed(1), +vl.toFixed(1), +ye.toFixed(2), +st.toFixed(2), +(car.w || 0).toFixed(2), car.air ? 1 : 0, R.sim.broken, +car.y.toFixed(2)].join(' ')); }
       g.stepSim(dt); t += dt; n++;
       if (car.air) airT += dt;
       if (R.dist > RY.hw[R.hint] + 1.5) offRoad += dt;
+      { const outNow = R.dist > RY.hw[R.hint] + 2.5; if (outNow && !out._out && !car.air) { out.events.push('LEFT ROAD s=' + R.s.toFixed(0) + ' t=' + t.toFixed(1) + ' v=' + spd.toFixed(1) + ' vt=' + vt.toFixed(1) + ' st=' + st.toFixed(2) + ' lat=' + R.lat.toFixed(1) + ' hw=' + RY.hw[R.hint].toFixed(1) + ' bank=' + (RY.bank ? RY.bank[R.hint].toFixed(3) : '') + ' mu=' + (car.surf.mu || 0).toFixed(2) + ' ay=' + (car.ayL || 0).toFixed(1) + ' drift=' + !!car.drifting + ' sec=' + R.sec + ' axL=' + (car.axL || 0).toFixed(1)); } out._out = outNow; }
       maxLat = Math.max(maxLat, Math.abs(R.lat)); minHp = Math.min(minHp, car.health); topSpd = Math.max(topSpd, spd);
-      if (R.stuck > 2.6) { R.reset(); stuckReset++; out.events.push('stuck-reset at s=' + R.s.toFixed(0) + ' t=' + t.toFixed(1)); }
+      if (R.stuck > 2.6) { const hh = []; RY.hits(car.x, car.z, 1.2, hh); out.events.push('stuck-reset at s=' + R.s.toFixed(0) + ' t=' + t.toFixed(1) + ' lat=' + R.lat.toFixed(1) + ' dist=' + R.dist.toFixed(1) + ' hw=' + RY.hw[R.hint].toFixed(1) + ' hits=' + hh.length + ' spd=' + car.speed.toFixed(1) + ' thr=' + car.thr.toFixed(2) + ' surf.mu=' + (car.surf.mu || 0).toFixed(2) + ' air=' + car.air + ' hp=' + car.health.toFixed(0)); R.reset(); stuckReset++; }
       if (R.jumpBest > prevJump + 0.5) { out.events.push('jump ' + (R.jumpBest).toFixed(0) + ' m at s=' + R.s.toFixed(0) + ' t=' + t.toFixed(1)); prevJump = R.jumpBest; }
       if (R.sim.broken > prevBroken && R.sim.broken - prevBroken >= 1) { /* count bursts */ if (!out.lastBurst || t - out.lastBurst > 1) out.events.push('walls ' + R.sim.broken + '/' + R.sim.total + ' at s=' + R.s.toFixed(0) + ' t=' + t.toFixed(1) + ' v=' + spd.toFixed(1)); out.lastBurst = t; prevBroken = R.sim.broken; }
       if (t - lastLog >= 5) { lastLog = t; out.log.push({ t: +t.toFixed(0), s: +R.s.toFixed(0), v: +(spd * 3.6).toFixed(0), lat: +R.lat.toFixed(1), y: +car.y.toFixed(1), hp: +car.health.toFixed(0), sec: R.sec }); }
@@ -62,7 +64,7 @@ const OUT = process.env.OUT || __dirname;
     out.jumpBest = +R.jumpBest.toFixed(1); out.stuckReset = stuckReset; out.minHp = +minHp.toFixed(0); out.topKmh = +(topSpd * 3.6).toFixed(0); out.splits = R.splits.map((x) => +x.toFixed(2)); out.cpsS = RY.cps; out.par = RY.par; out.ms = Math.round(performance.now() - t0); out.steps = n;
     out.msPerStep = +((performance.now() - t0) / n).toFixed(3);
     return out;
-  }, [TOD, MAXT, SHOTS.slice()]);
+  }, [TOD, MAXT, SHOTS.slice(), TRACE]);
   console.log(JSON.stringify(res, null, 1));
   console.log(logs.join('\n'));
   await browser.close();

@@ -146,10 +146,13 @@ function stepCar(dt, c0, P0, T0, circ0) {
   const ayPrev = c.vy;
   if (c.air) {
     c.vy -= G * dt; c.y += c.vy * dt; c.airT += dt; c.pitch += (Math.atan2(c.vy, Math.max(8, spd)) * 0.6 - c.pitch) * Math.min(1, dt * 2); c.roll += (0 - c.roll) * Math.min(1, dt);
-    if (c.y <= gy) { const imp = -c.vy; c.y = gy; c.air = false; c.sV -= imp * 0.12; if (imp > 4.5) { c.landImpact = imp; } c.vy = 0; c.airT = 0; }
+    if (c.y <= gy) { const imp = -c.vy; c.y = gy; c.air = false; c.sV -= imp * 0.12; if (imp > 4.5) { c.landImpact = imp; } c.vy = 0; c.airT = 0; if (Rally.on) c.airCd = 0.12; }
   } else {
     const need = (gy - c.y) / dt;
-    if (need < c.vyPrev - G * dt - 0.2 && spd > 8) { c.air = true; c.vy = c.vyPrev; c.y += c.vy * dt; }
+    /* on the rally stage: no re-launch for a moment after touchdown (landing zeroes vy, which on any downhill reads as the ground falling away and used to chain into endless air),
+       and a take-off margin that grows with speed so the 2 m ground grid's slope kinks are not mistaken for a lip */
+    const cd = (c.airCd || 0) > 0; if (cd) c.airCd -= dt;
+    if (!cd && need < c.vyPrev - G * dt - (Rally.on ? 0.2 + 0.03 * spd : 0.2) && spd > 8) { c.air = true; c.vy = c.vyPrev; c.y += c.vy * dt; }
     else { c.vy = clamp(need, -30, 30); c.y = gy; }
     c.pitch += (tp - c.pitch) * Math.min(1, dt * 14); c.roll += (tr - c.roll) * Math.min(1, dt * 14);
   }
