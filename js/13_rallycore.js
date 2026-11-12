@@ -311,5 +311,5 @@ RY.layout = function () {
 RY.build = function (density) {
   RY.path(); RY.profile(); RY.sections(); RY.index(); RY.bake(); RY.forest(density); RY.layout();
   /* a rough par: what an average run looks like (used for the splits and medals) */
-  RY.par = RY.L / 26.5; RY.ready = true; return RY;
+  RY.par = RY.L / 26.0; RY.ready = true; return RY;   /* ~148 s: a conservative clean drive (tests/rally3.js, AY=0.45) takes 163 s = bronze; silver and gold need a real line, nitro and the jumps flat out */
 };

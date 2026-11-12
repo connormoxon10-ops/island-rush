@@ -14,6 +14,7 @@ const RY_TODS = [
   { n: 'Golden hour', tod: 17.0, fog: 0.0054, tint: [1.04, 0.96, 0.86], shaft: 1.0, sun: 2.9, expo: 1.05 },
   { n: 'Dusk', tod: 18.95, fog: 0.0058, tint: [0.9, 0.86, 0.95], shaft: 0.55, sun: 2.0, expo: 1.2 }
 ];
+const RY_MEDAL = [1.1, 0.97, 0.88];   /* bronze, silver, gold as a share of par */
 const RY_DUST = [[0.66, 0.5, 0.33], [0.66, 0.62, 0.54], [0.24, 0.17, 0.11], [0.82, 0.7, 0.5]];
 const RYP = { dust: null, grit: null, leaf: null, ok: false };
 const _ryCar = { x: 0, y: 0, z: 0, yaw: 0, vx: 0, vz: 0, L: 4, W: 1.9 }, _ryLoc = { i: 0, s: 0, d: 0, l: 0 }, _ryH = [], _ryQ = {};
@@ -218,7 +219,7 @@ Rally.paint = function () {
   const R = save.rally, seg = (k, opts, cur) => '<div class="rseg" data-k="' + k + '">' + opts.map(([v, l]) => '<button type="button" class="' + (cur === v ? 'on' : '') + '" data-v="' + v + '">' + l + '</button>').join('') + '</div>';
   E.rlTitle.textContent = 'Hollow Pines'; E.rlSub.textContent = 'Forest rally stage'; E.rlCash.textContent = money(save.money); E.rlPanel.classList.remove('jk');
   E.rlFoot.innerHTML = '<button class="btn" type="button" data-act="rback">◂ Back</button><button class="btn primary" type="button" data-act="rstart">Start stage</button>';
-  const par = RY.ready ? RY.par : 3844 / 26.5, med = [par * 1.08, par * 0.95, par * 0.86].map((v) => fmtLap(v));
+  const par = RY.ready ? RY.par : 3844 / 26.0, med = [par * RY_MEDAL[0], par * RY_MEDAL[1], par * RY_MEDAL[2]].map((v) => fmtLap(v));
   E.rlBody.innerHTML = '<p class="rlp">' + RY_INFO + '</p>' +
     '<div class="rlrow"><label>Light</label>' + seg('tod', RY_TODS.map((t, i) => [i, t.n]), Rally.tod) + '</div>' +
     '<div class="rlprize"><small>Medal times</small><span>Bronze <b>' + med[0] + '</b></span><span>Silver <b>' + med[1] + '</b></span><span>Gold <b>' + med[2] + '</b></span></div>' +
@@ -351,7 +352,7 @@ Rally.split = function () {
 Rally.finish = function () {
   const t = Rally.clock + Rally.penalty, R = save.rally, par = RY.par, c = car;
   Rally.phase = 'done'; Rally.doneT = 0; Rally.doneS = Rally.s;
-  const medal = t <= par * 0.86 ? 3 : t <= par * 0.95 ? 2 : t <= par * 1.08 ? 1 : 0, pb = !(R.best > 0) || t < R.best, prev = R.best;
+  const medal = t <= par * RY_MEDAL[2] ? 3 : t <= par * RY_MEDAL[1] ? 2 : t <= par * RY_MEDAL[0] ? 1 : 0, pb = !(R.best > 0) || t < R.best, prev = R.best;
   const reward = Math.round((500 + medal * 450 + Math.min(300, Rally.sim.broken * 8) + (pb ? 150 : 0)) / 10) * 10;
   R.runs++; R.gates += Rally.sim.broken; R.jump = Math.max(R.jump, Rally.jumpBest); R.earned += reward; save.money += reward;
   if (pb) { R.best = t; R.splits = Rally.splits.slice(0, 3); }
