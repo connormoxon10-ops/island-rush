@@ -3,7 +3,7 @@
    turns them into meshes. The forest is the expensive part: ~40k trees are split into 128 m cells, each cell holds one InstancedMesh per tree
    variant, and every frame the cells near the car are drawn with full foliage (and cast shadows) while the ones further out are drawn as
    cheap trunk + cone silhouettes. Cells outside the view never reach the GPU. All of it sits in one THREE.Group (RYG.group). */
-const RYG = { built: false, group: null, tiles: [], cells: [], rocks: [], gates: null, shafts: null, motes: null, far: 380, near: 92 };
+const RYG = { built: false, group: null, tiles: [], cells: [], rocks: [], gates: null, shafts: null, far: 380, near: 92 };
 const RYG_CELL = 128, RYG_TILE = 32;
 RYG.U = {
   time: { value: 0 }, dap: { value: 0.6 }, bump: { value: 0.12 }, wet: { value: 0 },
@@ -389,7 +389,7 @@ RYG.buildGantries = function (group) {
   if (gb.count) { const mesh = gb.mesh(RYG.mats.wood, true, true); group.add(mesh); }
 };
 
-/* ---------------- light shafts + floating motes ---------------- */
+/* ---------------- light shafts ---------------- */
 RYG.buildShafts = function (group, n) {
   const pos = new Float32Array(n * 4 * 3), uvs = new Float32Array(n * 4 * 2), seed = new Float32Array(n * 4), idx = new Uint16Array(n * 6), base = new Float32Array(n * 4 * 3);
   for (let i = 0; i < n; i++) {
@@ -412,21 +412,7 @@ RYG.buildShafts = function (group, n) {
   });
   const mesh = new THREE.Mesh(g, mat); mesh.frustumCulled = false; mesh.renderOrder = 4; group.add(mesh);
   RYG.shafts = { mesh, n, pos, base, geo: g, mat, next: 0, life: new Float32Array(n) };
-  /* drifting motes: pollen, dust and flying seeds in the light, animated entirely in the shader around the camera */
-  const m = 360, mp = new Float32Array(m * 3); for (let i = 0; i < m * 3; i++) mp[i] = Math.random();
-  const mg = new THREE.BufferGeometry(); mg.setAttribute('position', new THREE.BufferAttribute(mp, 3));
-  const mm = new THREE.ShaderMaterial({
-    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
-    uniforms: { uCam: { value: new THREE.Vector3() }, uTime: RYG.U.time, uCol: { value: new THREE.Color(1, 0.85, 0.6) }, uAmt: { value: 1 }, uScale: { value: 600 }, uSun: { value: new THREE.Vector3(0, 1, 0) } },
-    vertexShader: `uniform vec3 uCam; uniform float uTime, uScale; varying float vA; uniform vec3 uSun;
-      float wr(float v, float c, float s){ return c + mod(v - c + s * 0.5, s) - s * 0.5; }
-      void main(){ vec3 b = position; float W = 46.0, H = 16.0; float t = uTime;
-        vec3 p; p.x = wr(b.x * W + sin(t * 0.4 + b.z * 30.0) * 1.2 + t * 0.7, uCam.x, W); p.z = wr(b.z * W + cos(t * 0.35 + b.x * 25.0) * 1.2 + t * 0.4, uCam.z, W); p.y = wr(b.y * H - t * (0.12 + b.x * 0.15) , uCam.y + 1.5, H);
-        vec4 mv = viewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = clamp(uScale * (0.025 + 0.03 * b.y) / max(0.5, -mv.z), 1.0, 5.0);
-        vec3 v = normalize(p - uCam); float sunAl = pow(max(dot(v, uSun), 0.0), 2.0); vA = (0.2 + 0.8 * sunAl) * smoothstep(1.5, 5.0, -mv.z) * (0.4 + 0.6 * fract(b.x * 91.0 + t * 0.2 + b.z * 7.0)); }`,
-    fragmentShader: `varying float vA; uniform vec3 uCol; uniform float uAmt; void main(){ vec2 c = gl_PointCoord - 0.5; float a = 1.0 - smoothstep(0.0, 0.5, length(c)); gl_FragColor = vec4(uCol, a * a * vA * uAmt * 0.55); }`
-  });
-  const pts = new THREE.Points(mg, mm); pts.frustumCulled = false; pts.renderOrder = 5; group.add(pts); RYG.motes = { pts, mat: mm };
+  /* (no floating motes or drifting leaf specks: as 1-5 px additive dots they read as flashing coloured squares through the lens fringing) */
 };
 RYG.placeShaft = function (i, x, z) {
   const S = RYG.shafts, y = RY.heightAt(x, z) - 1; for (let k = 0; k < 4; k++) { const v = i * 4 + k; S.base[v * 3] = x; S.base[v * 3 + 1] = y; S.base[v * 3 + 2] = z; S.pos[v * 3] = x; S.pos[v * 3 + 1] = y; S.pos[v * 3 + 2] = z; }
@@ -452,7 +438,7 @@ RYG.dispose = function () {
   if (!RYG.built) return; const g = RYG.group;
   g.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material.map) { /* shared atlas stays */ } });
   if (g.parent) g.parent.remove(g);
-  RYG.built = false; RYG.group = null; RYG.tiles.length = 0; RYG.cells.length = 0; RYG.rocks.length = 0; RYG.gates = null; RYG.shafts = null; RYG.motes = null; RYG.vars = {};
+  RYG.built = false; RYG.group = null; RYG.tiles.length = 0; RYG.cells.length = 0; RYG.rocks.length = 0; RYG.gates = null; RYG.shafts = null; RYG.vars = {};
 };
 
 /* ---------------- per-frame ---------------- */
@@ -476,7 +462,7 @@ RYG.update = function (dt, cam, car, sun, tod) {
   }
   RYG.stats.tilesVisible = nt; RYG.stats.cellsNear = nc0; RYG.stats.cellsFar = nc1;
   RYG.syncGates();
-  /* lighting uniforms for the leaf material + shafts + motes */
+  /* lighting uniforms for the leaf material + shafts */
   const U = RYG.U; U.sunV.value.copy(sun.viewDir); U.sunCol.value.copy(sun.col); U.sunAmt.value = sun.amt;
   if (RYG.shafts) {
     const S = RYG.shafts, mat = S.mat; mat.uniforms.uSun.value.copy(sun.dir); mat.uniforms.uCol.value.copy(sun.col); mat.uniforms.uAmt.value = sun.shaft; mat.uniforms.uCam.value.copy(cam.position); mat.uniforms.uFog.value = scene.fog.density;
@@ -490,5 +476,4 @@ RYG.update = function (dt, cam, car, sun, tod) {
       }
     }
   }
-  if (RYG.motes) { const m = RYG.motes.mat; m.uniforms.uCam.value.copy(cam.position); m.uniforms.uSun.value.copy(sun.dir); m.uniforms.uCol.value.copy(sun.col); m.uniforms.uAmt.value = sun.shaft; m.uniforms.uScale.value = 0.5 * (renderer.domElement.height || 720) / Math.tan(cam.fov * DEG / 2); }
 };
