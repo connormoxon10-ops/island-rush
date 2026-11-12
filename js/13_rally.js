@@ -16,8 +16,28 @@ const RY_TODS = [
 ];
 const RY_MEDAL = [1.15, 0.97, 0.88];   /* bronze, silver, gold as a share of par */
 const RY_DUST = [[0.66, 0.5, 0.33], [0.66, 0.62, 0.54], [0.24, 0.17, 0.11], [0.82, 0.7, 0.5]];
-const RYP = { dust: null, grit: null, leaf: null, ok: false };
-const _ryCar = { x: 0, y: 0, z: 0, yaw: 0, vx: 0, vz: 0, L: 4, W: 1.9 }, _ryLoc = { i: 0, s: 0, d: 0, l: 0 }, _ryH = [], _ryQ = {};
+const RYP = { dust: null, grit: null, ok: false };
+const _ryCar = { x: 0, y: 0, z: 0, yaw: 0, vx: 0, vz: 0, L: 4, W: 1.9, own: true }, _ryLoc = { i: 0, s: 0, d: 0, l: 0 }, _ryH = [], _ryQ = {};
+
+/* ---------------- driving assist ----------------
+   The stock bicycle model is faithful and twitchy: a rally AWD car on loose dirt power-oversteers the moment the wheel moves, and a keyboard driver can not catch it.
+   Hollow Pines therefore runs a stability layer after every car step (Rally.assist, on by default, lobby switch). It does three things:
+   - yaw: pulls the yaw rate toward what the steering angle is asking for (v * tan(delta) / L), so the car turns as much as you steer and no more, and straightens itself when you let go;
+   - sideslip: bleeds off sideways velocity so the tyres 'bite' instead of the car skating, which also kills the snap-spin after a bump or a landing;
+   - power: the traction limiter cuts the engine earlier and harder as the rear tyres run out of grip.
+   The handbrake switches most of it off so flicks and drifts are still yours to throw. In the air only the yaw rate is damped. */
+const RY_CTL = { yaw: 9.0, slide: 3.4, air: 2.2, hand: 0.25, minV: 2.5 };
+Rally.assistOn = function () { return save.rally.assist !== 0; };
+Rally.assist = function (c, h, force) {
+  if (!force && !Rally.assistOn()) return;   /* rivals always drive with it: their autopilot relies on it */
+  if (c.air) { c.w *= Math.max(0, 1 - RY_CTL.air * h); return; }
+  const s = Math.sin(c.yaw), co = Math.cos(c.yaw); let vf = c.vx * s + c.vz * co, vr = c.vx * co - c.vz * s; const spd = Math.abs(vf);
+  if (spd < RY_CTL.minV) return;
+  const k = c.hand > 0.5 ? RY_CTL.hand : 1, wT = vf * Math.tan(c.delta || 0) / CARP.L;
+  c.w += (wT - c.w) * Math.min(1, RY_CTL.yaw * k * h);
+  vr *= 1 - Math.min(1, RY_CTL.slide * k * h);
+  c.vx = vf * s + vr * co; c.vz = vf * co - vr * s;
+};
 
 /* ---------------- physics hooks ---------------- */
 Rally.collide = function (c, px, pz, R, P) {
@@ -31,6 +51,7 @@ Rally.collide = function (c, px, pz, R, P) {
 };
 /* every physics sub-step: the car meets the planks, wreckage moves, air time is tracked */
 Rally.sub = function (c, h) {
+  Rally.assist(c, h);
   const sim = Rally.sim; if (!sim) return;
   _ryCar.x = c.x; _ryCar.y = c.y; _ryCar.z = c.z; _ryCar.yaw = c.yaw; _ryCar.vx = c.vx; _ryCar.vz = c.vz; _ryCar.L = CUR.body.L; _ryCar.W = CUR.body.W;
   const took = RW.carStep(sim, _ryCar);
@@ -39,6 +60,7 @@ Rally.sub = function (c, h) {
   RW.step(sim, h);
   if (c.air) { if (!Rally.air) Rally.air = { t: 0, x: c.x, z: c.z, y: c.y, maxY: c.y }; Rally.air.t += h; Rally.air.maxY = Math.max(Rally.air.maxY, c.y); }
   else if (Rally.air) { Rally.landed(c); Rally.air = null; }
+  if (RR.on) RR.sub(c, h);
 };
 Rally.landed = function (c) {
   const A = Rally.air, d = Math.hypot(c.x - A.x, c.z - A.z), up = A.maxY - Math.min(A.y, c.y);
@@ -52,9 +74,12 @@ Rally.landed = function (c) {
 };
 
 /* ---------------- effects ---------------- */
+/* soft point sprites: a particle smaller than 4 px is drawn 4 px wide and faded by its area instead of collapsing into a hard 1-2 px square (which the lens fringing turns into a flashing coloured speck) */
+const RY_PT_VS = 'attribute vec4 aCol; attribute float aSize; varying vec4 vC; uniform float uScale; void main(){ vC=aCol; vec4 mv=modelViewMatrix*vec4(position,1.0); vC.a*=smoothstep(2.0,9.0,-mv.z); float px=aSize*uScale/max(0.5,-mv.z); float k=clamp(px/4.0,0.0,1.0); vC.a*=k*k; gl_Position=projectionMatrix*mv; gl_PointSize=max(px,4.0); }';
+function ryPoints(n) { const P = mkPoints(n, THREE.NormalBlending); P.pts.material.vertexShader = RY_PT_VS; return P; }
 function ryInitFx() {
-  if (RYP.ok) return; RYP.dust = mkPoints(1500, THREE.NormalBlending); RYP.grit = mkPoints(420, THREE.NormalBlending); RYP.leaf = mkPoints(500, THREE.NormalBlending);
-  scene.add(RYP.dust.pts, RYP.grit.pts, RYP.leaf.pts); RYP.ok = true;
+  if (RYP.ok) return; RYP.dust = ryPoints(1500); RYP.grit = ryPoints(420);
+  scene.add(RYP.dust.pts, RYP.grit.pts); RYP.ok = true;
 }
 Rally.dustTint = [0.7, 0.62, 0.52];
 Rally.puff = function (x, y, z, vx, vy, vz, life, size, grow, a) {
@@ -89,8 +114,6 @@ Rally.fx = function (dt) {
     /* gravel thrown out behind the driven wheels */
     let g = (sp * 0.7 * loose * slide * thr * q) * dt * 40; g = Math.floor(g) + (Math.random() < g - Math.floor(g) ? 1 : 0);
     for (let i = 0; i < g; i++) { const side = Math.random() < 0.5 ? -1 : 1, x = c.x - s * P.b + co * side * P.track / 2, z = c.z - co * P.b - s * side * P.track / 2; Rally.chip(x, c.y + 0.1, z, -c.vx * 0.5 + (Math.random() - 0.5) * 4, 2 + Math.random() * 4, -c.vz * 0.5 + (Math.random() - 0.5) * 4, false); }
-    /* kicked-up leaves on the forest road */
-    if (Math.random() < dt * sp * 0.5 * q) { const side = Math.random() < 0.5 ? -1 : 1, x = c.x - s * 1.5 + co * side * 0.9, z = c.z - co * 1.5 - s * side * 0.9, l = Math.random(), r = l < 0.4 ? 0.7 : l < 0.7 ? 0.8 : 0.35, g2 = l < 0.4 ? 0.35 : l < 0.7 ? 0.55 : 0.5, b = l < 0.4 ? 0.1 : l < 0.7 ? 0.12 : 0.1; emit(RYP.leaf, x, c.y + 0.2, z, -c.vx * 0.2 + (Math.random() - 0.5) * 3, 1.5 + Math.random() * 3, -c.vz * 0.2 + (Math.random() - 0.5) * 3, 1.6 + Math.random(), 0.1, 0, r, g2, b, 1, 2.5); }
   }
   /* scraping a rock face or stone wall: grey dust and stone chips from the contact point, in proportion to the speed */
   if (c.railFx > 0) {
@@ -104,10 +127,8 @@ Rally.fx = function (dt) {
     }
     c.railFx = 0;
   }
-  /* ambient: leaves drifting down through the shafts around the car */
-  if (Math.random() < dt * 5 * q) { const a = Math.random() * TAU, d = 4 + Math.random() * 22, l = Math.random(); emit(RYP.leaf, c.x + Math.sin(a) * d, c.y + 5 + Math.random() * 9, c.z + Math.cos(a) * d, (Math.random() - 0.5) * 1.5, -0.5 - Math.random() * 0.4, (Math.random() - 0.5) * 1.5, 7 + Math.random() * 5, 0.1, 0, l < 0.4 ? 0.62 : 0.3, l < 0.4 ? 0.42 : 0.5, 0.1, 0.9, 0.04); }
-  ryPoolUpdate(RYP.dust, dt); ryPoolUpdate(RYP.grit, dt); ryPoolUpdate(RYP.leaf, dt);
-  const u = 0.5 * (renderer.domElement.height || 720) / Math.tan(camera.fov * DEG / 2); for (const S of [RYP.dust, RYP.grit, RYP.leaf]) S.pts.material.uniforms.uScale.value = u;
+  ryPoolUpdate(RYP.dust, dt); ryPoolUpdate(RYP.grit, dt);
+  const u = 0.5 * (renderer.domElement.height || 720) / Math.tan(camera.fov * DEG / 2); for (const S of [RYP.dust, RYP.grit]) S.pts.material.uniforms.uScale.value = u;
 };
 /* wood sounds */
 Rally.woodSnd = function (kind, sp) {
@@ -187,6 +208,11 @@ const RY_CSS = `
 #ryGate{position:absolute;right:max(14px,env(safe-area-inset-right));top:calc(14px + env(safe-area-inset-top));text-align:right;font-size:16px;letter-spacing:.14em;opacity:.9}
 #ryGate b{font-size:30px;display:block;letter-spacing:.04em}
 #ryQuit{position:absolute;left:max(12px,env(safe-area-inset-left));top:calc(12px + env(safe-area-inset-top));pointer-events:auto;font-family:inherit;font-size:15px;letter-spacing:.1em;padding:6px 12px;background:rgba(6,10,14,.6);color:#fff;border:1px solid rgba(255,255,255,.3);cursor:pointer;border-radius:3px}
+#ryPos{position:absolute;right:max(14px,env(safe-area-inset-right));top:calc(78px + env(safe-area-inset-top));text-align:right;font-size:16px;letter-spacing:.14em;opacity:.95}
+#ryPos b{font-size:30px;display:block;letter-spacing:.04em}#ryPos[hidden]{display:none}
+#ryTower{position:absolute;left:max(12px,env(safe-area-inset-left));top:calc(54px + env(safe-area-inset-top));font-size:16px;letter-spacing:.06em;min-width:200px}
+#ryTower div{display:flex;gap:10px;padding:2px 9px;background:rgba(6,10,14,.5);margin-bottom:2px;border-left:3px solid transparent;border-radius:2px}
+#ryTower div.me{border-color:#ffb02e;background:rgba(70,38,6,.66);font-weight:700}#ryTower span.g{margin-left:auto;opacity:.85;font-variant-numeric:tabular-nums}
 #ryHint{position:absolute;left:0;right:0;bottom:calc(150px + env(safe-area-inset-bottom));text-align:center;font-size:20px;letter-spacing:.1em;opacity:0;transition:opacity .3s}#ryHint.on{opacity:.95}
 body.rally #tr,body.rally #mp,body.rally #wanted,body.rally #tgt,body.rally #prompt{display:none!important}
 body.rally #rcount{top:26%}
@@ -194,9 +220,9 @@ body.rally #rcount{top:26%}
 Rally.dom = function () {
   if (Rally.el) return; const st = document.createElement('style'); st.textContent = RY_CSS; document.head.appendChild(st);
   const h = document.createElement('div'); h.id = 'ryhud'; h.hidden = true;
-  h.innerHTML = '<div class="ryt"><div id="ryTime">0:00.0</div><div id="rySplit"></div></div><div id="ryBar"><i id="ryProg"></i></div><div id="ryNote"><div class="g" id="ryG"></div><b id="ryNT"></b><span id="ryND"></span></div><div id="ryNote2"></div><div id="ryBig"></div><div id="ryGate"></div><div id="ryHint"></div><button id="ryQuit" type="button">✕ Quit stage</button>';
+  h.innerHTML = '<div class="ryt"><div id="ryTime">0:00.0</div><div id="rySplit"></div></div><div id="ryBar"><i id="ryProg"></i></div><div id="ryNote"><div class="g" id="ryG"></div><b id="ryNT"></b><span id="ryND"></span></div><div id="ryNote2"></div><div id="ryBig"></div><div id="ryGate"></div><div id="ryPos" hidden></div><div id="ryTower"></div><div id="ryHint"></div><button id="ryQuit" type="button">✕ Quit stage</button>';
   const hud = document.getElementById('hud'); (hud ? hud.parentNode : document.body).insertBefore(h, hud ? hud.nextSibling : null);
-  Rally.el = { root: h, time: h.querySelector('#ryTime'), split: h.querySelector('#rySplit'), bar: h.querySelector('#ryBar'), prog: h.querySelector('#ryProg'), note: h.querySelector('#ryNote'), g: h.querySelector('#ryG'), nt: h.querySelector('#ryNT'), nd: h.querySelector('#ryND'), n2: h.querySelector('#ryNote2'), big: h.querySelector('#ryBig'), gate: h.querySelector('#ryGate'), hint: h.querySelector('#ryHint') };
+  Rally.el = { root: h, time: h.querySelector('#ryTime'), split: h.querySelector('#rySplit'), bar: h.querySelector('#ryBar'), prog: h.querySelector('#ryProg'), note: h.querySelector('#ryNote'), g: h.querySelector('#ryG'), nt: h.querySelector('#ryNT'), nd: h.querySelector('#ryND'), n2: h.querySelector('#ryNote2'), big: h.querySelector('#ryBig'), gate: h.querySelector('#ryGate'), pos: h.querySelector('#ryPos'), tower: h.querySelector('#ryTower'), hint: h.querySelector('#ryHint') };
   h.querySelector('#ryQuit').addEventListener('click', () => { if (Rally.on) Rally.exit(true); });
   E.rres.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b || !b.dataset.ry) return; if (b.dataset.ry === 'again') Rally.again(); else if (b.dataset.ry === 'done') Rally.exit(false); });
 };
@@ -217,14 +243,19 @@ Rally.hud = function (dt) {
     E_.g.textContent = ryNoteGlyph(n); E_.nt.textContent = n.t; E_.nd.textContent = Math.round(d / 5) * 5 + ' m';
     E_.n2.textContent = n2 && n2.s - n.s < 120 ? '› ' + n2.t : '';
   } else { E_.note.hidden = true; E_.n2.textContent = ''; }
-  const sim = Rally.sim; E_.gate.innerHTML = 'PLANKS<b>' + (sim ? sim.broken : 0) + '<small style="font-size:16px;opacity:.7"> / ' + (sim ? sim.total : 0) + '</small></b>';
+  const sim = Rally.sim; E_.gate.innerHTML = 'PLANKS<b>' + (sim ? sim.mine : 0) + '<small style="font-size:16px;opacity:.7"> / ' + (sim ? sim.total : 0) + '</small></b>';
+  if (RR.on) {
+    Rally.twT = (Rally.twT || 0) - 0.05; if (Rally.twT > 0) return; Rally.twT = 0.2;   /* the standings change slowly: redraw them 5x a second */
+    const ord = RR.order(), me = ord.findIndex((o) => o.me), lead = ord[0]; E_.pos.hidden = false; E_.pos.innerHTML = 'POSITION<b>' + (me + 1) + '<small style="font-size:16px;opacity:.7"> / ' + ord.length + '</small></b>';
+    E_.tower.innerHTML = ord.map((o, i) => '<div' + (o.me ? ' class="me"' : '') + '><span>' + (i + 1) + '</span><span>' + esc(o.name) + '</span><span class="g">' + (i === 0 ? (o.fin ? fmtLap(o.t).replace(/(\.\d)\d$/, '$1') : 'LEAD') : (o.fin ? '+' + (o.t - lead.t).toFixed(1) : '+' + (Math.max(0, lead.s - o.s) / Math.max(18, o.v)).toFixed(1) + 's')) + '</span></div>').join('');
+  } else { E_.pos.hidden = true; E_.tower.innerHTML = ''; }
   E_.hint.className = Rally.stuck > 2.5 && Rally.phase === 'run' ? 'on' : ''; if (Rally.stuck > 2.5) E_.hint.textContent = TouchIn.on ? '' : 'STUCK? PRESS R TO RESET (+3 s)';
   if (Rally.wrong > 1.2 && Rally.phase === 'run') { E_.hint.className = 'on'; E_.hint.textContent = 'WRONG WAY · TURN AROUND'; }
 };
 
 /* ---------------- lobby ---------------- */
 const RY_INFO = 'A 3.7 km point-to-point forest stage cut through dense pine and birch. Hard-packed dirt, loose gravel, a wet mud pocket and a sandy cut, with ' +
-  'crests, big jumps and dips. Six plank walls block the road: drive straight through them. Pace notes call the road ahead.';
+  'crests, big jumps and dips. Six plank walls block the road: drive straight through them. Pace notes call the road ahead. Three rival drivers start beside you.';
 Rally.open = function () {
   if (App.mode !== 'rlobby') return; Rally.lobby = true; Rally.tod = clamp(save.rally.tod, 0, 3); Rally.paint(); Snd.beep(620, 0.06);
 };
@@ -235,8 +266,10 @@ Rally.paint = function () {
   const par = RY.ready ? RY.par : 3844 / 26.0, med = [par * RY_MEDAL[0], par * RY_MEDAL[1], par * RY_MEDAL[2]].map((v) => fmtLap(v));
   E.rlBody.innerHTML = '<p class="rlp">' + RY_INFO + '</p>' +
     '<div class="rlrow"><label>Light</label>' + seg('tod', RY_TODS.map((t, i) => [i, t.n]), Rally.tod) + '</div>' +
+    '<div class="rlrow"><label>Rivals</label>' + seg('rivals', [[0, 'None'], [1, 'Rookie'], [2, 'Pro'], [3, 'Elite']], Rally.rivalLevel()) + '</div>' +
+    '<div class="rlrow"><label>Assist</label>' + seg('assist', [[1, 'On · easy to control'], [0, 'Off · raw physics']], Rally.assistOn() ? 1 : 0) + '</div>' +
     '<div class="rlprize"><small>Medal times</small><span>Bronze <b>' + med[0] + '</b></span><span>Silver <b>' + med[1] + '</b></span><span>Gold <b>' + med[2] + '</b></span></div>' +
-    '<div class="rlrec"><span>Runs <b>' + R.runs + '</b></span><span>Best <b>' + fmtLap(R.best) + '</b></span><span>Planks smashed <b>' + R.gates + '</b></span><span>Longest jump <b>' + (R.jump ? Math.round(R.jump) + ' m' : '–') + '</b></span></div>' +
+    '<div class="rlrec"><span>Runs <b>' + R.runs + '</b></span><span>Best <b>' + fmtLap(R.best) + '</b></span><span>Wins <b>' + (R.wins || 0) + '</b></span><span>Planks smashed <b>' + R.gates + '</b></span><span>Longest jump <b>' + (R.jump ? Math.round(R.jump) + ' m' : '–') + '</b></span></div>' +
     '<p class="rlp dim">You drive the <b>Ridgeback RS</b>, lent to you for the stage. ' + (TouchIn.on ? 'Use the pedals as normal; hold DRIFT for the handbrake.' : 'W/S throttle and brake, A/D steer, Space handbrake, Shift boost, R resets to the road (+3 s).') + '</p>';
 };
 Rally.lobbyClick = function (b) {
@@ -244,6 +277,8 @@ Rally.lobbyClick = function (b) {
   if (a === 'rback') { Rally.lobby = false; Race.paint(); Snd.beep(420, 0.05); }
   else if (a === 'rstart') Rally.start();
   else if (a === 'leave') { Rally.lobby = false; Race.leave(); }
+  else if (b.parentNode && b.parentNode.dataset.k === 'rivals') { save.rally.rivals = +b.dataset.v; Rally.paint(); Snd.beep(520, 0.04); }
+  else if (b.parentNode && b.parentNode.dataset.k === 'assist') { save.rally.assist = +b.dataset.v; Rally.paint(); Snd.beep(520, 0.04); }
   else if (b.parentNode && b.parentNode.dataset.k === 'tod') { Rally.tod = +b.dataset.v; save.rally.tod = Rally.tod; Rally.paint(); Snd.beep(520, 0.04); }
 };
 Rally.lobbyKey = function (code) { if (code === 'Escape') { Rally.lobby = false; Race.paint(); } else if (code === 'Enter') Rally.start(); };
@@ -251,7 +286,7 @@ Rally.lobbyKey = function (code) { if (code === 'Escape') { Rally.lobby = false;
 /* ---------------- start / reset / exit ---------------- */
 Rally.stageDensity = function () { return clamp(Q.tree || 1, 0.5, 1); };
 Rally.hideWorld = function () {
-  Rally.hidden.length = 0; const keep = new Set([Sky.mesh, Part.smoke.pts, Part.spark.pts, car.body, Wheels.group, RYG.group, RYP.dust.pts, RYP.grit.pts, RYP.leaf.pts]);
+  Rally.hidden.length = 0; const keep = new Set([Sky.mesh, Part.smoke.pts, Part.spark.pts, car.body, Wheels.group, RYG.group, RYP.dust.pts, RYP.grit.pts]);
   for (const o of scene.children) { if (o.isLight || keep.has(o) || !o.visible) continue; o.visible = false; Rally.hidden.push(o); }
   if (Chunks.group) Chunks.group.visible = false; if (Far.group) Far.group.visible = false;
 };
@@ -281,7 +316,7 @@ Rally.start = async function () {
 Rally.reset0 = function () {
   const sim = Rally.sim; RW.reset(sim); for (const k of [0, 1, 2, 3, 4]) sim.dirty[k] = true;
   Rally.phase = 'grid'; Rally.t = 0; Rally.clock = 0; Rally.penalty = 0; Rally.cp = 0; Rally.splits = []; Rally.resets = 0; Rally.jumpBest = 0; Rally.air = null; Rally.combo = 0; Rally.stuck = 0; Rally.wrong = 0; Rally.noteI = 0; Rally.done = false;
-  Rally.hint = 0; Rally.placeAt(RY.startS - 7, 0);
+  Rally.hint = 0; RR.setup(); { const gs = Rally.gridSlot(); Rally.placeAt(RY.startS - gs[0], gs[1]); }
   Rally.best = save.rally.best > 0 ? save.rally.best : 0; if (Rally.el) { Rally.el.split.textContent = ''; Rally.el.split.className = ''; }
   E.rres.hidden = true; for (const k of ['rcount']) E[k].hidden = true;
 };
@@ -297,10 +332,10 @@ Rally.again = function () {
 };
 Rally.exit = function (quit) {
   if (!Rally.on) return;
-  Rally.on = false; Rally.phase = 'off'; Rally.sndStop(); E.rres.hidden = true; E.rcount.hidden = true; document.body.classList.remove('rally'); if (Rally.el) Rally.el.root.hidden = true;
+  Rally.on = false; Rally.phase = 'off'; RR.clear(); Rally.sndStop(); E.rres.hidden = true; E.rcount.hidden = true; document.body.classList.remove('rally'); if (Rally.el) Rally.el.root.hidden = true;
   if (RYG.group) RYG.group.visible = false; Rally.showWorld(); MAT.sky.uniforms.uHaze.value = 0;
   const S = Rally.saved; if (S) { save.set.cycle = S.cycle; App.tod = S.tod; applyCar(S.car, true); car.nitro = S.nitro; Cam.view = S.view; loadAround(S.x, S.z, 14); spawnAt(S.x, S.z, S.yaw); car.health = Math.max(car.health, S.health); }
-  if (RYP.ok) for (const P of [RYP.dust, RYP.grit, RYP.leaf]) P.life.fill(0);
+  if (RYP.ok) for (const P of [RYP.dust, RYP.grit]) P.life.fill(0);
   Rally.air = null; scene.fog.density = 0.001; L.sun.intensity = 3; writeSave(); UI.setMode('play');
   UI.toast(quit ? 'Left the stage' : 'Back at the race office', 'info');
 };
@@ -322,7 +357,7 @@ Rally.update = function (dt) {
     if (n !== Rally.cdLast) {
       Rally.cdLast = n;
       if (n >= 1 && n <= 3) { E.rcount.className = ''; E.rcount.textContent = n; Snd.beep(520, 0.1); Cam.shake = 0.25; }
-      else if (n <= 0) { E.rcount.className = 'go'; E.rcount.textContent = 'GO!'; Snd.beep(880, 0.35); Rally.phase = 'run'; Rally.clock = 0; setTimeout(() => { if (E.rcount.className === 'go') E.rcount.hidden = true; }, 1200); Cam.shake = 0.9; }
+      else if (n <= 0) { E.rcount.className = 'go'; E.rcount.textContent = 'GO!'; Snd.beep(880, 0.35); Rally.phase = 'run'; Rally.clock = 0; RR.go = true; setTimeout(() => { if (E.rcount.className === 'go') E.rcount.hidden = true; }, 1200); Cam.shake = 0.9; }
     }
   } else if (Rally.phase === 'run') Rally.clock += dt;
   else if (Rally.phase === 'done') { c.thr = 0; c.brk = 0.7; c.hand = 0; Rally.doneT += dt; }
@@ -342,13 +377,14 @@ Rally.update = function (dt) {
   if (sim && sim.ev.length) {
     let snaps = 0;
     for (let i = 0; i < sim.ev.length; i++) {
-      const e = sim.ev[i], sp = e.sp || 10;
-      if (e.t === 'crack') { if (i < 6) Rally.woodSnd('crack', sp); if (RYP.ok) for (let k = 0; k < 2; k++) Rally.chip(e.x, e.y, e.z, (Math.random() - 0.5) * 3, 1 + Math.random() * 3, (Math.random() - 0.5) * 3, true); }
+      const e = sim.ev[i], sp = e.sp || 10, ex = e.x - c.x, ez = e.z - c.z, d2 = ex * ex + ez * ez, near = d2 < 3600, mine = d2 < 400;   /* a rival's wall hit far down the road is neither heard nor felt */
+      if (d2 > 14400) continue;
+      if (e.t === 'crack') { if (i < 6 && near) Rally.woodSnd('crack', sp); if (RYP.ok) for (let k = 0; k < 2; k++) Rally.chip(e.x, e.y, e.z, (Math.random() - 0.5) * 3, 1 + Math.random() * 3, (Math.random() - 0.5) * 3, true); }
       else if (e.t === 'snap') {
-        snaps++; if (snaps < 5) Rally.woodSnd('snap', sp);
+        if (near) { snaps++; if (snaps < 5) Rally.woodSnd('snap', sp); }
         if (RYP.ok) { for (let k = 0; k < 7; k++) Rally.chip(e.x, e.y, e.z, (e.vx || 0) * 0.5 + (Math.random() - 0.5) * 7, 1.5 + Math.random() * 5, (e.vz || 0) * 0.5 + (Math.random() - 0.5) * 7, true); if (e.near) for (let k = 0; k < 2; k++) Rally.puff(e.x, e.y, e.z, (e.vx || 0) * 0.2 + (Math.random() - 0.5) * 2, 0.5 + Math.random(), (e.vz || 0) * 0.2 + (Math.random() - 0.5) * 2, 1 + Math.random(), 0.5, 2.2, 0.28); }
-        Rally.combo++; Rally.comboT = 0.7;
-      } else if (e.t === 'rail') { Rally.woodSnd('rail', sp); Cam.shake = Math.max(Cam.shake, 0.9); if (RYP.ok) for (let k = 0; k < 10; k++) Rally.chip(e.x, e.y, e.z, (Math.random() - 0.5) * 8, 1 + Math.random() * 6, (Math.random() - 0.5) * 8, true); }
+        if (mine) { Rally.combo++; Rally.comboT = 0.7; }
+      } else if (e.t === 'rail') { if (near) { Rally.woodSnd('rail', sp); Cam.shake = Math.max(Cam.shake, 0.9); } if (RYP.ok) for (let k = 0; k < 10; k++) Rally.chip(e.x, e.y, e.z, (Math.random() - 0.5) * 8, 1 + Math.random() * 6, (Math.random() - 0.5) * 8, true); }
     }
     if (snaps) Cam.shake = Math.max(Cam.shake, Math.min(2.2, 0.5 + snaps * 0.12));
     sim.ev.length = 0;
@@ -366,23 +402,27 @@ Rally.finish = function () {
   const t = Rally.clock + Rally.penalty, R = save.rally, par = RY.par, c = car;
   Rally.phase = 'done'; Rally.doneT = 0; Rally.doneS = Rally.s;
   const medal = t <= par * RY_MEDAL[2] ? 3 : t <= par * RY_MEDAL[1] ? 2 : t <= par * RY_MEDAL[0] ? 1 : 0, pb = !(R.best > 0) || t < R.best, prev = R.best;
-  const reward = Math.round((500 + medal * 450 + Math.min(300, Rally.sim.broken * 8) + (pb ? 150 : 0)) / 10) * 10;
-  R.runs++; R.gates += Rally.sim.broken; R.jump = Math.max(R.jump, Rally.jumpBest); R.earned += reward; save.money += reward;
+  const rr = RR.on ? RR.results() : null, place = rr ? rr.findIndex((o) => o.me) + 1 : 0, pbonus = rr ? Math.round([900, 450, 220, 0][place - 1] * RR_TIERS[RR.tier].prize / 10) * 10 : 0, ord = ['', '1st', '2nd', '3rd', '4th'];
+  const reward = Math.round((500 + medal * 450 + Math.min(300, Rally.sim.mine * 8) + (pb ? 150 : 0) + pbonus) / 10) * 10;
+  if (rr && place === 1) R.wins = (R.wins || 0) + 1;
+  R.runs++; R.gates += Rally.sim.mine; R.jump = Math.max(R.jump, Rally.jumpBest); R.earned += reward; save.money += reward;
   if (pb) { R.best = t; R.splits = Rally.splits.slice(0, 3); }
   writeSave(); Snd.win();
   const names = ['No medal', 'Bronze', 'Silver', 'Gold'], col = ['#8a8f98', '#cd7f32', '#c8ccd2', '#ffd02e'][medal];
   E.rres.hidden = false;
-  E.rres.innerHTML = '<div id="rresP"><h2 class="ok">Stage complete</h2><div class="rw" style="color:' + col + '">' + names[medal] + (pb ? ' · new best' : '') + ' <small>' + money(reward) + '</small></div>' +
+  E.rres.innerHTML = '<div id="rresP"><h2 class="ok">' + (rr ? (place === 1 ? 'You won the stage' : 'Stage complete · ' + ord[place] + ' of ' + rr.length) : 'Stage complete') + '</h2><div class="rw" style="color:' + col + '">' + names[medal] + (pb ? ' · new best' : '') + ' <small>' + money(reward) + (pbonus ? ' (incl. ' + money(pbonus) + ' for ' + ord[place] + ')' : '') + '</small></div>' +
     '<table><tr><th>Split</th><th>Time</th><th>vs best</th></tr>' +
     Rally.splits.map((s, i) => '<tr><td>' + (i + 1) + '</td><td>' + fmtLap(s) + '</td><td>' + (R.splits[i] > 0 && prev > 0 ? (s - (prev > 0 && !pb ? R.splits[i] : R.splits[i]) <= 0 ? '−' : '+') + Math.abs(s - R.splits[i]).toFixed(2) : '–') + '</td></tr>').join('') +
     '<tr class="me"><td>Finish</td><td>' + fmtLap(t) + '</td><td>' + (prev > 0 ? (t - prev <= 0 ? '−' : '+') + Math.abs(t - prev).toFixed(2) : '–') + '</td></tr></table>' +
-    '<p class="rlp dim" style="margin:10px 0">Planks smashed <b>' + Rally.sim.broken + ' / ' + Rally.sim.total + '</b> · longest jump <b>' + Math.round(Rally.jumpBest) + ' m</b> · resets <b>' + Rally.resets + '</b> (+' + Rally.resets * 3 + ' s)</p>' +
+    (rr ? '<table><tr><th>Pos</th><th>Driver</th><th>Time</th></tr>' + rr.map((o, i) => '<tr' + (o.me ? ' class="me"' : '') + '><td>' + (i + 1) + '</td><td>' + esc(o.name) + '</td><td>' + (o.est ? '~' : '') + fmtLap(o.t) + '</td></tr>').join('') + '</table>' : '') +
+    '<p class="rlp dim" style="margin:10px 0">Planks smashed <b>' + Rally.sim.mine + ' / ' + Rally.sim.total + '</b> · longest jump <b>' + Math.round(Rally.jumpBest) + ' m</b> · resets <b>' + Rally.resets + '</b> (+' + Rally.resets * 3 + ' s)</p>' +
     '<div class="racts"><button class="btn" type="button" data-ry="done">Leave stage</button><button class="btn primary" type="button" data-ry="again">Run it again</button></div></div>';
   Rally.pop('FINISH', 'big');
 };
 
 /* ---------------- render-side per-frame hook ---------------- */
 Rally.visual = function (dt) {
+  if (Rally.on) RR.visual(dt);
   if (!Rally.on || !RYG.built || !Rally.sun) { return; }
   RYG.update(dt, camera, { x: car.x, z: car.z, yaw: car.yaw, rs: Rally.s }, Rally.sun, App.tod);
 };

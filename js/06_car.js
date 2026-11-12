@@ -115,7 +115,7 @@ function stepCar(dt, c0, P0, T0, circ0) {
   /* traction limit: the driven axle(s) can only put down mu x their load; AWD shares by load */
   const rdE = clamp(P.awd ? 0.7 * Nr / (Nf + Nr) + 0.3 * P.rd : P.rd, 0.06, 0.94);
   /* traction control: ease off the power as the rear tyres run out of lateral grip (off with the handbrake so drifts still hold) */
-  const tcf = c.hand > 0.5 ? 1 : 1 - 0.7 * sstep(0.5, 0.9, c.utR || 0);
+  const ra = Rally.on && (c !== car || Rally.assistOn()), tcf = c.hand > 0.5 ? 1 : 1 - (ra ? 0.88 : 0.7) * (ra ? sstep(0.3, 0.7, c.utR || 0) : sstep(0.5, 0.9, c.utR || 0));   /* the rally stage's driving assist cuts power earlier and harder */
   const FmaxRaw = 0.93 * Math.min(mu * Nr / rdE, mu * Nf / (1 - rdE)), Fmax = FmaxRaw * tcf;
   const fbf = clamp(Nf / (Nf + Nr) + 0.05, 0.3, 0.8);
   let F = 0, Fb = 0;
