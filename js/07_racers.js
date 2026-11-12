@@ -147,10 +147,10 @@ Bots.edge = function (b, dt, me) {
   const T0 = b.T0; if (!T0) return;
   const gap = me.prog - b.prog, pi = (me.idx | 0) % Track.n, vp = b.allow[pi], plan = vp >= b.vtop * 0.97 ? vp : vp * b.lim;
   b.pr += (clamp(Math.abs(car.speed) / Math.max(6, plan), 0, 1.4) - b.pr) * Math.min(1, dt / 5);
-  const want = b.edge0 + clamp(gap / 160, 0, 1) * 0.12 + clamp((b.pr - 0.9) * 0.9, 0, 0.1);
-  b.edge += clamp(want - b.edge, -dt * 0.015, dt * 0.05); b.edge = clamp(b.edge, b.edge0, 0.22); b.tk = 1 + 0.3 * b.edge;
+  const want = b.edge0 + clamp(gap / 110, 0, 1) * 0.17 + clamp((b.pr - 0.88) * 1.1, 0, 0.13);
+  b.edge += clamp(want - b.edge, -dt * 0.012, dt * 0.08); b.edge = clamp(b.edge, b.edge0, 0.34); b.tk = 1 + 0.3 * b.edge;
   b.profT -= dt; if (b.profT > 0) return;
-  const pw = clamp(Math.max(1 + 2.2 * b.edge, 1.03 * tune.Tmax / T0.Tmax), 1, 1.6), gr = clamp(Math.max(1 + 0.8 * b.edge, 1.015 * tune.mu / T0.mu), 1, 1.25);
+  const pw = clamp(Math.max(1 + 2.2 * b.edge, 1.07 * tune.Tmax / T0.Tmax), 1, 1.85), gr = clamp(Math.max(1 + 0.8 * b.edge, 1.035 * tune.mu / T0.mu), 1, 1.32);
   if (Math.abs(pw - b.pwF) > 0.004 || Math.abs(gr - b.grF) > 0.002) { b.pwF = pw; b.grF = gr; b.T.Tmax = T0.Tmax * pw; b.T.mu = T0.mu * gr; Bots.profile(b); }
   b.profT = 0.7;
 };
