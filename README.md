@@ -34,6 +34,7 @@ Open `dist/island-rush.html` in a desktop browser. It loads three.js r128 from c
 
 - **The island:** a procedurally generated island with towns, highways, biomes, day/night and weather, traffic, pedestrians and a coastal marina.
 - **Driving:** a roster of cars with a garage, upgrades and cosmetics, damage and explosions, a race track with bot drivers that get faster than you.
+- **Rally stage:** *Hollow Pines*, a 3.8 km point-to-point forest stage (race office lobby, **Rally stage**). Lent the Ridgeback RS rally car, you drive hard-packed dirt, loose gravel, wet mud and sand through ~40,000 trees with low-sun light shafts, dappled shade and adaptive exposure; crests, big jumps and dips (up to ~60 m of air at speed); six plank walls you smash through in a shower of splinters; pace notes, splits, medals and four times of day. Code: `js/13_rallycore.js` (stage model), `13_rallywall.js` (breakable walls), `13_rallygfx.js` (rendering), `13_rally.js` (flow, HUD, effects).
 - **Flying and boating:** an airport with planes, a jet, a helicopter and a blimp; boats with water physics; vehicle missions and dogfights.
 - **On foot:** walk, talk to people and build relationships, carjack, get arrested (and sued), repair vehicles, play venue games (pool, darts, curling, mini-golf, fishing and more), find hidden collectibles.
 - **The Workshop** (walk into the hangar): a 3D parts editor with symmetry, snapping and staging, and a flight mode with an ISA atmosphere, aerodynamics, engines, fuel and staging, structural break-up and re-entry.
@@ -60,6 +61,8 @@ The physics files (`js/09_wk*.js`) are pure numbers, so they are unit-tested in 
 ```bash
 node tests/vac1.js     # airless bodies are true vacuum
 node tests/sys4.js     # Home-to-Rust transfer optimiser and simulator cross-check
+node tests/rally1.js   # rally stage model: route, ground, forest, jumps, wall placement
+node tests/rally2.js   # breakable plank walls
 ```
 
 The browser tests drive the built game in headless Chromium with software GL (slow, 1-7 fps), using step lists of `{js}`, `{wait}` and `{shot}`:
@@ -71,6 +74,8 @@ bash build.sh
 node tests/run3f.js low "$(cat tests/eva3.json)"      # one scenario
 bash tests/regression.sh && bash tests/flight.sh      # the two regression suites (12 scenarios each)
 ```
+
+`tests/rally3.js` drives the whole rally stage with an autopilot on the real car physics (`AY=0.45 node tests/rally3.js` gives a clean ~163 s lap; `TRACE=s0,s1` prints a frame trace) and `tests/rally4.js` takes a screenshot tour of it.
 
 Each suite writes `*.done` and `*.log` files in `tests/` (and `{shot}` steps write PNGs to the current directory); every scenario should exit 0 with no `PAGEERROR` in its log. The harness serves `tests/three.min.js` in place of the CDN copy.
 

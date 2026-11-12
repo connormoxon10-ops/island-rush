@@ -1,1 +1,7 @@
 CONTEXT.md
+# build and test output
+dist/game.js
+dist/test.html
+tests/*.log
+tests/*.done
+tests/*.png

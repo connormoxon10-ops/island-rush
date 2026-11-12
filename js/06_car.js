@@ -10,19 +10,19 @@ function refreshTune() {
 const car = {
   x: 0, y: 0, z: 0, yaw: 0, vx: 0, vz: 0, w: 0, vy: 0, vyPrev: 0, air: false, airT: 0, pitch: 0, roll: 0, steer: 0, steerIn: 0, thr: 0, brk: 0, hand: 0, nit: false,
   gear: 1, rpm: 900, shift: 0, rev: false, nitro: 100, health: 100, axL: 0, ayL: 0, speed: 0, kmh: 0, slip: 0, driftAng: 0, drifting: false, spin: false, braking: false,
-  surf: { h: 0, mu: 1, rr: 0.02, rough: 0.02, road: true, water: false }, sY: 0, sV: 0, shake: 0, inWater: false, wrecked: 0, onRoad: true, leanP: 0, leanR: 0, leanPv: 0, leanRv: 0,
+  surf: { h: 0, mu: 1, rr: 0.02, rough: 0.02, road: true, water: false, loose: 0 }, sY: 0, sV: 0, shake: 0, inWater: false, wrecked: 0, onRoad: true, leanP: 0, leanR: 0, leanPv: 0, leanRv: 0,
   lights: false, heading: 0, safe: { x: 0, z: 0, yaw: 0 }, safeT: 0, lastImpact: 0, crashFlag: 0, skid: 0
 };
-const _gs = { h: 0, mu: 1, rr: 0, rough: 0, road: false, water: false }, WH = [0, 0, 0, 0];
+const _gs = { h: 0, mu: 1, rr: 0, rough: 0, road: false, water: false, loose: 0 }, WH = [0, 0, 0, 0];
 function wheelGround(c, P) {
-  P = P || CARP; const s = Math.sin(c.yaw), co = Math.cos(c.yaw), hw = P.track / 2; let mu = 0, rr = 0, rough = 0, road = 0, water = 0;
+  P = P || CARP; const s = Math.sin(c.yaw), co = Math.cos(c.yaw), hw = P.track / 2; let mu = 0, rr = 0, rough = 0, road = 0, water = 0, loose = 0;
   const PT = [[-hw, P.a], [hw, P.a], [-hw, -P.b], [hw, -P.b]];
   for (let k = 0; k < 4; k++) {
     const lx = PT[k][0], lz = PT[k][1];
-    groundAt(c.x + s * lz + co * lx, c.z + co * lz - s * lx, _gs);
-    WH[k] = _gs.h; mu += _gs.mu; rr += _gs.rr; rough += _gs.rough; road += _gs.road ? 1 : 0; water += _gs.water ? 1 : 0;
+    _gs.loose = 0; groundAt(c.x + s * lz + co * lx, c.z + co * lz - s * lx, _gs);
+    WH[k] = _gs.h; loose += _gs.loose; mu += _gs.mu; rr += _gs.rr; rough += _gs.rough; road += _gs.road ? 1 : 0; water += _gs.water ? 1 : 0;
   }
-  const sf = c.surf; sf.mu = mu / 4; sf.rr = rr / 4; sf.rough = rough / 4; sf.road = road >= 2; sf.water = water >= 3;
+  const sf = c.surf; sf.mu = mu / 4; sf.rr = rr / 4; sf.rough = rough / 4; sf.road = road >= 2; sf.water = water >= 3; sf.loose = loose / 4;
 }
 
 /* static collisions (circles + boxes) with impulse response */
@@ -46,6 +46,7 @@ function collideStatic(c, P, circ) {
   circ = circ || CIRC; const s = Math.sin(c.yaw), co = Math.cos(c.yaw);
   for (let k = 0; k < 3; k++) {
     const R = circ[k][1]; const px = c.x + s * circ[k][0], pz = c.z + co * circ[k][0];
+    if (Rally.on) { Rally.collide(c, px, pz, R, P); continue; }
     if (Track.s) Track.collide(c, px, pz, R, P);
     const ccx = Math.floor(px / CHUNK), ccz = Math.floor(pz / CHUNK);
     for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
@@ -119,7 +120,8 @@ function stepCar(dt, c0, P0, T0, circ0) {
   const vxa = Math.max(Math.abs(vf), 1.2);
   const af = Math.atan2(vr + P.a * c.w, vxa) - delta * sg, ar = Math.atan2(vr - P.b * c.w, vxa);
   const fxR = rdE * Math.abs(F) + (1 - fbf) * Fb + Fh, fxF = (1 - rdE) * Math.abs(F) + fbf * Fb;
-  const muR = mu * (c.hand > 0.5 ? 0.36 : 1), capF = mu * Nf * kF, capR = muR * Nr * kR;
+  const lz = c.surf.loose || 0, slF = 1 - 0.22 * lz * sstep(0.07, 0.3, Math.abs(af)), slR = 1 - 0.22 * lz * sstep(0.07, 0.3, Math.abs(ar));   /* gravel: peak grip then a slide */
+  const muR = mu * (c.hand > 0.5 ? 0.36 : 1), capF = mu * Nf * kF * slF, capR = muR * Nr * kR * slR;
   const fcF = Math.sqrt(Math.max(0.05, 1 - Math.pow(Math.min(0.97, fxF / capF), 2))), fcR = Math.sqrt(Math.max(0.05, 1 - Math.pow(Math.min(0.97, fxR / capR), 2)));
   const FyfM = capF * fcF, FyrM = capR * fcR;
   /* cornering stiffness follows the static + aero axle load only: tyre load sensitivity cancels the braking/accel transfer, which keeps trail-braking progressive instead of snapping round */
@@ -144,10 +146,13 @@ function stepCar(dt, c0, P0, T0, circ0) {
   const ayPrev = c.vy;
   if (c.air) {
     c.vy -= G * dt; c.y += c.vy * dt; c.airT += dt; c.pitch += (Math.atan2(c.vy, Math.max(8, spd)) * 0.6 - c.pitch) * Math.min(1, dt * 2); c.roll += (0 - c.roll) * Math.min(1, dt);
-    if (c.y <= gy) { const imp = -c.vy; c.y = gy; c.air = false; c.sV -= imp * 0.12; if (imp > 4.5) { c.landImpact = imp; } c.vy = 0; c.airT = 0; }
+    if (c.y <= gy) { const imp = -c.vy; c.y = gy; c.air = false; c.sV -= imp * 0.12; if (imp > 4.5) { c.landImpact = imp; } c.vy = 0; c.airT = 0; if (Rally.on) c.airCd = 0.12; }
   } else {
     const need = (gy - c.y) / dt;
-    if (need < c.vyPrev - G * dt - 0.2 && spd > 8) { c.air = true; c.vy = c.vyPrev; c.y += c.vy * dt; }
+    /* on the rally stage: no re-launch for a moment after touchdown (landing zeroes vy, which on any downhill reads as the ground falling away and used to chain into endless air),
+       and a take-off margin that grows with speed so the 2 m ground grid's slope kinks are not mistaken for a lip */
+    const cd = (c.airCd || 0) > 0; if (cd) c.airCd -= dt;
+    if (!cd && need < c.vyPrev - G * dt - (Rally.on ? 0.2 + 0.03 * spd : 0.2) && spd > 8) { c.air = true; c.vy = c.vyPrev; c.y += c.vy * dt; }
     else { c.vy = clamp(need, -30, 30); c.y = gy; }
     c.pitch += (tp - c.pitch) * Math.min(1, dt * 14); c.roll += (tr - c.roll) * Math.min(1, dt * 14);
   }
