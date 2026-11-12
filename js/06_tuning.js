@@ -12,7 +12,7 @@
    Setup.estimate() then runs the same longitudinal model as stepCar() in one dimension (traction limit with weight transfer, the gearbox's shift rule, drag and rolling
    resistance) and the same axle-limit sums for cornering and braking, so the numbers on the tuning screen are what the car will do (tests/tuning1.js checks them against real runs). */
 const TU = [
-  { k: 'fd', g: 'Gearing', n: 'Final drive', min: 0.7, max: 1.4, step: 0.01, def: 1, fmt: (v, p) => (v * p.fd).toFixed(2) + ' : 1', tip: 'Shorter (higher number) = harder acceleration, lower top speed.' },
+  { k: 'fd', g: 'Gearing', n: 'Final drive', min: 0.7, max: 1.4, step: 0.01, def: 1, fmt: (v, p) => (v * p.fd).toFixed(2) + ' : 1', tip: 'Shorter (higher number) = more thrust in every gear, but more gear changes and more wheelspin. Longer = more top speed if the engine was running out of revs. Watch the figures above.' },
   { k: 'spread', g: 'Gearing', n: 'Ratio spread', min: 0.8, max: 1.25, step: 0.01, def: 1, fmt: (v) => (v < 0.995 ? 'Close ' : v > 1.005 ? 'Wide ' : 'Stock ') + Math.round(v * 100) + '%', tip: 'Close ratios keep the engine in its power band; wide ratios make first gear shorter and top gear the same.' },
   { k: 'band', g: 'Engine', n: 'Power band', min: -1, max: 1, step: 0.05, def: 0, fmt: (v) => (v < -0.02 ? 'Low-end ' : v > 0.02 ? 'Top-end ' : 'Stock ') + (v > 0 ? '+' : '') + Math.round(v * 100), tip: 'Cam and boost timing: where in the rev range the torque peaks.' },
   { k: 'tc', g: 'Engine', n: 'Traction control', min: 0, max: 10, step: 1, def: 7, fmt: (v) => (v === 0 ? 'Off' : String(v)), tip: 'How hard power is cut when the rear tyres are sliding. Off lets you steer on the throttle, and spin.' },
@@ -129,7 +129,7 @@ Setup.stop = function (P, T, v0) {
 Setup.estimate = function (P, T) {
   const r = Setup.run(P, T, false), rn = Setup.run(P, T, true), lo = Setup.corner(P, T, 22), hi = Setup.corner(P, T, 55), L = P.L || P.a + P.b;
   const Nf0 = P.m * G * P.b / L, Nr0 = P.m * G * P.a / L;
-  return { top: r.top, t100: r.t100, t200: r.t200, qm: r.qm, qmV: r.qmV, qmN: rn.qm, gLo: lo.g, gHi: hi.g, balLo: lo.bal, balHi: hi.bal, stop: Setup.stop(P, T, 27.78), front: P.b / L, turnIn: (Nf0 / (P.cf * Nf0) - Nr0 / (P.cr * Nr0)) * 57.3 * G / 9.81 * 10 };
+  return { top: r.top, t100: r.t100, t200: r.t200, qm: r.qm, qmV: r.qmV, qmN: rn.qm, gLo: lo.g, gHi: hi.g, balLo: lo.bal, balHi: hi.bal, stop: Setup.stop(P, T, 27.78), front: P.b / L, turnIn: (1 / P.cf - 1 / P.cr) * 57.3 };   /* understeer gradient, degrees of extra steering per g: lower = sharper turn-in */
 };
 Setup.both = function () {
   if (Setup.cache) return Setup.cache; const d = CUR, T0 = { Tmax: tune.Tmax, mu: tune.mu, cd: d.t.cd, cl: d.t.cl || 0, brk: d.t.brk, off: d.t.off, nitroMax: tune.nitroMax }, p0 = Setup.base(d), sv = {}; for (const t of TU) sv[t.k] = Setup.defOf(t, p0);
@@ -154,7 +154,7 @@ Setup.statsHtml = function () {
   return tile('Top speed', sp(n.top), d(n.top * (mph ? 2.23694 : 3.6), s.top * (mph ? 2.23694 : 3.6), 0, false)) + tile(mph ? '0–62 mph' : '0–100 km/h', n.t100 ? n.t100.toFixed(2) + ' s' : '–', d(n.t100, s.t100, 2, true)) +
     tile(mph ? '0–124 mph' : '0–200 km/h', n.t200 ? n.t200.toFixed(2) + ' s' : '–', n.t200 && s.t200 ? d(n.t200, s.t200, 2, true) : '') + tile('Quarter mile', n.qm.toFixed(2) + ' s @ ' + sp(n.qmV), d(n.qm, s.qm, 2, true)) + tile('Quarter mile, nitro', n.qmN.toFixed(2) + ' s', d(n.qmN, s.qmN, 2, true)) +
     tile('Grip at 80 km/h', n.gLo.toFixed(2) + ' g', d(n.gLo, s.gLo, 2, false)) + tile('Grip at 200 km/h', n.gHi.toFixed(2) + ' g', d(n.gHi, s.gHi, 2, false)) + tile('100–0 km/h', n.stop.toFixed(1) + ' m', d(n.stop, s.stop, 1, true)) +
-    tile('Weight F / R', Math.round(n.front * 100) + ' / ' + Math.round(100 - n.front * 100), '') + bal('Balance, slow corners', n.balLo) + bal('Balance, fast corners', n.balHi) + tile('Turn-in', n.turnIn > 0.02 ? 'Lazy ' + n.turnIn.toFixed(2) : n.turnIn < -0.02 ? 'Darty ' + (-n.turnIn).toFixed(2) : 'Neutral', '');
+    tile('Weight F / R', Math.round(n.front * 100) + ' / ' + Math.round(100 - n.front * 100), '') + bal('Balance, slow corners', n.balLo) + bal('Balance, fast corners', n.balHi) + tile('Turn-in (steer per g)', n.turnIn.toFixed(2) + '°' + (n.turnIn < 0.3 ? ' darty' : n.turnIn > 1.6 ? ' lazy' : ''), d(n.turnIn, s.turnIn, 2, true, '°'));
 };
 Setup.pane = function () {
   if (!Setup.css) { Setup.css = document.createElement('style'); Setup.css.textContent = TU_CSS; document.head.appendChild(Setup.css); }
