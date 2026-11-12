@@ -3119,7 +3119,7 @@ function stepCar(dt, c0, P0, T0, circ0) {
   /* traction limit: the driven axle(s) can only put down mu x their load; AWD shares by load */
   const rdE = clamp(P.awd ? 0.7 * Nr / (Nf + Nr) + 0.3 * P.rd : P.rd, 0.06, 0.94);
   /* traction control: ease off the power as the rear tyres run out of lateral grip (off with the handbrake so drifts still hold) */
-  const tcf = c.hand > 0.5 ? 1 : 1 - 0.7 * sstep(0.5, 0.9, c.utR || 0);
+  const ra = Rally.on && Rally.assistOn(), tcf = c.hand > 0.5 ? 1 : 1 - (ra ? 0.88 : 0.7) * (ra ? sstep(0.3, 0.7, c.utR || 0) : sstep(0.5, 0.9, c.utR || 0));   /* the rally stage's driving assist cuts power earlier and harder */
   const FmaxRaw = 0.93 * Math.min(mu * Nr / rdE, mu * Nf / (1 - rdE)), Fmax = FmaxRaw * tcf;
   const fbf = clamp(Nf / (Nf + Nr) + 0.05, 0.3, 0.8);
   let F = 0, Fb = 0;
@@ -20183,7 +20183,7 @@ function readControls(dt) {
   if (devOn('free')) { th = 0; br = 0; hand = 0; st = 0; nit = false; }
   if (GAR.edit) { th = 0; br = 1; hand = 1; st = 0; nit = false; }
   const spd = Math.abs(c.speed);
-  const rate = analog || TouchIn.l || TouchIn.r ? 5 : lerp(3.4, 1.7, clamp(spd / 40, 0, 1)) * (Math.sign(st) !== Math.sign(c.steer) && c.steer !== 0 ? 1.7 : 1) * (st === 0 ? 1.5 : 1);
+  const rate = (analog || TouchIn.l || TouchIn.r ? 5 : lerp(3.4, 1.7, clamp(spd / 40, 0, 1)) * (Math.sign(st) !== Math.sign(c.steer) && c.steer !== 0 ? 1.7 : 1) * (st === 0 ? 1.5 : 1)) * (Rally.on && Rally.assistOn() ? 1.8 : 1);   /* quicker wheel on the rally stage */
   c.steerIn = clamp(st, -1, 1); c.steer = approach(c.steer, c.steerIn, rate * dt);
   c.thr = approach(c.thr, th, (th > c.thr ? 5 : 9) * dt); c.brk = approach(c.brk, br, (br > c.brk ? 7 : 12) * dt);
   c.hand = hand; c.nit = nit; Cam.back = back;
@@ -20357,8 +20357,28 @@ const RY_TODS = [
 ];
 const RY_MEDAL = [1.15, 0.97, 0.88];   /* bronze, silver, gold as a share of par */
 const RY_DUST = [[0.66, 0.5, 0.33], [0.66, 0.62, 0.54], [0.24, 0.17, 0.11], [0.82, 0.7, 0.5]];
-const RYP = { dust: null, grit: null, leaf: null, ok: false };
+const RYP = { dust: null, grit: null, ok: false };
 const _ryCar = { x: 0, y: 0, z: 0, yaw: 0, vx: 0, vz: 0, L: 4, W: 1.9 }, _ryLoc = { i: 0, s: 0, d: 0, l: 0 }, _ryH = [], _ryQ = {};
+
+/* ---------------- driving assist ----------------
+   The stock bicycle model is faithful and twitchy: a rally AWD car on loose dirt power-oversteers the moment the wheel moves, and a keyboard driver can not catch it.
+   Hollow Pines therefore runs a stability layer after every car step (Rally.assist, on by default, lobby switch). It does three things:
+   - yaw: pulls the yaw rate toward what the steering angle is asking for (v * tan(delta) / L), so the car turns as much as you steer and no more, and straightens itself when you let go;
+   - sideslip: bleeds off sideways velocity so the tyres 'bite' instead of the car skating, which also kills the snap-spin after a bump or a landing;
+   - power: the traction limiter cuts the engine earlier and harder as the rear tyres run out of grip.
+   The handbrake switches most of it off so flicks and drifts are still yours to throw. In the air only the yaw rate is damped. */
+const RY_CTL = { yaw: 9.0, slide: 3.4, air: 2.2, hand: 0.25, minV: 2.5 };
+Rally.assistOn = function () { return save.rally.assist !== 0; };
+Rally.assist = function (c, h) {
+  if (!Rally.assistOn()) return;
+  if (c.air) { c.w *= Math.max(0, 1 - RY_CTL.air * h); return; }
+  const s = Math.sin(c.yaw), co = Math.cos(c.yaw); let vf = c.vx * s + c.vz * co, vr = c.vx * co - c.vz * s; const spd = Math.abs(vf);
+  if (spd < RY_CTL.minV) return;
+  const k = c.hand > 0.5 ? RY_CTL.hand : 1, wT = vf * Math.tan(c.delta || 0) / CARP.L;
+  c.w += (wT - c.w) * Math.min(1, RY_CTL.yaw * k * h);
+  vr *= 1 - Math.min(1, RY_CTL.slide * k * h);
+  c.vx = vf * s + vr * co; c.vz = vf * co - vr * s;
+};
 
 /* ---------------- physics hooks ---------------- */
 Rally.collide = function (c, px, pz, R, P) {
@@ -20372,6 +20392,7 @@ Rally.collide = function (c, px, pz, R, P) {
 };
 /* every physics sub-step: the car meets the planks, wreckage moves, air time is tracked */
 Rally.sub = function (c, h) {
+  Rally.assist(c, h);
   const sim = Rally.sim; if (!sim) return;
   _ryCar.x = c.x; _ryCar.y = c.y; _ryCar.z = c.z; _ryCar.yaw = c.yaw; _ryCar.vx = c.vx; _ryCar.vz = c.vz; _ryCar.L = CUR.body.L; _ryCar.W = CUR.body.W;
   const took = RW.carStep(sim, _ryCar);
@@ -20563,6 +20584,7 @@ Rally.paint = function () {
   const par = RY.ready ? RY.par : 3844 / 26.0, med = [par * RY_MEDAL[0], par * RY_MEDAL[1], par * RY_MEDAL[2]].map((v) => fmtLap(v));
   E.rlBody.innerHTML = '<p class="rlp">' + RY_INFO + '</p>' +
     '<div class="rlrow"><label>Light</label>' + seg('tod', RY_TODS.map((t, i) => [i, t.n]), Rally.tod) + '</div>' +
+    '<div class="rlrow"><label>Assist</label>' + seg('assist', [[1, 'On · easy to control'], [0, 'Off · raw physics']], Rally.assistOn() ? 1 : 0) + '</div>' +
     '<div class="rlprize"><small>Medal times</small><span>Bronze <b>' + med[0] + '</b></span><span>Silver <b>' + med[1] + '</b></span><span>Gold <b>' + med[2] + '</b></span></div>' +
     '<div class="rlrec"><span>Runs <b>' + R.runs + '</b></span><span>Best <b>' + fmtLap(R.best) + '</b></span><span>Planks smashed <b>' + R.gates + '</b></span><span>Longest jump <b>' + (R.jump ? Math.round(R.jump) + ' m' : '–') + '</b></span></div>' +
     '<p class="rlp dim">You drive the <b>Ridgeback RS</b>, lent to you for the stage. ' + (TouchIn.on ? 'Use the pedals as normal; hold DRIFT for the handbrake.' : 'W/S throttle and brake, A/D steer, Space handbrake, Shift boost, R resets to the road (+3 s).') + '</p>';
@@ -20572,6 +20594,7 @@ Rally.lobbyClick = function (b) {
   if (a === 'rback') { Rally.lobby = false; Race.paint(); Snd.beep(420, 0.05); }
   else if (a === 'rstart') Rally.start();
   else if (a === 'leave') { Rally.lobby = false; Race.leave(); }
+  else if (b.parentNode && b.parentNode.dataset.k === 'assist') { save.rally.assist = +b.dataset.v; Rally.paint(); Snd.beep(520, 0.04); }
   else if (b.parentNode && b.parentNode.dataset.k === 'tod') { Rally.tod = +b.dataset.v; save.rally.tod = Rally.tod; Rally.paint(); Snd.beep(520, 0.04); }
 };
 Rally.lobbyKey = function (code) { if (code === 'Escape') { Rally.lobby = false; Race.paint(); } else if (code === 'Enter') Rally.start(); };

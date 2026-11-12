@@ -465,7 +465,7 @@ function readControls(dt) {
   if (devOn('free')) { th = 0; br = 0; hand = 0; st = 0; nit = false; }
   if (GAR.edit) { th = 0; br = 1; hand = 1; st = 0; nit = false; }
   const spd = Math.abs(c.speed);
-  const rate = analog || TouchIn.l || TouchIn.r ? 5 : lerp(3.4, 1.7, clamp(spd / 40, 0, 1)) * (Math.sign(st) !== Math.sign(c.steer) && c.steer !== 0 ? 1.7 : 1) * (st === 0 ? 1.5 : 1);
+  const rate = (analog || TouchIn.l || TouchIn.r ? 5 : lerp(3.4, 1.7, clamp(spd / 40, 0, 1)) * (Math.sign(st) !== Math.sign(c.steer) && c.steer !== 0 ? 1.7 : 1) * (st === 0 ? 1.5 : 1)) * (Rally.on && Rally.assistOn() ? 1.8 : 1);   /* quicker wheel on the rally stage */
   c.steerIn = clamp(st, -1, 1); c.steer = approach(c.steer, c.steerIn, rate * dt);
   c.thr = approach(c.thr, th, (th > c.thr ? 5 : 9) * dt); c.brk = approach(c.brk, br, (br > c.brk ? 7 : 12) * dt);
   c.hand = hand; c.nit = nit; Cam.back = back;
