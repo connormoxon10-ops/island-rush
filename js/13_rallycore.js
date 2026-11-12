@@ -29,6 +29,26 @@ const RY_FEATS = [
 const RY_WALLS = [{ e: 8, at: 70 }, { e: 10, at: 130 }, { e: 17, at: 190 }, { e: 21, at: 85 }, { e: 26, at: 72 }, { e: 30, at: 70 }];   /* all on straights, a long run-up after the previous corner */
 /* surface sections by distance: 0 hard-packed dirt, 1 loose gravel, 2 wet mud, 3 sand */
 const RY_SECS = [[0, 0], [380, 1], [900, 0], [1180, 2], [1420, 0], [1900, 1], [2400, 3], [2620, 0], [3100, 2], [3300, 1], [3900, 0]];
+/* road camber of the bends, by element index: b = cross-fall slope (+ banked into the bend, the outside is higher; - off-camber, the outside drops away), m = height of the dirt lip along the
+   outer edge of a banked bend (a berm you can lean on). A bend that is not listed is flat. The straights between them get a crown and a cross-fall of their own (RY.sections). */
+const RY_CAMB = {
+  1: { b: 0.13, m: 0.3 }, 3: { b: 0.1, m: 0.2 }, 4: { b: 0.17, m: 0.35 }, 5: { b: -0.09, m: 0 }, 7: { b: 0.3, m: 0.7 }, 9: { b: 0.34, m: 0.8 },
+  11: { b: -0.11, m: 0 }, 13: { b: 0.18, m: 0.4 }, 14: { b: 0.24, m: 0.5 }, 16: { b: 0.26, m: 0.55 }, 18: { b: 0.09, m: 0.2 }, 20: { b: 0.36, m: 0.85 },
+  22: { b: -0.12, m: 0 }, 23: { b: 0.17, m: 0.35 }, 25: { b: 0.3, m: 0.7 }, 27: { b: 0.07, m: 0.2 }, 29: { b: 0.2, m: 0.4 }
+};
+/* solid walls beside the road: element, metres into it, length, side (+1 left, -1 right, 0 both), kind ('rock' = a rock cutting with the hillside risen behind it, 'stone' = a dry-stone wall),
+   height m above the verge, and the gap m between the road edge and the face. Bank and berm put the car close to them on purpose. */
+const RY_RAILS = [
+  { e: 3, at: 0, len: 190, side: -1, k: 'rock', h: 4.2, gap: 1.3 },     /* the esses: a rock face down the right */
+  { e: 7, at: 0, len: 84, side: 1, k: 'stone', h: 1.5, gap: 0.9 },      /* outside of the tight right: stone retaining wall */
+  { e: 9, at: 0, len: 82, side: 1, k: 'rock', h: 4.6, gap: 1.6 },       /* inside of the left hairpin: cut into the hill */
+  { e: 15, at: 4, len: 122, side: 0, k: 'rock', h: 5.4, gap: 1.5 },     /* the gorge: rock both sides */
+  { e: 18, at: 8, len: 150, side: 1, k: 'stone', h: 1.25, gap: 1.0 },   /* long fast right: wall along the outside */
+  { e: 19, at: 0, len: 134, side: -1, k: 'rock', h: 4.0, gap: 1.4 },    /* into the right hairpin */
+  { e: 23, at: 6, len: 92, side: 1, k: 'stone', h: 1.4, gap: 0.9 },
+  { e: 25, at: 0, len: 80, side: -1, k: 'rock', h: 4.4, gap: 1.5 },
+  { e: 29, at: 6, len: 100, side: -1, k: 'stone', h: 1.3, gap: 0.9 }
+];
 
 const RY = { ready: false, GS: 2, DS: 2, seed: 7, MAXD: 108, name: 'Hollow Pines' };
 const _ryIn = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -47,6 +67,11 @@ RY.path = function () {
     kk[i] = k; const hm = h + k * ds / 2; x += Math.sin(hm) * ds; z += Math.cos(hm) * ds; h += k * ds;
   }
   for (let i = 0; i < N; i++) { tx[i] = Math.sin(th[i]); tz[i] = Math.cos(th[i]); }
+  /* the road is the polyline through the samples: each segment runs along its chord (the tangent at its start would leave a step of up to 8 cm between segments on a tight bend, which a
+     banked road turns into a washboard of bumps) */
+  const cx = new Float32Array(N), cz = new Float32Array(N);
+  for (let i = 0; i < N; i++) { if (i < N - 1) { const dx = px[i + 1] - px[i], dz = pz[i + 1] - pz[i], l = Math.hypot(dx, dz) || 1; cx[i] = dx / l; cz[i] = dz / l; } else { cx[i] = tx[i]; cz[i] = tz[i]; } }
+  RY.cx = cx; RY.cz = cz;
   RY.N = N; RY.L = (N - 1) * ds; RY.px = px; RY.pz = pz; RY.th = th; RY.kap = kk; RY.tx = tx; RY.tz = tz; RY.starts = starts;
 };
 
@@ -82,20 +107,67 @@ RY.profile = function () {
   RY.maxSlope = mx; RY.maxCurv = ma;
 };
 
-/* ---------- 3. width, bank, surface, openness ---------- */
+/* ---------- 3. width, camber, rails, surface, openness ---------- */
+const RY_START_S = 62, RY_FIN_IN = 46;            /* stage-distance of the start line, and metres from the end to the finish line */
+const RY_RAIL_T = { rock: 2.4, stone: 0.8 };      /* how thick each kind of wall is (the face stands at the gap, the cap runs this far behind it) */
+/* the cross-section of the road at lateral offset l (+ left), measured from the centre line: a cross-fall (bank), a crown that lowers both edges (negative = dished, the middle lower),
+   and the lip of a berm along the outer edge (lip > 0 lifts the left edge, lip < 0 the right) */
+RY.cross = function (l, hw, bank, crown, lip) {
+  const u = l / hw; let h = -bank * l - crown * u * u;
+  if (lip > 0 && u > 0.35) { const t = (u - 0.35) / 0.65; h += lip * t * t * (1 + 0.5 * t); }
+  else if (lip < 0 && u < -0.35) { const t = (-u - 0.35) / 0.65; h += -lip * t * t * (1 + 0.5 * t); }
+  return h;
+};
 RY.sections = function () {
-  const N = RY.N, ds = RY.DS, hw = new Float32Array(N), bank = new Float32Array(N), sec = new Uint8Array(N), open = new Float32Array(N), rnd = mulberry32(RY.seed * 77 + 1);
-  const p = rnd() * 50;
+  const N = RY.N, ds = RY.DS, hw = new Float32Array(N), bank = new Float32Array(N), crown = new Float32Array(N), lip = new Float32Array(N), sec = new Uint8Array(N), open = new Float32Array(N), rnd = mulberry32(RY.seed * 77 + 1);
+  const p = rnd() * 50, ph = [rnd() * 6.28, rnd() * 6.28, rnd() * 6.28, rnd() * 6.28];
+  const win = (s, a, b, ra, rb) => _rySm(a - ra, a, s) * (1 - _rySm(b, b + rb, s));
+  /* camber stays flat where the car has to leave the ground straight (the run-in and landing of a jump), at the plank gates, and at the start and finish */
+  const flatW = (s) => {
+    let f = _rySm(RY_START_S + 6, RY_START_S + 40, s) * (1 - _rySm(RY.L - 112, RY.L - 72, s));
+    for (const jf of RY.feats) if (jf.k === 'jump') f *= 1 - win(s, jf.s0 - jf.up, jf.s0 + jf.down + 6, 12, 14);
+    for (const w of RY_WALLS) { const c = RY.starts[w.e] + w.at; f *= 1 - win(s, c - 8, c + 8, 18, 18); }
+    return f;
+  };
+  RY.bendW = new Float32Array(N);
   for (let i = 0; i < N; i++) {
     const s = i * ds, k = Math.abs(RY.kap[i]);
     hw[i] = 3.9 + Math.min(1.1, k * 30);                              /* bends open up a little */
-    bank[i] = _ryIn(RY.kap[i] * 5, -0.09, 0.09);                      /* outside of the bend is higher */
+    /* bends: the camber table, blended in before the turn-in and out after the exit */
+    let cb = 0, cl = 0, cw = 0;
+    for (let e = 0; e < RY_ELEMS.length; e++) {
+      const el = RY_ELEMS[e]; if (el[0] !== 'C') continue; const S0 = RY.starts[e], len = el[1];
+      if (s < S0 - 36 || s > S0 + len + 36) continue;
+      const w = win(s, S0 + 0.16 * len, S0 + 0.84 * len, 0.16 * len + 18, 0.16 * len + 18); cw = Math.max(cw, w);
+      const cc = RY_CAMB[e]; if (!cc) continue; const sg = el[2] > 0 ? 1 : -1;
+      cb += sg * cc.b * w; cl += -sg * Math.sign(cc.b) * cc.m * w;
+    }
+    /* straights: a crown that comes and goes (some stretches dished, some heavily crowned) and a cross-fall that tilts the whole road for a while */
+    const fl = flatW(s), crn = 0.12 + 0.21 * Math.sin(s / 97 + ph[0]) * (0.65 + 0.35 * Math.sin(s / 311 + ph[1]));
+    const fall = 0.085 * Math.sin(s / 131 + ph[2]) * _rySm(0.3, 0.7, 0.5 + 0.5 * Math.sin(s / 333 + ph[3]));
+    bank[i] = _ryIn(cb + fall * (1 - cw), -0.4, 0.4) * fl; crown[i] = crn * (1 - 0.7 * cw) * fl; lip[i] = cl * fl; RY.bendW[i] = cw;
+    hw[i] += 0.8 * _rySm(0.07, 0.3, Math.abs(bank[i])) * cw;          /* a banked bend is cut wider */
     let sc = 0; for (const r of RY_SECS) if (s >= r[0]) sc = r[1]; sec[i] = sc;
     open[i] = _rySm(0.52, 0.78, 0.5 + 0.9 * fbm(s * 0.0046 + p, 3.3, 3));    /* 1 = a glade where the sun gets down to the road, 0 = canopy tunnel */
   }
   /* soften the width changes */
   for (let pass = 0; pass < 6; pass++) { const t = Float32Array.from(hw); for (let i = 1; i < N - 1; i++) hw[i] = (t[i - 1] + 2 * t[i] + t[i + 1]) / 4; }
-  RY.hw = hw; RY.bank = bank; RY.sec = sec; RY.open = open;
+  RY.hw = hw; RY.bank = bank; RY.crown = crown; RY.lip = lip; RY.sec = sec; RY.open = open;
+  /* the solid walls: per sample and side, the gap to the face, the height (tapering to nothing at both ends, so a wall sinks into the hillside) and the kind (0 none, 1 rock, 2 stone) */
+  const mk = () => ({ g: new Float32Array(N), h: new Float32Array(N), k: new Uint8Array(N), cut: new Float32Array(N), band: new Float32Array(N) });
+  const R = RY.rails = { L: mk(), R: mk() }; let maxGap = 0;
+  for (const rl of RY_RAILS) {
+    const sA = RY.starts[rl.e] + rl.at, sB = sA + rl.len, th = RY_RAIL_T[rl.k];
+    for (let i = Math.max(0, Math.floor(sA / ds)); i <= Math.min(N - 1, Math.ceil(sB / ds)); i++) {
+      const s = i * ds, h = rl.h * _rySm(0, 12, s - sA) * _rySm(0, 12, sB - s); if (h <= 0) continue;
+      for (const side of rl.side === 0 ? [1, -1] : [rl.side]) {
+        const o = side > 0 ? R.L : R.R; if (h < o.h[i]) continue;
+        o.g[i] = rl.gap; o.h[i] = h; o.k[i] = rl.k === 'rock' ? 1 : 2; o.cut[i] = rl.k === 'rock' ? h : 0; o.band[i] = rl.gap + th + 0.9;
+      }
+    }
+    maxGap = Math.max(maxGap, rl.gap + th);
+  }
+  RY.railReach = maxGap + 1.2; RY.hwMax = 0; for (let i = 0; i < N; i++) RY.hwMax = Math.max(RY.hwMax, hw[i]);
 };
 
 /* ---------- 4. spatial index of the path ---------- */
@@ -109,7 +181,7 @@ RY.index = function () {
 };
 /* nearest path sample to (x,z), optionally skipping samples within `skip` indices of `ex` (to find the other arm of a hairpin); fills o.i, o.d (unsigned), o.l (signed, + = left) */
 RY.nearest = function (x, z, ex, skip, o) {
-  const C = RY.BC, cx = Math.floor((x - RY.bx0) / C), cz = Math.floor((z - RY.bz0) / C), px = RY.px, pz = RY.pz, tx = RY.tx, tz = RY.tz, N = RY.N;
+  const C = RY.BC, cx = Math.floor((x - RY.bx0) / C), cz = Math.floor((z - RY.bz0) / C), px = RY.px, pz = RY.pz, tx = RY.cx, tz = RY.cz, N = RY.N;
   let best = 1e18, bi = -1;
   for (let r = 0; r <= 5; r++) {
     for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) {
@@ -135,15 +207,19 @@ const _ryA = { i: 0, d: 0, l: 0 }, _ryB = { i: 0, d: 0, l: 0 };
 RY.heightFrom = function (o, x, z) {
   const sg = Math.min(o.seg, RY.N - 2), fr = o.t / RY.DS, i = o.i, l = o.l, d = o.d;
   const hw = lerp(RY.hw[sg], RY.hw[sg + 1], fr), bank = lerp(RY.bank[sg], RY.bank[sg + 1], fr), py = lerp(RY.py[sg], RY.py[sg + 1], fr), base = lerp(RY.base[sg], RY.base[sg + 1], fr);
-  const e = Math.max(0, d - hw), roadH = py - bank * _ryIn(l, -hw, hw);
+  const crown = lerp(RY.crown[sg], RY.crown[sg + 1], fr), lip = lerp(RY.lip[sg], RY.lip[sg + 1], fr);
+  const e = Math.max(0, d - hw), roadH = py + RY.cross(_ryIn(l, -hw, hw), hw, bank, crown, lip);
   if (e <= 0) return roadH;
-  const edgeH = py - bank * (l < 0 ? -hw : hw);
+  const sd = l < 0 ? -1 : 1, edgeH = py + RY.cross(sd * hw, hw, bank, crown, lip);
   /* verge: a shallow ditch, then the bank climbs into the hillside; the valley floor follows the smoothed base so jumps blend away */
   const ditch = -0.22 * _rySm(0, 0.5, e) * (1 - _rySm(0.5, 2.2, e));
   const rise = 0.17 * Math.min(e, 18) + 0.42 * _ryIn(e - 18, 0, 24) + 0.12 * Math.max(0, e - 42);
   const f = _rySm(1.5, 15, e), hills = (fbm(x * 0.021 + 5.1, z * 0.021 - 2.7, 3) * 7.5 + fbm(x * 0.09, z * 0.09, 2) * 1.1) * _rySm(2, 20, e);
-  const feat = lerp(edgeH, base - bank * (l < 0 ? -hw : hw) * 0.5, f);
-  return feat + ditch + rise + hills;
+  const feat = lerp(edgeH, base - bank * sd * hw * 0.5, f);
+  /* behind a rock cutting the hillside stands higher than the face (it starts well behind the face so the road's grid cells never see it) */
+  const R = sd > 0 ? RY.rails.L : RY.rails.R, cut = lerp(R.cut[sg], R.cut[sg + 1], fr);
+  let up = 0; if (cut > 0.05) { const eW = e - Math.max(R.g[sg], R.g[sg + 1]); up = cut * _rySm(2.4, 8.0, eW) * (1 - _rySm(18, 46, eW)); }
+  return feat + ditch + rise + hills + up;
 };
 RY.bake = function () {
   const GS = RY.GS, x0 = Math.floor(RY.bx0 / GS) * GS, z0 = Math.floor(RY.bz0 / GS) * GS, gw = Math.ceil((RY.bx0 + RY.bw * RY.BC - x0) / GS) + 1, gh = Math.ceil((RY.bz0 + RY.bh * RY.BC - z0) / GS) + 1;
@@ -217,12 +293,12 @@ RY.distAt = function (x, z) {
 /* position and heading at distance s along the stage with a lateral offset (+ = left) */
 RY.at = function (s, off, o) {
   s = _ryIn(s, 0, RY.L); const i = Math.min(RY.N - 2, Math.floor(s / RY.DS)), t = s - i * RY.DS;
-  const tx = RY.tx[i], tz = RY.tz[i]; o.i = i; o.s = s; o.tx = tx; o.tz = tz; o.yaw = Math.atan2(tx, tz);
+  const tx = RY.cx[i], tz = RY.cz[i]; o.i = i; o.s = s; o.tx = tx; o.tz = tz; o.yaw = Math.atan2(tx, tz);
   o.x = RY.px[i] + tx * t + tz * off; o.z = RY.pz[i] + tz * t - tx * off; o.hw = RY.hw[i]; return o;
 };
 /* progress tracking: search a window around the last known sample (two stretches of road that run close never get confused) */
 RY.locate = function (x, z, hint, o) {
-  const N = RY.N, px = RY.px, pz = RY.pz, tx = RY.tx, tz = RY.tz; let best = 1e18, bi = 0, bt = 0;
+  const N = RY.N, px = RY.px, pz = RY.pz, tx = RY.cx, tz = RY.cz; let best = 1e18, bi = 0, bt = 0;
   const a = Math.max(0, hint - 12), b = Math.min(N - 2, hint + 40);
   for (let i = a; i <= b; i++) {
     const ax = x - px[i], az = z - pz[i]; let t = ax * tx[i] + az * tz[i]; t = t < 0 ? 0 : t > RY.DS ? RY.DS : t;
@@ -243,6 +319,7 @@ RY.forest = function (density) {
     const jx = x + (rnd() - 0.5) * GS * 0.95, jz = z + (rnd() - 0.5) * GS * 0.95, d = RY.distAt(jx, jz); if (d > RY.MAXD - 6) continue;
     RY.nearest(jx, jz, -1, 0, A); if (A.i < 0) continue;
     const hw = RY.hw[A.i], e = d - hw, op = RY.open[A.i], hy = RY.heightAt(jx, jz);
+    if (e < (A.l > 0 ? RY.rails.L.band[A.i] : RY.rails.R.band[A.i])) continue;   /* the wall and its cap stand here */
     const clear = fbm(jx * 0.016 + 11, jz * 0.016 + 4, 2) > 0.18 ? 0.3 : 1;              /* the odd natural clearing */
     /* undergrowth first: bushes and ferns crowd the verge, thin out into the forest */
     if (e > 1.4 && e < 36 && rnd() < 0.5 * density * (1 - _rySm(8, 36, e)) + 0.06) {
@@ -261,6 +338,7 @@ RY.forest = function (density) {
   /* rocks, mostly just off the road, some in the ditch */
   for (let i = 0; i < Math.round(RY.L / 26); i++) {
     const s = rnd() * RY.L, side = rnd() < 0.5 ? -1 : 1, off = RY.at(s, 0, {}), hw = off.hw, l = side * (hw + 1.2 + rnd() * rnd() * 14);
+    if (hw + (side > 0 ? RY.rails.L : RY.rails.R).band[off.i] > Math.abs(l)) continue;
     const q = RY.at(s, l, {}); rocks.push({ v: (rnd() * 12) | 0, x: q.x, z: q.z, sc: 0.5 + rnd() * rnd() * 2.6, rot: rnd() * TAU });
   }
   RY.trees = tr; RY.under = und; RY.rocks = rocks;
@@ -279,8 +357,20 @@ RY.hits = function (px, pz, R, out) {
     for (let k = 0; k < a.length; k++) { const t = tr[a[k]], ax = px - t.x, az = pz - t.z, rr = t.rad + R, d2 = ax * ax + az * az; if (d2 < rr * rr) { const d = Math.sqrt(d2) || 0.01; out.push({ nx: ax / d, nz: az / d, pen: rr - d }); } }
   }
   for (const r of RY.solidRocks) { const ax = px - r.x, az = pz - r.z, rr = r.sc * 0.78 + R; if (Math.abs(ax) < rr && Math.abs(az) < rr) { const d2 = ax * ax + az * az; if (d2 < rr * rr) { const d = Math.sqrt(d2) || 0.01; out.push({ nx: ax / d, nz: az / d, pen: rr - d }); } } }
-  /* the outer boundary of the stage: a steep wooded hillside, pushes back toward the road */
   const d = RY.distAt(px, pz);
+  /* rock cuttings and stone walls beside the road: a plane at the face, the normal points back across the road. Heights under 0.5 m (a wall sinking into the hillside at its end) are not solid */
+  if (d < RY.hwMax + RY.railReach) {
+    const A = _ryA; RY.nearest(px, pz, -1, 0, A);
+    if (A.i >= 0) {
+      const sg = Math.min(A.seg, RY.N - 2), fr = A.t / RY.DS, hw = lerp(RY.hw[sg], RY.hw[sg + 1], fr), tx = RY.cx[sg], tz = RY.cz[sg];
+      for (let k = 0; k < 2; k++) {
+        const side = k ? -1 : 1, R_ = k ? RY.rails.R : RY.rails.L; if (Math.min(R_.h[sg], R_.h[sg + 1]) < 0.5) continue;
+        const pen = side * A.l + R - (hw + Math.max(R_.g[sg], R_.g[sg + 1]));
+        if (pen > 0) out.push({ nx: -side * tz, nz: side * tx, pen, rail: true });
+      }
+    }
+  }
+  /* the outer boundary of the stage: a steep wooded hillside, pushes back toward the road */
   if (d > RY.MAXD - 14) { RY.nearest(px, pz, -1, 0, _ryA); if (_ryA.i >= 0) { const ax = RY.px[_ryA.i] - px, az = RY.pz[_ryA.i] - pz, l = Math.hypot(ax, az) || 1; out.push({ nx: ax / l, nz: az / l, pen: d - (RY.MAXD - 14) + R }); } }
   return out;
 };
@@ -295,6 +385,7 @@ RY.layout = function () {
     const kp = 2 * Math.abs(el[2]) * Math.PI / 180 / el[1], R = 1 / kp, sev = R >= 130 ? 6 : R >= 85 ? 5 : R >= 55 ? 4 : R >= 36 ? 3 : R >= 22 ? 2 : 1;
     let dir = el[2] > 0 ? 'LEFT' : 'RIGHT', txt = dir + ' ' + sev; if (sev === 1) txt = dir + ' HAIRPIN'; if (Math.abs(el[2]) > 100 && sev > 1) txt += ' LONG';
     const nxt = RY_ELEMS[e + 1]; if (nxt && nxt[0] === 'C' && Math.sign(nxt[2]) !== Math.sign(el[2])) txt += ' INTO ' + (nxt[2] > 0 ? 'LEFT' : 'RIGHT');
+    const cc = RY_CAMB[e]; if (cc && cc.b >= 0.15) txt += ' · BANKED'; else if (cc && cc.b <= -0.08) txt += ' · OFF-CAMBER';
     notes.push({ s: RY.starts[e] + el[1] * 0.18, t: txt, sev, dir: el[2] > 0 ? 1 : -1, k: 'bend' });
   }
   for (const f of RY.feats) {
@@ -303,8 +394,9 @@ RY.layout = function () {
     else if (f.k === 'whoops') notes.push({ s: f.s0 - 8, t: 'WHOOPS', sev: 6, dir: 0, k: 'dip' });
   }
   for (const w of RY.walls) notes.push({ s: w.s - 24, t: 'WALL · GO THROUGH', sev: 6, dir: 0, k: 'wall' });
+  for (const rl of RY_RAILS) notes.push({ s: RY.starts[rl.e] + rl.at - 30, t: (rl.k === 'rock' ? 'ROCK FACE ' : 'STONE WALL ') + (rl.side === 0 ? 'BOTH SIDES' : rl.side > 0 ? 'LEFT' : 'RIGHT'), sev: 5, dir: rl.side, k: 'rail' });
   notes.sort((a, b) => a.s - b.s); RY.notes = notes;
-  RY.startS = 62; RY.finishS = RY.L - 46; RY.cps = [0.26, 0.52, 0.76].map((f) => RY.startS + (RY.finishS - RY.startS) * f);
+  RY.startS = RY_START_S; RY.finishS = RY.L - RY_FIN_IN; RY.cps = [0.26, 0.52, 0.76].map((f) => RY.startS + (RY.finishS - RY.startS) * f);
 };
 
 /* ---------- everything ---------- */

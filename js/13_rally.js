@@ -22,7 +22,7 @@ const _ryCar = { x: 0, y: 0, z: 0, yaw: 0, vx: 0, vz: 0, L: 4, W: 1.9 }, _ryLoc 
 /* ---------------- physics hooks ---------------- */
 Rally.collide = function (c, px, pz, R, P) {
   RY.hits(px, pz, R, _ryH);
-  for (let i = 0; i < _ryH.length; i++) { const h = _ryH[i]; contact(c, px, pz, h.nx, h.nz, h.pen, 0, 0, P); }
+  for (let i = 0; i < _ryH.length; i++) { const h = _ryH[i]; contact(c, px, pz, h.nx, h.nz, h.pen, 0, 0, P); if (h.rail && h.pen > (c.rail || 0)) c.rail = h.pen; }   /* a wall in the way: stepCar scrapes speed off while it lasts */
   const sim = Rally.sim; if (!sim) return;
   for (const G of sim.walls) {
     const gx = px - G.x, gz = pz - G.z; if (gx * gx + gz * gz > 144) continue;
@@ -190,8 +190,8 @@ Rally.dom = function () {
 };
 Rally.pop = function (txt, cls) { const b = Rally.el && Rally.el.big; if (!b) return; b.textContent = txt; b.className = ''; void b.offsetWidth; b.className = 'on ' + (cls || ''); };
 Rally.hint = 0;
-const RY_GLYPH = { LEFT: '↰', RIGHT: '↱', jump: '⤴', dip: '⤵', wall: '▦' };
-function ryNoteGlyph(n) { return n.k === 'bend' ? (n.dir > 0 ? RY_GLYPH.LEFT : RY_GLYPH.RIGHT) : n.k === 'jump' ? RY_GLYPH.jump : n.k === 'wall' ? RY_GLYPH.wall : RY_GLYPH.dip; }
+const RY_GLYPH = { LEFT: '↰', RIGHT: '↱', jump: '⤴', dip: '⤵', wall: '▦', rail: '▮' };
+function ryNoteGlyph(n) { return n.k === 'bend' ? (n.dir > 0 ? RY_GLYPH.LEFT : RY_GLYPH.RIGHT) : n.k === 'jump' ? RY_GLYPH.jump : n.k === 'wall' ? RY_GLYPH.wall : n.k === 'rail' ? RY_GLYPH.rail : RY_GLYPH.dip; }
 Rally.hud = function (dt) {
   const E_ = Rally.el; if (!E_) return; Rally.hudT -= dt; if (Rally.hudT > 0) return; Rally.hudT = 0.05;
   const t = Rally.phase === 'run' || Rally.phase === 'done' ? Rally.clock + Rally.penalty : 0;
