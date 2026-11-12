@@ -63,6 +63,14 @@ const OUT = process.env.OUT || __dirname;
     out.phase = R.phase; out.time = +R.clock.toFixed(2); out.pen = R.penalty; out.sim = { broken: R.sim.broken, total: R.sim.total }; out.maxLat = +maxLat.toFixed(1); out.offRoad = +offRoad.toFixed(1); out.air = +airT.toFixed(1);
     out.jumpBest = +R.jumpBest.toFixed(1); out.stuckReset = stuckReset; out.minHp = +minHp.toFixed(0); out.topKmh = +(topSpd * 3.6).toFixed(0); out.splits = R.splits.map((x) => +x.toFixed(2)); out.cpsS = RY.cps; out.par = RY.par; out.ms = Math.round(performance.now() - t0); out.steps = n;
     out.msPerStep = +((performance.now() - t0) / n).toFixed(3);
+    /* finish flow: results, best time saved, run again, leave the stage and land back on the island */
+    if (R.phase === 'done') {
+      const E = document.getElementById('rresP');
+      out.finish = { shown: !!E && !document.getElementById('rres').hidden, text: E ? E.textContent.replace(/\s+/g, ' ').slice(0, 220) : null, save: JSON.stringify(g.save.rally), money: g.getMoney() };
+      const planks = R.sim.broken; R.again(); out.again = { phase: R.phase, planksReset: R.sim.broken === 0, was: planks, s: +R.s.toFixed(0), resHidden: document.getElementById('rres').hidden };
+      const sv = R.saved; R.exit(false);
+      out.exit = { on: R.on, mode: g.App.mode, car: g.save.car, bodyVisible: !!g.car.body.visible, x: +g.car.x.toFixed(0), z: +g.car.z.toFixed(0), wasX: +sv.x.toFixed(0), wasZ: +sv.z.toFixed(0), rootHidden: document.getElementById('ryhud').hidden, bodyClass: document.body.className, sceneHidden: g.scene.children.filter((o) => !o.visible && !o.isLight).length };
+    }
     return out;
   }, [TOD, MAXT, SHOTS.slice(), TRACE]);
   console.log(JSON.stringify(res, null, 1));

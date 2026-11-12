@@ -14,7 +14,7 @@ const RY_TODS = [
   { n: 'Golden hour', tod: 17.0, fog: 0.0054, tint: [1.04, 0.96, 0.86], shaft: 1.0, sun: 2.9, expo: 1.05 },
   { n: 'Dusk', tod: 18.95, fog: 0.0058, tint: [0.9, 0.86, 0.95], shaft: 0.55, sun: 2.0, expo: 1.2 }
 ];
-const RY_MEDAL = [1.1, 0.97, 0.88];   /* bronze, silver, gold as a share of par */
+const RY_MEDAL = [1.15, 0.97, 0.88];   /* bronze, silver, gold as a share of par */
 const RY_DUST = [[0.66, 0.5, 0.33], [0.66, 0.62, 0.54], [0.24, 0.17, 0.11], [0.82, 0.7, 0.5]];
 const RYP = { dust: null, grit: null, leaf: null, ok: false };
 const _ryCar = { x: 0, y: 0, z: 0, yaw: 0, vx: 0, vz: 0, L: 4, W: 1.9 }, _ryLoc = { i: 0, s: 0, d: 0, l: 0 }, _ryH = [], _ryQ = {};
@@ -53,7 +53,7 @@ Rally.landed = function (c) {
 
 /* ---------------- effects ---------------- */
 function ryInitFx() {
-  if (RYP.ok) return; RYP.dust = mkPoints(900, THREE.NormalBlending); RYP.grit = mkPoints(360, THREE.NormalBlending); RYP.leaf = mkPoints(500, THREE.NormalBlending);
+  if (RYP.ok) return; RYP.dust = mkPoints(1500, THREE.NormalBlending); RYP.grit = mkPoints(420, THREE.NormalBlending); RYP.leaf = mkPoints(500, THREE.NormalBlending);
   scene.add(RYP.dust.pts, RYP.grit.pts, RYP.leaf.pts); RYP.ok = true;
 }
 Rally.dustTint = [0.7, 0.62, 0.52];
@@ -80,11 +80,11 @@ Rally.fx = function (dt) {
   if (!RYP.ok) return; const c = car, sp = Math.abs(c.speed), s = Math.sin(c.yaw), co = Math.cos(c.yaw), P = CARP;
   const q = Q.tree < 0.7 ? 0.6 : 1;
   if (Rally.phase !== 'grid' && !c.air && sp > 3) {
-    const loose = c.surf.loose || 0.3, slide = c.drifting ? 2 : 1, thr = 0.5 + 0.5 * c.thr, rate = sp * (1.6 + 4 * loose) * slide * thr * q;
+    const loose = c.surf.loose || 0.3, slide = c.drifting ? 2 : 1, thr = 0.5 + 0.5 * c.thr, rate = sp * (2.4 + 6 * loose) * slide * (0.6 + 0.4 * thr) * q;
     let n = rate * dt; n = Math.floor(n) + (Math.random() < n - Math.floor(n) ? 1 : 0);
     for (let i = 0; i < n; i++) {
       const side = Math.random() < 0.5 ? -1 : 1, front = Math.random() < 0.18, zz = front ? P.a : -P.b, lx = side * P.track / 2, x = c.x + s * zz + co * lx, z = c.z + co * zz - s * lx;
-      Rally.puff(x, c.y + 0.12, z, -c.vx * 0.22 + (Math.random() - 0.5) * 2.4, 0.6 + Math.random() * 1.3 + sp * 0.02, -c.vz * 0.22 + (Math.random() - 0.5) * 2.4, 1.3 + Math.random() * 1.7, 0.7 + Math.random() * 0.5, 3.4 + Math.random() * 2.4, 0.26 + 0.2 * loose);
+      Rally.puff(x, c.y + 0.12, z, -c.vx * 0.22 + (Math.random() - 0.5) * 2.4, 0.6 + Math.random() * 1.3 + sp * 0.02, -c.vz * 0.22 + (Math.random() - 0.5) * 2.4, 1.6 + Math.random() * 2.0, 0.9 + Math.random() * 0.7, 4.2 + Math.random() * 3.2, 0.4 + 0.3 * loose);
     }
     /* gravel thrown out behind the driven wheels */
     let g = (sp * 0.7 * loose * slide * thr * q) * dt * 40; g = Math.floor(g) + (Math.random() < g - Math.floor(g) ? 1 : 0);

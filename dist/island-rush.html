@@ -20355,7 +20355,7 @@ const RY_TODS = [
   { n: 'Golden hour', tod: 17.0, fog: 0.0054, tint: [1.04, 0.96, 0.86], shaft: 1.0, sun: 2.9, expo: 1.05 },
   { n: 'Dusk', tod: 18.95, fog: 0.0058, tint: [0.9, 0.86, 0.95], shaft: 0.55, sun: 2.0, expo: 1.2 }
 ];
-const RY_MEDAL = [1.1, 0.97, 0.88];   /* bronze, silver, gold as a share of par */
+const RY_MEDAL = [1.15, 0.97, 0.88];   /* bronze, silver, gold as a share of par */
 const RY_DUST = [[0.66, 0.5, 0.33], [0.66, 0.62, 0.54], [0.24, 0.17, 0.11], [0.82, 0.7, 0.5]];
 const RYP = { dust: null, grit: null, leaf: null, ok: false };
 const _ryCar = { x: 0, y: 0, z: 0, yaw: 0, vx: 0, vz: 0, L: 4, W: 1.9 }, _ryLoc = { i: 0, s: 0, d: 0, l: 0 }, _ryH = [], _ryQ = {};
@@ -20394,7 +20394,7 @@ Rally.landed = function (c) {
 
 /* ---------------- effects ---------------- */
 function ryInitFx() {
-  if (RYP.ok) return; RYP.dust = mkPoints(900, THREE.NormalBlending); RYP.grit = mkPoints(360, THREE.NormalBlending); RYP.leaf = mkPoints(500, THREE.NormalBlending);
+  if (RYP.ok) return; RYP.dust = mkPoints(1500, THREE.NormalBlending); RYP.grit = mkPoints(420, THREE.NormalBlending); RYP.leaf = mkPoints(500, THREE.NormalBlending);
   scene.add(RYP.dust.pts, RYP.grit.pts, RYP.leaf.pts); RYP.ok = true;
 }
 Rally.dustTint = [0.7, 0.62, 0.52];
@@ -20421,11 +20421,11 @@ Rally.fx = function (dt) {
   if (!RYP.ok) return; const c = car, sp = Math.abs(c.speed), s = Math.sin(c.yaw), co = Math.cos(c.yaw), P = CARP;
   const q = Q.tree < 0.7 ? 0.6 : 1;
   if (Rally.phase !== 'grid' && !c.air && sp > 3) {
-    const loose = c.surf.loose || 0.3, slide = c.drifting ? 2 : 1, thr = 0.5 + 0.5 * c.thr, rate = sp * (1.6 + 4 * loose) * slide * thr * q;
+    const loose = c.surf.loose || 0.3, slide = c.drifting ? 2 : 1, thr = 0.5 + 0.5 * c.thr, rate = sp * (2.4 + 6 * loose) * slide * (0.6 + 0.4 * thr) * q;
     let n = rate * dt; n = Math.floor(n) + (Math.random() < n - Math.floor(n) ? 1 : 0);
     for (let i = 0; i < n; i++) {
       const side = Math.random() < 0.5 ? -1 : 1, front = Math.random() < 0.18, zz = front ? P.a : -P.b, lx = side * P.track / 2, x = c.x + s * zz + co * lx, z = c.z + co * zz - s * lx;
-      Rally.puff(x, c.y + 0.12, z, -c.vx * 0.22 + (Math.random() - 0.5) * 2.4, 0.6 + Math.random() * 1.3 + sp * 0.02, -c.vz * 0.22 + (Math.random() - 0.5) * 2.4, 1.3 + Math.random() * 1.7, 0.7 + Math.random() * 0.5, 3.4 + Math.random() * 2.4, 0.26 + 0.2 * loose);
+      Rally.puff(x, c.y + 0.12, z, -c.vx * 0.22 + (Math.random() - 0.5) * 2.4, 0.6 + Math.random() * 1.3 + sp * 0.02, -c.vz * 0.22 + (Math.random() - 0.5) * 2.4, 1.6 + Math.random() * 2.0, 0.9 + Math.random() * 0.7, 4.2 + Math.random() * 3.2, 0.4 + 0.3 * loose);
     }
     /* gravel thrown out behind the driven wheels */
     let g = (sp * 0.7 * loose * slide * thr * q) * dt * 40; g = Math.floor(g) + (Math.random() < g - Math.floor(g) ? 1 : 0);
@@ -21091,6 +21091,7 @@ function _rygGroundMat() {
       flo = mix(shoulder, flo, smoothstep(0.5, 5.0, e_));
       float t_ = smoothstep(-0.2, 0.9, e_);
       vec3 alb = mix(road, flo, t_) * (1.0 - 0.3 * smoothstep(8.0, 46.0, e_));
+      alb = mix(alb, vec3(0.05, 0.085, 0.045), smoothstep(34.0, 96.0, e_) * 0.88);   /* the far hillside under the haze reads as dark conifer forest, not a pale cut-off slab */
       alb = mix(alb, alb * vec3(0.55, 0.5, 0.47), uWet * (1.0 - t_) * 0.6);
       diffuseColor.rgb *= pow(alb, vec3(2.2));
       float hg_ = (n2 - 0.5) * 0.55 + (n4 - 0.5) * 0.35 + (n5 - 0.5) * 0.2 - rut_ * 0.9 + berm_ * 0.5 * n3;
@@ -21346,7 +21347,7 @@ RYG.buildRocks = function (group) {
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0), col = new THREE.Color();
   for (const v in by) {
     const list = by[v], src = TREE.rock[v], mesh = new THREE.InstancedMesh(src.g, RYG.mats.wood, list.length);
-    for (let i = 0; i < list.length; i++) { const r = list[i], y = RY.heightAt(r.x, r.z); q.setFromAxisAngle(up, r.rot); p.set(r.x, y + 0.05 * r.sc, r.z); s.set(r.sc * 1.25, r.sc * 1.1, r.sc * 1.25); m4.compose(p, q, s); mesh.setMatrixAt(i, m4); const k = 0.85 + 0.3 * ((r.rot * 3) % 1); col.setRGB(k, k, k); mesh.setColorAt(i, col); }
+    for (let i = 0; i < list.length; i++) { const r = list[i], y = RY.heightAt(r.x, r.z); q.setFromAxisAngle(up, r.rot); p.set(r.x, y + 0.05 * r.sc, r.z); s.set(r.sc * 1.25, r.sc * 1.1, r.sc * 1.25); m4.compose(p, q, s); mesh.setMatrixAt(i, m4); const k = 0.85 + 0.3 * ((r.rot * 3) % 1); col.setRGB(k * 0.66, k * 0.62, k * 0.56); mesh.setColorAt(i, col); }
     mesh.instanceMatrix.needsUpdate = true; mesh.instanceColor.needsUpdate = true; mesh.frustumCulled = false; mesh.castShadow = true; mesh.receiveShadow = true; group.add(mesh); RYG.rocks.push(mesh);
   }
 };

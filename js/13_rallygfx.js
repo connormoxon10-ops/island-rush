@@ -56,6 +56,7 @@ function _rygGroundMat() {
       flo = mix(shoulder, flo, smoothstep(0.5, 5.0, e_));
       float t_ = smoothstep(-0.2, 0.9, e_);
       vec3 alb = mix(road, flo, t_) * (1.0 - 0.3 * smoothstep(8.0, 46.0, e_));
+      alb = mix(alb, vec3(0.05, 0.085, 0.045), smoothstep(34.0, 96.0, e_) * 0.88);   /* the far hillside under the haze reads as dark conifer forest, not a pale cut-off slab */
       alb = mix(alb, alb * vec3(0.55, 0.5, 0.47), uWet * (1.0 - t_) * 0.6);
       diffuseColor.rgb *= pow(alb, vec3(2.2));
       float hg_ = (n2 - 0.5) * 0.55 + (n4 - 0.5) * 0.35 + (n5 - 0.5) * 0.2 - rut_ * 0.9 + berm_ * 0.5 * n3;
@@ -311,7 +312,7 @@ RYG.buildRocks = function (group) {
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0), col = new THREE.Color();
   for (const v in by) {
     const list = by[v], src = TREE.rock[v], mesh = new THREE.InstancedMesh(src.g, RYG.mats.wood, list.length);
-    for (let i = 0; i < list.length; i++) { const r = list[i], y = RY.heightAt(r.x, r.z); q.setFromAxisAngle(up, r.rot); p.set(r.x, y + 0.05 * r.sc, r.z); s.set(r.sc * 1.25, r.sc * 1.1, r.sc * 1.25); m4.compose(p, q, s); mesh.setMatrixAt(i, m4); const k = 0.85 + 0.3 * ((r.rot * 3) % 1); col.setRGB(k, k, k); mesh.setColorAt(i, col); }
+    for (let i = 0; i < list.length; i++) { const r = list[i], y = RY.heightAt(r.x, r.z); q.setFromAxisAngle(up, r.rot); p.set(r.x, y + 0.05 * r.sc, r.z); s.set(r.sc * 1.25, r.sc * 1.1, r.sc * 1.25); m4.compose(p, q, s); mesh.setMatrixAt(i, m4); const k = 0.85 + 0.3 * ((r.rot * 3) % 1); col.setRGB(k * 0.66, k * 0.62, k * 0.56); mesh.setColorAt(i, col); }
     mesh.instanceMatrix.needsUpdate = true; mesh.instanceColor.needsUpdate = true; mesh.frustumCulled = false; mesh.castShadow = true; mesh.receiveShadow = true; group.add(mesh); RYG.rocks.push(mesh);
   }
 };
