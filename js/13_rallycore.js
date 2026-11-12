@@ -41,7 +41,7 @@ const RY_CAMB = {
 const RY_RAILS = [
   { e: 3, at: 0, len: 190, side: -1, k: 'rock', h: 4.2, gap: 1.3 },     /* the esses: a rock face down the right */
   { e: 7, at: 0, len: 84, side: 1, k: 'stone', h: 1.5, gap: 0.9 },      /* outside of the tight right: stone retaining wall */
-  { e: 9, at: 0, len: 82, side: 1, k: 'rock', h: 4.6, gap: 1.6 },       /* inside of the left hairpin: cut into the hill */
+  { e: 9, at: 12, len: 66, side: 1, k: 'rock', h: 4.6, gap: 1.6 },       /* inside of the left hairpin: cut into the hill */
   { e: 15, at: 4, len: 122, side: 0, k: 'rock', h: 5.4, gap: 1.5 },     /* the gorge: rock both sides */
   { e: 18, at: 8, len: 150, side: 1, k: 'stone', h: 1.25, gap: 1.0 },   /* long fast right: wall along the outside */
   { e: 19, at: 0, len: 134, side: -1, k: 'rock', h: 4.0, gap: 1.4 },    /* into the right hairpin */
@@ -114,8 +114,8 @@ const RY_RAIL_T = { rock: 2.4, stone: 0.8 };      /* how thick each kind of wall
    and the lip of a berm along the outer edge (lip > 0 lifts the left edge, lip < 0 the right) */
 RY.cross = function (l, hw, bank, crown, lip) {
   const u = l / hw; let h = -bank * l - crown * u * u;
-  if (lip > 0 && u > 0.35) { const t = (u - 0.35) / 0.65; h += lip * t * t * (1 + 0.5 * t); }
-  else if (lip < 0 && u < -0.35) { const t = (-u - 0.35) / 0.65; h += -lip * t * t * (1 + 0.5 * t); }
+  if (lip > 0 && u > 0.35) { const t = (u - 0.35) / 0.65; h += lip * t * t * (1 + 0.25 * t); }
+  else if (lip < 0 && u < -0.35) { const t = (-u - 0.35) / 0.65; h += -lip * t * t * (1 + 0.25 * t); }
   return h;
 };
 RY.sections = function () {

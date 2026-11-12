@@ -126,10 +126,10 @@ function _rygRockMat(stone) {
       float str_ = 0.5 + 0.5 * sin(vWp.y * 4.6 + nA_ * 3.4 + nB_ * 1.2);
       mul_ = vec3(0.74 + 0.5 * nB_) * mix(0.78, 1.14, str_) * (0.85 + 0.3 * nC_);
       mul_ *= mix(vec3(1.0), vec3(1.12, 0.98, 0.84), smoothstep(0.55, 0.8, nA_) * 0.6);
-      hg_ = (nA_ - 0.5) * 1.1 + (nB_ - 0.5) * 0.8 + (nC_ - 0.5) * 0.45 + (nD_ - 0.5) * 0.2 - smoothstep(0.62, 0.7, str_) * 0.25;`}
+      hg_ = (nA_ - 0.5) * 1.1 + (nB_ - 0.5) * 0.8 + (nC_ - 0.5) * 0.3 - smoothstep(0.62, 0.7, str_) * 0.25; mul_ *= 0.9 + 0.2 * nD_;`}
       diffuseColor.rgb = mix(diffuseColor.rgb * mul_, vec3(0.045, 0.075, 0.025) * (0.6 + 0.8 * nC_), moss_ * 0.55);`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
-      normal = perturbN_(-vViewPosition, normal, vec2(dFdx(hg_), dFdy(hg_)) * ${stone ? '0.1' : '0.14'} * (1.0 - smoothstep(18.0, 80.0, length(vViewPosition))), faceDirection);`);
+      normal = perturbN_(-vViewPosition, normal, vec2(dFdx(hg_), dFdy(hg_)) * ${stone ? '0.1' : '0.085'} * (1.0 - smoothstep(14.0, 60.0, length(vViewPosition))), faceDirection);`);
   };
   return m;
 }
@@ -403,7 +403,7 @@ RYG.buildRails = function (group) {
         grid.push(row);
       }
       /* colours: strata darkening toward the foot, sun-bleached facets near the top; stone is one even tone (the shader lays the courses) */
-      const colFor = (c, r, t) => { const v = hash(ri, c * 3 + t, r + sid * 5); if (!rock) return [0.2 + 0.03 * v, 0.19 + 0.03 * v, 0.17 + 0.03 * v]; const g = 0.1 + 0.07 * v + 0.05 * F[r]; return [g * 1.04, g * 0.98, g * 0.9]; };
+      const colFor = (c, r, t) => { const v = hash(ri, c * 3 + t, r + sid * 5); if (!rock) return [0.215 + 0.04 * v, 0.2 + 0.04 * v, 0.17 + 0.04 * v]; const g = 0.17 + 0.09 * v + 0.07 * F[r]; return [g * 1.16, g * 1.0, g * 0.8]; };
       for (let c = 0; c < n; c++) for (let r = 0; r < NR - 1; r++) {
         const a = grid[c][r], b = grid[c + 1][r], d = grid[c + 1][r + 1], e = grid[c][r + 1];
         const uvf = (p, k) => [cols[k].u, p[1]];

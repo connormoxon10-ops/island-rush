@@ -1,6 +1,6 @@
 /* rally stage model checks: geometry, height profile, ground queries, forest, walls */
 const load = require('./ryt.js');
-const { RY, RY_ELEMS, RY_SURF } = load();
+const { RY, RY_ELEMS, RY_SURF, RY_CAMB, RY_RAILS, RY_WALLS } = load();
 let fails = 0; const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console.log('ok  ', m); };
 const t0 = Date.now(); RY.build(1); console.log('built in', Date.now() - t0, 'ms');
 console.log('length', RY.L.toFixed(0), 'm, samples', RY.N, ', grid', RY.gw + 'x' + RY.gh, ', trees', RY.trees.length, ', understory', RY.under.length, ', rocks', RY.rocks.length);
@@ -50,6 +50,60 @@ ok(RY.maxSlope < 0.4, 'road gradient stays sane (max ' + RY.maxSlope.toFixed(3) 
     for (let k = 0; k < 24; k++) { const a = RY.startS + k * 150, b = Math.min(RY.finishS, a + 150); if (a >= RY.finishS) break; if (RY.feats.some((f) => b > f.s0 - 60 && a < featEnd(f))) continue; fly(v, a, b, stOut); }
     ok(stOut.n > 3000 && stOut.air / stOut.n < 0.01, 'only ' + (100 * stOut.air / stOut.n).toFixed(2) + '% of the time in the air away from features at ' + v + ' m/s (over ' + stOut.n + ' steps)');
   }
+}
+/* ---- camber: bends are banked or off-camber, straights crowned/dished/cross-falling, all flat at the jumps and gates ---- */
+{
+  let bmin = 9, bmax = -9, cmin = 9, cmax = -9, rate = 0; for (let i = 0; i < RY.N; i++) { bmin = Math.min(bmin, RY.bank[i]); bmax = Math.max(bmax, RY.bank[i]); cmin = Math.min(cmin, RY.crown[i]); cmax = Math.max(cmax, RY.crown[i]); if (i) rate = Math.max(rate, Math.abs(RY.bank[i] - RY.bank[i - 1]) / RY.DS); }
+  console.log('cross-fall', bmin.toFixed(2), '..', bmax.toFixed(2), ', crown', cmin.toFixed(2), '..', cmax.toFixed(2), ', fastest change', rate.toFixed(3), '/m');
+  ok(bmax > 0.3 && bmin < -0.3, 'banks reach 17 degrees both ways (' + bmin.toFixed(2) + ' .. ' + bmax.toFixed(2) + ')');
+  ok(Math.max(Math.abs(bmin), bmax) <= 0.4, 'no bank steeper than 0.4');
+  ok(cmin < -0.03 && cmax > 0.25, 'the crown varies from dished (' + cmin.toFixed(2) + ') to heavily crowned (' + cmax.toFixed(2) + ')');
+  ok(rate < 0.04, 'the camber never changes faster than 0.04 per metre (' + rate.toFixed(3) + ')');
+  /* every banked bend leans into the turn, every off-camber bend away from it, measured at the apex */
+  for (const e of Object.keys(RY_CAMB)) {
+    const el = RY_ELEMS[e], i = Math.round((RY.starts[e] + el[1] / 2) / RY.DS), left = el[2] > 0, b = RY_CAMB[e].b;
+    const q = RY.at(RY.starts[e] + el[1] / 2, 0, {}), a = RY.at(q.s, RY.hw[i] - 0.3, {}), c = RY.at(q.s, -(RY.hw[i] - 0.3), {}), ha = RY.heightAt(a.x, a.z), hc = RY.heightAt(c.x, c.z);
+    const outsideHigher = left ? hc > ha : ha > hc;   /* left bend: the outside is the right-hand edge */
+    ok(outsideHigher === (b > 0), 'bend ' + e + ' (' + (left ? 'left' : 'right') + ') is ' + (b > 0 ? 'banked into the turn' : 'off-camber') + ' (' + (ha - hc).toFixed(2) + ' m left edge over right)');
+  }
+  /* flat where the car leaves the ground straight: 16 m before a jump's kicker to its landing, 8 m either side of every plank gate */
+  let worst = 0;
+  for (const f of RY.feats) if (f.k === 'jump') for (let s = f.s0 - f.up; s < f.s0 + f.down + 6; s += 2) { const i = Math.round(s / RY.DS); worst = Math.max(worst, Math.abs(RY.bank[i]), Math.abs(RY.crown[i]) * 3, Math.abs(RY.lip[i])); }
+  for (const w of RY.walls) for (let s = w.s - 8; s < w.s + 8; s += 2) { const i = Math.round(s / RY.DS); worst = Math.max(worst, Math.abs(RY.bank[i]), Math.abs(RY.crown[i]) * 3, Math.abs(RY.lip[i])); }
+  ok(worst < 0.012, 'jumps and plank gates are on flat, uncrowned road (worst ' + worst.toFixed(4) + ')');
+  /* the baked ground follows the cross-section across the whole width, lip included */
+  let me = 0, at = 0; const g = {};
+  for (let s = 90; s < RY.L - 90; s += 9) { const i = Math.round(s / RY.DS); for (let l = -RY.hw[i] + 0.4; l <= RY.hw[i] - 0.4; l += 1.3) { const q = RY.at(s, l, {}); RY.ground(q.x, q.z, g); const j = Math.min(RY.N - 2, Math.floor(s / RY.DS)), fr = s / RY.DS - j; const py = RY.py[j] * (1 - fr) + RY.py[j + 1] * fr, hw = RY.hw[j] * (1 - fr) + RY.hw[j + 1] * fr, bk = RY.bank[j] * (1 - fr) + RY.bank[j + 1] * fr, cr = RY.crown[j] * (1 - fr) + RY.crown[j + 1] * fr, lp = RY.lip[j] * (1 - fr) + RY.lip[j + 1] * fr; const want = py + RY.cross(l, hw, bk, cr, lp); if (Math.abs(g.h - want) > me) { me = Math.abs(g.h - want); at = s; } } }
+  ok(me < 0.3, 'baked ground matches the road cross-section across the full width, berm lips included (worst ' + me.toFixed(3) + ' m at s=' + at.toFixed(0) + ')');
+  /* no steep step across the drivable width (road plus shoulder up to a wall face): steepest slope between points 0.5 m apart */
+  let steep = 0, sat = 0; for (let s = 90; s < RY.L - 90; s += 5) { const i = Math.round(s / RY.DS), lim = RY.hw[i] + 1.2; let prev = null; for (let l = -lim; l <= lim; l += 0.5) { const q = RY.at(s, l, {}); const h = RY.heightAt(q.x, q.z); if (prev !== null && Math.abs(h - prev) / 0.5 > steep) { steep = Math.abs(h - prev) / 0.5; sat = s; } prev = h; } }
+  ok(steep < 1.35, 'steepest cross slope on the road and shoulder is ' + steep.toFixed(2) + ' (s=' + sat.toFixed(0) + ')');
+}
+/* ---- rock faces and stone walls ---- */
+{
+  const out = []; let bad = 0;
+  for (const rl of RY_RAILS) {
+    const sM = RY.starts[rl.e] + rl.at + rl.len / 2, i = Math.round(sM / RY.DS);
+    for (const side of rl.side === 0 ? [1, -1] : [rl.side]) {
+      const gap = rl.gap, hw = RY.hw[i], q = RY.at(sM, side * (hw + gap + 0.2), {});
+      RY.hits(q.x, q.z, 0.8, out); const hit = out.find((h) => h.rail);
+      const q2 = RY.at(sM, side * (hw + gap - 1.4), {}); RY.hits(q2.x, q2.z, 0.8, out); const miss = out.find((h) => h.rail);
+      /* the push-back points across the road, toward the centre line */
+      const lx = hit ? hit.nx * RY.cz[i] - hit.nz * RY.cx[i] : 0;
+      if (!hit || miss || lx * side > -0.9) { bad++; console.log('  wall e' + rl.e + ' side ' + side + ': hit ' + !!hit + ' miss-clear ' + !miss + ' normal-across ' + lx.toFixed(2)); }
+    }
+    /* nothing grows inside the wall's footprint and the jumps and gates are far away */
+    for (const f of RY.feats) if (f.k === 'jump' && f.s0 + f.down + f.land > RY.starts[rl.e] + rl.at - 20 && f.s0 - f.up < RY.starts[rl.e] + rl.at + rl.len + 20) { bad++; console.log('  wall at e' + rl.e + ' is within 20 m of a jump'); }
+    for (const w of RY.walls) if (w.s > RY.starts[rl.e] + rl.at - 30 && w.s < RY.starts[rl.e] + rl.at + rl.len + 20) { bad++; console.log('  wall at e' + rl.e + ' is within 30 m of a plank gate'); }
+  }
+  ok(bad === 0, 'every rock face and stone wall is solid at its face, open on the road side, pushes across the road and keeps clear of the jumps and gates');
+  let inside = 0; for (const t of RY.trees) { const o = RY.nearest(t.x, t.z, -1, 0, {}); const side = o.l > 0 ? RY.rails.L : RY.rails.R; if (o.d - RY.hw[o.i] < side.band[o.i]) inside++; }
+  ok(inside === 0, 'no tree stands in a wall footprint (' + inside + ' found)');
+  /* behind a rock face the hillside climbs above its top; behind a stone wall it does not change */
+  for (const rl of RY_RAILS) {
+    const sM = RY.starts[rl.e] + rl.at + rl.len / 2, i = Math.round(sM / RY.DS), side = rl.side === 0 ? 1 : rl.side, hw = RY.hw[i], face = RY.at(sM, side * (hw + rl.gap - 0.3), {}), back = RY.at(sM, side * (hw + rl.gap + 9), {});
+    const rise = RY.heightAt(back.x, back.z) - RY.heightAt(face.x, face.z);
+    if (rl.k === 'rock') ok(rise > rl.h * 0.85, 'e' + rl.e + ' rock cutting: the hillside 9 m behind the face stands ' + rise.toFixed(1) + ' m above the verge (face ' + rl.h + ' m)'); }
 }
 /* plank walls are for speed: each one sits on a straight with a clear run-up (no bend in the 70 m before it or the 20 m after) and clear of jumps */
 for (const w of RY.walls) {

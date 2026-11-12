@@ -20379,7 +20379,7 @@ const _ryCar = { x: 0, y: 0, z: 0, yaw: 0, vx: 0, vz: 0, L: 4, W: 1.9 }, _ryLoc 
 /* ---------------- physics hooks ---------------- */
 Rally.collide = function (c, px, pz, R, P) {
   RY.hits(px, pz, R, _ryH);
-  for (let i = 0; i < _ryH.length; i++) { const h = _ryH[i]; contact(c, px, pz, h.nx, h.nz, h.pen, 0, 0, P); if (h.rail && h.pen > (c.rail || 0)) c.rail = h.pen; }   /* a wall in the way: stepCar scrapes speed off while it lasts */
+  for (let i = 0; i < _ryH.length; i++) { const h = _ryH[i]; contact(c, px, pz, h.nx, h.nz, h.pen, 0, 0, P); if (h.rail && h.pen > (c.rail || 0)) { c.rail = h.pen; c.railX = px - h.nx * R; c.railZ = pz - h.nz * R; } }   /* a wall in the way: stepCar scrapes speed off while it lasts (and the effects pass throws stone dust from the contact point) */
   const sim = Rally.sim; if (!sim) return;
   for (const G of sim.walls) {
     const gx = px - G.x, gz = pz - G.z; if (gx * gx + gz * gz > 144) continue;
@@ -20448,6 +20448,18 @@ Rally.fx = function (dt) {
     for (let i = 0; i < g; i++) { const side = Math.random() < 0.5 ? -1 : 1, x = c.x - s * P.b + co * side * P.track / 2, z = c.z - co * P.b - s * side * P.track / 2; Rally.chip(x, c.y + 0.1, z, -c.vx * 0.5 + (Math.random() - 0.5) * 4, 2 + Math.random() * 4, -c.vz * 0.5 + (Math.random() - 0.5) * 4, false); }
     /* kicked-up leaves on the forest road */
     if (Math.random() < dt * sp * 0.5 * q) { const side = Math.random() < 0.5 ? -1 : 1, x = c.x - s * 1.5 + co * side * 0.9, z = c.z - co * 1.5 - s * side * 0.9, l = Math.random(), r = l < 0.4 ? 0.7 : l < 0.7 ? 0.8 : 0.35, g2 = l < 0.4 ? 0.35 : l < 0.7 ? 0.55 : 0.5, b = l < 0.4 ? 0.1 : l < 0.7 ? 0.12 : 0.1; emit(RYP.leaf, x, c.y + 0.2, z, -c.vx * 0.2 + (Math.random() - 0.5) * 3, 1.5 + Math.random() * 3, -c.vz * 0.2 + (Math.random() - 0.5) * 3, 1.6 + Math.random(), 0.1, 0, r, g2, b, 1, 2.5); }
+  }
+  /* scraping a rock face or stone wall: grey dust and stone chips from the contact point, in proportion to the speed */
+  if (c.railFx > 0) {
+    if (c.railFx > 3 && !c.air) {
+      let n = c.railFx * 1.4 * dt * q; n = Math.floor(n) + (Math.random() < n - Math.floor(n) ? 1 : 0);
+      for (let i = 0; i < n; i++) {
+        const k = 0.8 + Math.random() * 0.4, up = 0.4 + Math.random() * 1.8;
+        emit(RYP.dust, c.railX + (Math.random() - 0.5) * 2.2 * s, c.y + 0.3 + Math.random() * 0.6, c.railZ + (Math.random() - 0.5) * 2.2 * co, c.vx * 0.3 + (Math.random() - 0.5) * 2, up, c.vz * 0.3 + (Math.random() - 0.5) * 2, 0.9 + Math.random() * 1.3, 0.6 + Math.random() * 0.5, 2.6 + Math.random() * 2, 0.5 * k, 0.48 * k, 0.45 * k, 0.5, -0.2);
+        if (Math.random() < 0.6) emit(RYP.grit, c.railX, c.y + 0.4, c.railZ, c.vx * 0.5 + (Math.random() - 0.5) * 5, 1 + Math.random() * 4, c.vz * 0.5 + (Math.random() - 0.5) * 5, 0.5 + Math.random() * 0.6, 0.06 + Math.random() * 0.05, 0, 0.6 * k, 0.57 * k, 0.52 * k, 1, 12);
+      }
+    }
+    c.railFx = 0;
   }
   /* ambient: leaves drifting down through the shafts around the car */
   if (Math.random() < dt * 5 * q) { const a = Math.random() * TAU, d = 4 + Math.random() * 22, l = Math.random(); emit(RYP.leaf, c.x + Math.sin(a) * d, c.y + 5 + Math.random() * 9, c.z + Math.cos(a) * d, (Math.random() - 0.5) * 1.5, -0.5 - Math.random() * 0.4, (Math.random() - 0.5) * 1.5, 7 + Math.random() * 5, 0.1, 0, l < 0.4 ? 0.62 : 0.3, l < 0.4 ? 0.42 : 0.5, 0.1, 0.9, 0.04); }
@@ -20523,7 +20535,7 @@ const RY_CSS = `
 #ryBar i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#ffb02e,#ff5a1f);border-radius:3px}
 #ryBar u{position:absolute;top:-4px;width:2px;height:14px;background:#fff;opacity:.8}
 #ryNote{position:absolute;left:50%;top:calc(112px + env(safe-area-inset-top));transform:translateX(-50%);display:flex;align-items:center;gap:14px;padding:8px 20px;background:rgba(6,10,14,.55);border-left:4px solid #ffb02e;border-radius:3px;min-width:240px;justify-content:center;transition:border-color .2s}
-#ryNote .g{font-size:34px;line-height:1;width:40px;text-align:center}#ryNote b{font-size:30px;letter-spacing:.06em;font-weight:700}#ryNote span{font-size:22px;opacity:.85;font-variant-numeric:tabular-nums}
+#ryNote .g{font-size:34px;line-height:1;width:40px;text-align:center}#ryNote b{font-size:30px;letter-spacing:.06em;font-weight:700}#ryNote span{font-size:22px;opacity:.85;font-variant-numeric:tabular-nums}@media(min-width:701px){#ryNote b,#ryNote span{white-space:nowrap}}
 #ryNote.s1,#ryNote.s2{border-color:#ff3b3b}#ryNote.s3{border-color:#ff8a1f}#ryNote.s4{border-color:#ffd02e}#ryNote.s5,#ryNote.s6{border-color:#5dff8a}#ryNote.jump{border-color:#4fc3ff}#ryNote.wall{border-color:#ff7a1f;background:rgba(60,18,6,.6)}
 #ryNote2{position:absolute;left:50%;top:calc(170px + env(safe-area-inset-top));transform:translateX(-50%);font-size:18px;opacity:.75;letter-spacing:.08em}
 #ryBig{position:absolute;left:0;right:0;top:36%;text-align:center;font-size:54px;letter-spacing:.1em;opacity:0;font-weight:700}
@@ -20776,7 +20788,7 @@ const RY_CAMB = {
 const RY_RAILS = [
   { e: 3, at: 0, len: 190, side: -1, k: 'rock', h: 4.2, gap: 1.3 },     /* the esses: a rock face down the right */
   { e: 7, at: 0, len: 84, side: 1, k: 'stone', h: 1.5, gap: 0.9 },      /* outside of the tight right: stone retaining wall */
-  { e: 9, at: 0, len: 82, side: 1, k: 'rock', h: 4.6, gap: 1.6 },       /* inside of the left hairpin: cut into the hill */
+  { e: 9, at: 12, len: 66, side: 1, k: 'rock', h: 4.6, gap: 1.6 },       /* inside of the left hairpin: cut into the hill */
   { e: 15, at: 4, len: 122, side: 0, k: 'rock', h: 5.4, gap: 1.5 },     /* the gorge: rock both sides */
   { e: 18, at: 8, len: 150, side: 1, k: 'stone', h: 1.25, gap: 1.0 },   /* long fast right: wall along the outside */
   { e: 19, at: 0, len: 134, side: -1, k: 'rock', h: 4.0, gap: 1.4 },    /* into the right hairpin */
@@ -20849,8 +20861,8 @@ const RY_RAIL_T = { rock: 2.4, stone: 0.8 };      /* how thick each kind of wall
    and the lip of a berm along the outer edge (lip > 0 lifts the left edge, lip < 0 the right) */
 RY.cross = function (l, hw, bank, crown, lip) {
   const u = l / hw; let h = -bank * l - crown * u * u;
-  if (lip > 0 && u > 0.35) { const t = (u - 0.35) / 0.65; h += lip * t * t * (1 + 0.5 * t); }
-  else if (lip < 0 && u < -0.35) { const t = (-u - 0.35) / 0.65; h += -lip * t * t * (1 + 0.5 * t); }
+  if (lip > 0 && u > 0.35) { const t = (u - 0.35) / 0.65; h += lip * t * t * (1 + 0.25 * t); }
+  else if (lip < 0 && u < -0.35) { const t = (-u - 0.35) / 0.65; h += -lip * t * t * (1 + 0.25 * t); }
   return h;
 };
 RY.sections = function () {
@@ -21270,10 +21282,10 @@ function _rygRockMat(stone) {
       float str_ = 0.5 + 0.5 * sin(vWp.y * 4.6 + nA_ * 3.4 + nB_ * 1.2);
       mul_ = vec3(0.74 + 0.5 * nB_) * mix(0.78, 1.14, str_) * (0.85 + 0.3 * nC_);
       mul_ *= mix(vec3(1.0), vec3(1.12, 0.98, 0.84), smoothstep(0.55, 0.8, nA_) * 0.6);
-      hg_ = (nA_ - 0.5) * 1.1 + (nB_ - 0.5) * 0.8 + (nC_ - 0.5) * 0.45 + (nD_ - 0.5) * 0.2 - smoothstep(0.62, 0.7, str_) * 0.25;`}
+      hg_ = (nA_ - 0.5) * 1.1 + (nB_ - 0.5) * 0.8 + (nC_ - 0.5) * 0.3 - smoothstep(0.62, 0.7, str_) * 0.25; mul_ *= 0.9 + 0.2 * nD_;`}
       diffuseColor.rgb = mix(diffuseColor.rgb * mul_, vec3(0.045, 0.075, 0.025) * (0.6 + 0.8 * nC_), moss_ * 0.55);`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
-      normal = perturbN_(-vViewPosition, normal, vec2(dFdx(hg_), dFdy(hg_)) * ${stone ? '0.1' : '0.14'} * (1.0 - smoothstep(18.0, 80.0, length(vViewPosition))), faceDirection);`);
+      normal = perturbN_(-vViewPosition, normal, vec2(dFdx(hg_), dFdy(hg_)) * ${stone ? '0.1' : '0.085'} * (1.0 - smoothstep(14.0, 60.0, length(vViewPosition))), faceDirection);`);
   };
   return m;
 }
@@ -21547,7 +21559,7 @@ RYG.buildRails = function (group) {
         grid.push(row);
       }
       /* colours: strata darkening toward the foot, sun-bleached facets near the top; stone is one even tone (the shader lays the courses) */
-      const colFor = (c, r, t) => { const v = hash(ri, c * 3 + t, r + sid * 5); if (!rock) return [0.2 + 0.03 * v, 0.19 + 0.03 * v, 0.17 + 0.03 * v]; const g = 0.1 + 0.07 * v + 0.05 * F[r]; return [g * 1.04, g * 0.98, g * 0.9]; };
+      const colFor = (c, r, t) => { const v = hash(ri, c * 3 + t, r + sid * 5); if (!rock) return [0.215 + 0.04 * v, 0.2 + 0.04 * v, 0.17 + 0.04 * v]; const g = 0.17 + 0.09 * v + 0.07 * F[r]; return [g * 1.16, g * 1.0, g * 0.8]; };
       for (let c = 0; c < n; c++) for (let r = 0; r < NR - 1; r++) {
         const a = grid[c][r], b = grid[c + 1][r], d = grid[c + 1][r + 1], e = grid[c][r + 1];
         const uvf = (p, k) => [cols[k].u, p[1]];
