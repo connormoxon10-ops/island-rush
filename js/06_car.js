@@ -47,6 +47,7 @@ function collideStatic(c, P, circ) {
   for (let k = 0; k < 3; k++) {
     const R = circ[k][1]; const px = c.x + s * circ[k][0], pz = c.z + co * circ[k][0];
     if (Rally.on) { Rally.collide(c, px, pz, R, P); continue; }
+    if (Drag.on) { Drag.collide(c, px, pz, R, P); continue; }
     if (Track.s) Track.collide(c, px, pz, R, P);
     const ccx = Math.floor(px / CHUNK), ccz = Math.floor(pz / CHUNK);
     for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
