@@ -42,7 +42,7 @@ Rally.assist = function (c, h, force) {
 /* ---------------- physics hooks ---------------- */
 Rally.collide = function (c, px, pz, R, P) {
   RY.hits(px, pz, R, _ryH);
-  for (let i = 0; i < _ryH.length; i++) { const h = _ryH[i]; contact(c, px, pz, h.nx, h.nz, h.pen, 0, 0, P); if (h.rail && h.pen > (c.rail || 0)) { c.rail = h.pen; c.railX = px - h.nx * R; c.railZ = pz - h.nz * R; } }   /* a wall in the way: stepCar scrapes speed off while it lasts (and the effects pass throws stone dust from the contact point) */
+  for (let i = 0; i < _ryH.length; i++) { const h = _ryH[i]; if (h.pen > 0) contact(c, px, pz, h.nx, h.nz, h.pen, 0, 0, P); if (h.rail && h.pen + 0.1 > (c.rail || 0)) { c.rail = h.pen + 0.1; c.railX = px - h.nx * R; c.railZ = pz - h.nz * R; } }   /* a wall in the way: stepCar scrapes speed off while it lasts (and the effects pass throws stone dust from the contact point) */
   const sim = Rally.sim; if (!sim) return;
   for (const G of sim.walls) {
     const gx = px - G.x, gz = pz - G.z; if (gx * gx + gz * gz > 144) continue;

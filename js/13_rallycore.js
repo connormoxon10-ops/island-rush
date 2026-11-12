@@ -366,7 +366,7 @@ RY.hits = function (px, pz, R, out) {
       for (let k = 0; k < 2; k++) {
         const side = k ? -1 : 1, R_ = k ? RY.rails.R : RY.rails.L; if (Math.min(R_.h[sg], R_.h[sg + 1]) < 0.5) continue;
         const pen = side * A.l + R - (hw + Math.max(R_.g[sg], R_.g[sg + 1]));
-        if (pen > 0) out.push({ nx: -side * tz, nz: side * tx, pen, rail: true });
+        if (pen > -0.12) out.push({ nx: -side * tz, nz: side * tx, pen, rail: true });   /* a hair short of the face still counts, so a car sliding along a wall is scraped (the caller only pushes out of a positive pen) */
       }
     }
   }

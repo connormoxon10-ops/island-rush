@@ -86,7 +86,7 @@ function stepCar(dt, c0, P0, T0, circ0) {
     }
     if (c.rail > 0) {
       const sp = Math.hypot(c.vx, c.vz);
-      if (sp > 0.5) { const dv = Math.min(sp * 0.4, (4 + 14 * Math.min(1, c.rail / 0.35)) * dt); vf -= vf / sp * dv; vr -= vr / sp * dv; c.railFx = sp; }
+      if (sp > 0.5) { const dv = Math.min(sp * 0.4, (5 + 16 * Math.min(1, Math.max(0, c.rail - 0.1) / 0.12)) * dt);   /* c.rail = 0.1 + how far the last collision pass had to push the car out: touching scrapes at 5 m/s^2, pressing in hard at 21 */ vf -= vf / sp * dv; vr -= vr / sp * dv; c.railFx = sp; }
       c.rail = 0;
     }
   }

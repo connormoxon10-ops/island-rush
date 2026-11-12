@@ -18,15 +18,16 @@ const G = path.resolve(__dirname, '../dist/test.html');
   const res = await page.evaluate(async () => {
     const g = window.__game, R = g.Rally, RY = g.RY, car = g.car, out = { rows: [] };
     g.App.mode = 'rlobby'; await R.start();
+    R.assistOn = () => false;   /* this measures the raw tyre model: the driving assist holds the yaw rate whatever the grip, which would swamp the bank */
     const pad = { connected: true, axes: [0, 0], buttons: Array.from({ length: 16 }, () => ({ value: 0, pressed: false })) };
     navigator.getGamepads = () => [pad];
     const realGround = RY.ground, realHits = RY.hits; let cs = 0, cone = false;   /* plane: cs > 0 = the left side is higher by cs per metre. cone: cs > 0 = the circle's outside is higher (banked) */
-    const CX = 7000 + 40, CZ = -7000;
-    RY.ground = (x, z, o) => { realGround(x, z, o); o.h = cone ? 50 + cs * Math.hypot(x - CX, z - CZ) : 50 + cs * (x - 7000); o.mu = 0.84; o.rr = 0.034; o.rough = 0.1; o.road = true; o.loose = 0.2; };
+    const X0 = 7400, Z0 = -7400, CX = X0 + 40, CZ = Z0;   /* well away from the start grid, where the rival cars wait */
+    RY.ground = (x, z, o) => { realGround(x, z, o); o.h = cone ? 50 + cs * Math.hypot(x - CX, z - CZ) : 50 + cs * (x - X0); o.mu = 0.84; o.rr = 0.034; o.rough = 0.1; o.road = true; o.loose = 0.2; };
     RY.hits = (px, pz, r, o) => { o.length = 0; return o; };
     const dt = 1 / 120;
     const run = (slope, steer, v, secs, isCone) => {
-      cs = slope; cone = !!isCone; R.phase = 'run'; R.clock = 0; car.x = 7000; car.z = -7000; car.yaw = 0; car.vx = 0; car.vz = v; car.speed = v; car.w = 0; car.air = false; car.y = RY.heightAt(car.x, car.z) + 0; car.cs = 0; car.ayL = 0; car.steer = 0; car.rail = 0;
+      cs = slope; cone = !!isCone; R.phase = 'run'; R.clock = 0; car.x = X0; car.z = Z0; car.yaw = 0; car.vx = 0; car.vz = v; car.speed = v; car.w = 0; car.air = false; car.y = RY.heightAt(car.x, car.z) + 0; car.cs = 0; car.ayL = 0; car.steer = 0; car.rail = 0;
       let n = 0, ay = 0, na = 0, vs = 0, drift = 0;
       for (; n < secs / dt; n++) {
         pad.axes[0] = -steer; pad.buttons[7].value = Math.abs(car.speed) < v ? 0.8 : 0.25; pad.buttons[6].value = 0;
