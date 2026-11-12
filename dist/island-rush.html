@@ -3119,7 +3119,7 @@ function stepCar(dt, c0, P0, T0, circ0) {
   /* traction limit: the driven axle(s) can only put down mu x their load; AWD shares by load */
   const rdE = clamp(P.awd ? 0.7 * Nr / (Nf + Nr) + 0.3 * P.rd : P.rd, 0.06, 0.94);
   /* traction control: ease off the power as the rear tyres run out of lateral grip (off with the handbrake so drifts still hold) */
-  const tcf = c.hand > 0.5 ? 1 : 1 - 0.7 * sstep(0.5, 0.9, c.utR || 0);
+  const ra = Rally.on && Rally.assistOn(), tcf = c.hand > 0.5 ? 1 : 1 - (ra ? 0.88 : 0.7) * (ra ? sstep(0.3, 0.7, c.utR || 0) : sstep(0.5, 0.9, c.utR || 0));   /* the rally stage's driving assist cuts power earlier and harder */
   const FmaxRaw = 0.93 * Math.min(mu * Nr / rdE, mu * Nf / (1 - rdE)), Fmax = FmaxRaw * tcf;
   const fbf = clamp(Nf / (Nf + Nr) + 0.05, 0.3, 0.8);
   let F = 0, Fb = 0;
@@ -20183,7 +20183,7 @@ function readControls(dt) {
   if (devOn('free')) { th = 0; br = 0; hand = 0; st = 0; nit = false; }
   if (GAR.edit) { th = 0; br = 1; hand = 1; st = 0; nit = false; }
   const spd = Math.abs(c.speed);
-  const rate = analog || TouchIn.l || TouchIn.r ? 5 : lerp(3.4, 1.7, clamp(spd / 40, 0, 1)) * (Math.sign(st) !== Math.sign(c.steer) && c.steer !== 0 ? 1.7 : 1) * (st === 0 ? 1.5 : 1);
+  const rate = (analog || TouchIn.l || TouchIn.r ? 5 : lerp(3.4, 1.7, clamp(spd / 40, 0, 1)) * (Math.sign(st) !== Math.sign(c.steer) && c.steer !== 0 ? 1.7 : 1) * (st === 0 ? 1.5 : 1)) * (Rally.on && Rally.assistOn() ? 1.8 : 1);   /* quicker wheel on the rally stage */
   c.steerIn = clamp(st, -1, 1); c.steer = approach(c.steer, c.steerIn, rate * dt);
   c.thr = approach(c.thr, th, (th > c.thr ? 5 : 9) * dt); c.brk = approach(c.brk, br, (br > c.brk ? 7 : 12) * dt);
   c.hand = hand; c.nit = nit; Cam.back = back;
@@ -20357,8 +20357,28 @@ const RY_TODS = [
 ];
 const RY_MEDAL = [1.15, 0.97, 0.88];   /* bronze, silver, gold as a share of par */
 const RY_DUST = [[0.66, 0.5, 0.33], [0.66, 0.62, 0.54], [0.24, 0.17, 0.11], [0.82, 0.7, 0.5]];
-const RYP = { dust: null, grit: null, leaf: null, ok: false };
+const RYP = { dust: null, grit: null, ok: false };
 const _ryCar = { x: 0, y: 0, z: 0, yaw: 0, vx: 0, vz: 0, L: 4, W: 1.9 }, _ryLoc = { i: 0, s: 0, d: 0, l: 0 }, _ryH = [], _ryQ = {};
+
+/* ---------------- driving assist ----------------
+   The stock bicycle model is faithful and twitchy: a rally AWD car on loose dirt power-oversteers the moment the wheel moves, and a keyboard driver can not catch it.
+   Hollow Pines therefore runs a stability layer after every car step (Rally.assist, on by default, lobby switch). It does three things:
+   - yaw: pulls the yaw rate toward what the steering angle is asking for (v * tan(delta) / L), so the car turns as much as you steer and no more, and straightens itself when you let go;
+   - sideslip: bleeds off sideways velocity so the tyres 'bite' instead of the car skating, which also kills the snap-spin after a bump or a landing;
+   - power: the traction limiter cuts the engine earlier and harder as the rear tyres run out of grip.
+   The handbrake switches most of it off so flicks and drifts are still yours to throw. In the air only the yaw rate is damped. */
+const RY_CTL = { yaw: 9.0, slide: 3.4, air: 2.2, hand: 0.25, minV: 2.5 };
+Rally.assistOn = function () { return save.rally.assist !== 0; };
+Rally.assist = function (c, h) {
+  if (!Rally.assistOn()) return;
+  if (c.air) { c.w *= Math.max(0, 1 - RY_CTL.air * h); return; }
+  const s = Math.sin(c.yaw), co = Math.cos(c.yaw); let vf = c.vx * s + c.vz * co, vr = c.vx * co - c.vz * s; const spd = Math.abs(vf);
+  if (spd < RY_CTL.minV) return;
+  const k = c.hand > 0.5 ? RY_CTL.hand : 1, wT = vf * Math.tan(c.delta || 0) / CARP.L;
+  c.w += (wT - c.w) * Math.min(1, RY_CTL.yaw * k * h);
+  vr *= 1 - Math.min(1, RY_CTL.slide * k * h);
+  c.vx = vf * s + vr * co; c.vz = vf * co - vr * s;
+};
 
 /* ---------------- physics hooks ---------------- */
 Rally.collide = function (c, px, pz, R, P) {
@@ -20372,6 +20392,7 @@ Rally.collide = function (c, px, pz, R, P) {
 };
 /* every physics sub-step: the car meets the planks, wreckage moves, air time is tracked */
 Rally.sub = function (c, h) {
+  Rally.assist(c, h);
   const sim = Rally.sim; if (!sim) return;
   _ryCar.x = c.x; _ryCar.y = c.y; _ryCar.z = c.z; _ryCar.yaw = c.yaw; _ryCar.vx = c.vx; _ryCar.vz = c.vz; _ryCar.L = CUR.body.L; _ryCar.W = CUR.body.W;
   const took = RW.carStep(sim, _ryCar);
@@ -20393,9 +20414,12 @@ Rally.landed = function (c) {
 };
 
 /* ---------------- effects ---------------- */
+/* soft point sprites: a particle smaller than 4 px is drawn 4 px wide and faded by its area instead of collapsing into a hard 1-2 px square (which the lens fringing turns into a flashing coloured speck) */
+const RY_PT_VS = 'attribute vec4 aCol; attribute float aSize; varying vec4 vC; uniform float uScale; void main(){ vC=aCol; vec4 mv=modelViewMatrix*vec4(position,1.0); vC.a*=smoothstep(2.0,9.0,-mv.z); float px=aSize*uScale/max(0.5,-mv.z); float k=clamp(px/4.0,0.0,1.0); vC.a*=k*k; gl_Position=projectionMatrix*mv; gl_PointSize=max(px,4.0); }';
+function ryPoints(n) { const P = mkPoints(n, THREE.NormalBlending); P.pts.material.vertexShader = RY_PT_VS; return P; }
 function ryInitFx() {
-  if (RYP.ok) return; RYP.dust = mkPoints(1500, THREE.NormalBlending); RYP.grit = mkPoints(420, THREE.NormalBlending); RYP.leaf = mkPoints(500, THREE.NormalBlending);
-  scene.add(RYP.dust.pts, RYP.grit.pts, RYP.leaf.pts); RYP.ok = true;
+  if (RYP.ok) return; RYP.dust = ryPoints(1500); RYP.grit = ryPoints(420);
+  scene.add(RYP.dust.pts, RYP.grit.pts); RYP.ok = true;
 }
 Rally.dustTint = [0.7, 0.62, 0.52];
 Rally.puff = function (x, y, z, vx, vy, vz, life, size, grow, a) {
@@ -20430,13 +20454,9 @@ Rally.fx = function (dt) {
     /* gravel thrown out behind the driven wheels */
     let g = (sp * 0.7 * loose * slide * thr * q) * dt * 40; g = Math.floor(g) + (Math.random() < g - Math.floor(g) ? 1 : 0);
     for (let i = 0; i < g; i++) { const side = Math.random() < 0.5 ? -1 : 1, x = c.x - s * P.b + co * side * P.track / 2, z = c.z - co * P.b - s * side * P.track / 2; Rally.chip(x, c.y + 0.1, z, -c.vx * 0.5 + (Math.random() - 0.5) * 4, 2 + Math.random() * 4, -c.vz * 0.5 + (Math.random() - 0.5) * 4, false); }
-    /* kicked-up leaves on the forest road */
-    if (Math.random() < dt * sp * 0.5 * q) { const side = Math.random() < 0.5 ? -1 : 1, x = c.x - s * 1.5 + co * side * 0.9, z = c.z - co * 1.5 - s * side * 0.9, l = Math.random(), r = l < 0.4 ? 0.7 : l < 0.7 ? 0.8 : 0.35, g2 = l < 0.4 ? 0.35 : l < 0.7 ? 0.55 : 0.5, b = l < 0.4 ? 0.1 : l < 0.7 ? 0.12 : 0.1; emit(RYP.leaf, x, c.y + 0.2, z, -c.vx * 0.2 + (Math.random() - 0.5) * 3, 1.5 + Math.random() * 3, -c.vz * 0.2 + (Math.random() - 0.5) * 3, 1.6 + Math.random(), 0.1, 0, r, g2, b, 1, 2.5); }
   }
-  /* ambient: leaves drifting down through the shafts around the car */
-  if (Math.random() < dt * 5 * q) { const a = Math.random() * TAU, d = 4 + Math.random() * 22, l = Math.random(); emit(RYP.leaf, c.x + Math.sin(a) * d, c.y + 5 + Math.random() * 9, c.z + Math.cos(a) * d, (Math.random() - 0.5) * 1.5, -0.5 - Math.random() * 0.4, (Math.random() - 0.5) * 1.5, 7 + Math.random() * 5, 0.1, 0, l < 0.4 ? 0.62 : 0.3, l < 0.4 ? 0.42 : 0.5, 0.1, 0.9, 0.04); }
-  ryPoolUpdate(RYP.dust, dt); ryPoolUpdate(RYP.grit, dt); ryPoolUpdate(RYP.leaf, dt);
-  const u = 0.5 * (renderer.domElement.height || 720) / Math.tan(camera.fov * DEG / 2); for (const S of [RYP.dust, RYP.grit, RYP.leaf]) S.pts.material.uniforms.uScale.value = u;
+  ryPoolUpdate(RYP.dust, dt); ryPoolUpdate(RYP.grit, dt);
+  const u = 0.5 * (renderer.domElement.height || 720) / Math.tan(camera.fov * DEG / 2); for (const S of [RYP.dust, RYP.grit]) S.pts.material.uniforms.uScale.value = u;
 };
 /* wood sounds */
 Rally.woodSnd = function (kind, sp) {
@@ -20564,6 +20584,7 @@ Rally.paint = function () {
   const par = RY.ready ? RY.par : 3844 / 26.0, med = [par * RY_MEDAL[0], par * RY_MEDAL[1], par * RY_MEDAL[2]].map((v) => fmtLap(v));
   E.rlBody.innerHTML = '<p class="rlp">' + RY_INFO + '</p>' +
     '<div class="rlrow"><label>Light</label>' + seg('tod', RY_TODS.map((t, i) => [i, t.n]), Rally.tod) + '</div>' +
+    '<div class="rlrow"><label>Assist</label>' + seg('assist', [[1, 'On · easy to control'], [0, 'Off · raw physics']], Rally.assistOn() ? 1 : 0) + '</div>' +
     '<div class="rlprize"><small>Medal times</small><span>Bronze <b>' + med[0] + '</b></span><span>Silver <b>' + med[1] + '</b></span><span>Gold <b>' + med[2] + '</b></span></div>' +
     '<div class="rlrec"><span>Runs <b>' + R.runs + '</b></span><span>Best <b>' + fmtLap(R.best) + '</b></span><span>Planks smashed <b>' + R.gates + '</b></span><span>Longest jump <b>' + (R.jump ? Math.round(R.jump) + ' m' : '–') + '</b></span></div>' +
     '<p class="rlp dim">You drive the <b>Ridgeback RS</b>, lent to you for the stage. ' + (TouchIn.on ? 'Use the pedals as normal; hold DRIFT for the handbrake.' : 'W/S throttle and brake, A/D steer, Space handbrake, Shift boost, R resets to the road (+3 s).') + '</p>';
@@ -20573,6 +20594,7 @@ Rally.lobbyClick = function (b) {
   if (a === 'rback') { Rally.lobby = false; Race.paint(); Snd.beep(420, 0.05); }
   else if (a === 'rstart') Rally.start();
   else if (a === 'leave') { Rally.lobby = false; Race.leave(); }
+  else if (b.parentNode && b.parentNode.dataset.k === 'assist') { save.rally.assist = +b.dataset.v; Rally.paint(); Snd.beep(520, 0.04); }
   else if (b.parentNode && b.parentNode.dataset.k === 'tod') { Rally.tod = +b.dataset.v; save.rally.tod = Rally.tod; Rally.paint(); Snd.beep(520, 0.04); }
 };
 Rally.lobbyKey = function (code) { if (code === 'Escape') { Rally.lobby = false; Race.paint(); } else if (code === 'Enter') Rally.start(); };
@@ -20580,7 +20602,7 @@ Rally.lobbyKey = function (code) { if (code === 'Escape') { Rally.lobby = false;
 /* ---------------- start / reset / exit ---------------- */
 Rally.stageDensity = function () { return clamp(Q.tree || 1, 0.5, 1); };
 Rally.hideWorld = function () {
-  Rally.hidden.length = 0; const keep = new Set([Sky.mesh, Part.smoke.pts, Part.spark.pts, car.body, Wheels.group, RYG.group, RYP.dust.pts, RYP.grit.pts, RYP.leaf.pts]);
+  Rally.hidden.length = 0; const keep = new Set([Sky.mesh, Part.smoke.pts, Part.spark.pts, car.body, Wheels.group, RYG.group, RYP.dust.pts, RYP.grit.pts]);
   for (const o of scene.children) { if (o.isLight || keep.has(o) || !o.visible) continue; o.visible = false; Rally.hidden.push(o); }
   if (Chunks.group) Chunks.group.visible = false; if (Far.group) Far.group.visible = false;
 };
@@ -20629,7 +20651,7 @@ Rally.exit = function (quit) {
   Rally.on = false; Rally.phase = 'off'; Rally.sndStop(); E.rres.hidden = true; E.rcount.hidden = true; document.body.classList.remove('rally'); if (Rally.el) Rally.el.root.hidden = true;
   if (RYG.group) RYG.group.visible = false; Rally.showWorld(); MAT.sky.uniforms.uHaze.value = 0;
   const S = Rally.saved; if (S) { save.set.cycle = S.cycle; App.tod = S.tod; applyCar(S.car, true); car.nitro = S.nitro; Cam.view = S.view; loadAround(S.x, S.z, 14); spawnAt(S.x, S.z, S.yaw); car.health = Math.max(car.health, S.health); }
-  if (RYP.ok) for (const P of [RYP.dust, RYP.grit, RYP.leaf]) P.life.fill(0);
+  if (RYP.ok) for (const P of [RYP.dust, RYP.grit]) P.life.fill(0);
   Rally.air = null; scene.fog.density = 0.001; L.sun.intensity = 3; writeSave(); UI.setMode('play');
   UI.toast(quit ? 'Left the stage' : 'Back at the race office', 'info');
 };
@@ -21039,7 +21061,7 @@ RY.build = function (density) {
    turns them into meshes. The forest is the expensive part: ~40k trees are split into 128 m cells, each cell holds one InstancedMesh per tree
    variant, and every frame the cells near the car are drawn with full foliage (and cast shadows) while the ones further out are drawn as
    cheap trunk + cone silhouettes. Cells outside the view never reach the GPU. All of it sits in one THREE.Group (RYG.group). */
-const RYG = { built: false, group: null, tiles: [], cells: [], rocks: [], gates: null, shafts: null, motes: null, far: 380, near: 92 };
+const RYG = { built: false, group: null, tiles: [], cells: [], rocks: [], gates: null, shafts: null, far: 380, near: 92 };
 const RYG_CELL = 128, RYG_TILE = 32;
 RYG.U = {
   time: { value: 0 }, dap: { value: 0.6 }, bump: { value: 0.12 }, wet: { value: 0 },
@@ -21425,7 +21447,7 @@ RYG.buildGantries = function (group) {
   if (gb.count) { const mesh = gb.mesh(RYG.mats.wood, true, true); group.add(mesh); }
 };
 
-/* ---------------- light shafts + floating motes ---------------- */
+/* ---------------- light shafts ---------------- */
 RYG.buildShafts = function (group, n) {
   const pos = new Float32Array(n * 4 * 3), uvs = new Float32Array(n * 4 * 2), seed = new Float32Array(n * 4), idx = new Uint16Array(n * 6), base = new Float32Array(n * 4 * 3);
   for (let i = 0; i < n; i++) {
@@ -21448,21 +21470,7 @@ RYG.buildShafts = function (group, n) {
   });
   const mesh = new THREE.Mesh(g, mat); mesh.frustumCulled = false; mesh.renderOrder = 4; group.add(mesh);
   RYG.shafts = { mesh, n, pos, base, geo: g, mat, next: 0, life: new Float32Array(n) };
-  /* drifting motes: pollen, dust and flying seeds in the light, animated entirely in the shader around the camera */
-  const m = 360, mp = new Float32Array(m * 3); for (let i = 0; i < m * 3; i++) mp[i] = Math.random();
-  const mg = new THREE.BufferGeometry(); mg.setAttribute('position', new THREE.BufferAttribute(mp, 3));
-  const mm = new THREE.ShaderMaterial({
-    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
-    uniforms: { uCam: { value: new THREE.Vector3() }, uTime: RYG.U.time, uCol: { value: new THREE.Color(1, 0.85, 0.6) }, uAmt: { value: 1 }, uScale: { value: 600 }, uSun: { value: new THREE.Vector3(0, 1, 0) } },
-    vertexShader: `uniform vec3 uCam; uniform float uTime, uScale; varying float vA; uniform vec3 uSun;
-      float wr(float v, float c, float s){ return c + mod(v - c + s * 0.5, s) - s * 0.5; }
-      void main(){ vec3 b = position; float W = 46.0, H = 16.0; float t = uTime;
-        vec3 p; p.x = wr(b.x * W + sin(t * 0.4 + b.z * 30.0) * 1.2 + t * 0.7, uCam.x, W); p.z = wr(b.z * W + cos(t * 0.35 + b.x * 25.0) * 1.2 + t * 0.4, uCam.z, W); p.y = wr(b.y * H - t * (0.12 + b.x * 0.15) , uCam.y + 1.5, H);
-        vec4 mv = viewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = clamp(uScale * (0.025 + 0.03 * b.y) / max(0.5, -mv.z), 1.0, 5.0);
-        vec3 v = normalize(p - uCam); float sunAl = pow(max(dot(v, uSun), 0.0), 2.0); vA = (0.2 + 0.8 * sunAl) * smoothstep(1.5, 5.0, -mv.z) * (0.4 + 0.6 * fract(b.x * 91.0 + t * 0.2 + b.z * 7.0)); }`,
-    fragmentShader: `varying float vA; uniform vec3 uCol; uniform float uAmt; void main(){ vec2 c = gl_PointCoord - 0.5; float a = 1.0 - smoothstep(0.0, 0.5, length(c)); gl_FragColor = vec4(uCol, a * a * vA * uAmt * 0.55); }`
-  });
-  const pts = new THREE.Points(mg, mm); pts.frustumCulled = false; pts.renderOrder = 5; group.add(pts); RYG.motes = { pts, mat: mm };
+  /* (no floating motes or drifting leaf specks: as 1-5 px additive dots they read as flashing coloured squares through the lens fringing) */
 };
 RYG.placeShaft = function (i, x, z) {
   const S = RYG.shafts, y = RY.heightAt(x, z) - 1; for (let k = 0; k < 4; k++) { const v = i * 4 + k; S.base[v * 3] = x; S.base[v * 3 + 1] = y; S.base[v * 3 + 2] = z; S.pos[v * 3] = x; S.pos[v * 3 + 1] = y; S.pos[v * 3 + 2] = z; }
@@ -21488,7 +21496,7 @@ RYG.dispose = function () {
   if (!RYG.built) return; const g = RYG.group;
   g.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material.map) { /* shared atlas stays */ } });
   if (g.parent) g.parent.remove(g);
-  RYG.built = false; RYG.group = null; RYG.tiles.length = 0; RYG.cells.length = 0; RYG.rocks.length = 0; RYG.gates = null; RYG.shafts = null; RYG.motes = null; RYG.vars = {};
+  RYG.built = false; RYG.group = null; RYG.tiles.length = 0; RYG.cells.length = 0; RYG.rocks.length = 0; RYG.gates = null; RYG.shafts = null; RYG.vars = {};
 };
 
 /* ---------------- per-frame ---------------- */
@@ -21512,7 +21520,7 @@ RYG.update = function (dt, cam, car, sun, tod) {
   }
   RYG.stats.tilesVisible = nt; RYG.stats.cellsNear = nc0; RYG.stats.cellsFar = nc1;
   RYG.syncGates();
-  /* lighting uniforms for the leaf material + shafts + motes */
+  /* lighting uniforms for the leaf material + shafts */
   const U = RYG.U; U.sunV.value.copy(sun.viewDir); U.sunCol.value.copy(sun.col); U.sunAmt.value = sun.amt;
   if (RYG.shafts) {
     const S = RYG.shafts, mat = S.mat; mat.uniforms.uSun.value.copy(sun.dir); mat.uniforms.uCol.value.copy(sun.col); mat.uniforms.uAmt.value = sun.shaft; mat.uniforms.uCam.value.copy(cam.position); mat.uniforms.uFog.value = scene.fog.density;
@@ -21526,7 +21534,6 @@ RYG.update = function (dt, cam, car, sun, tod) {
       }
     }
   }
-  if (RYG.motes) { const m = RYG.motes.mat; m.uniforms.uCam.value.copy(cam.position); m.uniforms.uSun.value.copy(sun.dir); m.uniforms.uCol.value.copy(sun.col); m.uniforms.uAmt.value = sun.shaft; m.uniforms.uScale.value = 0.5 * (renderer.domElement.height || 720) / Math.tan(cam.fov * DEG / 2); }
 };
 
 /* ---- js/13_rallywall.js ---- */
