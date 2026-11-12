@@ -55,7 +55,16 @@ const CARS = [
     t: { Tmax: 640, mu: 1.45, cd: 0.45, brk: 1.25, off: 0.8, cl: 0.8 },
     stats: { spd: 10, acc: 10, hdl: 10, off: 1 },
     body: { L: 4.6, W: 2.06, H: 0.3, C: 0.36, wr: 0.36, y0: 0.24, tw: 0.36, rim: [0.12, 0.12, 0.13], lw: 0.42, lh: 0.06, tlh: 0.06, tailBar: true, glass: [0.01, 0.014, 0.02],
-      cab: { cz: 0.1, bd: 0.9, tw: 0.5, td: 0.42, zoff: -0.3, inset: 0.2 }, wing: { h: 0.5, z: 0.35, span: 0.9, chord: 0.42, plates: true }, splitter: true, diffuser: true, intakes: true, deck: { z0: -1.9, z1: -0.85 }, stripes: [0.05, 0.05, 0.06], flares: true } }
+      cab: { cz: 0.1, bd: 0.9, tw: 0.5, td: 0.42, zoff: -0.3, inset: 0.2 }, wing: { h: 0.5, z: 0.35, span: 0.9, chord: 0.42, plates: true }, splitter: true, diffuser: true, intakes: true, deck: { z0: -1.9, z1: -0.85 }, stripes: [0.05, 0.05, 0.06], flares: true } },
+
+  { id: 'ridge', name: 'Ridgeback RS', cls: 'Rally car', price: 6800, paint: 1, dy: 0.1, snd: { f: 1.05, lp: 1.3 }, dial: 280,
+    blurb: 'Stage-bred all-wheel-drive rally hatch: long-travel suspension, huge wing, a bonnet full of vents and a taste for gravel, big air and splintered fences.',
+    p: { m: 1260, a: 1.22, b: 1.25, Iz: 1900, rw: 0.37, fd: 4.5, gears: [3.3, 2.4, 1.85, 1.5, 1.22, 1.0], idle: 1000, red: 7400, track: 1.64, cgh: 0.56, rd: 0.5, awd: true, rsf: 0.5, ab: 0.5, cf: 10.0, cr: 11.4 },
+    t: { Tmax: 520, mu: 1.02, cd: 0.95, brk: 1.05, off: 1.22, cl: 0.1 },
+    stats: { spd: 7, acc: 9, hdl: 8, off: 10 },
+    body: { L: 4.15, W: 1.9, H: 0.5, C: 0.55, wr: 0.37, y0: 0.46, tw: 0.27, rim: [0.95, 0.72, 0.16], rimStyle: 'five',
+      cab: { cz: -0.3, bd: 1.45, tw: 0.7, td: 0.98, zoff: -0.14, inset: 0.06 }, squareback: true, noseR: 0.5, flares: true, skirts: true, splitter: true, lightbar: true,
+      stripes: [1.0, 0.78, 0.1], wing: { h: 0.4, z: 0.26, span: 0.94, chord: 0.5, plates: true }, rally: true, exhaust: 1 } }
 ];
 const CAR_BY_ID = {}; for (const d of CARS) { CAR_BY_ID[d.id] = d; const b = d.body; d.top = (b.y0 != null ? b.y0 : 0.36) + b.H + 0.1 + b.C; d.hl = b.L / 2; }
 const BASE_N = CARS.length;   /* CARS[0..BASE_N) are the dealership cars; stolen cars are appended at runtime (see 07_jack.js) */

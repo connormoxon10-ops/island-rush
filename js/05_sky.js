@@ -119,6 +119,7 @@ function skyAt(t) {
 }
 const _col = new THREE.Color(), _warm = new THREE.Color(1.0, 0.5, 0.22), _white = new THREE.Color(1.0, 0.95, 0.86);
 function updateEnvironment(tod, focus, time) {
+  if (Rally.on) { Rally.env(tod, focus, time); return; }
   skyAt(tod); Biome.tick(focus.x, focus.z, time); Biome.atmSky(env);
   const ang = (tod - 6) / 24 * TAU;
   env.sunDir.set(Math.cos(ang), Math.sin(ang), 0.32).normalize();
