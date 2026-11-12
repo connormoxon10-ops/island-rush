@@ -60,7 +60,7 @@ Drag.think = function (b, h) {
   c.steerIn = clamp(al / maxS * 1.2, -1, 1); c.steer = approach(c.steer, c.steerIn, 8 * h); c.hand = 0;
   if (done) { c.thr = 0; c.brk = spd > 2 ? 0.75 : 0; c.nit = false; if (spd < 2) c.hand = 1; }
   else { c.thr = 1; c.brk = 0; c.nit = b.nit && Drag.clock > Drag.tGreen + b.rt + 0.9 && c.nitro > 0; }
-  if (c.nitroUse) c.nitro = Math.max(0, c.nitro - 24 * h);
+  if (c.nitroUse) c.nitro = Math.max(0, c.nitro - (b.P.nitDrain || 24) * h);
 };
 
 /* ---------------- the place ---------------- */

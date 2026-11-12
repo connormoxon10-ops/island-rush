@@ -230,7 +230,7 @@ UI.progress = function (f, msg) { E.loadfill.style.width = (f * 100).toFixed(0) 
 UI.openMenu = function (tab) { if (App.mode !== 'play') return; Home.closeEdit(); UI.setMode('pause'); UI.tabTo(tab || App.tab); for (const k in Keys) Keys[k] = false; };
 UI.closeMenu = function () { if (App.mode !== 'pause') return; UI.setMode('play'); writeSave(); };
 UI.tabTo = function (name) {
-  App.tab = name; const tabs = [['missions', 'Missions'], ['map', 'Map'], ['garage', 'Garage'], ['people', 'People'], ['collection', 'Collection'], ['settings', 'Settings'], ['controls', 'Controls']]; if (save.set.dev) tabs.push(['dev', 'Dev']);
+  App.tab = name; const tabs = [['missions', 'Missions'], ['map', 'Map'], ['garage', 'Garage'], ['tuning', 'Tuning'], ['people', 'People'], ['collection', 'Collection'], ['settings', 'Settings'], ['controls', 'Controls']]; if (save.set.dev) tabs.push(['dev', 'Dev']);
   E.tabs.innerHTML = tabs.map((t) => '<button type="button" role="tab" data-tab="' + t[0] + '" aria-selected="' + (t[0] === name) + '">' + t[1] + '</button>').join('');
   UI.renderPane();
 };
@@ -274,6 +274,8 @@ UI.renderPane = function () {
     }
     const rep = Math.ceil((100 - c.health) * 4);
     h += '<div class="sect">Repairs</div><div class="up"><div><h4>Body condition ' + Math.round(c.health) + '%</h4></div><button class="btn" type="button" data-act="repair"' + (c.health > 99 || save.money < rep ? ' disabled' : '') + '>' + (c.health > 99 ? 'Like new' : 'Repair ' + money(rep)) + '</button></div>';
+  } else if (App.tab === 'tuning') {
+    h += Setup.pane();
   } else if (App.tab === 'people') {
     h = Rel.pane();
   } else if (App.tab === 'dev') {
@@ -331,6 +333,7 @@ function bindUI() {
     else if (a === 'dact') UI.devAct(b.dataset.id);
     else if (a === 'drive') { if (App.setCar(b.dataset.id)) { UI.toast(CUR.name + ' ready', 'info'); UI.renderPane(); } }
     else if (a === 'buycar') { const d = CAR_BY_ID[b.dataset.id]; if (d && !save.owned[d.id] && save.money >= d.price) { save.money -= d.price; save.owned[d.id] = true; Snd.beep(900, 0.12); if (!Mi) { App.setCar(d.id); car.health = 100; } writeSave(); UI.toast('Bought ' + d.name, 'good'); UI.renderPane(); } }
+    else if (a === 'tupre') { Setup.preset(b.dataset.id); Snd.beep(700, 0.06); UI.renderPane(); }
     else if (a === 'buytok') { if (Jack.buyTok(b.dataset.k)) UI.renderPane(); }
     else if (a === 'sellk' || a === 'scrapk') { const id = b.dataset.id, key = a + ':' + id; if (Jack.conf !== key) { Jack.conf = key; UI.renderPane(); } else { Jack.conf = ''; if (a === 'sellk') Jack.sellKept(id); else Jack.scrapKept(id); UI.renderPane(); } }
     else if (a === 'jgps') { UI.setWaypoint(GAR.ox, GAR.oz + 12); UI.closeMenu(); }
@@ -347,6 +350,7 @@ function bindUI() {
   });
   E.pane.addEventListener('input', (e) => {
     const s = e.target.getAttribute && e.target.getAttribute('data-slider'); if (!s) return; const v = +e.target.value;
+    if (s.slice(0, 3) === 'tu:') { Setup.onSlider(s.slice(3), v); return; }
     if (s === 'fov') save.set.fov = v; else if (s === 'vol') { save.set.vol = v; if (App.onSetting) App.onSetting('vol'); } else if (s === 'tod') App.tod = v; else if (s === 'dpower') { Dev.power = v; refreshTune(); } else if (s === 'dgrip') { Dev.grip = v; refreshTune(); } else if (s === 'dts') Dev.ts = v;
     const lab = e.target.parentNode.querySelector('[data-val]'); if (lab) UI.sliderLabel(s, lab);
   });

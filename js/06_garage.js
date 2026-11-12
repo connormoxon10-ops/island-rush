@@ -84,7 +84,7 @@ const curPaint = (id) => { const i = save.cc[id || save.car]; return i != null ?
 /* ---------- make a car the active one (physics + body + cameras) ---------- */
 function applyCar(id, rebuildMesh) {
   const d = CAR_BY_ID[id] || CARS[0]; CUR = d; save.car = d.id;
-  Object.assign(CARP, { awd: false, rsf: 0.5, ab: 0.5, cf: 10.2, cr: 12.2, lat: 1 }, d.p); CARP.L = d.p.a + d.p.b;   /* optional keys go back to their defaults first, so one car's all-wheel drive or drag tyres never carry over to the next */
+  Object.assign(CARP, { awd: false, rsf: 0.5, ab: 0.5, cf: 10.2, cr: 12.2, lat: 1 }, d.p, { gears: d.p.gears.slice() }); CARP.L = d.p.a + d.p.b;   /* optional keys go back to their defaults first, so one car's all-wheel drive or drag tyres never carry over to the next */
   refreshTune();
   const hl = d.hl, hw = d.body.W / 2;
   CIRC[0][0] = hl - 0.45; CIRC[1][0] = 0; CIRC[2][0] = -(hl - 0.45); for (const k of CIRC) k[1] = hw + 0.09;
