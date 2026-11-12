@@ -47,6 +47,7 @@ function collideStatic(c, P, circ) {
   for (let k = 0; k < 3; k++) {
     const R = circ[k][1]; const px = c.x + s * circ[k][0], pz = c.z + co * circ[k][0];
     if (Rally.on) { Rally.collide(c, px, pz, R, P); continue; }
+    if (Drag.on) { Drag.collide(c, px, pz, R, P); continue; }
     if (Track.s) Track.collide(c, px, pz, R, P);
     const ccx = Math.floor(px / CHUNK), ccz = Math.floor(pz / CHUNK);
     for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
@@ -137,7 +138,7 @@ function stepCar(dt, c0, P0, T0, circ0) {
   const af = Math.atan2(vr + P.a * c.w, vxa) - delta * sg, ar = Math.atan2(vr - P.b * c.w, vxa);
   const fxR = rdE * Math.abs(F) + (1 - fbf) * Fb + Fh, fxF = (1 - rdE) * Math.abs(F) + fbf * Fb;
   const lz = c.surf.loose || 0, slF = 1 - 0.22 * lz * sstep(0.07, 0.3, Math.abs(af)), slR = 1 - 0.22 * lz * sstep(0.07, 0.3, Math.abs(ar));   /* gravel: peak grip then a slide */
-  const muR = mu * (c.hand > 0.5 ? 0.36 : 1), capF = mu * Nf * kF * slF, capR = muR * Nr * kR * slR;
+  const latK = P.lat || 1, muR = mu * (c.hand > 0.5 ? 0.36 : 1), capF = mu * Nf * kF * slF * latK, capR = muR * Nr * kR * slR * latK;   /* P.lat: a car whose tyres launch far better than they corner (drag rubber) */
   const fcF = Math.sqrt(Math.max(0.05, 1 - Math.pow(Math.min(0.97, fxF / capF), 2))), fcR = Math.sqrt(Math.max(0.05, 1 - Math.pow(Math.min(0.97, fxR / capR), 2)));
   const FyfM = capF * fcF, FyrM = capR * fcR;
   /* cornering stiffness follows the static + aero axle load only: tyre load sensitivity cancels the braking/accel transfer, which keeps trail-braking progressive instead of snapping round */
