@@ -6,10 +6,10 @@
 const Race = { on: false, phase: 'off', cfg: { laps: 3, diff: 1, n: 5 }, near: null, ents: [], me: null, t: 0, ct: 0, goAt: 0, clock: 0, hold: false, hudT: 0, over: false, res: null, wrong: 0, gridT: 0, banner: '' };
 const RACE_NAMES = ['Vega Ruiz', 'Mika Tanaka', 'Dex Calloway', 'Ines Varga', 'Boone Hart', 'Sloane Okafor', 'Rafe Lindqvist', 'Nova Reyes', 'Tobias Wren'];
 const RACE_DIFF = [
-  { n: 'Rookie', sk: 0.9, mult: 1, off: [-1, -1, 0, 0, -1, -2, -1], lim: 0.97, rb: [0.96, 1.04], edge: 0.03, nit: false, cover: false, push: 0, pw: 1, gr: 1, react: [0.2, 0.3] },
-  { n: 'Pro', sk: 0.96, mult: 1.6, off: [0, 1, 1, 1, 0, 1, 0], lim: 1.0, rb: [0.99, 1.05], edge: 0.05, nit: true, cover: true, push: 0, pw: 1, gr: 1, react: [0.12, 0.25] },
-  { n: 'Elite', sk: 1.0, mult: 2.5, off: [1, 1, 2, 2, 1, 2, 1], lim: 1.0, rb: [1.0, 1.06], edge: 0.07, nit: true, cover: true, push: 1.5, pw: 1.05, gr: 1.02, react: [0.07, 0.15] },
-  { n: 'Legend', sk: 1.0, mult: 4, off: [2, 2, 3, 3, 2, 3, 2], lim: 1.02, rb: [1.0, 1.08], edge: 0.09, nit: true, cover: true, push: 3, pw: 1.12, gr: 1.04, react: [0.05, 0.1] }
+  { n: 'Rookie', sk: 0.95, mult: 1, off: [0, 0, 1, 1, 0, -1, 0], lim: 1.0, rb: [0.99, 1.05], edge: 0.07, nit: true, cover: false, push: 0, pw: 1.03, gr: 1.01, react: [0.14, 0.25] },
+  { n: 'Pro', sk: 0.99, mult: 1.6, off: [1, 2, 2, 2, 1, 2, 1], lim: 1.02, rb: [1.0, 1.06], edge: 0.1, nit: true, cover: true, push: 1, pw: 1.06, gr: 1.02, react: [0.08, 0.16] },
+  { n: 'Elite', sk: 1.0, mult: 2.5, off: [2, 2, 3, 3, 2, 3, 2], lim: 1.03, rb: [1.0, 1.08], edge: 0.14, nit: true, cover: true, push: 2.5, pw: 1.1, gr: 1.04, react: [0.05, 0.1] },
+  { n: 'Legend', sk: 1.0, mult: 4, off: [3, 3, 4, 4, 3, 4, 3], lim: 1.05, rb: [1.0, 1.1], edge: 0.18, nit: true, cover: true, push: 4, pw: 1.18, gr: 1.07, react: [0.03, 0.06] }
 ];
 /* the dealership cars from fastest to slowest round this circuit (measured with the bots' own driving), so a rival tier that is 'two cars better' really is two cars faster */
 const RACE_ORDER = [6, 5, 4, 0, 7, 1, 3, 2];
