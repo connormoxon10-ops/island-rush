@@ -20343,7 +20343,7 @@ HB.update = function () {
    and gate posts, every physics sub-step calls Rally.sub (breakable gates), step() hands over to Rally.update (clock, splits, pace notes, effects)
    and updateEnvironment() hands over to Rally.env (low forest sun, haze, exposure that adapts to shade and clearings). */
 const Rally = {
-  on: false, lobby: false, phase: 'off', ready: false, sim: null, t: 0, clock: 0, penalty: 0, s: 0, lat: 0, hint: 0, sec: 0, open: 0.5, cp: 0, splits: [], best: null,
+  on: false, lobby: false, phase: 'off', ready: false, sim: null, t: 0, clock: 0, penalty: 0, s: 0, lat: 0, hint: 0, sec: 0, opn: 0.5, cp: 0, splits: [], best: null,
   saved: null, hidden: [], sun: null, expo: 1, lit: 0.6, resets: 0, smashed: 0, jumpBest: 0, air: null, combo: 0, comboT: 0, stuck: 0, wrong: 0, safeS: 0, safeT: 0, hudT: 0, noteI: 0, tod: 2, loading: false, count: 0, doneT: 0
 };
 const RY_TODS = [
@@ -20469,14 +20469,14 @@ Rally.env = function (tod, focus, time) {
   /* haze takes the colour of the low sun */
   env.hor.r *= cfg.tint[0]; env.hor.g *= cfg.tint[1]; env.hor.b *= cfg.tint[2];
   /* openness around the car: clearings are brighter, deep forest is darker and the eye adapts with a lag */
-  const O = RY.open[Rally.hint] || 0; Rally.open += (O - Rally.open) * Math.min(1, dtE * 1.5);
-  const target = cfg.expo * (1.14 - 0.2 * Rally.open); Rally.expo += (target - Rally.expo) * Math.min(1, dtE * 0.9);
-  scene.fog.color.copy(env.hor); scene.fog.density = cfg.fog * (Q.fog || 1) * (1 + 0.5 * (1 - Rally.open) * 0.3);
+  const O = RY.open[Rally.hint] || 0; Rally.opn += (O - Rally.opn) * Math.min(1, dtE * 1.5);
+  const target = cfg.expo * (1.14 - 0.2 * Rally.opn); Rally.expo += (target - Rally.expo) * Math.min(1, dtE * 0.9);
+  scene.fog.color.copy(env.hor); scene.fog.density = cfg.fog * (Q.fog || 1) * (1 + 0.5 * (1 - Rally.opn) * 0.3);
   if (!hasPost) scene.fog.color.convertLinearToSRGB();
-  L.sun.color.copy(env.sunCol); L.sun.intensity = cfg.sun * sstep(-0.02, 0.2, e) * (1 + 0.25 * Rally.open);
+  L.sun.color.copy(env.sunCol); L.sun.intensity = cfg.sun * sstep(-0.02, 0.2, e) * (1 + 0.25 * Rally.opn);
   L.moon.intensity = 0.4 * env.night;
   _col.copy(env.zen).lerp(env.hor, 0.45); L.hemi.color.copy(_col); L.hemi.groundColor.setRGB(0.1 * env.day + 0.02, 0.085 * env.day + 0.018, 0.04 * env.day + 0.018);
-  L.hemi.intensity = lerp(0.5, 0.95, env.day) * (0.82 + 0.3 * Rally.open);
+  L.hemi.intensity = lerp(0.5, 0.95, env.day) * (0.82 + 0.3 * Rally.opn);
   const f = focus;
   L.sun.position.set(Math.round(f.x * 2) / 2 + env.sunDir.x * 350, f.y + env.sunDir.y * 350, Math.round(f.z * 2) / 2 + env.sunDir.z * 350); L.sun.target.position.set(Math.round(f.x * 2) / 2, f.y, Math.round(f.z * 2) / 2);
   L.moon.position.set(f.x - env.sunDir.x * 300, f.y - env.sunDir.y * 300 + 50, f.z - env.sunDir.z * 300); L.moon.target.position.copy(f);
@@ -20485,9 +20485,9 @@ Rally.env = function (tod, focus, time) {
   Sky.mesh.position.copy(camera.position);
   /* shared sun description for the forest shaders / shafts / particles */
   const S = Rally.sunInfo(); S.dir.copy(env.sunDir); camera.updateMatrixWorld(); S.viewDir.copy(env.sunDir).transformDirection(camera.matrixWorldInverse); S.col.copy(env.sunCol);
-  S.amt = sstep(-0.02, 0.25, e); S.shaft = cfg.shaft * sstep(0.02, 0.2, e) * (0.35 + 0.65 * (1 - Rally.open * 0.5));
-  RYG.U.dap.value = 0.62 * (1 - 0.6 * Rally.open) * S.amt * (Q.shadow ? 1 : 0.5);
-  const dl = 0.42 + 0.58 * S.amt * (0.5 + 0.5 * Rally.open), t = Rally.dustTint; t[0] = (0.3 + 0.7 * env.sunCol.r * S.amt) * dl + 0.1; t[1] = (0.3 + 0.7 * env.sunCol.g * S.amt) * dl + 0.1; t[2] = (0.3 + 0.7 * env.sunCol.b * S.amt) * dl + 0.12;
+  S.amt = sstep(-0.02, 0.25, e); S.shaft = cfg.shaft * sstep(0.02, 0.2, e) * (0.35 + 0.65 * (1 - Rally.opn * 0.5));
+  RYG.U.dap.value = 0.62 * (1 - 0.6 * Rally.opn) * S.amt * (Q.shadow ? 1 : 0.5);
+  const dl = 0.42 + 0.58 * S.amt * (0.5 + 0.5 * Rally.opn), t = Rally.dustTint; t[0] = (0.3 + 0.7 * env.sunCol.r * S.amt) * dl + 0.1; t[1] = (0.3 + 0.7 * env.sunCol.g * S.amt) * dl + 0.1; t[2] = (0.3 + 0.7 * env.sunCol.b * S.amt) * dl + 0.12;
 };
 
 /* ---------------- HUD ---------------- */
@@ -20531,7 +20531,7 @@ function ryNoteGlyph(n) { return n.k === 'bend' ? (n.dir > 0 ? RY_GLYPH.LEFT : R
 Rally.hud = function (dt) {
   const E_ = Rally.el; if (!E_) return; Rally.hudT -= dt; if (Rally.hudT > 0) return; Rally.hudT = 0.05;
   const t = Rally.phase === 'run' || Rally.phase === 'done' ? Rally.clock + Rally.penalty : 0;
-  E_.time.textContent = fmtLap(t).replace(/(\.\d)\d$/, '$1');
+  E_.time.textContent = t > 0 ? fmtLap(t).replace(/(\.\d)\d$/, '$1') : '0:00.0';
   const span = RY.finishS - RY.startS, p = clamp((Rally.s - RY.startS) / span, 0, 1); E_.prog.style.width = (p * 100).toFixed(1) + '%';
   /* pace notes: the next two calls ahead of the car */
   const N = RY.notes; while (Rally.noteI < N.length && N[Rally.noteI].s < Rally.s - 6) Rally.noteI++;
@@ -21466,6 +21466,8 @@ RYG.build = function (sim, opts) {
   RYG.buildTerrain(g, RYG.mats.ground); const t1 = performance.now();
   RYG.buildForest(g); RYG.buildRocks(g); RYG.buildLogs(g); const t2 = performance.now();
   RYG.buildGates(g, sim); RYG.buildGantries(g); RYG.buildShafts(g, opts.shafts == null ? 46 : opts.shafts);
+  /* three r128 reuses a material's program across instanced meshes without re-checking instanceColor: give every instanced mesh one */
+  g.traverse((o) => { if (o.isInstancedMesh && !o.instanceColor) { const a = new Float32Array(o.count * 3).fill(1); o.instanceColor = new THREE.InstancedBufferAttribute(a, 3); } });
   RYG.stats.msTerrain = Math.round(t1 - t0); RYG.stats.msForest = Math.round(t2 - t1); RYG.stats.msTotal = Math.round(performance.now() - t0);
   RYG.built = true; return g;
 };

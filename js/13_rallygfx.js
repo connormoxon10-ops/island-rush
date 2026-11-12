@@ -435,6 +435,8 @@ RYG.build = function (sim, opts) {
   RYG.buildTerrain(g, RYG.mats.ground); const t1 = performance.now();
   RYG.buildForest(g); RYG.buildRocks(g); RYG.buildLogs(g); const t2 = performance.now();
   RYG.buildGates(g, sim); RYG.buildGantries(g); RYG.buildShafts(g, opts.shafts == null ? 46 : opts.shafts);
+  /* three r128 reuses a material's program across instanced meshes without re-checking instanceColor: give every instanced mesh one */
+  g.traverse((o) => { if (o.isInstancedMesh && !o.instanceColor) { const a = new Float32Array(o.count * 3).fill(1); o.instanceColor = new THREE.InstancedBufferAttribute(a, 3); } });
   RYG.stats.msTerrain = Math.round(t1 - t0); RYG.stats.msForest = Math.round(t2 - t1); RYG.stats.msTotal = Math.round(performance.now() - t0);
   RYG.built = true; return g;
 };
