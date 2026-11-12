@@ -101,6 +101,39 @@ function _rygLeafMat() {
   return m;
 }
 
+/* rock cuttings and dry-stone walls: world-space noise for the grain, strata and moss, and a block pattern for the stone from the uv (metres along the wall, world height) */
+function _rygRockMat(stone) {
+  const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.96, metalness: 0, side: THREE.DoubleSide });
+  m.extensions = { derivatives: true };
+  m.customProgramCacheKey = () => (stone ? 'rystone' : 'ryrock');
+  m.onBeforeCompile = (sh) => {
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWp; varying vec3 vNw; varying vec2 vUv2;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\n vWp = (modelMatrix * vec4(transformed, 1.0)).xyz; vNw = normalize(mat3(modelMatrix) * objectNormal); vUv2 = uv;');
+    sh.fragmentShader = 'varying vec3 vWp; varying vec3 vNw; varying vec2 vUv2;\n' + RYG_NOISE + '\n' + sh.fragmentShader
+      .replace('#include <color_fragment>', `#include <color_fragment>
+      float nA_ = rf_(vWp.xy * 0.8 + vWp.z * 0.37), nB_ = rf_(vWp.zy * 1.9 + vWp.x * 0.61), nC_ = rn_(vWp.xz * 6.0 + vWp.y * 3.1), nD_ = rn_(vWp.xy * 17.0 + vWp.z * 11.0);
+      float moss_ = smoothstep(0.52, 0.78, rf_(vWp.xz * 0.9 + vWp.y * 0.35)) * (0.35 + 0.65 * smoothstep(-0.2, 0.9, vNw.y));
+      float hg_ = 0.0; vec3 mul_ = vec3(1.0);
+      ${stone ? `
+      vec2 p_ = vec2(vUv2.x, vUv2.y / 0.36); float row_ = floor(p_.y), len_ = 0.55 + 0.7 * rh_(vec2(row_, 5.0));
+      float x_ = (p_.x + rh_(vec2(row_, 11.0)) * 3.0) / len_, col_ = floor(x_); vec2 f_ = vec2(fract(x_), fract(p_.y));
+      float edge_ = min(min(f_.x, 1.0 - f_.x) * len_, min(f_.y, 1.0 - f_.y) * 0.36), bid_ = rh_(vec2(col_ + row_ * 17.0, row_));
+      float mort_ = 1.0 - smoothstep(0.014, 0.05, edge_), dome_ = smoothstep(0.0, 0.1, edge_);
+      mul_ = mix(vec3(0.78, 0.74, 0.7), vec3(1.2, 1.12, 0.98), bid_) * (0.78 + 0.44 * nB_);
+      mul_ = mix(mul_, vec3(0.3, 0.27, 0.24), mort_);
+      hg_ = dome_ * 0.7 - mort_ * 0.5 + (nC_ - 0.5) * 0.35 + (nD_ - 0.5) * 0.15;
+      moss_ *= 0.8 + 0.6 * mort_;` : `
+      float str_ = 0.5 + 0.5 * sin(vWp.y * 4.6 + nA_ * 3.4 + nB_ * 1.2);
+      mul_ = vec3(0.74 + 0.5 * nB_) * mix(0.78, 1.14, str_) * (0.85 + 0.3 * nC_);
+      mul_ *= mix(vec3(1.0), vec3(1.12, 0.98, 0.84), smoothstep(0.55, 0.8, nA_) * 0.6);
+      hg_ = (nA_ - 0.5) * 1.1 + (nB_ - 0.5) * 0.8 + (nC_ - 0.5) * 0.3 - smoothstep(0.62, 0.7, str_) * 0.25; mul_ *= 0.9 + 0.2 * nD_;`}
+      diffuseColor.rgb = mix(diffuseColor.rgb * mul_, vec3(0.045, 0.075, 0.025) * (0.6 + 0.8 * nC_), moss_ * 0.55);`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+      normal = perturbN_(-vViewPosition, normal, vec2(dFdx(hg_), dFdy(hg_)) * ${stone ? '0.1' : '0.085'} * (1.0 - smoothstep(14.0, 60.0, length(vViewPosition))), faceDirection);`);
+  };
+  return m;
+}
+
 /* ---------------- small geometry helpers ---------------- */
 function _rygGeoFromGB(gb) {
   const g = new THREE.BufferGeometry();
@@ -341,6 +374,60 @@ RYG.buildLogs = function (group) {
   mesh.instanceMatrix.needsUpdate = true; mesh.frustumCulled = false; mesh.castShadow = true; mesh.receiveShadow = true; group.add(mesh); RYG.logs = mesh;
 };
 
+/* ---------------- rock cuttings and stone walls ---------------- */
+/* Each wall is one mesh per side: the face (flat-shaded facets for rock, a straight course-laid face for stone), the cap on top, and the back. The terrain behind a rock cutting is raised in the
+   stage model, so the cap is a ledge with the hillside climbing out of it. */
+RYG.buildRails = function (group) {
+  const hash = (a, b, c) => { let h = Math.imul(a * 73856093 ^ b * 19349663 ^ c * 83492791, 1) >>> 0; h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+  let tris = 0, ri = 0; RYG.rails = [];
+  for (const rl of RY_RAILS) {
+    ri++;
+    const rock = rl.k === 'rock', stepS = rock ? 1.5 : 1.0, th = RY_RAIL_T[rl.k], sA = RY.starts[rl.e] + rl.at, n = Math.max(2, Math.round(rl.len / stepS));
+    for (const side of rl.side === 0 ? [1, -1] : [rl.side]) {
+      const R = side > 0 ? RY.rails.L : RY.rails.R, cols = [], sid = side > 0 ? 1 : 2;
+      for (let c = 0; c <= n; c++) {
+        const s = sA + rl.len * c / n, i = Math.min(RY.N - 2, Math.floor(s / RY.DS)), fr = s / RY.DS - i, hw = lerp(RY.hw[i], RY.hw[i + 1], fr), h = lerp(R.h[i], R.h[i + 1], fr);
+        const q = RY.at(s, side * (hw + rl.gap), {}), qb = RY.at(s, side * (hw + rl.gap + th), {});
+        cols.push({ s, h, x: q.x, z: q.z, bx: qb.x, bz: qb.z, ox: side * q.tz, oz: -side * q.tx, tx: q.tx, tz: q.tz, yb: RY.heightAt(q.x, q.z), ybb: RY.heightAt(qb.x, qb.z), u: c * rl.len / n });
+      }
+      if (!rock) for (let pass = 0; pass < 2; pass++) { const t = cols.map((k) => k.yb); for (let c = 1; c < n; c++) cols[c].yb = (t[c - 1] + 2 * t[c] + t[c + 1]) / 4; }
+      const face = new _RygSoup(), cap = new _RygSoup(), F = rock ? [0, 0.3, 0.6, 0.84, 1] : [0, 1], NR = F.length;
+      const lean = rock ? 0.3 : 0.05, grid = [];
+      for (let c = 0; c <= n; c++) {
+        const k = cols[c], row = [];
+        for (let r = 0; r < NR; r++) {
+          const f = F[r], end = c === 0 || c === n, jl = rock && !end ? (hash(ri, c, r * 7 + sid) - 0.5) * (0.5 + 0.7 * f) : 0, ja = rock && !end ? (hash(ri, c, r * 7 + 3 + sid) - 0.5) * 0.9 : 0, jy = rock && r > 0 && r < NR - 1 ? (hash(ri, c, r * 7 + 5 + sid) - 0.5) * 0.5 : 0;
+          const set = lean * f * k.h + jl, y = k.yb - 0.45 + f * (k.h + 0.45) + jy + (rock && r === NR - 1 ? (hash(ri, c, 99 + sid) - 0.5) * 0.5 : 0);
+          row.push([k.x + k.ox * set + k.tx * ja, y, k.z + k.oz * set + k.tz * ja]);
+        }
+        grid.push(row);
+      }
+      /* colours: strata darkening toward the foot, sun-bleached facets near the top; stone is one even tone (the shader lays the courses) */
+      const colFor = (c, r, t) => { const v = hash(ri, c * 3 + t, r + sid * 5); if (!rock) return [0.215 + 0.04 * v, 0.2 + 0.04 * v, 0.17 + 0.04 * v]; const g = 0.17 + 0.09 * v + 0.07 * F[r]; return [g * 1.16, g * 1.0, g * 0.8]; };
+      for (let c = 0; c < n; c++) for (let r = 0; r < NR - 1; r++) {
+        const a = grid[c][r], b = grid[c + 1][r], d = grid[c + 1][r + 1], e = grid[c][r + 1];
+        const uvf = (p, k) => [cols[k].u, p[1]];
+        const col = colFor(c, r, 0), col2 = colFor(c, r, 1);
+        face.tri(a, b, d, uvf(a, c), uvf(b, c + 1), uvf(d, c + 1), col); face.tri(a, d, e, uvf(a, c), uvf(d, c + 1), uvf(e, c), col2);
+      }
+      /* cap: from the top of the face back to the far edge, then the back wall down to the ground */
+      for (let c = 0; c < n; c++) {
+        const k0 = cols[c], k1 = cols[c + 1], t0 = grid[c][NR - 1], t1 = grid[c + 1][NR - 1];
+        const lift0 = rock ? 0.12 : 0.04, b0 = [k0.bx, t0[1] + lift0, k0.bz], b1 = [k1.bx, t1[1] + lift0, k1.bz];
+        const gc = rock ? [0.075, 0.095, 0.04] : [0.17, 0.17, 0.14], g2 = rock ? [0.06, 0.08, 0.03] : [0.14, 0.15, 0.1];
+        cap.tri(t0, t1, b1, [0, 0], [1, 0], [1, 1], gc); cap.tri(t0, b1, b0, [0, 0], [1, 1], [0, 1], g2);
+        const bb0 = [k0.bx, Math.min(k0.ybb, t0[1] - 0.6) - 0.3, k0.bz], bb1 = [k1.bx, Math.min(k1.ybb, t1[1] - 0.6) - 0.3, k1.bz];
+        const bc = rock ? [0.09, 0.075, 0.06] : [0.19, 0.18, 0.16];
+        face.tri(b0, b1, bb1, [k0.u, b0[1]], [k1.u, b1[1]], [k1.u, bb1[1]], bc); face.tri(b0, bb1, bb0, [k0.u, b0[1]], [k1.u, bb1[1]], [k0.u, bb0[1]], bc);
+      }
+      const mf = new THREE.Mesh(face.geo(), rock ? RYG.mats.rock : RYG.mats.stone), mc = new THREE.Mesh(cap.geo(), RYG.mats.wood);
+      for (const m of [mf, mc]) { m.castShadow = true; m.receiveShadow = true; group.add(m); }
+      RYG.rails.push(mf, mc); tris += (face.p.length + cap.p.length) / 9;
+    }
+  }
+  RYG.stats.railTris = tris;
+};
+
 /* ---------------- gates ---------------- */
 RYG.buildGates = function (group, sim) {
   const tex = _rygPlankTex(), pm = new THREE.MeshStandardMaterial({ map: tex, vertexColors: true, roughness: 0.9, metalness: 0 });
@@ -424,10 +511,10 @@ RYG.stats = {};
 RYG.build = function (sim, opts) {
   if (RYG.built) return RYG.group; opts = opts || {};
   const t0 = performance.now(), g = RYG.group = new THREE.Group(); g.name = 'rally'; g.visible = false;
-  RYG.mats = { ground: _rygGroundMat(), leaf: _rygLeafMat(), wood: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 }) };
+  RYG.mats = { ground: _rygGroundMat(), leaf: _rygLeafMat(), rock: _rygRockMat(false), stone: _rygRockMat(true), wood: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 }) };
   RYG.far = opts.far || 380; RYG.tiles.length = 0; RYG.cells.length = 0; RYG.rocks.length = 0;
   RYG.buildTerrain(g, RYG.mats.ground); const t1 = performance.now();
-  RYG.buildForest(g); RYG.buildRocks(g); RYG.buildLogs(g); const t2 = performance.now();
+  RYG.buildForest(g); RYG.buildRocks(g); RYG.buildLogs(g); RYG.buildRails(g); const t2 = performance.now();
   RYG.buildGates(g, sim); RYG.buildGantries(g); RYG.buildShafts(g, opts.shafts == null ? 46 : opts.shafts);
   /* three r128 reuses a material's program across instanced meshes without re-checking instanceColor: give every instanced mesh one */
   g.traverse((o) => { if (o.isInstancedMesh && !o.instanceColor) { const a = new Float32Array(o.count * 3).fill(1); o.instanceColor = new THREE.InstancedBufferAttribute(a, 3); } });

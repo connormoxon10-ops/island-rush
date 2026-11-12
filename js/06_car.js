@@ -74,7 +74,23 @@ function stepCar(dt, c0, P0, T0, circ0) {
   const c = c0 || car, P = P0 || CARP, T = T0 || tune, s = Math.sin(c.yaw), co = Math.cos(c.yaw);
   let vf = c.vx * s + c.vz * co, vr = c.vx * co - c.vz * s;
   wheelGround(c, P);
-  const mu = c.surf.mu * T.mu * (c.surf.road ? 1 : T.off), spd = Math.abs(vf);
+  /* rally: the road leans. Gravity pulls the car down the cross-slope, a banked road presses the tyres harder into the dirt in a bend (an off-camber one lifts them off it), and a wall
+     scrape (set by the last collision pass) drags the speed down */
+  let nfB = 1;
+  if (Rally.on) {
+    if (!c.air) {
+      const cs = ((WH[1] + WH[3]) - (WH[0] + WH[2])) / (2 * P.track), cl = clamp(cs, -0.7, 0.7), ca = 1 / Math.sqrt(1 + cl * cl);   /* + = the left side is higher */
+      c.cs = (c.cs || 0) + (cl - (c.cs || 0)) * Math.min(1, dt * 12);
+      const sn = c.cs / Math.sqrt(1 + c.cs * c.cs);
+      vr -= G * sn * dt; nfB = clamp(ca - (c.ayL || 0) / G * sn, 0.55, 1.6);
+    }
+    if (c.rail > 0) {
+      const sp = Math.hypot(c.vx, c.vz);
+      if (sp > 0.5) { const dv = Math.min(sp * 0.4, (5 + 16 * Math.min(1, Math.max(0, c.rail - 0.1) / 0.12)) * dt);   /* c.rail = 0.1 + how far the last collision pass had to push the car out: touching scrapes at 5 m/s^2, pressing in hard at 21 */ vf -= vf / sp * dv; vr -= vr / sp * dv; c.railFx = sp; }
+      c.rail = 0;
+    }
+  }
+  const mu = c.surf.mu * T.mu * (c.surf.road ? 1 : T.off) * nfB, spd = Math.abs(vf);
   /* axle loads: static split + longitudinal weight transfer (last step's accel) + aero downforce */
   const down = T.cl * spd * spd, Nf0 = P.m * G * P.b / P.L, Nr0 = P.m * G * P.a / P.L;
   const dN = clamp(P.m * c.axL * P.cgh / P.L, -0.35 * Nf0, 0.35 * Nr0);
