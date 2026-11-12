@@ -1,12 +1,12 @@
 /* Rally stage drive test: boots the game, starts Hollow Pines, then drives the whole stage with a simple autopilot (analog steering through a faked gamepad)
    using the real car physics and the real Rally hooks. No rendering is waited on: physics steps run synchronously in the page.
    usage: node tests/rally3.js [car-speed-scale] ; env: TOD=0..3, MAXT=seconds, SHOTS=s1,s2,.. (screenshots at those stage distances, slow in software GL),
-   AY=lateral-g target of the speed profile, NOISE=sloppy-driver steering noise (0..1 of full lock, correlated over ~0.3 s), LAG=steering delay in frames */
+   RIV=rival level 0..3 (0 none, 1 Rookie, 2 Pro (default), 3 Elite), AY=lateral-g target of the speed profile, NOISE=sloppy-driver steering noise (0..1 of full lock, correlated over ~0.3 s), LAG=steering delay in frames */
 const { chromium } = require('playwright');
 const path = require('path');
 const G = path.resolve(__dirname, '../dist/test.html');
 const TRACE = process.env.TRACE ? process.env.TRACE.split(',').map(Number) : null, TOD = +(process.env.TOD || 2), MAXT = +(process.env.MAXT || 260), SHOTS = (process.env.SHOTS || '').split(',').filter(Boolean).map(Number);
-const OUT = process.env.OUT || __dirname, NOISE = +(process.env.NOISE || 0), LAG = +(process.env.LAG || 0);
+const OUT = process.env.OUT || __dirname, NOISE = +(process.env.NOISE || 0), LAG = +(process.env.LAG || 0), RIV = +(process.env.RIV == null ? 2 : process.env.RIV);
 (async () => {
   const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'] });
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } }); const page = await ctx.newPage();
@@ -19,9 +19,9 @@ const OUT = process.env.OUT || __dirname, NOISE = +(process.env.NOISE || 0), LAG
   await page.goto('file://' + G);
   await page.waitForFunction(() => window.__ready || window.__bootError, null, { timeout: 170000 });
   console.log('boot err', await page.evaluate(() => window.__bootError || null));
-  const res = await page.evaluate(async ([tod, maxT, shots, TRACE, NOISE, LAG]) => {
+  const res = await page.evaluate(async ([tod, maxT, shots, TRACE, NOISE, LAG, RIV]) => {
     const g = window.__game, R = g.Rally, RY = g.RY, car = g.car, out = { log: [], marks: [], events: [] };
-    g.App.mode = 'rlobby'; g.save.rally.tod = tod; R.tod = tod; await R.start();
+    g.App.mode = 'rlobby'; g.save.rally.tod = tod; g.save.rally.rivals = RIV; R.tod = tod; await R.start();
     /* fake analog gamepad: axes[0] = -steer, buttons 7 = throttle, 6 = brake */
     const pad = { connected: true, axes: [0, 0], buttons: Array.from({ length: 16 }, () => ({ value: 0, pressed: false })) };
     navigator.getGamepads = () => [pad];
@@ -63,6 +63,8 @@ const OUT = process.env.OUT || __dirname, NOISE = +(process.env.NOISE || 0), LAG
       if (t - lastLog >= 5) { lastLog = t; out.log.push({ t: +t.toFixed(0), s: +R.s.toFixed(0), v: +(spd * 3.6).toFixed(0), lat: +R.lat.toFixed(1), y: +car.y.toFixed(1), hp: +car.health.toFixed(0), sec: R.sec }); }
       if (shots.length && R.s >= shots[0]) { out.marks.push({ s: shots.shift(), x: car.x, z: car.z, yaw: car.yaw }); }
     }
+    out.rivals = g.RR.list.map((b) => ({ name: b.name, ay: +b.ay.toFixed(2), fin: b.fin, tFin: +b.tFin.toFixed(1), s: +b.s.toFixed(0), resets: b.resets, kmh: +(b.c.speed * 3.6).toFixed(0) })); out.order = g.RR.on ? g.RR.order().map((o) => (o.me ? 'YOU' : o.name) + (o.fin ? ' ' + o.t.toFixed(1) : ' @' + o.s.toFixed(0))) : null; out.results = g.RR.on && R.phase === 'done' ? g.RR.results().map((o) => (o.me ? 'YOU ' : o.name + ' ') + (o.est ? '~' : '') + o.t.toFixed(1)) : null;
+    out.wallMap = R.sim.walls.map((G) => G.planks.map((p) => (p.state === 0 ? '.' : p.own ? 'o' : 'r')).join(''));   /* per wall, plank by plank across the road: . intact, o broken by you, r broken by a rival */
     out.phase = R.phase; out.time = +R.clock.toFixed(2); out.pen = R.penalty; out.sim = { broken: R.sim.broken, total: R.sim.total }; out.maxLat = +maxLat.toFixed(1); out.offRoad = +offRoad.toFixed(1); out.air = +airT.toFixed(1);
     out.spins = spins; out.maxSlip = +maxSlip.toFixed(2); out.meanSlip = +(slipSum / Math.max(1, slipN)).toFixed(3); out.jumpBest = +R.jumpBest.toFixed(1); out.stuckReset = stuckReset; out.minHp = +minHp.toFixed(0); out.topKmh = +(topSpd * 3.6).toFixed(0); out.splits = R.splits.map((x) => +x.toFixed(2)); out.cpsS = RY.cps; out.par = RY.par; out.ms = Math.round(performance.now() - t0); out.steps = n;
     out.msPerStep = +((performance.now() - t0) / n).toFixed(3);
@@ -71,11 +73,11 @@ const OUT = process.env.OUT || __dirname, NOISE = +(process.env.NOISE || 0), LAG
       const E = document.getElementById('rresP');
       out.finish = { shown: !!E && !document.getElementById('rres').hidden, text: E ? E.textContent.replace(/\s+/g, ' ').slice(0, 220) : null, save: JSON.stringify(g.save.rally), money: g.getMoney() };
       const planks = R.sim.broken; R.again(); out.again = { phase: R.phase, planksReset: R.sim.broken === 0, was: planks, s: +R.s.toFixed(0), resHidden: document.getElementById('rres').hidden };
-      const sv = R.saved; R.exit(false);
+      const sv = R.saved; R.exit(false); out.rrAfterExit = { on: g.RR.on, n: g.RR.list.length };
       out.exit = { on: R.on, mode: g.App.mode, car: g.save.car, bodyVisible: !!g.car.body.visible, x: +g.car.x.toFixed(0), z: +g.car.z.toFixed(0), wasX: +sv.x.toFixed(0), wasZ: +sv.z.toFixed(0), rootHidden: document.getElementById('ryhud').hidden, bodyClass: document.body.className, sceneHidden: g.scene.children.filter((o) => !o.visible && !o.isLight).length };
     }
     return out;
-  }, [TOD, MAXT, SHOTS.slice(), TRACE, NOISE, LAG]);
+  }, [TOD, MAXT, SHOTS.slice(), TRACE, NOISE, LAG, RIV]);
   console.log(JSON.stringify(res, null, 1));
   console.log(logs.join('\n'));
   await browser.close();

@@ -27,7 +27,7 @@ function _rwHide(sim, k, slot) { const m = sim.mats[k], o = slot * 16; for (let 
 
 /* walls: [{x,z,yaw,hw,y}], gh(x,z) = ground height. seed makes the wood tones and break points repeatable. */
 RW.make = function (walls, gh, seed) {
-  const rnd = mulberry32((seed || 3) * 977 + 13), sim = { walls: [], gh, rnd, live: [], bend: [], ev: [], now: 0, broken: 0, total: 0, shardNext: 0, cap: [0, 0, 0, 0, RW.SHARDS], used: 0, acc: 0 };
+  const rnd = mulberry32((seed || 3) * 977 + 13), sim = { walls: [], gh, rnd, live: [], bend: [], ev: [], now: 0, broken: 0, mine: 0, total: 0, shardNext: 0, cap: [0, 0, 0, 0, RW.SHARDS], used: 0, acc: 0 };
   let nP = 0, nR = 0;
   for (const w of walls) { const W = 2 * (w.hw + 0.65), n = Math.floor(W / RW.PITCH); nP += n; nR += RW.RAILS.length * Math.ceil(W / RW.RL); }
   sim.cap = [nP, nP, nP, nR, RW.SHARDS]; sim.mats = sim.cap.map((c) => new Float32Array(c * 16)); sim.tint = sim.cap.map((c) => new Float32Array(c * 3)); sim.dirty = [true, true, true, true, true]; sim.count = [0, 0, 0, 0, 0];
@@ -59,7 +59,7 @@ RW.putPlank = function (sim, p, ang) {
 RW.reset = function (sim) {
   for (const G of sim.walls) { G.hit = false; for (const p of G.planks) { p.state = 0; p.ang = 0; p.bp = null; _rwHide(sim, 1, p.slot); _rwHide(sim, 2, p.slot); RW.putPlank(sim, p, 0); } for (const r of G.rails) { r.state = 0; _rwPut(sim, 3, r.slot, r.px, r.py, r.pz, G.qw, r.len, 0.12, 0.07); } }
   for (let i = 0; i < RW.SHARDS; i++) _rwHide(sim, 4, i);
-  sim.live.length = 0; sim.bend.length = 0; sim.ev.length = 0; sim.broken = 0; sim.shardNext = 0;
+  sim.live.length = 0; sim.bend.length = 0; sim.ev.length = 0; sim.broken = 0; sim.mine = 0; sim.shardNext = 0;
 };
 
 /* ---------- bodies ---------- */
@@ -93,7 +93,7 @@ RW.carStep = function (sim, car) {
       const near = Math.abs(side) < hwid - 0.1;      /* direct hit vs a clipped neighbour */
       const vn = car.vx * G.tx + car.vz * G.tz, sp = Math.hypot(car.vx, car.vz);
       p.state = 1; p.t0 = sim.now; p.snapAt = sim.now + (near ? 0.04 + sim.rnd() * 0.06 : 0.07 + sim.rnd() * 0.12); p.angMax = (near ? 0.34 : 0.22) + sim.rnd() * 0.1; p.dir = vn >= 0 ? 1 : -1;
-      p.cvx = car.vx; p.cvz = car.vz; p.cside = side; p.sp = sp; p.near = near; sim.bend.push(p);
+      p.own = !!car.own; p.cvx = car.vx; p.cvz = car.vz; p.cside = side; p.sp = sp; p.near = near; sim.bend.push(p);
       took += near ? 0.008 : 0.0025; G.hit = true;
       if (sim.ev.length < 40) sim.ev.push({ t: 'crack', x: p.bx, y: p.by + 0.8, z: p.bz, sp });
     }
@@ -132,7 +132,7 @@ function _rwSnap(sim, p) {
     const st = _rwBody(sim, 1, p.slot, p.bx + u[0] * hb / 2, p.by + u[1] * hb / 2, p.bz + u[2] * hb / 2, qb, [p.cvx * 0.35, 0.6, p.cvz * 0.35], [G.lx * p.dir * (2 + r() * 3), (r() - 0.5) * 2, G.lz * p.dir * (2 + r() * 3)], hb / 2, 1, RW.PW, hb, RW.PT, 12);
     st.pivot = true;
   }
-  p.state = 2; sim.broken++;
+  p.state = 2; sim.broken++; if (p.own) sim.mine++;   /* mine: planks the player's own car broke (rivals break them too) */
   const bx = p.bx + u[0] * hb, by = p.by + u[1] * hb, bz = p.bz + u[2] * hb;
   _rwShards(sim, bx, by, bz, p.cvx, p.cvz, p.near ? 6 + ((r() * 5) | 0) : 2, 0.6 + Math.min(1.6, sp / 22) * (p.near ? 1 : 0.5));
   if (sim.ev.length < 40) sim.ev.push({ t: 'snap', x: bx, y: by, z: bz, sp, vx: p.cvx, vz: p.cvz, near: p.near });
@@ -186,4 +186,4 @@ RW.bulldoze = function (sim, car) {
     if (fwd > -hl && fwd < hl && Math.abs(side) < hw) { const push = Math.max(0, sp * 0.8 - (b.vx * cx + b.vz * cz)); b.vx += cx * push * 0.5 + (side > 0 ? 1 : -1) * cz * 0.6; b.vz += cz * push * 0.5 - (side > 0 ? 1 : -1) * cx * 0.6; b.vy += 0.6; b.rest = 0; }
   }
 };
-RW.stats = function (sim) { return { broken: sim.broken, total: sim.total, live: sim.live.length }; };
+RW.stats = function (sim) { return { broken: sim.broken, mine: sim.mine, total: sim.total, live: sim.live.length }; };
