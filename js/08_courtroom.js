@@ -32,18 +32,29 @@ function crPerson(o) {
   const hat = o.hat ? (o.hat.isColor ? { k: 'cap', c: o.hat, bc: o.hat } : o.hat) : null, st = o.hairStyle || 'short';
   const h = Human.make({ fem: !!o.fem, s: o.s || 1, stout: (o.build === 'stout' ? 1.16 : o.build === 'slim' ? 0.9 : 1) * (o.robe ? 1.06 : 1), skin: o.skin, hair: o.hair, shirt: o.jacket, inner: o.shirt || lc(0xeeeeee), tie: o.tie, pants: o.pants || o.jacket, shoe: o.shoe || lc(0x15151a),
     sleeve: !o.shortSl, shorts: !!o.shorts, robe: !!o.robe, suit: !o.robe && !o.casual && !o.shortSl, hst: st, beard: !!o.beard, glasses: !!o.glasses, glassC: o.glassC, hat: hat && HU_HAT[hat.k] ? hat : null, seed: (o.skin ? o.skin.r * 7 : 0) + (o.hair ? o.hair.g * 13 : 0) });
+  HU.cut.add(h);   /* blinks and breathes while its scene is on screen (huCutTick) */
   const b = h.b, rig = { root: h.root, hips: b.hips, tor: b.tor, head: b.head, armL: b.armL, elL: b.elL, armR: b.armR, elR: b.elR, legL: b.legL, knL: b.knL, legR: b.legR, knR: b.knR, hu: h };
   /* bandage and neck brace ride on the head */
   if (o.bandage || o.brace) {
-    const ex = new THREE.Group(); ex.position.y = 0.106; ex.scale.setScalar(0.9); b.head.add(ex); const gb = new GB(0, 0, false);
-    if (o.bandage) { crObx(gb, 0, 0.095, 0.01, 0.2, 0.05, 0.215, lc(0xf4f4ee), 0.1); crObx(gb, 0.06, 0.02, 0.1, 0.07, 0.05, 0.02, lc(0xf4f4ee), 0); }
-    if (o.brace) crCyl(gb, 0, -0.17, 0, 0.082, 0.07, 0.082, lc(0xe9e6dc), 0.2);
+    const ex = new THREE.Group(); b.head.add(ex); const gb = new GB(0, 0, false);
+    /* in head-bone space (y = metres above the chin): a bandage wound round the brow over the hair, a dressing on the temple, a collar round the neck */
+    if (o.bandage) { crCyl(gb, 0, 0.172, -0.012, 0.086, 0.042, 0.112, lc(0xf4f4ee), 0.1); crObx(gb, 0.05, 0.142, 0.07, 0.04, 0.03, 0.01, lc(0xf4f4ee), 0, 0, 0.6, 0); }
+    if (o.brace) crCyl(gb, 0, -0.045, -0.012, 0.066, 0.075, 0.066, lc(0xe9e6dc), 0.2);
     ex.add(gb.mesh(CR.mats.std, false, false));
   }
   if (o.seated) { b.hips.position.y = o.seat || 0.62; for (const l of [rig.legL, rig.legR]) l.rotation.x = -Math.PI / 2; for (const k of [rig.knL, rig.knR]) k.rotation.x = Math.PI / 2; }
   return rig;
 }
 /* freeze a posed person into a static crowd mesh */
+/* the injured pedestrian's left arm in a sling (a cradle under the forearm, a strap over the right shoulder) and a cast on the right leg, fitted to the skeleton */
+function crInjure(v) {
+  const wh = lc(0xf0eee6), mats = CR.mats, g = new GB(0, 0, false), c = new GB(0, 0, false), f = new GB(0, 0, false);
+  v.armL.rotation.set(-0.42, 0, 0.12); v.elL.rotation.x = -1.45; v.armR.rotation.x = -0.3; v.elR.rotation.x = -0.7;
+  crObx(g, 0, -0.17, 0.004, 0.1, 0.36, 0.11, wh, 0.15); v.sling = g.mesh(mats.std, false, false); v.elL.add(v.sling);
+  const st = new GB(0, 0, false); crObx(st, -0.01, 0.3, 0.118, 0.045, 0.44, 0.012, wh, 0.15, 0, 0, -0.55); v.strap = st.mesh(mats.std, false, false); v.tor.add(v.strap);
+  crObx(c, 0, -0.21, 0.004, 0.142, 0.4, 0.152, wh, 0.1); v.knR.add(c.mesh(mats.std, false, false));
+  crObx(f, 0, -0.015, 0.05, 0.12, 0.11, 0.24, wh, 0.1); v.hu.b.footR.add(f.mesh(mats.std, false, false));
+}
 function crBake(rig, gb) {
   rig.root.updateMatrixWorld(true);
   if (rig.hu) { const g = Human.bake(rig.hu); gb.geo(g, rig.hu.mesh.matrixWorld, _crW, 0); g.dispose(); }
@@ -210,11 +221,10 @@ CR.builders.court = function () {
   law.root.position.set(0.8, 0, -0.6); sc.add(law.root);
   const vic = CR.A.victim = crPerson({ skin: skinA[3], hair: hairA[1], jacket: lc(0x2e6fa8), shirt: lc(0xece9e0), pants: lc(0x3a4a63), hairStyle: 'short', seated: true, seat: 0.25 + 0.47 + 0.08, bandage: true, brace: true, tie: null });
   vic.root.position.set(4.35, 0, -5.4); vic.root.rotation.y = -0.75; sc.add(vic.root);
-  { const wh = lc(0xf0eee6); const g = new GB(0, 0, false); crObx(g, 0, 0.15, 0.13, 0.5, 0.3, 0.05, wh, 0.2, 0, 0, 0.55); crObx(g, 0.04, 0.42, 0.14, 0.12, 0.1, 0.1, wh, 0.1); vic.sling = g.mesh(mats.std, false, false); vic.tor.add(vic.sling);
-    vic.armL.rotation.x = -0.5; vic.armL.rotation.z = -0.25; vic.elL.rotation.x = -1.25; vic.armR.rotation.x = -0.3; vic.elR.rotation.x = -0.7;
+  { crInjure(vic);
     const cr = new GB(0, 0, false); crObx(cr, 0, 0.55, 0, 0.04, 1.1, 0.04, lc(0xb8b8c0), 0); crObx(cr, 0, 1.0, 0, 0.22, 0.04, 0.04, lc(0x30343c), 0); const cm = cr.mesh(mats.std, false, false); cm.position.set(5.3, 0.25, -4.7); cm.rotation.set(-0.12, 0.2, 0.2); sc.add(cm);
     const cr2 = cm.clone(); cr2.position.set(5.5, 0.25, -4.75); cr2.rotation.set(-0.1, 0.1, 0.12); sc.add(cr2);
-    const cast = new GB(0, 0, false); crObx(cast, 0, -0.2, 0.12, 0.2, 0.46, 0.2, wh, 0.1); crObx(cast, 0, -0.45, 0.15, 0.16, 0.12, 0.3, wh, 0.1); const cmesh = cast.mesh(mats.std, false, false); vic.legR.add(cmesh); }
+  }
   const sMesh = S.mesh(mats.std, false, true), pMesh = P.mesh(mats.pol, false, true), eMesh = E.mesh(mats.emi, false, false); sc.add(sMesh, pMesh, eMesh);
   /* first-person hands (children of the camera) */
   const hands = CR.hands = [];

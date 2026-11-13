@@ -151,6 +151,9 @@ function frame(now) {
   requestAnimationFrame(frame);
   let dt = (now - last) / 1000; last = now; if (!(dt > 0)) return; dt = Math.min(dt, 0.1);
   if (App.mode === 'load') return;
+  /* every mode advances the renderer's frame counter: skinned people only re-upload their skeleton when it changes, so a cutscene that skipped this would freeze everyone in it */
+  renderer.info.reset();
+  if (App.mode === 'court' || App.mode === 'bust' || App.mode === 'shop' || App.mode === 'venue') huCutTick(dt, App.time + now / 1000);
   if (App.mode === 'court') { Court.frame(dt); return; }
   if (App.mode === 'bust') { Bust.frame(dt); return; }
   if (App.mode === 'shop') { Shop.frame(dt); return; }
@@ -158,7 +161,7 @@ function frame(now) {
   if (App.mode === 'mech') { Mech.frame(dt); return; }
   if (App.mode === 'wk') { Wk.frame(dt); return; }
   syncPl();
-  frameN++; const c = car; renderer.info.reset(); Air.tick(dt); Dock.tick(dt); Track.tick(dt);
+  frameN++; const c = car; Air.tick(dt); Dock.tick(dt); Track.tick(dt);
   adapt(dt);
   if (App.mode === 'pause' || App.mode === 'vm' || App.mode === 'rlobby') {
     if (frameN % 10 !== 0) return;

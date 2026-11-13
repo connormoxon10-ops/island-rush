@@ -43,12 +43,10 @@ function crMakeLawyer(o) {
   l.root.position.set(o.x, 0, o.z); CR.scene.add(l.root); CR.A.lawyer = l; return l;
 }
 function crMakeVictim(o) {
-  const pal = crPal(), mats = CR.mats, wh = lc(0xf0eee6);
+  const pal = crPal();
   const v = crPerson({ skin: pal.skinA[o.skin == null ? 3 : o.skin], hair: pal.hairA[o.hair == null ? 1 : o.hair], jacket: lc(o.jacket || 0x2e6fa8), shirt: lc(0xece9e0), pants: lc(o.pants || 0x3a4a63), hairStyle: o.style || 'short', seated: true, seat: o.seat || 0.8, bandage: true, brace: true });
   v.root.position.set(o.x, 0, o.z); v.root.rotation.y = o.ry || 0; CR.scene.add(v.root);
-  const g = new GB(0, 0, false); crObx(g, 0, 0.15, 0.13, 0.5, 0.3, 0.05, wh, 0.2, 0, 0, 0.55); crObx(g, 0.04, 0.42, 0.14, 0.12, 0.1, 0.1, wh, 0.1); v.sling = g.mesh(mats.std, false, false); v.tor.add(v.sling);
-  v.armL.rotation.x = -0.5; v.armL.rotation.z = -0.25; v.elL.rotation.x = -1.25; v.armR.rotation.x = -0.3; v.elR.rotation.x = -0.7;
-  const cast = new GB(0, 0, false); crObx(cast, 0, -0.2, 0.12, 0.2, 0.46, 0.2, wh, 0.1); crObx(cast, 0, -0.45, 0.15, 0.16, 0.12, 0.3, wh, 0.1); v.legR.add(cast.mesh(mats.std, false, false));
+  crInjure(v);
   if (o.lean) v.tor.rotation.x = -o.lean; CR.A.victim = v; return v;
 }
 function crFinish(sc, S, P, E) { const mats = CR.mats; sc.add(S.mesh(mats.std, false, true), P.mesh(mats.pol, false, true), E.mesh(mats.emi, false, false)); }
