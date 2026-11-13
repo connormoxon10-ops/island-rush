@@ -7,6 +7,10 @@ const RYG = { built: false, group: null, tiles: [], cells: [], rocks: [], gates:
 const RYG_CELL = 128, RYG_TILE = 32;
 RYG.U = {
   time: { value: 0 }, dap: { value: 0.6 }, bump: { value: 0.12 }, wet: { value: 0 },
+  /* the ground's palette, set per stage theme: four road surfaces, four tones of the land beside it, the verge, the far distance, and x = how strongly the distance takes that colour, y = grass down the middle */
+  r0: { value: new THREE.Vector3(0.50, 0.36, 0.22) }, r1: { value: new THREE.Vector3(0.60, 0.55, 0.46) }, r2: { value: new THREE.Vector3(0.26, 0.18, 0.11) }, r3: { value: new THREE.Vector3(0.72, 0.60, 0.42) },
+  f0: { value: new THREE.Vector3(0.32, 0.20, 0.10) }, f1: { value: new THREE.Vector3(0.19, 0.13, 0.08) }, f2: { value: new THREE.Vector3(0.11, 0.19, 0.06) }, f3: { value: new THREE.Vector3(0.36, 0.18, 0.06) },
+  sh: { value: new THREE.Vector3(0.25, 0.27, 0.10) }, far: { value: new THREE.Vector3(0.05, 0.085, 0.045) }, pk: { value: new THREE.Vector2(0.88, 1) },
   sunV: { value: new THREE.Vector3(0, 1, 0) }, sunCol: { value: new THREE.Color(1, 0.8, 0.5) }, sunAmt: { value: 1 }
 };
 
@@ -27,16 +31,16 @@ function _rygGroundMat() {
   m.extensions = { derivatives: true };
   m.customProgramCacheKey = () => 'rygound';
   m.onBeforeCompile = (sh) => {
-    sh.uniforms.uTime = RYG.U.time; sh.uniforms.uDap = RYG.U.dap; sh.uniforms.uBump = RYG.U.bump; sh.uniforms.uWet = RYG.U.wet;
+    sh.uniforms.uTime = RYG.U.time; sh.uniforms.uDap = RYG.U.dap; sh.uniforms.uBump = RYG.U.bump; sh.uniforms.uWet = RYG.U.wet; for (const k of ['r0', 'r1', 'r2', 'r3', 'f0', 'f1', 'f2', 'f3', 'sh', 'far', 'pk']) sh.uniforms['u_' + k] = RYG.U[k];
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec2 aRD; attribute vec4 aSec; varying vec2 vRD; varying vec4 vSec; varying vec3 vWp;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\n vRD = aRD; vSec = aSec; vWp = (modelMatrix * vec4(transformed, 1.0)).xyz;');
-    sh.fragmentShader = 'uniform float uTime, uDap, uBump, uWet; varying vec2 vRD; varying vec4 vSec; varying vec3 vWp;\n' + RYG_NOISE + '\n' + sh.fragmentShader
+    sh.fragmentShader = 'uniform float uTime, uDap, uBump, uWet; uniform vec3 u_r0, u_r1, u_r2, u_r3, u_f0, u_f1, u_f2, u_f3, u_sh, u_far; uniform vec2 u_pk; varying vec2 vRD; varying vec4 vSec; varying vec3 vWp;\n' + RYG_NOISE + '\n' + sh.fragmentShader
       .replace('#include <color_fragment>', `#include <color_fragment>
       vec2 w_ = vWp.xz + vWp.y * vec2(0.73, 0.52); float d_ = vRD.x, e_ = vRD.y, a_ = abs(d_);
       float fw_ = length(fwidth(w_));
       float f3_ = 1.0 - smoothstep(0.17 / 4.3, 0.55 / 4.3, fw_), f4_ = 1.0 - smoothstep(0.17 / 17.0, 0.55 / 17.0, fw_), f5_ = 1.0 - smoothstep(0.17 / 61.0, 0.55 / 61.0, fw_);
       float n1 = rf_(w_ * 0.21), n2 = rf_(w_ * 0.9 + 3.7), n3 = mix(0.5, rn_(w_ * 4.3), f3_), n4 = mix(0.5, rn_(w_ * 17.0), f4_), n5 = mix(0.5, rn_(w_ * 61.0), f5_);
-      vec3 cHard = vec3(0.50, 0.36, 0.22), cGrav = vec3(0.60, 0.55, 0.46), cMud = vec3(0.26, 0.18, 0.11), cSand = vec3(0.72, 0.60, 0.42);
+      vec3 cHard = u_r0, cGrav = u_r1, cMud = u_r2, cSand = u_r3;
       vec3 road = cHard * vSec.x + cGrav * vSec.y + cMud * vSec.z + cSand * vSec.w;
       road *= 0.76 + 0.5 * n1 + 0.2 * (n3 - 0.5);
       float rut_ = smoothstep(0.42, 0.85, a_) * (1.0 - smoothstep(1.35, 1.85, a_));
@@ -46,17 +50,17 @@ function _rygGroundMat() {
       float berm_ = smoothstep(-1.9, -0.5, e_) * (1.0 - smoothstep(-0.2, 0.7, e_));
       road = mix(road, cGrav * (0.78 + 0.45 * n3), berm_ * 0.62);
       float tuft_ = (1.0 - smoothstep(0.3, 0.8, a_)) * smoothstep(0.62, 0.82, n2) * (1.0 - vSec.z * 0.6);
-      road = mix(road, vec3(0.20, 0.27, 0.10) * (0.7 + 0.6 * n4), tuft_ * 0.8);
-      vec3 cNeedle = vec3(0.32, 0.20, 0.10), cMoss = vec3(0.11, 0.19, 0.06), cLeaf = vec3(0.36, 0.18, 0.06), cDirt = vec3(0.19, 0.13, 0.08);
+      road = mix(road, vec3(0.20, 0.27, 0.10) * (0.7 + 0.6 * n4), tuft_ * 0.8 * u_pk.y);
+      vec3 cNeedle = u_f0, cMoss = u_f2, cLeaf = u_f3, cDirt = u_f1;
       vec3 flo = mix(cNeedle, cDirt, smoothstep(0.35, 0.7, n1));
       flo = mix(flo, cMoss, smoothstep(0.5, 0.75, rf_(w_ * 0.43 + 9.0)) * 0.9);
       flo = mix(flo, cLeaf, smoothstep(0.62, 0.85, n3) * 0.45);
       flo *= 0.62 + 0.75 * n4; flo += (n5 - 0.5) * 0.05;
-      vec3 shoulder = vec3(0.25, 0.27, 0.10) * (0.7 + 0.7 * n3);
+      vec3 shoulder = u_sh * (0.7 + 0.7 * n3);
       flo = mix(shoulder, flo, smoothstep(0.5, 5.0, e_));
       float t_ = smoothstep(-0.2, 0.9, e_);
       vec3 alb = mix(road, flo, t_) * (1.0 - 0.3 * smoothstep(8.0, 46.0, e_));
-      alb = mix(alb, vec3(0.05, 0.085, 0.045), smoothstep(34.0, 96.0, e_) * 0.88);   /* the far hillside under the haze reads as dark conifer forest, not a pale cut-off slab */
+      alb = mix(alb, u_far, smoothstep(34.0, 96.0, e_) * u_pk.x);   /* the far hillside under the haze reads as dark conifer forest, not a pale cut-off slab */
       alb = mix(alb, alb * vec3(0.55, 0.5, 0.47), uWet * (1.0 - t_) * 0.6);
       diffuseColor.rgb *= pow(alb, vec3(2.2));
       float hg_ = (n2 - 0.5) * 0.55 + (n4 - 0.5) * 0.35 + (n5 - 0.5) * 0.2 - rut_ * 0.9 + berm_ * 0.5 * n3;
@@ -325,7 +329,7 @@ RYG.buildForest = function (group) {
     }
     /* undergrowth: ferns, bushes and grass tufts (leaf cards only) */
     const byU = {};
-    for (const u of c.un) { const key = u.k === 'bush' ? 'bush' + (u.v & 1) * 2 : 'grass' + (u.v % 3); (byU[key] || (byU[key] = [])).push(u); cell.minx = Math.min(cell.minx, u.x); cell.maxx = Math.max(cell.maxx, u.x); cell.minz = Math.min(cell.minz, u.z); cell.maxz = Math.max(cell.maxz, u.z); }
+    for (const u of c.un) { const key = u.k === 'grass' ? 'grass' + (u.v % 3) : u.k + (u.v & 1) * 2; (byU[key] || (byU[key] = [])).push(u); cell.minx = Math.min(cell.minx, u.x); cell.maxx = Math.max(cell.maxx, u.x); cell.minz = Math.min(cell.minz, u.z); cell.maxz = Math.max(cell.maxz, u.z); }
     for (const key in byU) {
       const list = byU[key], name = key.replace(/\d+$/, ''), vi = +key.slice(name.length), src = TREE[name][vi % TREE[name].length], n = list.length;
       const mesh = new THREE.InstancedMesh(src.leaf, leafMat, n);
@@ -512,6 +516,14 @@ RYG.build = function (sim, opts) {
   if (RYG.built) return RYG.group; opts = opts || {};
   const t0 = performance.now(), g = RYG.group = new THREE.Group(); g.name = 'rally'; g.visible = false;
   RYG.mats = { ground: _rygGroundMat(), leaf: _rygLeafMat(), rock: _rygRockMat(false), stone: _rygRockMat(true), wood: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 }) };
+  /* the stage's theme: ground palette, and (off the forest) the plain the land settles onto in the distance, and the sea */
+  { const P = RY.T.pal, U = RYG.U, D = { r: [[0.50, 0.36, 0.22], [0.60, 0.55, 0.46], [0.26, 0.18, 0.11], [0.72, 0.60, 0.42]], f: [[0.32, 0.20, 0.10], [0.19, 0.13, 0.08], [0.11, 0.19, 0.06], [0.36, 0.18, 0.06]], sh: [0.25, 0.27, 0.10], far: [0.05, 0.085, 0.045], farK: 0.88, tuftK: 1 }, Q2 = P || D;
+    for (let k = 0; k < 4; k++) { U['r' + k].value.fromArray(Q2.r[k]); U['f' + k].value.fromArray(Q2.f[k]); } U.sh.value.fromArray(Q2.sh); U.far.value.fromArray(Q2.far); U.pk.value.set(Q2.farK, Q2.tuftK);
+    if (RY.plain != null) {
+      const cx = RY.gx0 + RY.gw * RY.GS / 2, cz = RY.gz0 + RY.gh * RY.GS / 2, flat = (y, mat) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(12000, 12000), mat); m.rotation.x = -Math.PI / 2; m.position.set(cx, y, cz); m.receiveShadow = false; g.add(m); return m; };
+      flat(RY.plain - 0.45, new THREE.MeshStandardMaterial({ color: new THREE.Color().fromArray(P.plain).convertSRGBToLinear(), roughness: 1, metalness: 0 }));
+      if (RY.sea != null) RYG.sea = flat(RY.sea, new THREE.MeshStandardMaterial({ color: new THREE.Color(0.05, 0.3, 0.38).convertSRGBToLinear(), roughness: 0.14, metalness: 0.05, transparent: true, opacity: 0.84 }));
+    } }
   RYG.far = opts.far || 380; RYG.tiles.length = 0; RYG.cells.length = 0; RYG.rocks.length = 0;
   RYG.buildTerrain(g, RYG.mats.ground); const t1 = performance.now();
   RYG.buildForest(g); RYG.buildRocks(g); RYG.buildLogs(g); RYG.buildRails(g); const t2 = performance.now();
@@ -523,7 +535,7 @@ RYG.build = function (sim, opts) {
 };
 RYG.dispose = function () {
   if (!RYG.built) return; const g = RYG.group;
-  g.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material.map) { /* shared atlas stays */ } });
+  g.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material.map) { /* shared atlas stays */ } }); RYG.sea = null;
   if (g.parent) g.parent.remove(g);
   RYG.built = false; RYG.group = null; RYG.tiles.length = 0; RYG.cells.length = 0; RYG.rocks.length = 0; RYG.gates = null; RYG.shafts = null; RYG.vars = {};
 };
