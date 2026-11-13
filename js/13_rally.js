@@ -44,7 +44,10 @@ Rally.collide = function (c, px, pz, R, P) {
   RY.hits(px, pz, R, _ryH);
   for (let i = 0; i < _ryH.length; i++) { const h = _ryH[i];
     if (h.net) {   /* a crash net gives: it takes the car in, soaks up the speed going into it and lets go without a bounce or a dent */
-      if (h.pen > 0) { const push = h.pen > 0.3 ? h.pen - 0.3 + 0.1 : h.pen * 0.35; c.x += h.nx * push; c.z += h.nz * push; const vn = c.vx * h.nx + c.vz * h.nz; if (vn < 0) { const k = h.pen > 0.3 ? 1 : 0.9; c.vx -= h.nx * vn * k; c.vz -= h.nz * vn * k; }   /* it gives 30 cm, never more */ c.vx *= 0.997; c.vz *= 0.997; c.w *= 0.985; c.net = 1; }
+      if (h.pen > 0) {   /* it gives 30 cm, never more; the speed it takes off comes from the impact (friction against the net in proportion to how hard the car hits it), so a hard hit is caught and a car sliding along it is not glued there */
+        const push = h.pen > 0.3 ? h.pen - 0.3 + 0.1 : h.pen * 0.35; c.x += h.nx * push; c.z += h.nz * push; const vn = c.vx * h.nx + c.vz * h.nz;
+        if (vn < 0) { const k = h.pen > 0.3 ? 1 : 0.9, tx = -h.nz, tz = h.nx, vt = c.vx * tx + c.vz * tz, fr = Math.min(Math.abs(vt), 0.8 * -vn * k) * Math.sign(vt); c.vx -= h.nx * vn * k + tx * fr; c.vz -= h.nz * vn * k + tz * fr; c.w *= 0.985; }
+        c.net = 1; }
       continue;
     }
     if (h.pen > 0) contact(c, px, pz, h.nx, h.nz, h.pen, 0, 0, P); if (h.rail && h.pen + 0.1 > (c.rail || 0)) { c.rail = h.pen + 0.1; c.railX = px - h.nx * R; c.railZ = pz - h.nz * R; } }   /* a wall in the way: stepCar scrapes speed off while it lasts (and the effects pass throws stone dust from the contact point) */
@@ -52,7 +55,7 @@ Rally.collide = function (c, px, pz, R, P) {
   for (const rv of RY.ravines) {
     const dx = px - rv.x, dz = pz - rv.z, u = dx * rv.tx + dz * rv.tz; if (u < -2 || u > rv.span + 2 || Math.abs(dx * rv.tz - dz * rv.tx) > 60) continue;
     if (c.y < rv.lipY - 2.2 && u > 0.5) c.fell = rv;
-    if (c.y < rv.deckY - 0.8 && u > rv.span - 2.8) contact(c, px, pz, -rv.tx, -rv.tz, u - (rv.span - 2.8), 0, 0, P);
+    if (u > rv.span - 2.8 && c.y < rv.deckY - 0.8) { if (c.y < rv.deckY - 1.5) { contact(c, px, pz, -rv.tx, -rv.tz, u - (rv.span - 2.8), 0, 0, P); c.fell = rv; } }   /* clipping the deck's edge just bumps the car up onto it; arriving well below it is a fall */
   }
   const sim = Rally.sim; if (!sim) return;
   for (const G of sim.walls) {
