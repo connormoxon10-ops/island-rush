@@ -33,7 +33,7 @@ function genMissions() {
       const n = Math.max(3, Math.round(span / 240));
       for (let i = 1; i <= n; i++) { const s = m.s0 + span * i / n; routePos(m, s, _mp); m.cps.push({ x: _mp.x, z: _mp.z, h: _mp.h, r: 18, s, tx: _mp.tx, tz: _mp.tz, finish: i === n }); }
       if (type === 'sprint') { m.limit = span / 42 + 12; m.bonus = 3; m.reward = 450 + Math.round(span / 7); m.title = 'Highway Sprint: ' + A.name + ' → ' + B.name; }
-      else { m.rivalV = 40 + (k % 4) * 2.5; m.limit = span / 28 + 15; m.reward = 800 + Math.round(span / 6); m.title = 'Street Race: ' + A.name + ' → ' + B.name; }
+      else { m.rivalV = 44 + (k % 4) * 2.5; m.limit = span / 28 + 15; m.reward = 800 + Math.round(span / 6); m.title = 'Street Race: ' + A.name + ' → ' + B.name; }
     }
     m.desc = MT[type].blurb + ' (' + Math.round(r.len) + ' m)'; missions.push(m);
   };
@@ -208,9 +208,9 @@ function updateMission(dt) {
   /* rival AI */
   if (Mi.rival) {
     const rv = Mi.rival, def = Mi.def; const sPlayer = cp ? (cp.s - Math.hypot(cp.x - c.x, cp.z - c.z)) : def.s0;
-    const gap = sPlayer - rv.rs; const target = def.rivalV * (1 + clamp(gap / 130, -0.14, 0.2)) * (1 + 0.04 * Math.sin(Mi.t * 0.35));
+    const gap = sPlayer - rv.rs; const target = def.rivalV * (1 + clamp(gap / 100, -0.06, 0.3)) * (1 + 0.04 * Math.sin(Mi.t * 0.35));
     const slow = rv.stun > 0 ? 0.2 : 1; rv.stun = Math.max(0, (rv.stun || 0) - dt); rv.lane += (-1.2 - rv.lane) * Math.min(1, dt * 1.1);
-    rv.vtt = target * slow; rv.v += clamp(rv.vtt - rv.v, -10 * dt, 6 * dt); rv.rs += rv.v * dt; rv.s = def.dir > 0 ? rv.rs : def.road.len - rv.rs; placeDyn(rv);
+    rv.vtt = target * slow; rv.v += clamp(rv.vtt - rv.v, -10 * dt, 8 * dt); rv.rs += rv.v * dt; rv.s = def.dir > 0 ? rv.rs : def.road.len - rv.rs; placeDyn(rv);
     if (rv.rs >= def.road.len - 14) return endMission(false, 'RIVAL WON', ['Your rival crossed the line first.'], 0);
   }
   if (type === 'drift') {

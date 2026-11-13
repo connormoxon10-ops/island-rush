@@ -76,6 +76,8 @@ function nearestRoad(x, z) {
 }
 
 function terrainHeight(x, z) {
+  if (Rally.on) return RY.heightAt(x, z);
+  if (Drag.on) return DG.Y;   /* the rally stage replaces the island while it is running */
   let h = terrainNoRoad(x, z);
   nearestRoad(x, z);
   if (NR.seg >= 0 && NR.d < NR.infl) { const w = 1 - sstep(NR.flat, NR.infl, NR.d); h += (NR.h - h) * w; }
@@ -89,6 +91,8 @@ function townAt(x, z, m) {
 
 /* ground sample with surface properties (used by physics) */
 function groundAt(x, z, o) {
+  if (Rally.on) { RY.ground(x, z, o); return; }
+  if (Drag.on) { Drag.ground(x, z, o); return; }
   if (Track.s && x >= Track.s.x0 && x <= Track.s.x1 && z >= Track.s.z0 && z <= Track.s.z1) {   /* the whole race site is one flat height: skip the terrain noise */
     const pv = Track.paved(x, z); o.h = Track.s.H0 + (pv ? 0.07 : 0); o.mu = pv ? 1.0 : 0.74; o.rr = pv ? 0.014 : 0.05; o.rough = pv ? 0.012 : 0.22; o.road = pv; o.water = false; return;
   }

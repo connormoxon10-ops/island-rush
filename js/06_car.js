@@ -6,23 +6,24 @@ function refreshTune() {
   const t = (typeof CUR !== 'undefined' && CUR.t) || { Tmax: 470, mu: 1.15, cd: 0.5, cl: 0, brk: 1, off: 1 };
   tune.cd = t.cd; tune.cl = t.cl || 0; tune.brk = t.brk; tune.off = t.off;
   tune.Tmax = t.Tmax * (1 + 0.07 * save.up.eng) * (save.set.dev ? Dev.power : 1); tune.mu = t.mu * (1 + 0.035 * save.up.tire) * (save.set.dev ? Dev.grip : 1); tune.nitroMax = 100 + 25 * save.up.nit; tune.dmg = 1 - 0.12 * save.up.arm;
+  Setup.apply();   /* the player's tuning setup for this car, on top of the stock numbers and the upgrades (06_tuning.js) */
 }
 const car = {
   x: 0, y: 0, z: 0, yaw: 0, vx: 0, vz: 0, w: 0, vy: 0, vyPrev: 0, air: false, airT: 0, pitch: 0, roll: 0, steer: 0, steerIn: 0, thr: 0, brk: 0, hand: 0, nit: false,
   gear: 1, rpm: 900, shift: 0, rev: false, nitro: 100, health: 100, axL: 0, ayL: 0, speed: 0, kmh: 0, slip: 0, driftAng: 0, drifting: false, spin: false, braking: false,
-  surf: { h: 0, mu: 1, rr: 0.02, rough: 0.02, road: true, water: false }, sY: 0, sV: 0, shake: 0, inWater: false, wrecked: 0, onRoad: true, leanP: 0, leanR: 0, leanPv: 0, leanRv: 0,
+  surf: { h: 0, mu: 1, rr: 0.02, rough: 0.02, road: true, water: false, loose: 0 }, sY: 0, sV: 0, shake: 0, inWater: false, wrecked: 0, onRoad: true, leanP: 0, leanR: 0, leanPv: 0, leanRv: 0,
   lights: false, heading: 0, safe: { x: 0, z: 0, yaw: 0 }, safeT: 0, lastImpact: 0, crashFlag: 0, skid: 0
 };
-const _gs = { h: 0, mu: 1, rr: 0, rough: 0, road: false, water: false }, WH = [0, 0, 0, 0];
+const _gs = { h: 0, mu: 1, rr: 0, rough: 0, road: false, water: false, loose: 0 }, WH = [0, 0, 0, 0];
 function wheelGround(c, P) {
-  P = P || CARP; const s = Math.sin(c.yaw), co = Math.cos(c.yaw), hw = P.track / 2; let mu = 0, rr = 0, rough = 0, road = 0, water = 0;
+  P = P || CARP; const s = Math.sin(c.yaw), co = Math.cos(c.yaw), hw = P.track / 2; let mu = 0, rr = 0, rough = 0, road = 0, water = 0, loose = 0;
   const PT = [[-hw, P.a], [hw, P.a], [-hw, -P.b], [hw, -P.b]];
   for (let k = 0; k < 4; k++) {
     const lx = PT[k][0], lz = PT[k][1];
-    groundAt(c.x + s * lz + co * lx, c.z + co * lz - s * lx, _gs);
-    WH[k] = _gs.h; mu += _gs.mu; rr += _gs.rr; rough += _gs.rough; road += _gs.road ? 1 : 0; water += _gs.water ? 1 : 0;
+    _gs.loose = 0; groundAt(c.x + s * lz + co * lx, c.z + co * lz - s * lx, _gs);
+    WH[k] = _gs.h; loose += _gs.loose; mu += _gs.mu; rr += _gs.rr; rough += _gs.rough; road += _gs.road ? 1 : 0; water += _gs.water ? 1 : 0;
   }
-  const sf = c.surf; sf.mu = mu / 4; sf.rr = rr / 4; sf.rough = rough / 4; sf.road = road >= 2; sf.water = water >= 3;
+  const sf = c.surf; sf.mu = mu / 4; sf.rr = rr / 4; sf.rough = rough / 4; sf.road = road >= 2; sf.water = water >= 3; sf.loose = loose / 4;
 }
 
 /* static collisions (circles + boxes) with impulse response */
@@ -46,6 +47,8 @@ function collideStatic(c, P, circ) {
   circ = circ || CIRC; const s = Math.sin(c.yaw), co = Math.cos(c.yaw);
   for (let k = 0; k < 3; k++) {
     const R = circ[k][1]; const px = c.x + s * circ[k][0], pz = c.z + co * circ[k][0];
+    if (Rally.on) { Rally.collide(c, px, pz, R, P); continue; }
+    if (Drag.on) { Drag.collide(c, px, pz, R, P); continue; }
     if (Track.s) Track.collide(c, px, pz, R, P);
     const ccx = Math.floor(px / CHUNK), ccz = Math.floor(pz / CHUNK);
     for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
@@ -73,7 +76,23 @@ function stepCar(dt, c0, P0, T0, circ0) {
   const c = c0 || car, P = P0 || CARP, T = T0 || tune, s = Math.sin(c.yaw), co = Math.cos(c.yaw);
   let vf = c.vx * s + c.vz * co, vr = c.vx * co - c.vz * s;
   wheelGround(c, P);
-  const mu = c.surf.mu * T.mu * (c.surf.road ? 1 : T.off), spd = Math.abs(vf);
+  /* rally: the road leans. Gravity pulls the car down the cross-slope, a banked road presses the tyres harder into the dirt in a bend (an off-camber one lifts them off it), and a wall
+     scrape (set by the last collision pass) drags the speed down */
+  let nfB = 1;
+  if (Rally.on) {
+    if (!c.air) {
+      const cs = ((WH[1] + WH[3]) - (WH[0] + WH[2])) / (2 * P.track), cl = clamp(cs, -0.7, 0.7), ca = 1 / Math.sqrt(1 + cl * cl);   /* + = the left side is higher */
+      c.cs = (c.cs || 0) + (cl - (c.cs || 0)) * Math.min(1, dt * 12);
+      const sn = c.cs / Math.sqrt(1 + c.cs * c.cs);
+      vr -= G * sn * dt; nfB = clamp(ca - (c.ayL || 0) / G * sn, 0.55, 1.6);
+    }
+    if (c.rail > 0) {
+      const sp = Math.hypot(c.vx, c.vz);
+      if (sp > 0.5) { const dv = Math.min(sp * 0.4, (5 + 16 * Math.min(1, Math.max(0, c.rail - 0.1) / 0.12)) * dt);   /* c.rail = 0.1 + how far the last collision pass had to push the car out: touching scrapes at 5 m/s^2, pressing in hard at 21 */ vf -= vf / sp * dv; vr -= vr / sp * dv; c.railFx = sp; }
+      c.rail = 0;
+    }
+  }
+  const mu = c.surf.mu * T.mu * (c.surf.road ? 1 : T.off) * nfB, spd = Math.abs(vf);
   /* axle loads: static split + longitudinal weight transfer (last step's accel) + aero downforce */
   const down = T.cl * spd * spd, Nf0 = P.m * G * P.b / P.L, Nr0 = P.m * G * P.a / P.L;
   const dN = clamp(P.m * c.axL * P.cgh / P.L, -0.35 * Nf0, 0.35 * Nr0);
@@ -81,7 +100,7 @@ function stepCar(dt, c0, P0, T0, circ0) {
   /* lateral load transfer: the loaded outer tyres give less grip than they add (load sensitivity), more so for tall cars; rsf = front roll-stiffness share */
   const lq = Math.min(1.2, 2 * Math.abs(c.ayL) * P.cgh / (G * P.track)), lq2 = 0.2 * lq * lq;
   const kF = 1 - lq2 * 2 * P.rsf, kR = 1 - lq2 * 2 * (1 - P.rsf);
-  const maxS = clamp(1.5 * mu * (1 + down / (P.m * G)) * G * P.L / Math.max(spd * spd, 1) + 0.05, 0.07, 0.56);
+  const skS = P.sk || 1, maxS = clamp((1.5 * mu * (1 + down / (P.m * G)) * G * P.L / Math.max(spd * spd, 1) + 0.05) * skS, 0.07, 0.56 * skS);   /* P.sk: steering lock (tuning) */
   const delta = c.steer * maxS * (1 + Math.min(0.45, Math.abs(vr) / Math.max(6, spd) * 0.9)); c.delta = delta;
   let thr = c.thr, brk = c.brk;
   if (vf < 0.8 && brk > 0.1 && thr < 0.05) c.rev = true;
@@ -93,25 +112,26 @@ function stepCar(dt, c0, P0, T0, circ0) {
   if (c.shift > 0) c.shift -= dt; else { if (rpm > upR && c.gear < P.gears.length) { c.gear++; c.shift = 0.16; } else if (rpm < dnR && c.gear > 1) { c.gear--; c.shift = 0.08; } }
   if (spd < 2) c.gear = 1;
   const rpmT = Math.max(rpm, P.red * (c.gear === 1 ? 0.46 : 0.243));
-  let tq = T.Tmax * (0.62 + 0.38 * Math.sin(Math.PI * clamp((rpmT - 800) / (P.red - 700), 0, 1))); if (rpm > P.red) tq = 0;
+  let tq = T.Tmax * (0.62 + 0.38 * Math.sin(Math.PI * Math.pow(clamp((rpmT - 800) / (P.red - 700), 0, 1), P.tqSkew || 1))); if (rpm > P.red) tq = 0;   /* P.tqSkew moves the torque peak down (< 1) or up (> 1) the rev range */
   const nOn = c.nit && c.nitro > 0 && thr > 0.1 && !c.rev;
   /* traction limit: the driven axle(s) can only put down mu x their load; AWD shares by load */
   const rdE = clamp(P.awd ? 0.7 * Nr / (Nf + Nr) + 0.3 * P.rd : P.rd, 0.06, 0.94);
   /* traction control: ease off the power as the rear tyres run out of lateral grip (off with the handbrake so drifts still hold) */
-  const tcf = c.hand > 0.5 ? 1 : 1 - 0.7 * sstep(0.5, 0.9, c.utR || 0);
-  const FmaxRaw = 0.93 * Math.min(mu * Nr / rdE, mu * Nf / (1 - rdE)), Fmax = FmaxRaw * tcf;
-  const fbf = clamp(Nf / (Nf + Nr) + 0.05, 0.3, 0.8);
+  const ra = Rally.on && (c !== car || Rally.assistOn()), tcf = c.hand > 0.5 ? 1 : 1 - (ra ? 0.88 : P.tc != null ? P.tc : 0.7) * (ra ? sstep(0.3, 0.7, c.utR || 0) : sstep(0.5, 0.9, c.utR || 0));   /* the rally stage's driving assist cuts power earlier and harder */
+  const lonF = P.lonF || 1, lonR = P.lonR || 1;   /* per-axle tyre factors from the tuning setup (camber, pressure): lon = traction and braking, lat = cornering */
+  const FmaxRaw = 0.93 * Math.min(mu * lonR * Nr / rdE, mu * lonF * Nf / (1 - rdE)), Fmax = FmaxRaw * tcf;
+  const fbf = clamp(Nf / (Nf + Nr) + 0.05 + (P.bb || 0), 0.3, 0.85);
   let F = 0, Fb = 0;
   if (c.rev) { F = -brk * 5200 * (P.m / 1400) * (1 - sstep(7, 12, -vf)); Fb = thr * mu * (P.m * G + down) * 0.9; }
-  else { F = thr * tq * ratio * 0.9 / P.rw * (c.shift > 0 ? 0.15 : 1) * (nOn ? 1.32 : 1); F = Math.min(F, Fmax); Fb = brk * mu * (P.m * G + down) * 0.9 * T.brk; }
+  else { F = thr * tq * ratio * 0.9 / P.rw * (c.shift > 0 ? 0.15 : 1) * (nOn ? P.nitK || 1.32 : 1); F = Math.min(F, Fmax); Fb = brk * mu * (P.m * G + down) * 0.9 * T.brk; }
   /* ABS: the brakes can't ask more than ~88% of either axle's grip, so the car keeps some steering while braking hard */
-  Fb = Math.min(Fb, 0.88 * Math.min(mu * Nf * kF / fbf, mu * Nr * kR / (1 - fbf)));
+  Fb = Math.min(Fb, 0.88 * Math.min(mu * lonF * Nf * kF / fbf, mu * lonR * Nr * kR / (1 - fbf)));
   c.spin = !c.rev && tcf > 0.9 && F >= Fmax * 0.97 && spd < 28;
   const Fh = c.hand * mu * P.m * G * 0.35;
   const slopeF = (((WH[0] + WH[1]) / 2) - ((WH[2] + WH[3]) / 2)) / P.L;
   const Fx = F - P.m * G * slopeF * 0.8;
   const Feb = c.rev ? 0 : (1 - thr) * 0.12 * T.Tmax * (rpm / P.red) * ratio * 0.9 / P.rw;
-  const R = T.cd * spd * spd + c.surf.rr * P.m * G * (1 + 0.012 * spd) * (spd > 0.05 ? 1 : 0) + Feb + Fb + Fh;
+  const R = T.cd * spd * spd + c.surf.rr * (P.rrK || 1) * P.m * G * (1 + 0.012 * spd) * (spd > 0.05 ? 1 : 0) + Feb + Fb + Fh;
   const aLong = (Fx - sg * R) / P.m;
   vf += Fx / P.m * dt; const dres = R / P.m * dt;
   if (Math.abs(vf) <= dres) vf = 0; else vf -= Math.sign(vf) * dres;
@@ -119,7 +139,8 @@ function stepCar(dt, c0, P0, T0, circ0) {
   const vxa = Math.max(Math.abs(vf), 1.2);
   const af = Math.atan2(vr + P.a * c.w, vxa) - delta * sg, ar = Math.atan2(vr - P.b * c.w, vxa);
   const fxR = rdE * Math.abs(F) + (1 - fbf) * Fb + Fh, fxF = (1 - rdE) * Math.abs(F) + fbf * Fb;
-  const muR = mu * (c.hand > 0.5 ? 0.36 : 1), capF = mu * Nf * kF, capR = muR * Nr * kR;
+  const lz = c.surf.loose || 0, slF = 1 - 0.22 * lz * sstep(0.07, 0.3, Math.abs(af)), slR = 1 - 0.22 * lz * sstep(0.07, 0.3, Math.abs(ar));   /* gravel: peak grip then a slide */
+  const latK = P.lat || 1, muR = mu * (c.hand > 0.5 ? 0.36 : 1), capF = mu * Nf * kF * slF * latK * (P.latF || 1), capR = muR * Nr * kR * slR * latK * (P.latR || 1);   /* P.lat: a car whose tyres launch far better than they corner (drag rubber) */
   const fcF = Math.sqrt(Math.max(0.05, 1 - Math.pow(Math.min(0.97, fxF / capF), 2))), fcR = Math.sqrt(Math.max(0.05, 1 - Math.pow(Math.min(0.97, fxR / capR), 2)));
   const FyfM = capF * fcF, FyrM = capR * fcR;
   /* cornering stiffness follows the static + aero axle load only: tyre load sensitivity cancels the braking/accel transfer, which keeps trail-braking progressive instead of snapping round */
@@ -144,10 +165,13 @@ function stepCar(dt, c0, P0, T0, circ0) {
   const ayPrev = c.vy;
   if (c.air) {
     c.vy -= G * dt; c.y += c.vy * dt; c.airT += dt; c.pitch += (Math.atan2(c.vy, Math.max(8, spd)) * 0.6 - c.pitch) * Math.min(1, dt * 2); c.roll += (0 - c.roll) * Math.min(1, dt);
-    if (c.y <= gy) { const imp = -c.vy; c.y = gy; c.air = false; c.sV -= imp * 0.12; if (imp > 4.5) { c.landImpact = imp; } c.vy = 0; c.airT = 0; }
+    if (c.y <= gy) { const imp = -c.vy; c.y = gy; c.air = false; c.sV -= imp * 0.12; if (imp > 4.5) { c.landImpact = imp; } c.vy = 0; c.airT = 0; if (Rally.on) c.airCd = 0.12; }
   } else {
     const need = (gy - c.y) / dt;
-    if (need < c.vyPrev - G * dt - 0.2 && spd > 8) { c.air = true; c.vy = c.vyPrev; c.y += c.vy * dt; }
+    /* on the rally stage: no re-launch for a moment after touchdown (landing zeroes vy, which on any downhill reads as the ground falling away and used to chain into endless air),
+       and a take-off margin that grows with speed so the 2 m ground grid's slope kinks are not mistaken for a lip */
+    const cd = (c.airCd || 0) > 0; if (cd) c.airCd -= dt;
+    if (!cd && need < c.vyPrev - G * dt - (Rally.on ? 0.2 + 0.03 * spd : 0.2) && spd > 8) { c.air = true; c.vy = c.vyPrev; c.y += c.vy * dt; }
     else { c.vy = clamp(need, -30, 30); c.y = gy; }
     c.pitch += (tp - c.pitch) * Math.min(1, dt * 14); c.roll += (tr - c.roll) * Math.min(1, dt * 14);
   }

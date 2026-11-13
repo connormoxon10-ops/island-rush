@@ -6,13 +6,13 @@
 const Race = { on: false, phase: 'off', cfg: { laps: 3, diff: 1, n: 5 }, near: null, ents: [], me: null, t: 0, ct: 0, goAt: 0, clock: 0, hold: false, hudT: 0, over: false, res: null, wrong: 0, gridT: 0, banner: '' };
 const RACE_NAMES = ['Vega Ruiz', 'Mika Tanaka', 'Dex Calloway', 'Ines Varga', 'Boone Hart', 'Sloane Okafor', 'Rafe Lindqvist', 'Nova Reyes', 'Tobias Wren'];
 const RACE_DIFF = [
-  { n: 'Rookie', sk: 0.9, mult: 1, off: [-1, -1, 0, 0, -1, -2, -1], lim: 0.97, rb: [0.96, 1.04], edge: 0.03, nit: false, cover: false, push: 0, pw: 1, gr: 1, react: [0.2, 0.3] },
-  { n: 'Pro', sk: 0.96, mult: 1.6, off: [0, 1, 1, 1, 0, 1, 0], lim: 1.0, rb: [0.99, 1.05], edge: 0.05, nit: true, cover: true, push: 0, pw: 1, gr: 1, react: [0.12, 0.25] },
-  { n: 'Elite', sk: 1.0, mult: 2.5, off: [1, 1, 2, 2, 1, 2, 1], lim: 1.0, rb: [1.0, 1.06], edge: 0.07, nit: true, cover: true, push: 1.5, pw: 1.05, gr: 1.02, react: [0.07, 0.15] },
-  { n: 'Legend', sk: 1.0, mult: 4, off: [2, 2, 3, 3, 2, 3, 2], lim: 1.02, rb: [1.0, 1.08], edge: 0.09, nit: true, cover: true, push: 3, pw: 1.12, gr: 1.04, react: [0.05, 0.1] }
+  { n: 'Rookie', sk: 0.95, mult: 1, off: [0, 0, 1, 1, 0, -1, 0], lim: 1.0, rb: [0.99, 1.05], edge: 0.07, nit: true, cover: false, push: 0, pw: 1.03, gr: 1.01, react: [0.14, 0.25] },
+  { n: 'Pro', sk: 0.99, mult: 1.6, off: [1, 2, 2, 2, 1, 2, 1], lim: 1.02, rb: [1.0, 1.06], edge: 0.1, nit: true, cover: true, push: 1, pw: 1.06, gr: 1.02, react: [0.08, 0.16] },
+  { n: 'Elite', sk: 1.0, mult: 2.5, off: [2, 2, 3, 3, 2, 3, 2], lim: 1.03, rb: [1.0, 1.08], edge: 0.14, nit: true, cover: true, push: 2.5, pw: 1.1, gr: 1.04, react: [0.05, 0.1] },
+  { n: 'Legend', sk: 1.0, mult: 4, off: [3, 3, 4, 4, 3, 4, 3], lim: 1.05, rb: [1.0, 1.1], edge: 0.18, nit: true, cover: true, push: 4, pw: 1.18, gr: 1.07, react: [0.03, 0.06] }
 ];
 /* the dealership cars from fastest to slowest round this circuit (measured with the bots' own driving), so a rival tier that is 'two cars better' really is two cars faster */
-const RACE_ORDER = [6, 5, 4, 0, 1, 3, 2];
+const RACE_ORDER = [6, 5, 4, 0, 7, 1, 3, 2];
 const RACE_PRIZE = [1800, 1100, 700, 450, 300, 200, 150, 100], RACE_LAPM = { 2: 0.75, 3: 1, 5: 1.7 };
 const _rl = { i: 0, t: 0, s: 0, d: 0, l: 0 }, _ro = {};
 const fmtLap = (t) => { if (!(t > 0)) return '–'; const m = Math.floor(t / 60), s = t - m * 60; return m + ':' + (s < 10 ? '0' : '') + s.toFixed(2); };
@@ -32,12 +32,12 @@ Race.open = function () {
   for (const k in Keys) Keys[k] = false; for (const k of ['l', 'r', 'gas', 'brk', 'nit', 'hand']) TouchIn[k] = 0;
   Race.phase = 'lobby'; UI.setMode('rlobby'); Race.paint(); Snd.beep(620, 0.06);
 };
-Race.leave = function () { if (App.mode !== 'rlobby' || Jack.open) return; Race.phase = 'off'; UI.setMode('play'); Snd.beep(420, 0.05); };
-Race.key = function (code) { if (Jack.open) { Jack.key(code); return; } if (code === 'Escape' || code === 'KeyE' && false) Race.leave(); else if (code === 'Enter') Race.start(); };
+Race.leave = function () { if (App.mode !== 'rlobby' || Jack.open) return; Rally.lobby = false; Drag.lobby = false; Race.phase = 'off'; UI.setMode('play'); Snd.beep(420, 0.05); };
+Race.key = function (code) { if (Rally.lobby) { Rally.lobbyKey(code); return; } if (Drag.lobby) { Drag.lobbyKey(code); return; } if (Jack.open) { Jack.key(code); return; } if (code === 'Escape' || code === 'KeyE' && false) Race.leave(); else if (code === 'Enter') Race.start(); };
 Race.paint = function () {
   const R = save.race, c = Race.cfg, seg = (k, opts) => '<div class="rseg" data-k="' + k + '">' + opts.map(([v, l]) => '<button type="button" class="' + (c[k] === v ? 'on' : '') + '" data-v="' + v + '">' + l + '</button>').join('') + '</div>';
   E.rlTitle.textContent = Track.name; E.rlCash.textContent = money(save.money); E.rlSub.textContent = 'Grand Prix'; E.rlPanel.classList.remove('jk');
-  E.rlFoot.innerHTML = '<button class="btn" type="button" data-act="leave">Leave</button><button class="btn primary" type="button" data-act="start">Start race</button>';
+  E.rlFoot.innerHTML = '<button class="btn" type="button" data-act="leave">Leave</button><button class="btn" type="button" data-act="rally">Rally stage \u25b8</button><button class="btn" type="button" data-act="drag">Drag strip \u25b8</button><button class="btn primary" type="button" data-act="start">Start race</button>';
   const base = RACE_PRIZE.slice(0, c.n + 1).map((p, i) => '<span>' + (i + 1) + '. <b>' + money(Math.round(p * RACE_DIFF[c.diff].mult * RACE_LAPM[c.laps] / 10) * 10) + '</b></span>').slice(0, 4).join('');
   E.rlBody.innerHTML = '<p class="rlp">A 2.2 km grand-prix circuit with a long start straight, a hairpin and an infield chicane. Rivals drive the same physics you do, and they are not shy about contact.</p>' +
     '<div class="rlrow"><label>Laps</label>' + seg('laps', [[2, '2'], [3, '3'], [5, '5']]) + '</div>' +
@@ -52,6 +52,10 @@ Race.initUI = function () {
   rl.addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;
     if (Jack.open) { Jack.click(b); return; }
+    if (Rally.lobby) { Rally.lobbyClick(b); return; }
+    if (Drag.lobby) { Drag.lobbyClick(b); return; }
+    if (b.dataset.act === 'rally') { Rally.open(); return; }
+    if (b.dataset.act === 'drag') { Drag.open(); return; }
     if (b.dataset.act === 'start') Race.start(); else if (b.dataset.act === 'leave') Race.leave();
     else if (b.parentNode && b.parentNode.dataset.k) { Race.cfg[b.parentNode.dataset.k] = +b.dataset.v; Race.paint(); Snd.beep(520, 0.04); }
   });
@@ -71,7 +75,7 @@ Race.start = function () {
   const slots = []; for (let i = 0; i <= n; i++) slots.push(i);
   for (let i = 0; i <= n; i++) {
     if (i === playerSlot) { Track.slot(i, _ro); pe.slot = i; Race.slotO = Object.assign({}, _ro); continue; }
-    const bi = k++, def = CARS[RACE_ORDER[clamp(pr - D.off[bi % D.off.length], 0, BASE_N - 1)]], hex = PAINTS[hexes[(bi * 3 + 1) % hexes.length]];
+    const bi = k++, def = CARS[RACE_ORDER[clamp(pr - D.off[bi % D.off.length], 0, RACE_ORDER.length - 1)]], hex = PAINTS[hexes[(bi * 3 + 1) % hexes.length]];
     const b = Bots.make(def, hex, RACE_NAMES[bi % RACE_NAMES.length], clamp(D.sk + (Math.random() - 0.5) * 0.03, 0.7, 1), bi); Bots.tier(b, D);
     Track.slot(i, _ro); Bots.place(b, _ro); b.slot = i; Bots.list.push(b); b.e = { bot: b, name: b.name, def, prog: b.prog, k: -1, cross: [], laps: [], best: 0, fin: false, tFin: 0, pos: 0, speed: 0 }; Race.ents.push(b.e);
   }

@@ -55,7 +55,25 @@ const CARS = [
     t: { Tmax: 640, mu: 1.45, cd: 0.45, brk: 1.25, off: 0.8, cl: 0.8 },
     stats: { spd: 10, acc: 10, hdl: 10, off: 1 },
     body: { L: 4.6, W: 2.06, H: 0.3, C: 0.36, wr: 0.36, y0: 0.24, tw: 0.36, rim: [0.12, 0.12, 0.13], lw: 0.42, lh: 0.06, tlh: 0.06, tailBar: true, glass: [0.01, 0.014, 0.02],
-      cab: { cz: 0.1, bd: 0.9, tw: 0.5, td: 0.42, zoff: -0.3, inset: 0.2 }, wing: { h: 0.5, z: 0.35, span: 0.9, chord: 0.42, plates: true }, splitter: true, diffuser: true, intakes: true, deck: { z0: -1.9, z1: -0.85 }, stripes: [0.05, 0.05, 0.06], flares: true } }
+      cab: { cz: 0.1, bd: 0.9, tw: 0.5, td: 0.42, zoff: -0.3, inset: 0.2 }, wing: { h: 0.5, z: 0.35, span: 0.9, chord: 0.42, plates: true }, splitter: true, diffuser: true, intakes: true, deck: { z0: -1.9, z1: -0.85 }, stripes: [0.05, 0.05, 0.06], flares: true } },
+
+  { id: 'ridge', name: 'Ridgeback RS', cls: 'Rally car', price: 6800, paint: 1, dy: 0.1, snd: { f: 1.05, lp: 1.3 }, dial: 280,
+    blurb: 'Stage-bred all-wheel-drive rally hatch: long-travel suspension, huge wing, a bonnet full of vents and a taste for gravel, big air and splintered fences.',
+    p: { m: 1260, a: 1.22, b: 1.25, Iz: 1900, rw: 0.37, fd: 4.5, gears: [3.3, 2.4, 1.85, 1.5, 1.22, 1.0], idle: 1000, red: 7400, track: 1.64, cgh: 0.56, rd: 0.5, awd: true, rsf: 0.5, ab: 0.5, cf: 10.0, cr: 11.4 },
+    t: { Tmax: 520, mu: 1.02, cd: 0.95, brk: 1.05, off: 1.22, cl: 0.1 },
+    stats: { spd: 7, acc: 9, hdl: 8, off: 10 },
+    body: { L: 4.15, W: 1.9, H: 0.5, C: 0.55, wr: 0.37, y0: 0.46, tw: 0.27, rim: [0.95, 0.72, 0.16], rimStyle: 'five',
+      cab: { cz: -0.3, bd: 1.45, tw: 0.7, td: 0.98, zoff: -0.14, inset: 0.06 }, squareback: true, noseR: 0.5, flares: true, skirts: true, splitter: true, lightbar: true,
+      stripes: [1.0, 0.78, 0.1], wing: { h: 0.4, z: 0.26, span: 0.94, chord: 0.5, plates: true }, rally: true, exhaust: 1 } },
+
+  /* an original design: a heavy twin-turbo all-wheel-drive coupe built for the strip. lat scales the tyres' cornering grip only (06_car.js), so it launches like nothing else and will not turn */
+  { id: 'basilisk', name: 'Basilisk DR', cls: 'Drag coupe', price: 32000, paint: 5, dy: 0.06, snd: { f: 0.9, lp: 1.6 }, dial: 460,
+    blurb: 'A 2,400 hp twin-turbo all-wheel-drive coupe on tall rally rubber, with wheelie bars and a parachute pack. It leaves the line like a missile and runs past 400 km/h. Corners are somebody else\'s problem.',
+    p: { m: 1680, a: 1.36, b: 1.42, Iz: 5400, rw: 0.4, fd: 3.0, gears: [3.3, 2.15, 1.58, 1.22, 0.96, 0.72], idle: 1100, red: 8000, track: 1.62, cgh: 0.5, rd: 0.6, awd: true, rsf: 0.62, ab: 0.5, cf: 5.2, cr: 9.6, lat: 0.38 },
+    t: { Tmax: 1500, mu: 1.62, cd: 0.36, brk: 0.95, off: 0.95, cl: 0.6 },
+    stats: { spd: 10, acc: 10, hdl: 1, off: 3 },
+    body: { L: 4.7, W: 1.96, H: 0.46, C: 0.44, wr: 0.4, y0: 0.42, tw: 0.4, rim: [0.08, 0.08, 0.09], rimStyle: 'five', glass: [0.01, 0.012, 0.016], lw: 0.36, lh: 0.07,
+      cab: { cz: -0.4, bd: 1.05, tw: 0.6, td: 0.62, zoff: -0.24, inset: 0.11 }, wing: { h: 0.2, z: 0.2, span: 0.8, chord: 0.3 }, splitter: true, skirts: true, flares: true, scoop: { z: 0.95, len: 0.6, w: 0.26, h: 0.1 }, exhaust: 4, drag: true } }
 ];
 const CAR_BY_ID = {}; for (const d of CARS) { CAR_BY_ID[d.id] = d; const b = d.body; d.top = (b.y0 != null ? b.y0 : 0.36) + b.H + 0.1 + b.C; d.hl = b.L / 2; }
 const BASE_N = CARS.length;   /* CARS[0..BASE_N) are the dealership cars; stolen cars are appended at runtime (see 07_jack.js) */
@@ -66,7 +84,7 @@ const curPaint = (id) => { const i = save.cc[id || save.car]; return i != null ?
 /* ---------- make a car the active one (physics + body + cameras) ---------- */
 function applyCar(id, rebuildMesh) {
   const d = CAR_BY_ID[id] || CARS[0]; CUR = d; save.car = d.id;
-  Object.assign(CARP, d.p); CARP.L = d.p.a + d.p.b;
+  Object.assign(CARP, { awd: false, rsf: 0.5, ab: 0.5, cf: 10.2, cr: 12.2, lat: 1 }, d.p, { gears: d.p.gears.slice() }); CARP.L = d.p.a + d.p.b;   /* optional keys go back to their defaults first, so one car's all-wheel drive or drag tyres never carry over to the next */
   refreshTune();
   const hl = d.hl, hw = d.body.W / 2;
   CIRC[0][0] = hl - 0.45; CIRC[1][0] = 0; CIRC[2][0] = -(hl - 0.45); for (const k of CIRC) k[1] = hw + 0.09;

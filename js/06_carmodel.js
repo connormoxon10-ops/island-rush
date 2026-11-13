@@ -368,6 +368,26 @@ function buildCarModel(def, hex, opts) {
     dk(-0.62, y0 - 0.06, hl + 0.02, 0.62, y0 + 0.04, hl + 0.14, 0.03); dk(-0.62, y0 + 0.26, hl + 0.02, 0.62, y0 + 0.34, hl + 0.14, 0.03);
     for (const sx of [-1, 1]) dk(sx * 0.62 - 0.04, y0 - 0.06, hl + 0.02, sx * 0.62 + 0.04, y0 + 0.46, hl + 0.14, 0.03);
   }
+  if (b.drag) {
+    /* parachute pack on the tail and a pair of wheelie bars trailing to small wheels just off the ground */
+    const yT = topAt(-hl + 0.12) + 0.02; dk(-0.2, yT - 0.3, -hl - 0.3, 0.2, yT - 0.04, -hl - 0.02, 0.03); gD.box(-0.17, yT - 0.27, -hl - 0.33, 0.17, yT - 0.07, -hl - 0.3, 0.55, 0.05, 0.04);
+    for (const sx of [-1, 1]) { dk(sx * 0.16 - 0.015, yT - 0.06, -hl - 0.2, sx * 0.16 + 0.015, yT + 0.0, -hl + 0.2, 0.05); dk(sx * 0.42 - 0.022, 0.11, -hl - 1.05, sx * 0.42 + 0.022, 0.155, -hl + 0.5, 0.25); dk(sx * 0.42 - 0.02, 0.13, -hl + 0.05, sx * 0.42 + 0.02, S.ySill + 0.05, -hl + 0.09, 0.25); }
+    dk(-0.44, 0.11, -hl - 0.62, 0.44, 0.15, -hl - 0.58, 0.25);
+    { const wg = ni(new THREE.CylinderGeometry(0.085, 0.085, 0.05, 12)); wg.rotateZ(Math.PI / 2); for (const sx of [-1, 1]) { _m4.compose(_p3.set(sx * 0.47, 0.09, -hl - 1.02), _q.identity(), _s3.set(1, 1, 1)); gD.geo(wg, _m4, _tcol.setRGB(0.05, 0.05, 0.055), 0); } wg.dispose(); }
+  }
+  if (b.rally) {
+    const yN2 = samp(S.sil, hl - 0.05);
+    /* bonnet vents: a pair of louvred slots, and a roof air intake */
+    for (const sx of [-1, 1]) for (let k = 0; k < 4; k++) { const z = S.zFB + 0.3 + k * 0.1; pTop(S, gD, sx * 0.2, sx * 0.5, z, z + 0.05, 0.012, [0.012, 0.012, 0.015], 3, 1); }
+    dk(-0.17, S.yR - 0.005, S.zRT + 0.12, 0.17, S.yR + 0.1, S.zRT + 0.5, 0.03);
+    gD.box(-0.12, S.yR + 0.06, S.zRT + 0.48, 0.12, S.yR + 0.095, S.zRT + 0.512, 0.01, 0.01, 0.012);
+    /* mud flaps behind every wheel */
+    for (const w of S.wheels) { const zf = w.z + (w.front ? -1 : -1) * (S.Ra + 0.03), xf = w.side * (hw - 0.2); dk(xf - 0.16, S.ySill - 0.08, zf - 0.012, xf + 0.16, S.ySill + 0.2, zf + 0.012, 0.02); }
+    /* door roundels (white number panels), tow loops, and a pair of driving lamps on the nose */
+    for (const sd of [-1, 1]) { const zc = S.zFB - 0.5; pSide(S, gD, sd, zc - 0.17, zc + 0.17, S.ySill + 0.34, S.ySill + 0.68, 0.009, [0.93, 0.93, 0.9], 3, 3); pSide(S, gD, sd, zc - 0.07, zc + 0.07, S.ySill + 0.4, S.ySill + 0.62, 0.012, [0.04, 0.04, 0.05], 2, 3); }
+    pTop(S, gD, -0.36, 0.36, S.zRT - 0.02, S.zRT + 0.02, 0.01, [0.9, 0.9, 0.88], 4, 1);
+    for (const sx of [-1, 1]) { gT.box(Math.min(sx * 0.58, sx * 0.64), yN2 - 0.42, hl - 0.05, Math.max(sx * 0.58, sx * 0.64), yN2 - 0.36, hl + 0.14, 0.9, 0.2, 0.1); gLt.box(sx * 0.34 - 0.09, yN2 - 0.3, hl - 0.06, sx * 0.34 + 0.09, yN2 - 0.2, hl + 0.025, 1, 1, 1); }
+  }
   const grp = new THREE.Group(), paint = mkPaint(hex, !!opts.studio, cs && cs.fin);
   const mP = gP.mesh(paint, true, true), mG = gG.mesh(MAT.carGlass, true, false), mT = gT.mesh(MAT.carTrim, false, true), mD = gD.mesh(MAT.carTrim, false, true), mH = gLt.mesh(MAT.carHead, false, false), mTl = tl.mesh(MAT.carTail, false, false);
   if (opts.studio) { const gm = MAT.carGlass.clone(); gm.envMap = Env.studio; mG.material = gm; grp.userData.studioMats = [gm]; }

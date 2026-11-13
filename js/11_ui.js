@@ -141,7 +141,8 @@ UI.update = function (dt) {
   /* prompt */
   const near = !Mi && !Foot.on && !Fly.on && !Boat.on && App.mode === 'play' ? Mission.nearby : null;
   const pr = E.prompt;
-  if (Fly.on) { Fly.prompt(pr); Fly.hud(dt); }
+  if (Rally.on || Drag.on) { if (!pr.hidden) pr.hidden = true; }
+  else if (Fly.on) { Fly.prompt(pr); Fly.hud(dt); }
   else if (Boat.on) { Boat.prompt(pr); Boat.hud(dt); }
   else if (Foot.on) UI.footPrompt();
   else if (Jack.canStash() && !Mi) { const h = TouchIn.on ? '<em>STASH</em> the stolen ' + esc(CUR.name) : '<em>E</em> Stash the stolen ' + esc(CUR.name) + ' · keep, sell or scrap'; if (pr._h !== h) { pr._h = h; pr.innerHTML = h; } pr.hidden = false; }
@@ -229,7 +230,7 @@ UI.progress = function (f, msg) { E.loadfill.style.width = (f * 100).toFixed(0) 
 UI.openMenu = function (tab) { if (App.mode !== 'play') return; Home.closeEdit(); UI.setMode('pause'); UI.tabTo(tab || App.tab); for (const k in Keys) Keys[k] = false; };
 UI.closeMenu = function () { if (App.mode !== 'pause') return; UI.setMode('play'); writeSave(); };
 UI.tabTo = function (name) {
-  App.tab = name; const tabs = [['missions', 'Missions'], ['map', 'Map'], ['garage', 'Garage'], ['people', 'People'], ['collection', 'Collection'], ['settings', 'Settings'], ['controls', 'Controls']]; if (save.set.dev) tabs.push(['dev', 'Dev']);
+  App.tab = name; const tabs = [['missions', 'Missions'], ['map', 'Map'], ['garage', 'Garage'], ['tuning', 'Tuning'], ['people', 'People'], ['collection', 'Collection'], ['settings', 'Settings'], ['controls', 'Controls']]; if (save.set.dev) tabs.push(['dev', 'Dev']);
   E.tabs.innerHTML = tabs.map((t) => '<button type="button" role="tab" data-tab="' + t[0] + '" aria-selected="' + (t[0] === name) + '">' + t[1] + '</button>').join('');
   UI.renderPane();
 };
@@ -238,7 +239,7 @@ const upCost = (l) => Math.round(350 * Math.pow(1.7, l) * (1 - Rel.perk('garage'
 const seg = (key, opts, cur) => '<div class="seg" role="group">' + opts.map((o) => '<button type="button" data-act="set" data-k="' + key + '" data-v="' + o[0] + '" aria-pressed="' + (String(cur) === String(o[0])) + '">' + o[1] + '</button>').join('') + '</div>';
 UI.renderPane = function () {
   E.menuCash.textContent = money(save.money); const p = E.pane, s = save.set, c = car;
-  E.btnAbort.hidden = !(Mi || VM.m); let h = '';
+  E.btnAbort.hidden = !(Mi || VM.m || Rally.on || Drag.on); let h = '';
   if (App.tab === 'missions') {
     const list = missions.map((m) => ({ m, d: Math.hypot(m.x - c.x, m.z - c.z) })).sort((a, b) => a.d - b.d);
     const done = missions.filter((m) => save.done[m.id]).length;
@@ -273,6 +274,8 @@ UI.renderPane = function () {
     }
     const rep = Math.ceil((100 - c.health) * 4);
     h += '<div class="sect">Repairs</div><div class="up"><div><h4>Body condition ' + Math.round(c.health) + '%</h4></div><button class="btn" type="button" data-act="repair"' + (c.health > 99 || save.money < rep ? ' disabled' : '') + '>' + (c.health > 99 ? 'Like new' : 'Repair ' + money(rep)) + '</button></div>';
+  } else if (App.tab === 'tuning') {
+    h += Setup.pane();
   } else if (App.tab === 'people') {
     h = Rel.pane();
   } else if (App.tab === 'dev') {
@@ -330,6 +333,7 @@ function bindUI() {
     else if (a === 'dact') UI.devAct(b.dataset.id);
     else if (a === 'drive') { if (App.setCar(b.dataset.id)) { UI.toast(CUR.name + ' ready', 'info'); UI.renderPane(); } }
     else if (a === 'buycar') { const d = CAR_BY_ID[b.dataset.id]; if (d && !save.owned[d.id] && save.money >= d.price) { save.money -= d.price; save.owned[d.id] = true; Snd.beep(900, 0.12); if (!Mi) { App.setCar(d.id); car.health = 100; } writeSave(); UI.toast('Bought ' + d.name, 'good'); UI.renderPane(); } }
+    else if (a === 'tupre') { Setup.preset(b.dataset.id); Snd.beep(700, 0.06); UI.renderPane(); }
     else if (a === 'buytok') { if (Jack.buyTok(b.dataset.k)) UI.renderPane(); }
     else if (a === 'sellk' || a === 'scrapk') { const id = b.dataset.id, key = a + ':' + id; if (Jack.conf !== key) { Jack.conf = key; UI.renderPane(); } else { Jack.conf = ''; if (a === 'sellk') Jack.sellKept(id); else Jack.scrapKept(id); UI.renderPane(); } }
     else if (a === 'jgps') { UI.setWaypoint(GAR.ox, GAR.oz + 12); UI.closeMenu(); }
@@ -346,13 +350,14 @@ function bindUI() {
   });
   E.pane.addEventListener('input', (e) => {
     const s = e.target.getAttribute && e.target.getAttribute('data-slider'); if (!s) return; const v = +e.target.value;
+    if (s.slice(0, 3) === 'tu:') { Setup.onSlider(s.slice(3), v); return; }
     if (s === 'fov') save.set.fov = v; else if (s === 'vol') { save.set.vol = v; if (App.onSetting) App.onSetting('vol'); } else if (s === 'tod') App.tod = v; else if (s === 'dpower') { Dev.power = v; refreshTune(); } else if (s === 'dgrip') { Dev.grip = v; refreshTune(); } else if (s === 'dts') Dev.ts = v;
     const lab = e.target.parentNode.querySelector('[data-val]'); if (lab) UI.sliderLabel(s, lab);
   });
   E.tabs.addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) UI.tabTo(b.dataset.tab); });
   E.btnResume.onclick = () => UI.closeMenu();
   E.btnRespawn.onclick = () => { UI.closeMenu(); App.respawn(true); };
-  E.btnAbort.onclick = () => { UI.closeMenu(); if (VM.m) VM.abort('Run abandoned'); else abortMission(); };
+  E.btnAbort.onclick = () => { UI.closeMenu(); if (Rally.on) Rally.exit(true); else if (Drag.on) Drag.exit(true); else if (VM.m) VM.abort('Run abandoned'); else abortMission(); };
   E.btnPause.onclick = () => UI.openMenu('missions');
   E.btnCam.onclick = () => UI.cycleView();
   E.btnStart.onclick = () => App.start();
@@ -389,6 +394,8 @@ function onKey(code) {
   if (App.mode !== 'play') return;
   if (GAR.edit) { Home.key(code); return; }
   if (Talk.on) { Talk.key(code); return; }
+  if (Drag.on) { if (code === 'KeyR') { Drag.again(); return; } if (/^(KeyE|Enter|KeyF|KeyG|KeyM|KeyQ|KeyH)$/.test(code)) return; }
+  if (Rally.on) { if (code === 'KeyR') { Rally.reset(); return; } if (/^(KeyE|Enter|KeyF|KeyG|KeyM|KeyQ|KeyH)$/.test(code)) return; }
   switch (code) {
     case 'Escape': case 'KeyP': UI.openMenu('missions'); break;
     case 'KeyM': UI.openMenu('map'); break;
@@ -463,7 +470,7 @@ function readControls(dt) {
   if (devOn('free')) { th = 0; br = 0; hand = 0; st = 0; nit = false; }
   if (GAR.edit) { th = 0; br = 1; hand = 1; st = 0; nit = false; }
   const spd = Math.abs(c.speed);
-  const rate = analog || TouchIn.l || TouchIn.r ? 5 : lerp(3.4, 1.7, clamp(spd / 40, 0, 1)) * (Math.sign(st) !== Math.sign(c.steer) && c.steer !== 0 ? 1.7 : 1) * (st === 0 ? 1.5 : 1);
+  const rate = (analog || TouchIn.l || TouchIn.r ? 5 : lerp(3.4, 1.7, clamp(spd / 40, 0, 1)) * (Math.sign(st) !== Math.sign(c.steer) && c.steer !== 0 ? 1.7 : 1) * (st === 0 ? 1.5 : 1)) * (Rally.on && Rally.assistOn() ? 1.8 : 1);   /* quicker wheel on the rally stage */
   c.steerIn = clamp(st, -1, 1); c.steer = approach(c.steer, c.steerIn, rate * dt);
   c.thr = approach(c.thr, th, (th > c.thr ? 5 : 9) * dt); c.brk = approach(c.brk, br, (br > c.brk ? 7 : 12) * dt);
   c.hand = hand; c.nit = nit; Cam.back = back;
