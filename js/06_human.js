@@ -97,6 +97,9 @@ class HuB {
   shift(x, y, z) { for (let k = 0; k < this.n; k++) { this.p[k * 3] += x; this.p[k * 3 + 1] += y; this.p[k * 3 + 2] += z; } }
   done(extra) {
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(this.p, 3)); g.setIndex(this.i); g.computeVertexNormals();
+    { const N = g.attributes.normal.array, P = this.p, M = new Map();   /* vertices on the same spot share one normal: a ring doubled to change colour must not show as a crease */
+      for (let k = 0; k < this.n; k++) { const key = Math.round(P[k * 3] * 2e4) + ',' + Math.round(P[k * 3 + 1] * 2e4) + ',' + Math.round(P[k * 3 + 2] * 2e4), e = M.get(key); if (e) { e[0] += N[k * 3]; e[1] += N[k * 3 + 1]; e[2] += N[k * 3 + 2]; e.push(k); } else M.set(key, [N[k * 3], N[k * 3 + 1], N[k * 3 + 2], k]); }
+      M.forEach((e) => { if (e.length < 5) return; const l = Math.hypot(e[0], e[1], e[2]) || 1; for (let q = 3; q < e.length; q++) { const k = e[q]; N[k * 3] = e[0] / l; N[k * 3 + 1] = e[1] / l; N[k * 3 + 2] = e[2] / l; } }); }
     const o = Object.assign({ n: this.n, p: new Float32Array(this.p), nr: new Float32Array(g.attributes.normal.array), a: new Float32Array(this.a), cv: new Float32Array(this.cv), w: new Float32Array(this.w), i: new Uint32Array(this.i) }, extra || null); g.dispose(); return o;
   }
 }
@@ -139,26 +142,34 @@ function huWeights(sex, W) {
 }
 
 /* ---------------- body: torso, pelvis, legs, feet, arms, hands, clothes ---------------- */
-const HU_TM = [[-0.03, 0.17, 0.108, -0.004, 2.6, 0.84], [0.01, 0.168, 0.107, -0.004, 2.6, 0.95], [0.10, 0.152, 0.098, -0.002, 2.5, 1], [0.21, 0.164, 0.103, 0, 2.4, 1], [0.32, 0.181, 0.112, 0.004, 2.4, 1], [0.41, 0.19, 0.106, 0.002, 2.5, 1], [0.46, 0.19, 0.092, -0.002, 2.6, 0.98], [0.495, 0.148, 0.076, -0.006, 2.3, 0.97], [0.515, 0.075, 0.058, -0.008, 2.1, 1.06], [0.53, 0.058, 0.052, -0.006, 2, 1.06]];
-const HU_TF = [[-0.03, 0.178, 0.108, -0.004, 2.6, 0.84], [0.01, 0.176, 0.107, -0.004, 2.6, 0.95], [0.10, 0.132, 0.092, -0.002, 2.4, 1], [0.21, 0.15, 0.1, 0.002, 2.3, 1], [0.30, 0.168, 0.116, 0.016, 2.3, 1], [0.36, 0.172, 0.118, 0.02, 2.3, 1], [0.42, 0.172, 0.104, 0.006, 2.4, 1], [0.46, 0.172, 0.088, -0.002, 2.5, 0.98], [0.495, 0.136, 0.072, -0.006, 2.3, 0.97], [0.515, 0.07, 0.054, -0.008, 2.1, 1.06], [0.53, 0.054, 0.05, -0.006, 2, 1.06]];
+const HU_TM = [[-0.078, 0.176, 0.113, -0.002, 2.6, 0.8], [-0.06, 0.177, 0.114, -0.002, 2.6, 0.94], [0.01, 0.17, 0.108, -0.004, 2.6, 1], [0.10, 0.152, 0.098, -0.002, 2.5, 1], [0.21, 0.164, 0.103, 0, 2.4, 1], [0.32, 0.181, 0.112, 0.004, 2.4, 1], [0.41, 0.186, 0.106, 0.002, 2.5, 1], [0.46, 0.176, 0.092, -0.002, 2.5, 1], [0.495, 0.13, 0.074, -0.006, 2.3, 1], [0.515, 0.075, 0.058, -0.008, 2.1, 1.04], [0.53, 0.058, 0.052, -0.006, 2, 1.04]];
+const HU_TF = [[-0.078, 0.184, 0.116, -0.002, 2.6, 0.8], [-0.06, 0.185, 0.117, -0.002, 2.6, 0.94], [0.01, 0.176, 0.107, -0.004, 2.6, 1], [0.10, 0.132, 0.092, -0.002, 2.4, 1], [0.21, 0.15, 0.1, 0.002, 2.3, 1], [0.30, 0.164, 0.104, 0.004, 2.3, 1], [0.36, 0.168, 0.104, 0.004, 2.3, 1], [0.42, 0.168, 0.1, 0.002, 2.4, 1], [0.46, 0.16, 0.088, -0.002, 2.5, 1], [0.495, 0.12, 0.07, -0.006, 2.3, 1], [0.515, 0.07, 0.054, -0.008, 2.1, 1.04], [0.53, 0.054, 0.05, -0.006, 2, 1.04]];
 const HU_TC = [[-0.30, 0.212, 0.145, -0.004, 2.4, 0.78], [-0.26, 0.208, 0.14, -0.004, 2.4, 0.9], [-0.12, 0.192, 0.125, -0.004, 2.4, 1], [0.05, 0.168, 0.108, -0.002, 2.4, 1], [0.12, 0.166, 0.106, 0, 2.4, 1], [0.22, 0.176, 0.112, 0, 2.4, 1], [0.32, 0.192, 0.12, 0.004, 2.4, 1], [0.41, 0.2, 0.112, 0.002, 2.5, 1], [0.46, 0.2, 0.098, -0.002, 2.6, 0.98], [0.495, 0.154, 0.082, -0.006, 2.3, 0.97], [0.515, 0.082, 0.064, -0.008, 2.1, 1.08], [0.532, 0.064, 0.056, -0.006, 2, 1.08]];
-const HU_HIPS = [[-0.115, 0.152, 0.098, 0, 2.4, 0.85], [-0.06, 0.168, 0.108, 0, 2.4, 0.95], [0.02, 0.17, 0.108, 0, 2.5, 1], [0.04, 0.166, 0.106, 0, 2.6, 0.4], [0.062, 0.166, 0.106, 0, 2.6, 0.4], [0.075, 0.158, 0.1, 0, 2.5, 1], [0.1, 0.15, 0.096, 0, 2.5, 1]];
-const HU_SKIRT = [[0.07, 0.168, 0.108, 0, 2.5, 1], [0.0, 0.176, 0.114, 0, 2.4, 1], [-0.12, 0.2, 0.14, 0, 2.3, 1], [-0.24, 0.235, 0.178, 0, 2.2, 0.98], [-0.33, 0.255, 0.198, 0, 2.2, 0.9], [-0.345, 0.256, 0.2, 0, 2.2, 0.7]];
+const HU_HIPS = [[-0.115, 0.14, 0.078, 0, 2.4, 1], [-0.06, 0.166, 0.1, 0, 2.4, 1], [0.02, 0.17, 0.108, 0, 2.5, 1], [0.04, 0.166, 0.106, 0, 2.6, 1], [0.062, 0.166, 0.106, 0, 2.6, 1], [0.075, 0.158, 0.1, 0, 2.5, 1], [0.1, 0.15, 0.096, 0, 2.5, 1]];
+const HU_SKIRT = [[0.07, 0.17, 0.11, 0, 2.5, 1], [0.02, 0.188, 0.116, 0, 2.4, 1], [-0.05, 0.2, 0.128, 0, 2.3, 1], [-0.12, 0.21, 0.146, 0, 2.3, 1], [-0.24, 0.235, 0.178, 0, 2.2, 0.98], [-0.33, 0.255, 0.198, 0, 2.2, 0.9], [-0.345, 0.256, 0.2, 0, 2.2, 0.7]];
 function huBody(sex, outfit, q) {
   const key = 'b' + sex + outfit + q; if (HU.pieces[key]) return HU.pieces[key];
   const B = new HuB(), Y = HU_Y, R = HU_REG, S = HU_SL, W = sex === 'M' ? 0.19 : 0.172, Wt = huWeights(sex, W), sg = (n) => (q ? n : Math.max(6, Math.round(n * 0.5)));
   const rows = (T) => T.map((r) => ({ y: r[0], a: r[1], b: r[2], z: r[3], e: r[4], c: r[5] })), long = outfit === 'coat' || outfit === 'robe', lim = sex === 'M' ? 1 : sex === 'F' ? 0.9 : 0.94;
   /* torso (shoulders at .46 above the waist, neck base at .53); a coat or robe hangs to mid thigh */
-  B.use(R.cloth, S.top, Wt.torso, huMx(0, Y.T, 0)); B.loft(rows(long ? HU_TC : sex === 'F' ? HU_TF : HU_TM), { seg: sg(22) });
+  const fine = (T) => { if (!q) return T; const o = []; for (let k = 0; k < T.length; k++) { o.push(T[k]); if (k < T.length - 1 && T[k + 1][0] - T[k][0] > 0.05) o.push(T[k].map((v, c) => (v + T[k + 1][c]) / 2)); } return o; };
+  const gz = (x, y, cx, cy, sx, sy) => Math.exp(-(((Math.abs(x) - cx) / sx) ** 2 + ((y - cy) / sy) ** 2)), t0 = B.n;
+  B.use(R.cloth, S.top, Wt.torso, huMx(0, Y.T, 0)); B.loft(rows(fine(long ? HU_TC : sex === 'F' ? HU_TF : HU_TM)), { seg: sg(32) });
+  for (let k = t0; k < B.n; k++) {   /* chest: two forms, not a shelf; shoulder blades and the furrow of the spine behind */
+    const x = B.p[k * 3], y = B.p[k * 3 + 1] - Y.T, z = B.p[k * 3 + 2];
+    if (z > 0.02) B.p[k * 3 + 2] += sex === 'F' ? 0.034 * gz(x, y, 0.07, 0.335, 0.043, 0.048) - 0.004 * Math.exp(-((x / 0.02) ** 2) - (((y - 0.34) / 0.06) ** 2)) : sex === 'M' ? 0.009 * gz(x, y, 0.085, 0.37, 0.07, 0.045) : 0;
+    else if (z < -0.02) B.p[k * 3 + 2] -= 0.006 * gz(x, y, 0.085, 0.36, 0.055, 0.07) - 0.005 * Math.exp(-((x / 0.022) ** 2)) * sstep(0.02, 0.15, y) * sstep(0.48, 0.38, y);
+  }
   /* pelvis with a belt, then a skirt or the long skirts of a robe */
-  B.use(R.cloth, outfit === 'robe' ? S.top : S.bot, Wt.pelvis, huMx(0, Y.H, 0)); B.loft(rows(HU_HIPS), { seg: sg(20) });
+  const p0 = B.n; B.use(R.cloth, outfit === 'robe' ? S.top : S.bot, Wt.pelvis, huMx(0, Y.H, 0)); B.loft(rows(HU_HIPS), { seg: sg(24) });
+  for (let k = p0; k < B.n; k++) { const z = B.p[k * 3 + 2]; if (z < -0.02) B.p[k * 3 + 2] -= (sex === 'F' ? 0.02 : sex === 'M' ? 0.013 : 0.006) * gz(B.p[k * 3], B.p[k * 3 + 1] - Y.H, 0.08, -0.04, 0.06, 0.07); }   /* seat */
   if (outfit === 'skirt') { B.use(R.cloth, S.bot, Wt.skirt, huMx(0, Y.H, 0)); B.loft(rows(HU_SKIRT), { seg: sg(24) }); }
   if (outfit === 'robe') { B.use(R.cloth, S.top, Wt.skirt, huMx(0, Y.H, 0, 0, 0, 0, 1.12, 2.05, 1.08)); B.loft(rows(HU_SKIRT), { seg: sg(24) }); }
   for (const sx of [-1, 1]) {
     /* leg: one tube from the hip joint to the ankle, so the knee bends as cloth; the thigh and the lower leg are separate palette slots (shorts, skirts, tights) */
     B.use(R.cloth, S.thigh, Wt.leg(sx), huMx(sx * 0.098, Y.J, 0));
     const lr = (y, a, b, z, c, sl) => ({ y, a: a * (sex === 'M' ? 1 : 0.96), b, z: z || 0, e: 2, c: c == null ? 1 : c, sl });
-    B.loft([lr(0.03, 0.09, 0.092, 0, 0.9, S.thigh), lr(-0.06, 0.094, 0.096), lr(-0.17, 0.086, 0.09), lr(-0.3, 0.07, 0.076), lr(-0.4, 0.061, 0.066), lr(-0.4, 0.061, 0.066, 0, 0.9, S.leg), lr(-0.432, 0.059, 0.064, 0.003),
+    B.loft([lr(0.03, 0.09, 0.092, 0, 1, S.thigh), lr(-0.06, 0.094, 0.096), lr(-0.17, 0.086, 0.09), lr(-0.3, 0.07, 0.076), lr(-0.4, 0.061, 0.066), lr(-0.4, 0.061, 0.066, 0, 1, S.leg), lr(-0.432, 0.059, 0.064, 0.003),
       lr(-0.5, 0.058, 0.066, -0.006), lr(-0.56, 0.059, 0.07, -0.011), lr(-0.66, 0.05, 0.058, -0.006), lr(-0.77, 0.04, 0.043, -0.001), lr(-0.825, 0.036, 0.039, 0, 0.86), lr(-0.862, 0.036, 0.039, 0, 0.86)], { seg: sg(14), cap: [1, 0] });
     /* shoe: upper and sole */
     B.use(R.shoe, S.shoe, Wt.one(sx < 0 ? HU_I.footL : HU_I.footR), huMx(sx * 0.098, Y.A, 0));
@@ -166,10 +177,9 @@ function huBody(sex, outfit, q) {
     B.loft([[-0.062, 0.032, 0.011, -0.065], [-0.04, 0.045, 0.012, -0.065], [0.09, 0.052, 0.012, -0.065], [0.17, 0.047, 0.012, -0.065], [0.206, 0.03, 0.009, -0.065]].map((r) => ({ y: r[0], a: r[1], b: r[2], v: r[3], e: 3, c: 0.42 })), { seg: sg(10), axis: 'z', cap: [1, 1] });
     /* arm: one tube from the shoulder to the wrist; the lower part is its own slot (long or short sleeves) */
     B.use(R.cloth, S.top, Wt.arm(sx), huMx(sx * W, Y.S, 0));
-    const ar = (y, a, b, c, sl) => ({ y, a: a * lim, b: b * lim, e: 2, c: c == null ? 1 : c, sl });
-    B.ell(0, -0.018, 0, 0.05 * lim, 0.044, 0.052 * lim, 1, null, { seg: sg(10) });
-    B.loft([ar(0.012, 0.028, 0.03, 0.94, S.top), ar(0.004, 0.042, 0.046), ar(-0.016, 0.052, 0.055), ar(-0.05, 0.055, 0.057), ar(-0.1, 0.051, 0.052), ar(-0.165, 0.048, 0.049, 0.9), ar(-0.17, 0.047, 0.048, 0.92, S.arm), ar(-0.24, 0.045, 0.046), ar(-0.31, 0.042, 0.043),
-      ar(-0.36, 0.045, 0.046), ar(-0.43, 0.042, 0.043), ar(-0.53, 0.032, 0.032), ar(-0.59, 0.028, 0.027, 0.92), ar(-0.612, 0.027, 0.026, 0.9)], { seg: sg(12), cap: [0, 1] });
+    const ar = (y, a, b, c, sl, dx) => ({ y, a: a * lim, b: b * lim, e: 2, c: c == null ? 1 : c, sl, x: -sx * (dx || 0) });
+    B.loft([ar(0.004, 0.008, 0.01, 1, S.top, 0.02), ar(-0.002, 0.024, 0.03, 1, null, 0.018), ar(-0.014, 0.037, 0.043, 1, null, 0.013), ar(-0.034, 0.045, 0.05, 1, null, 0.007), ar(-0.062, 0.048, 0.053, 1, null, 0.003), ar(-0.1, 0.048, 0.05), ar(-0.165, 0.046, 0.048), ar(-0.17, 0.045, 0.047, 1, S.arm), ar(-0.24, 0.045, 0.046), ar(-0.31, 0.042, 0.043),
+      ar(-0.36, 0.045, 0.046), ar(-0.43, 0.042, 0.043), ar(-0.53, 0.032, 0.032), ar(-0.59, 0.028, 0.027), ar(-0.612, 0.027, 0.026, 0.94)], { seg: sg(12), cap: [1, 1] });
     /* hand: flat palm, four fingers and a thumb (a mitten in the far version), built as a right hand and mirrored */
     B.use(R.skin, S.skin, Wt.one(sx < 0 ? HU_I.handL : HU_I.handR), huMx(sx * W, Y.W, 0, 0, 0, 0, sx, 1, 1));
     const pr = (y, a, b, z, e, c) => ({ y, a, b, z, e, c });
@@ -260,8 +270,8 @@ function huHead(sex, st, hat, old, q) {
   /* ears */
   B.cov = -0.6; B.use(R.skin, S.skin2, Wt.one(I.head));
   for (const sx of [-1, 1]) {
-    B.ell(sx * 0.0768, 0.11, -0.014, 0.0062, 0.031, 0.0175, [1.0, 0.9, 0.88], [0.12, -sx * 0.42, -sx * 0.1], { seg: q ? 10 : 6, lat: q ? 6 : 4 });
-    if (q) B.ell(sx * 0.0808, 0.112, -0.011, 0.0034, 0.02, 0.0095, [0.62, 0.48, 0.46], [0.12, -sx * 0.42, -sx * 0.1], { seg: 6, lat: 4 });
+    B.ell(sx * 0.0752, 0.11, -0.014, 0.0058, 0.03, 0.0165, [1.0, 0.9, 0.88], [0.12, -sx * 0.3, -sx * 0.08], { seg: q ? 10 : 6, lat: q ? 6 : 4 });
+    if (q) B.ell(sx * 0.0788, 0.112, -0.012, 0.0032, 0.019, 0.009, [0.66, 0.52, 0.5], [0.12, -sx * 0.3, -sx * 0.08], { seg: 6, lat: 4 });
   }
   /* Eyes. Each eyeball is a slightly long ball looking straight ahead. The lids are surfaces of revolution about an axis through the eye that is turned so
      the outer corner sits further back than the inner one, as it does on a face; each side has a lid bone on that axis, and turning it slides the upper lid down
@@ -296,7 +306,7 @@ function huHead(sex, st, hat, old, q) {
     lw = 0; const RLo = 6, m0 = B.n;
     for (let i = 0; i <= nc; i++) {
       const u = lerp(-1.1, 1.1, i / nc), a = u * F.EW, tl = ang(lidL(clamp(u, -1, 1), sx), rho(a, F.RL));
-      for (let k = 0; k < RLo; k++) lidP(a, k < 2 ? tl : lerp(tl, -1.35, (k - 1) / (RLo - 2)), k < 2 ? [0.96, 0.74, 0.72] : 0.95, k === 0);
+      for (let k = 0; k < RLo; k++) lidP(a, k < 2 ? tl : lerp(tl, -1.35, (k - 1) / (RLo - 2)), k < 2 ? [0.9, 0.74, 0.72] : 0.95, k === 0);
     }
     for (let i = 0; i < nc; i++) for (let k = 0; k < RLo - 1; k++) { const a = m0 + i * RLo + k, b = a + RLo; B.i.push(a, a + 1, b, a + 1, b + 1, b); }
   }
@@ -346,8 +356,8 @@ function huHair(st, sex, q) {
 }
 function huGlasses(lens) {
   const key = 'g' + (lens ? 1 : 0); if (HU.pieces[key]) return HU.pieces[key];
-  const B = new HuB(), Wt = huWeights('M', 0.19), tor = new THREE.TorusGeometry(0.0255, 0.0026, 6, 20), z = huFz(0.125) + 0.008; B.use(HU_REG.hard, HU_SL.glass, Wt.one(HU_I.head));
-  for (const sx of [-1, 1]) { B.add(tor, huMx(sx * 0.0335, 0.1255, z, 0, 0, 0, 1.08, 0.86, 1), 1); B.box(sx * 0.07, 0.129, z - 0.05, 0.003, 0.004, 0.1, 1, [0, -sx * 0.11, 0]); if (lens) B.ell(sx * 0.0335, 0.1255, z, 0.0265, 0.0215, 0.0025, 1, null, { seg: 10, lat: 3 }); }
+  const B = new HuB(), Wt = huWeights('M', 0.19), tor = new THREE.TorusGeometry(0.0225, 0.0022, 6, 20), z = huFz(0.125) + 0.008; B.use(HU_REG.hard, HU_SL.glass, Wt.one(HU_I.head));
+  for (const sx of [-1, 1]) { B.add(tor, huMx(sx * 0.0335, 0.1255, z, 0, 0, 0, 1.08, 0.86, 1), 1); B.box(sx * 0.068, 0.129, z - 0.05, 0.003, 0.004, 0.1, 1, [0, -sx * 0.16, 0]); if (lens) B.ell(sx * 0.0335, 0.1255, z, 0.0235, 0.019, 0.0025, 1, null, { seg: 10, lat: 3 }); }
   B.box(0, 0.131, z, 0.014, 0.003, 0.003, 1); tor.dispose(); B.shift(0, HU_Y.HD, 0.004); return (HU.pieces[key] = B.done());
 }
 const HU_HAT = {
@@ -373,7 +383,7 @@ function huBag() {
 function huMaterial() {
   if (HU.mat) return HU.mat;
   const m = HU.mat = new THREE.MeshStandardMaterial({ roughness: 0.7, metalness: 0, skinning: true, side: THREE.DoubleSide });
-  m.extensions = { derivatives: true }; m.customProgramCacheKey = () => 'human5';
+  m.extensions = { derivatives: true }; m.customProgramCacheKey = () => 'human6';
   m.onBeforeCompile = (sh) => {
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 aTint; attribute vec3 aTint2; attribute vec4 aInfo; attribute vec4 aUv;\nvarying vec3 vTint; varying vec3 vTint2; varying vec4 vInfo; varying vec4 vUvH; varying vec3 vRest;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\n vTint = aTint; vTint2 = aTint2; vInfo = aInfo; vUvH = aUv; vRest = position;');
@@ -411,6 +421,7 @@ function huMaterial() {
         }
         /* whatever hair grows here (scalp, brows, beard) comes through a noisy threshold: that is what makes a hairline soft and irregular instead of a painted edge */
         float ha_ = 1.0 - smoothstep(0.3, 0.9, px_ * 1700.0), ang_ = atan(vRest.x, vRest.z), st_ = mix(0.5, rn_(vec2(ang_ * 150.0, vRest.y * 60.0)), ha_), st2_ = mix(0.5, rn_(q_ * 1300.0), ha_), lock_ = rn_(vec2(ang_ * 21.0, vRest.y * 13.0));
+        if (vUvH.w - 2.0 * age_ < 0.9) st_ = mix(0.5, rn_(q_ * 1000.0), 1.0 - smoothstep(0.3, 0.9, px_ * 1000.0));
         if (curl_ > 0.5) { st_ = mix(0.5, rf_(q_ * 420.0), 1.0 - smoothstep(0.3, 0.9, px_ * 900.0)); lock_ = rn_(q_ * 95.0); }
         if (browS_ >= 0.0) st2_ = mix(0.5, browS_, 1.0 - smoothstep(0.3, 0.9, px_ * 1500.0));
         float m1_ = smoothstep(0.36, 0.64, cov1_ + (st_ - 0.5) * 0.44), m2_ = smoothstep(0.4, 0.62, cov2_ + (st2_ - 0.5) * 0.55), hm_ = max(m1_, m2_);

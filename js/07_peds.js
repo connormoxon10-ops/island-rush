@@ -266,7 +266,7 @@ function updatePeds(dt) {
     if (p.state !== 'down' && p.state !== 'rise' && !p.own) p.y = p.T.baseH + (p.crossing && p.onRoad ? 0.12 : 0.09);
     if (p.wave > 0) p.wave -= dt;
     /* gait phase advances with distance covered */
-    const cyc = 1.45 + Math.max(0, p.v - 1.4) * 0.55; p.ph += TAU * p.v / cyc * dt;
+    p.ph += TAU * p.v / pedCyc(p.v, p.app) * dt;
   }
   /* separate people who are walking into each other */
   const L = Peds.list;
@@ -297,8 +297,11 @@ function writePeds(time) {
 /* one leg of the walk at phase f (0 = heel strike): the ankle is carried back along the ground through stance (so the foot is planted, not sliding), peels off heel first,
    swings forward clear of the ground, and the thigh and knee angles are solved to reach it from a hip joint at height hj. D = metres per full stride, rn = 0 walk .. 1 run */
 const _pl = { th: 0, bn: 0, pit: 0, top: 0 };
+/* metres covered per full gait cycle (two steps) at speed v: cadence rises with speed as well as stride, and old people take shorter steps */
+function pedCyc(v, a) { return (1.3 + Math.max(0, v - 1.4) * 0.42) * (a && a.old ? 0.82 : 1) * (a ? a.s || 1 : 1); }
+/* D = metres per cycle in the leg's own (unscaled) space: the stance foot is carried back exactly that far times the stance fraction, so it does not slide */
 function pedLeg(f, D, rn, hj, o) {
-  const fs = lerp(0.62, 0.4, rn), S = D * fs * 0.84, xF = 0.44 * S, xB = -0.56 * S; let x, y, pit;
+  const fs = lerp(0.62, 0.4, rn), S = D * fs, xF = 0.44 * S, xB = -0.56 * S; let x, y, pit;
   if (f < fs) { const u = f / fs, off = sm01(clamp((u - 0.62) / 0.38, 0, 1)); x = lerp(xF, xB, u); y = 0.076 + 0.085 * off; pit = -0.24 * (1 - sm01(clamp(u / 0.16, 0, 1))) + 0.62 * off; }
   else { const w = (f - fs) / (1 - fs); x = lerp(xB, xF, sm01(w)); y = 0.076 + 0.085 * (1 - w) * (1 - w) + (0.07 + 0.16 * rn) * Math.sin(Math.PI * w); pit = lerp(0.62, -0.24, sm01(clamp(w * 1.25, 0, 1))); }
   o.top = f < fs ? y + Math.sqrt(Math.max(0.01, 0.737 - x * x)) : 9;      /* the highest the hip can ride over this foot while it is on the ground */
@@ -329,7 +332,7 @@ function pedPose(p, time, dt, hideHead, far) {
   /* legs: solved from planted feet while moving */
   let thL = 0, thR = 0, bnL = 0.03, bnR = 0.03, toL = 0, toR = 0, yHipG = -1;
   if (wlk > 0) {
-    const D = (1.45 + Math.max(0, p.v - 1.4) * 0.55) * old * (0.6 + 0.4 * wlk), fL = pfr(ph / TAU - 0.25), fR = pfr(fL + 0.5);
+    const D = pedCyc(p.v, a) / s * (0.6 + 0.4 * wlk), fL = pfr(ph / TAU - 0.25), fR = pfr(fL + 0.5);
     let hj = lerp(0.916, 0.89, rn) + lerp(0.019, 0.04, rn) * Math.cos(2 * TAU * (fL - 0.31));
     pedLeg(fL, D, rn, hj, _pl); const tA = _pl.top; pedLeg(fR, D, rn, hj, _pl); hj = Math.min(hj, tA, _pl.top);
     pedLeg(fL, D, rn, hj, _pl); thL = _pl.th * wlk; bnL = lerp(0.03, _pl.bn, wlk); toL = _pl.pit * wlk;
@@ -412,8 +415,10 @@ function pedPose(p, time, dt, hideHead, far) {
   b.neck.rotation.set(hp * 0.35, hy * 0.35, hr * 0.4); b.head.rotation.set(hp * 0.65, hy * 0.65, hr * 0.6); b.head.scale.setScalar(hideHead ? 0.001 : a.hs || 1); b.jaw.rotation.x = jaw;
   b.armL.rotation.set(-aL, 0, -spread); b.elL.rotation.set(-eL, eyL, 0); b.handL.rotation.set(-wrL, 0, -0.04);
   b.armR.rotation.set(-aR, 0, spread); b.elR.rotation.set(-eR, eyR, 0); b.handR.rotation.set(-wrR, 0, 0.04);
-  b.legL.rotation.set(-thL, 0, -0.03); b.knL.rotation.set(bnL, 0, 0); b.footL.rotation.set(thL - bnL + toL, -0.1, 0);
-  b.legR.rotation.set(-thR, 0, 0.03); b.knR.rotation.set(bnR, 0, 0); b.footR.rotation.set(thR - bnR + toR, 0.1, 0);
+  /* the legs undo the pelvis's turn, tilt and sideways sway, so a planted foot stays where it was put while the hips move over it */
+  const lyw = -(hipYaw - twist * 0.5), lz = -roll - hx / 0.86;
+  b.legL.rotation.set(-thL, lyw, -0.03 + lz); b.knL.rotation.set(bnL, 0, 0); b.footL.rotation.set(thL - bnL + toL, -0.1, 0);
+  b.legR.rotation.set(-thR, lyw, 0.03 + lz); b.knR.rotation.set(bnR, 0, 0); b.footR.rotation.set(thR - bnR + toR, 0.1, 0);
   Human.alive(h, dt, time, sd);
   if (h.from) { h.blendT += dt; Human.blend(h, sm01(Math.min(1, h.blendT / 0.9))); }
   if (!far) Human.physics(h, dt);
