@@ -3341,7 +3341,7 @@ function carSpec(def) {
   let zRT = Math.max(cz + zoff - td, zRB + 0.08), zFT = Math.min(cz + zoff + td, zFB - 0.1); if (zFT < zRT + 0.25) { const m = (zFT + zRT) / 2; zRT = m - 0.125; zFT = m + 0.125; }
   const boxy = !!b.boxy, S = { def, b, hl, hw, wr, y0, y1, yR, C, tww, cz, inset, tw, zRB, zFB, zRT, zFT, boxy };
   const wa = p.a != null ? p.a : hl - 0.85, wbk = p.b != null ? p.b : hl - 0.85;
-  S.wheels = []; for (const sx of [-1, 1]) for (const [z, front] of [[wa, true], [-wbk, false]]) S.wheels.push({ x: sx * (hw - tww / 2 - 0.04), z, r: wr, w: tww, front, side: sx });
+  S.wheels = []; for (const sx of [-1, 1]) for (const [z, front] of [[wa, true], [-wbk, false]]) { const r = front && b.wrF ? b.wrF : wr, w = front && b.twF ? b.twF : tww; S.wheels.push({ x: sx * (hw - w / 2 - 0.04), z, r, w, front, side: sx }); }   /* wrF / twF: a different front tyre (hot rods, open-wheelers) */
   S.Ra = wr + 0.065; S.ySill = Math.max(0.16, y0 - 0.14);
   S.rise = Math.max(0, wr + S.Ra + 0.055 - y1); S.flare = b.flares ? 0.065 : 0; S.crown = b.crown != null ? b.crown : 0.045;
   S.noseR = b.noseR != null ? b.noseR : (boxy ? 0.32 : 0.62); S.tailR = b.tailR != null ? b.tailR : (boxy ? 0.3 : 0.5);
@@ -3611,6 +3611,146 @@ function buggyFrame(S, gP, gG, gT, gD, gLt, tl, lod) {
     m.compose(_p3.set(0, 1.38, -1.5), q, _s3.set(1, 1, 1)); gD.geo(sp, m, col(0.03, 0.03, 0.033), 0); m.compose(_p3.set(0, 1.38, -1.5), q, _s3.set(1.02, 1.02, 1.02)); gT.geo(hb, m, col(0.7, 0.7, 0.72), 0); sp.dispose(); hb.dispose(); }
   cyl.dispose(); box.dispose();
 }
+/* ---------- hand-built cars: a kit of parts, then one builder per car ----------
+   For cars whose shape is not a body shell over four wheels (the buggy above, a monster truck, a hot rod, an open-wheel racer) the model is assembled from
+   tubes, blocks, balls and lofted shells. A loft is a run of superellipse rings along z ({ z, x, y, a half width, b half height, e exponent }) with smooth
+   normals, for noses, cabs, sidepods and fenders. Colours are linear; paint parts go in gP with white so the paint colour shows. */
+function carKit(lod) {
+  const seg = lod ? 6 : 12, cyl = ni(new THREE.CylinderGeometry(1, 1, 1, seg, 1)), box = ni(new THREE.BoxGeometry(1, 1, 1)), sph = ni(new THREE.SphereGeometry(1, seg, Math.max(4, seg >> 1)));
+  const up = new THREE.Vector3(0, 1, 0), d = new THREE.Vector3(), m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
+  const col = (c) => _tcol.setRGB(c[0], c[1], c[2]);
+  const K = {
+    seg, WH: [1, 1, 1],
+    tube(gb, a, b, r, c) { d.set(b[0] - a[0], b[1] - a[1], b[2] - a[2]); const L = d.length(); if (L < 1e-5) return; q.setFromUnitVectors(up, d.normalize()); m.compose(_p3.set((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2), q, _s3.set(r, L, r)); gb.geo(cyl, m, col(c || K.WH), 0); },
+    path(gb, P, r, c) { for (let i = 0; i < P.length - 1; i++) K.tube(gb, P[i], P[i + 1], r, c); },
+    blk(gb, x, y, z, sx, sy, sz, c, rx, ry, rz) { e.set(rx || 0, ry || 0, rz || 0, 'YXZ'); q.setFromEuler(e); m.compose(_p3.set(x, y, z), q, _s3.set(sx, sy, sz)); gb.geo(box, m, col(c), 0); },
+    ball(gb, x, y, z, rx, ry, rz, c) { m.compose(_p3.set(x, y, z), q.identity(), _s3.set(rx, ry, rz)); gb.geo(sph, m, col(c), 0); },
+    /* a cylinder of radius r and length len whose axis is x (ax 'x'), y or z */
+    drum(gb, x, y, z, r, len, c, ax) { e.set(ax === 'z' ? Math.PI / 2 : 0, 0, ax === 'x' ? Math.PI / 2 : 0); q.setFromEuler(e); m.compose(_p3.set(x, y, z), q, _s3.set(r, len, r)); gb.geo(cyl, m, col(c), 0); },
+    loft(gb, rings, c, o) {
+      o = o || {}; const n = o.seg || seg * 2, tA = o.tA != null ? o.tA : 0, tB = o.tB != null ? o.tB : TAU, full = o.tB == null, cols = full ? n : n + 1, P = [], cc = col(c).clone();
+      for (const r of rings) { const row = [], k = 2 / (r.e || 2); for (let s = 0; s < cols; s++) { const t = tA + (tB - tA) * s / n, cs = Math.cos(t), sn = Math.sin(t); row.push([(r.x || 0) + r.a * Math.sign(cs) * Math.pow(Math.abs(cs), k), r.y + r.b * Math.sign(sn) * Math.pow(Math.abs(sn), k), r.z]); } P.push(row); }
+      const at = (j, s) => P[Math.max(0, Math.min(P.length - 1, j))][full ? (s + cols) % cols : Math.max(0, Math.min(cols - 1, s))];
+      const N = P.map((row, j) => row.map((p, s) => { const a = at(j, s + 1), b = at(j, s - 1), f = at(j + 1, s), g = at(j - 1, s); const u = [a[0] - b[0], a[1] - b[1], a[2] - b[2]], v = [f[0] - g[0], f[1] - g[1], f[2] - g[2]];
+        let nx = u[1] * v[2] - u[2] * v[1], ny = u[2] * v[0] - u[0] * v[2], nz = u[0] * v[1] - u[1] * v[0]; const r = rings[j], ox = p[0] - (r.x || 0), oy = p[1] - r.y; if (nx * ox + ny * oy < 0) { nx = -nx; ny = -ny; nz = -nz; } const l = Math.hypot(nx, ny, nz) || 1; return [nx / l, ny / l, nz / l]; }));
+      const V = (j, s) => { const p = P[j][s % cols], nn = N[j][s % cols]; return [p[0], p[1], p[2], nn[0], nn[1], nn[2]]; };
+      const tri = (A, B, C) => { const ux = B[0] - A[0], uy = B[1] - A[1], uz = B[2] - A[2], vx = C[0] - A[0], vy = C[1] - A[1], vz = C[2] - A[2], fx = uy * vz - uz * vy, fy = uz * vx - ux * vz, fz = ux * vy - uy * vx;
+        const L = (fx * (A[3] + B[3] + C[3]) + fy * (A[4] + B[4] + C[4]) + fz * (A[5] + B[5] + C[5])) < 0 ? [A, C, B] : [A, B, C]; for (const W of L) gb.vtx(W[0], W[1], W[2], W[3], W[4], W[5], cc.r, cc.g, cc.b); };
+      for (let j = 0; j < P.length - 1; j++) for (let s = 0; s < n; s++) { const a = V(j, s), b = V(j, s + 1), f = V(j + 1, s), g = V(j + 1, s + 1); tri(a, b, g); tri(a, g, f); }
+      if (o.cap) for (const j of [0, P.length - 1]) { if (!o.cap[j ? 1 : 0]) continue; const r = rings[j], dz = j === 0 ? Math.sign(rings[0].z - rings[1].z) : Math.sign(rings[j].z - rings[j - 1].z), C0 = [r.x || 0, r.y, r.z, 0, 0, dz];
+        for (let s = 0; s < n; s++) { const a = P[j][s % cols], b = P[j][(s + 1) % cols]; tri(C0, [a[0], a[1], a[2], 0, 0, dz], [b[0], b[1], b[2], 0, 0, dz]); } }
+    },
+    /* an arc of sheet metal round a wheel (a fender): from angle a0 to a1 about the axle at (x, y, z), radius r, width w */
+    arc(gb, x, y, z, r, w, a0, a1, c) { const g = ni(new THREE.CylinderGeometry(r, r, w, seg * 2, 1, true, a0, a1 - a0)); g.rotateZ(Math.PI / 2); m.compose(_p3.set(x, y, z), q.identity(), _s3.set(1, 1, 1)); gb.geo(g, m, col(c), 0); const g2 = flipGeo(ni(new THREE.CylinderGeometry(r - 0.012, r - 0.012, w, seg * 2, 1, true, a0, a1 - a0))); g2.rotateZ(Math.PI / 2); gb.geo(g2, m, col(c), 0);   /* the inside face sits a little in, so the two never fight */ g.dispose(); g2.dispose(); },
+    done() { cyl.dispose(); box.dispose(); sph.dispose(); }
+  };
+  return K;
+}
+
+/* a monster truck: a pickup shell perched two metres up on a tube chassis, four-link solid axles, two shocks a corner, knobby tyres taller than a person */
+function monsterTruck(S, gP, gG, gT, gD, gLt, tl, lod) {
+  const K = carKit(lod), DK = [0.03, 0.03, 0.035], CHR = [0.75, 0.76, 0.78], RED = [0.6, 0.04, 0.03], STL = [0.18, 0.19, 0.2], GL = [1, 1, 1];
+  const zF = S.wheels.find((w) => w.front).z, zR = S.wheels.find((w) => !w.front).z, xW = Math.abs(S.wheels[0].x), yA = S.wr;
+  /* chassis: two rails, a hoop at each axle, cross members, bumpers */
+  for (const sx of [-1, 1]) { K.path(gD, [[sx * 0.45, 1.25, -2.35], [sx * 0.45, 1.15, -1.0], [sx * 0.45, 1.15, 1.0], [sx * 0.45, 1.25, 2.35]], 0.055, STL); }
+  for (const z of [-2.35, zR, -0.4, 0.6, zF, 2.35]) K.tube(gD, [-0.45, 1.18, z], [0.45, 1.18, z], 0.045, STL);
+  for (const z of [zF, zR]) K.path(gD, [[-0.45, 1.18, z], [-0.62, 1.95, z], [0.62, 1.95, z], [0.45, 1.18, z]], 0.045, STL);
+  for (const z of [2.45, -2.45]) { K.tube(gT, [-1.0, 1.3, z], [1.0, 1.3, z], 0.07, CHR); for (const sx of [-1, 1]) K.tube(gT, [sx * 0.45, 1.25, z * 0.96], [sx * 0.8, 1.3, z], 0.05, CHR); }
+  /* axles with a differential, four links each, and two shocks plus a bump stop per corner */
+  for (const [z, sg] of [[zF, 1], [zR, -1]]) {
+    K.drum(gD, 0, yA, z, 0.085, 2 * xW - 0.3, DK, 'x'); K.ball(gD, 0.08, yA, z, 0.26, 0.24, 0.24, DK); K.drum(gT, 0.08, yA, z + sg * 0.22, 0.09, 0.14, CHR, 'z');
+    for (const sx of [-1, 1]) {
+      for (const [y0, x0] of [[yA - 0.05, 0.6], [yA + 0.2, 0.3]]) K.tube(gT, [sx * x0, y0, z], [sx * 0.45, 1.18, z - sg * 1.05], 0.035, CHR);
+      for (const dx of [0.62, 0.84]) { const a = [sx * dx, yA + 0.1, z + (dx > 0.7 ? 0.15 : -0.15) * sg], b = [sx * (dx - 0.18), 1.95, z + (dx > 0.7 ? 0.1 : -0.1) * sg]; K.tube(gT, a, b, 0.045, CHR); K.tube(gT, [lerp(a[0], b[0], 0.15), lerp(a[1], b[1], 0.15), lerp(a[2], b[2], 0.15)], [lerp(a[0], b[0], 0.6), lerp(a[1], b[1], 0.6), lerp(a[2], b[2], 0.6)], 0.085, RED); K.tube(gT, [lerp(a[0], b[0], 0.62), lerp(a[1], b[1], 0.62), lerp(a[2], b[2], 0.62)], b, 0.06, [0.12, 0.12, 0.13]); }
+    }
+  }
+  K.ball(gD, 0, 1.35, 0.9, 0.42, 0.3, 0.55, [0.25, 0.26, 0.28]); K.drum(gT, 0, 1.35, 0.35, 0.22, 0.4, [0.5, 0.05, 0.04], 'z');   /* the engine and its transmission */
+  /* the shell: a pickup, boxy with rounded edges, floating over it all (base 1.85) */
+  const yB = 1.85, rg = (z, top, a, e) => ({ z, x: 0, y: (yB + top) / 2, a, b: (top - yB) / 2, e: e || 5 });
+  K.loft(gP, [rg(2.48, 2.3, 1.12, 4), rg(2.4, 2.45, 1.22), rg(1.8, 2.5, 1.24), rg(0.75, 2.56, 1.24), rg(0.62, 2.6, 1.2), rg(0.2, 3.08, 1.12), rg(-0.62, 3.1, 1.12), rg(-0.72, 2.64, 1.22), rg(-0.78, 2.52, 1.24), rg(-2.38, 2.52, 1.24), rg(-2.46, 2.4, 1.14, 4)], K.WH, { seg: lod ? 12 : 20, cap: [1, 1] });
+  K.blk(gD, 0, 2.53, -1.55, 2.2, 0.03, 1.5, [0.04, 0.04, 0.045]);                                                        /* bed cover */
+  K.blk(gG, 0, 2.86, 0.45, 2.02, 0.5, 0.05, GL, -0.86); K.blk(gG, 0, 2.86, -0.66, 1.9, 0.38, 0.04, GL, 0.25);           /* windscreen, back light */
+  for (const sx of [-1, 1]) K.blk(gG, sx * 1.135, 2.82, -0.2, 0.03, 0.38, 0.62, GL);                                     /* side windows */
+  K.blk(gD, 0, 2.18, 2.49, 1.5, 0.36, 0.04, DK); for (let k = 0; k < 4; k++) K.blk(gT, 0, 2.05 + k * 0.09, 2.51, 1.42, 0.025, 0.02, CHR);   /* grille */
+  for (const sx of [-1, 1]) { K.blk(gLt, sx * 0.92, 2.25, 2.5, 0.3, 0.14, 0.02, GL); K.blk(tl, sx * 1.1, 2.3, -2.47, 0.14, 0.24, 0.02, GL); K.path(gT, [[sx * 0.85, 2.4, -0.8], [sx * 0.85, 3.45, -0.8]], 0.07, CHR); K.drum(gT, sx * 0.85, 3.5, -0.8, 0.09, 0.12, [0.1, 0.1, 0.1], 'y'); }   /* lamps, stacks */
+  K.blk(gD, 0, 3.17, 0.05, 1.7, 0.1, 0.14, DK); for (let k = 0; k < 6; k++) K.blk(gLt, -0.7 + k * 0.28, 3.17, 0.125, 0.2, 0.07, 0.01, GL);   /* roof light bar */
+  K.done();
+}
+
+/* a hot rod: a chopped, channelled roadster-coupe on exposed rails, a blown V8 standing out of where the bonnet would be, zoomie headers, a dropped I-beam
+   front axle on a transverse leaf, cycle fenders over skinny front tyres and fat rear tyres under the body's rear wings */
+function hotRod(S, gP, gG, gT, gD, gLt, tl, lod) {
+  const K = carKit(lod), DK = [0.025, 0.025, 0.03], CHR = [0.82, 0.83, 0.85], BLK = [0.02, 0.02, 0.022], RED = [0.45, 0.03, 0.03], GL = [1, 1, 1];
+  const wf = S.wheels.find((w) => w.front), wr = S.wheels.find((w) => !w.front), xR = Math.abs(wr.x), xF = Math.abs(wf.x);
+  /* frame rails, kicked up over the rear axle */
+  for (const sx of [-1, 1]) K.path(gD, [[sx * 0.36, 0.42, -1.95], [sx * 0.36, 0.55, wr.z], [sx * 0.38, 0.32, -0.6], [sx * 0.36, 0.3, 1.0], [sx * 0.3, 0.32, wf.z + 0.15]], 0.04, DK);
+  /* body: the tub and a chopped top with narrow glass */
+  K.loft(gP, [{ z: -1.92, y: 0.68, a: 0.62, b: 0.22, e: 3 }, { z: -1.8, y: 0.68, a: 0.72, b: 0.3, e: 3.5 }, { z: -0.8, y: 0.68, a: 0.76, b: 0.32, e: 4 }, { z: 0.15, y: 0.7, a: 0.74, b: 0.3, e: 4 }, { z: 0.32, y: 0.74, a: 0.62, b: 0.26, e: 3.5 }], K.WH, { seg: lod ? 12 : 22, cap: [1, 1] });
+  K.loft(gP, [{ z: -1.25, y: 1.12, a: 0.6, b: 0.14, e: 5 }, { z: -1.12, y: 1.16, a: 0.64, b: 0.18, e: 5 }, { z: -0.1, y: 1.16, a: 0.64, b: 0.18, e: 5 }, { z: 0.02, y: 1.08, a: 0.62, b: 0.1, e: 5 }], K.WH, { seg: lod ? 10 : 18, cap: [1, 1] });
+  for (const sx of [-1, 1]) { K.blk(gG, sx * 0.645, 1.15, -0.62, 0.02, 0.13, 0.86, GL); K.blk(gP, sx * 0.65, 1.15, -0.16, 0.035, 0.18, 0.06, K.WH);
+    K.blk(gT, sx * 0.765, 0.9, -0.82, 0.012, 0.025, 2.1, CHR); for (const z of [-0.95, 0.05]) K.blk(gD, sx * 0.768, 0.66, z, 0.008, 0.48, 0.012, DK); K.blk(gT, sx * 0.77, 0.82, -0.82, 0.02, 0.025, 0.1, CHR); }   /* belt-line strip, door cuts, handle */
+  K.blk(gG, 0, 1.13, 0.06, 1.1, 0.12, 0.03, GL, -0.35); K.blk(gG, 0, 1.15, -1.22, 1.0, 0.1, 0.03, GL, 0.3);
+  /* rear wings over the fat tyres, cycle fenders over the skinny fronts, running boards between */
+  for (const sx of [-1, 1]) { K.arc(gP, sx * xR, wr.r, wr.z, wr.r + 0.1, wr.w + 0.12, Math.PI * 0.05, Math.PI * 0.98, K.WH); K.arc(gP, sx * xF, wf.r, wf.z, wf.r + 0.07, wf.w + 0.08, Math.PI * 0.25, Math.PI * 0.85, K.WH);
+    K.tube(gD, [sx * (xF - 0.05), wf.r + 0.05, wf.z], [sx * 0.4, 0.62, wf.z - 0.1], 0.018, CHR); K.blk(gD, sx * 0.82, 0.38, -0.4, 0.22, 0.03, 1.2, BLK); }
+  /* the engine: block, chrome valve covers, a blower with its belt, two carbs and a scoop, zoomie headers */
+  const zE = 0.9; K.blk(gD, 0, 0.62, zE, 0.5, 0.36, 0.62, RED); for (const sx of [-1, 1]) { K.blk(gT, sx * 0.24, 0.84, zE, 0.14, 0.12, 0.62, CHR, 0, 0, sx * 0.55); for (let k = 0; k < 4; k++) { const z = zE - 0.24 + k * 0.16; K.path(gT, [[sx * 0.3, 0.68, z], [sx * 0.46, 0.62, z - 0.05], [sx * 0.6, 0.78, z - 0.25]], 0.024, CHR); } }
+  K.blk(gT, 0, 1.0, zE, 0.3, 0.2, 0.62, CHR); for (let k = 0; k < 8; k++) K.blk(gT, 0, 1.11, zE - 0.27 + k * 0.077, 0.32, 0.02, 0.025, [0.6, 0.6, 0.62]);
+  K.drum(gT, 0, 1.0, zE + 0.4, 0.08, 0.06, CHR, 'z'); K.drum(gT, 0, 0.62, zE + 0.4, 0.09, 0.06, CHR, 'z'); K.blk(gD, 0, 0.81, zE + 0.43, 0.06, 0.42, 0.04, BLK);
+  for (const dz of [-0.14, 0.14]) K.drum(gT, 0, 1.2, zE + dz, 0.07, 0.18, CHR, 'y'); K.blk(gD, 0, 1.36, zE + 0.05, 0.22, 0.14, 0.52, BLK, -0.1);   /* carbs and the scoop */
+  /* the grille shell and radiator, bucket headlamps on stalks */
+  K.loft(gT, [{ z: zE + 0.62, y: 0.78, a: 0.27, b: 0.34, e: 3 }, { z: zE + 0.66, y: 0.78, a: 0.27, b: 0.34, e: 3 }], CHR, { cap: [0, 1] }); K.blk(gD, 0, 0.78, zE + 0.665, 0.42, 0.56, 0.02, DK);
+  for (let k = 0; k < 9; k++) K.blk(gT, -0.2 + k * 0.05, 0.78, zE + 0.672, 0.008, 0.52, 0.01, [0.5, 0.5, 0.52]);
+  for (const sx of [-1, 1]) { K.tube(gT, [sx * 0.26, 0.6, zE + 0.6], [sx * 0.46, 0.84, zE + 0.62], 0.02, CHR); K.ball(gT, sx * 0.48, 0.9, zE + 0.6, 0.12, 0.12, 0.12, CHR); K.drum(gLt, sx * 0.48, 0.9, zE + 0.705, 0.1, 0.01, GL, 'z'); }
+  /* front axle: dropped I-beam, transverse leaf, hairpins, shocks */
+  K.path(gD, [[-xF + 0.06, wf.r, wf.z], [-0.4, wf.r - 0.08, wf.z], [0.4, wf.r - 0.08, wf.z], [xF - 0.06, wf.r, wf.z]], 0.04, CHR); K.blk(gD, 0, 0.42, wf.z + 0.06, 0.8, 0.04, 0.07, BLK);
+  for (const sx of [-1, 1]) { K.path(gT, [[sx * 0.42, wf.r - 0.06, wf.z], [sx * 0.34, 0.3, wf.z - 0.9]], 0.02, CHR); K.tube(gT, [sx * 0.5, wf.r, wf.z - 0.05], [sx * 0.34, 0.62, wf.z - 0.12], 0.03, CHR); }
+  /* rear: quick-change diff, axle, roll pan, tail lamps, exhaust */
+  K.drum(gD, 0, wr.r, wr.z, 0.07, 2 * xR - 0.3, DK, 'x'); K.ball(gT, 0, wr.r, wr.z, 0.18, 0.17, 0.2, CHR); K.blk(gT, 0, wr.r, wr.z - 0.2, 0.2, 0.16, 0.08, CHR);
+  for (const sx of [-1, 1]) { K.drum(gD, sx * 0.42, 0.62, -1.96, 0.065, 0.04, DK, 'z'); K.drum(tl, sx * 0.42, 0.62, -1.985, 0.052, 0.01, GL, 'z'); }
+  /* inside: tuck-and-roll seat, a chrome steering wheel */
+  K.blk(gD, 0, 0.88, -0.55, 1.0, 0.32, 0.12, [0.32, 0.02, 0.02], -0.2); K.blk(gD, 0, 0.66, -0.35, 1.0, 0.12, 0.42, [0.32, 0.02, 0.02]);
+  { const tor = ni(new THREE.TorusGeometry(0.16, 0.014, 6, 20)); _q.setFromEuler(new THREE.Euler(-0.9, 0, 0)); _m4.compose(_p3.set(-0.28, 1.0, 0.0), _q, _s3.set(1, 1, 1)); gT.geo(tor, _m4, _tcol.setRGB(...CHR), 0); tor.dispose(); }
+  K.done();
+}
+
+/* an open-wheel single seater: a carbon tub and needle nose, sidepods, an airbox over the driver's head, a halo, front and rear wings, a flat floor and
+   diffuser, pushrod wishbones to each corner. The bodywork takes the paint; carbon parts are dark */
+function formulaCar(S, gP, gG, gT, gD, gLt, tl, lod) {
+  const K = carKit(lod), CF = [0.02, 0.02, 0.024], TI = [0.3, 0.31, 0.33], GL = [1, 1, 1], WHT = [0.85, 0.85, 0.86];
+  const wf = S.wheels.find((w) => w.front), wr = S.wheels.find((w) => !w.front), xF = Math.abs(wf.x), xR = Math.abs(wr.x), sg = lod ? 12 : 22;
+  /* nose, tub and engine cover in one loft */
+  K.loft(gP, [{ z: 2.42, y: 0.3, a: 0.05, b: 0.035, e: 2.2 }, { z: 2.3, y: 0.31, a: 0.1, b: 0.07, e: 2.4 }, { z: 1.8, y: 0.34, a: 0.16, b: 0.11, e: 2.6 }, { z: 1.1, y: 0.4, a: 0.25, b: 0.18, e: 2.8 }, { z: 0.55, y: 0.44, a: 0.33, b: 0.23, e: 3 }, { z: -0.1, y: 0.46, a: 0.4, b: 0.27, e: 3.2 }, { z: -0.8, y: 0.48, a: 0.36, b: 0.3, e: 3 }, { z: -1.45, y: 0.44, a: 0.22, b: 0.24, e: 2.6 }, { z: -1.95, y: 0.4, a: 0.1, b: 0.13, e: 2.4 }, { z: -2.05, y: 0.4, a: 0.05, b: 0.07, e: 2.2 }], K.WH, { seg: sg, cap: [1, 1] });
+  K.loft(gD, [{ z: 0.72, y: 0.69, a: 0.22, b: 0.025, e: 3 }, { z: 0.2, y: 0.71, a: 0.27, b: 0.025, e: 3 }, { z: -0.05, y: 0.71, a: 0.24, b: 0.025, e: 3 }], CF, { seg: sg, cap: [1, 1] });   /* the cockpit opening */
+  K.ball(gT, 0, 0.8, 0.12, 0.13, 0.14, 0.15, WHT); K.blk(gT, 0, 0.84, 0.12, 0.27, 0.035, 0.2, [0.55, 0.04, 0.03]);   /* a white helmet with a red stripe */ K.blk(gG, 0, 0.82, 0.24, 0.2, 0.06, 0.04, GL, -0.25);                  /* helmet and visor */
+  /* airbox and roll hoop, a shark fin down the engine cover */
+  K.loft(gP, [{ z: -0.02, y: 0.96, a: 0.11, b: 0.12, e: 2.6 }, { z: -0.12, y: 0.95, a: 0.13, b: 0.14, e: 2.6 }, { z: -0.6, y: 0.8, a: 0.15, b: 0.16, e: 2.6 }, { z: -1.2, y: 0.62, a: 0.12, b: 0.1, e: 2.4 }], K.WH, { seg: sg, cap: [0, 0] });
+  K.drum(gD, 0, 0.96, -0.015, 0.1, 0.01, CF, 'z'); K.blk(gP, 0, 0.84, -1.2, 0.02, 0.26, 0.9, K.WH, 0.18);
+  /* halo */
+  K.path(gD, [[0, 0.66, 0.72], [0, 0.88, 0.55], [0.2, 0.9, 0.42], [0.29, 0.88, 0.2], [0.31, 0.84, 0.0], [0.33, 0.66, -0.12]], 0.022, TI); K.path(gD, [[0.2, 0.9, 0.42], [-0.2, 0.9, 0.42], [-0.29, 0.88, 0.2], [-0.31, 0.84, 0.0], [-0.33, 0.66, -0.12]], 0.022, TI);
+  /* sidepods with dark intakes, mirrors */
+  for (const sx of [-1, 1]) {
+    K.loft(gP, [{ z: 0.32, x: sx * 0.6, y: 0.4, a: 0.16, b: 0.16, e: 3 }, { z: 0.15, x: sx * 0.62, y: 0.38, a: 0.2, b: 0.19, e: 3.2 }, { z: -0.5, x: sx * 0.58, y: 0.36, a: 0.2, b: 0.18, e: 3 }, { z: -1.15, x: sx * 0.44, y: 0.3, a: 0.12, b: 0.12, e: 2.6 }, { z: -1.5, x: sx * 0.34, y: 0.26, a: 0.05, b: 0.06, e: 2.4 }], K.WH, { seg: sg, cap: [0, 1] });
+    K.loft(gD, [{ z: 0.33, x: sx * 0.6, y: 0.4, a: 0.14, b: 0.14, e: 3 }, { z: 0.31, x: sx * 0.6, y: 0.4, a: 0.135, b: 0.135, e: 3 }], CF, { cap: [1, 0] });
+    K.tube(gD, [sx * 0.36, 0.62, 0.5], [sx * 0.5, 0.74, 0.52], 0.012, CF); K.blk(gP, sx * 0.52, 0.76, 0.52, 0.14, 0.07, 0.04, K.WH); K.blk(gG, sx * 0.52, 0.76, 0.497, 0.12, 0.05, 0.005, GL);
+  }
+  /* floor and diffuser, front and rear wings */
+  K.blk(gD, 0, 0.06, -0.3, 1.5, 0.02, 2.4, CF); K.blk(gD, 0, 0.14, -1.72, 1.1, 0.02, 0.5, CF, -0.3); for (const fx of [-0.4, -0.15, 0.15, 0.4]) K.blk(gD, fx, 0.15, -1.72, 0.01, 0.16, 0.48, CF, -0.3);
+  K.blk(gD, 0, 0.09, 2.22, 1.9, 0.02, 0.32, CF, 0.04); K.blk(gP, 0, 0.16, 2.08, 1.82, 0.015, 0.16, K.WH, 0.3); K.blk(gP, 0, 0.21, 1.98, 1.74, 0.012, 0.12, K.WH, 0.55);
+  for (const sx of [-1, 1]) { K.blk(gP, sx * 0.96, 0.17, 2.18, 0.015, 0.22, 0.46, K.WH); K.blk(gLt, sx * 0.97, 0.25, 2.4, 0.012, 0.02, 0.06, GL); K.tube(gD, [sx * 0.08, 0.27, 2.0], [sx * 0.12, 0.1, 2.05], 0.012, CF); }
+  for (const sx of [-1, 1]) K.blk(gP, sx * 0.5, 0.74, -1.9, 0.015, 0.56, 0.5, K.WH);
+  K.blk(gD, 0, 0.92, -1.86, 1.0, 0.02, 0.3, CF, -0.12); K.blk(gP, 0, 0.99, -2.02, 1.0, 0.015, 0.16, K.WH, -0.45); K.blk(gD, 0, 0.6, -1.95, 1.0, 0.015, 0.16, CF, -0.2);
+  K.tube(gD, [0, 0.44, -1.92], [0, 0.92, -1.86], 0.025, CF); K.blk(tl, 0, 0.34, -2.06, 0.08, 0.06, 0.01, GL);   /* wing pylon, rain light */
+  /* suspension: upper and lower wishbones and a pushrod to each upright */
+  for (const sx of [-1, 1]) for (const [w, x0, zs, zb] of [[wf, 0.22, wf.z - 0.25, wf.z + 0.2], [wr, 0.3, wr.z - 0.2, wr.z + 0.25]]) {
+    const xh = (w.front ? xF : xR) - w.w / 2 - 0.04;
+    for (const [y0, yh] of [[0.3, w.r - 0.1], [0.5, w.r + 0.12]]) { K.tube(gD, [sx * x0, y0, zs], [sx * xh, yh, w.z], 0.014, CF); K.tube(gD, [sx * x0, y0, zb], [sx * xh, yh, w.z], 0.014, CF); }
+    K.tube(gD, [sx * (xh - 0.03), w.r - 0.08, w.z], [sx * x0, 0.56, w.z + (w.front ? 0.1 : -0.1)], 0.012, TI); K.drum(gD, sx * xh, w.r, w.z, 0.07, 0.16, TI, 'y');
+  }
+  K.done();
+}
+const CUSTOM_CARS = { buggy: buggyFrame, monster: monsterTruck, rod: hotRod, formula: formulaCar };
+
 /* ---------- the car ---------- */
 function buildCarModel(def, hex, opts) {
   opts = opts || {};
@@ -3618,7 +3758,7 @@ function buildCarModel(def, hex, opts) {
   const S = carSpec(def), b = S.b, hl = S.hl, hw = S.hw, y0 = S.y0, y1 = S.y1, wr = S.wr, C = S.C, lod = opts.lod ? 1 : 0, tww = S.tww;
   const gP = new GB(0, 0, false), gG = new GB(0, 0, false), gT = new GB(0, 0, false), gD = new GB(0, 0, false), gLt = new GB(0, 0, false), tl = new GB(0, 0, false);
   const DK = [0.03, 0.03, 0.034], CH = [0.62, 0.64, 0.68];
-  if (b.buggy) buggyFrame(S, gP, gG, gT, gD, gLt, tl, lod); else {
+  if (b.custom || b.buggy) CUSTOM_CARS[b.custom || 'buggy'](S, gP, gG, gT, gD, gLt, tl, lod); else {
   loftBody(S, gP, gG, lod);
   const tbx = (x0, ya, z0, x1, yb, z1, k) => gT.box(Math.min(x0, x1), Math.min(ya, yb), Math.min(z0, z1), Math.max(x0, x1), Math.max(ya, yb), Math.max(z0, z1), k == null ? 0.03 : k, k == null ? 0.03 : k, k == null ? 0.034 : k);
   /* hollow body: dark chassis block seen through the wheel arches, plus a dark liner round each wheel */
@@ -4026,7 +4166,29 @@ const CARS = [
     p: { m: 940, a: 1.3, b: 1.25, Iz: 1250, rw: 0.46, fd: 4.9, gears: [3.4, 2.3, 1.68, 1.28, 1.02], idle: 950, red: 6900, track: 1.58, cgh: 0.68, rd: 0.4, rsf: 0.42, ab: 0.55, cf: 8.4, cr: 10.6 },
     t: { Tmax: 410, mu: 1.0, cd: 0.92, brk: 1.0, off: 1.4, cl: 0 },
     stats: { spd: 6, acc: 8, hdl: 7, off: 10 },
-    body: { L: 3.5, W: 2.04, H: 0.3, C: 0.82, wr: 0.46, y0: 0.7, tw: 0.44, rim: [0.85, 0.86, 0.88], rimStyle: 'bead', tire: 'knobby', buggy: true } }
+    body: { L: 3.5, W: 2.04, H: 0.3, C: 0.82, wr: 0.46, y0: 0.7, tw: 0.44, rim: [0.85, 0.86, 0.88], rimStyle: 'bead', tire: 'knobby', buggy: true } },
+
+  /* original designs, each hand-built (06_carmodel.js) rather than a body shell: a monster truck, a hot rod and an open-wheel single seater */
+  { id: 'monster', name: 'Goliath', cls: 'Monster truck', price: 24000, paint: 3, dy: 1.45, snd: { f: 0.62, lp: 0.55 }, dial: 200,
+    blurb: 'A pickup shell two metres up on a tube chassis, four-link solid axles with two shocks a corner, a blown big-block and 1.7 m knobby tyres. It climbs anything, crushes the rest, and rolls over if you ask it to corner.',
+    p: { m: 3700, a: 1.6, b: 1.6, Iz: 9800, rw: 0.84, fd: 4.6, gears: [3.4, 2.2, 1.5, 1.1, 0.88], idle: 750, red: 6200, track: 2.3, cgh: 1.25, rd: 0.4, awd: true, rsf: 0.5, ab: 0.5, cf: 6.4, cr: 7.4 },
+    t: { Tmax: 1500, mu: 1.0, cd: 2.4, brk: 1.1, off: 1.45, cl: 0 },
+    stats: { spd: 4, acc: 6, hdl: 2, off: 10 },
+    body: { L: 5.0, W: 3.1, H: 0.7, C: 0.55, wr: 0.84, y0: 1.85, tw: 0.74, rim: [0.8, 0.8, 0.82], rimStyle: 'bead', tire: 'knobby', custom: 'monster' } },
+
+  { id: 'rod', name: 'Ironside', cls: 'Hot rod', price: 18000, paint: 0, dy: -0.12, snd: { f: 0.78, lp: 0.95 }, dial: 280,
+    blurb: 'A chopped and channelled roadster on exposed rails: a supercharged V8 standing out of where the bonnet would be, zoomie headers, a dropped I-beam axle, skinny fronts and fat rears. Brutal in a straight line and loose everywhere else.',
+    p: { m: 1150, a: 1.45, b: 1.3, Iz: 1900, rw: 0.38, fd: 3.55, gears: [2.9, 1.95, 1.38, 1.0], idle: 850, red: 6800, track: 1.5, cgh: 0.46, rd: 0.5, rsf: 0.56, cf: 9.2, cr: 9.6 },
+    t: { Tmax: 880, mu: 1.08, cd: 0.7, brk: 0.9, off: 0.75, cl: 0 },
+    stats: { spd: 7, acc: 9, hdl: 4, off: 2 },
+    body: { L: 4.2, W: 1.96, H: 0.4, C: 0.45, wr: 0.38, wrF: 0.3, twF: 0.17, y0: 0.42, tw: 0.42, rim: [0.85, 0.86, 0.88], rimStyle: 'seven', custom: 'rod' } },
+
+  { id: 'formula', name: 'Vortex FR', cls: 'Open-wheel racer', price: 48000, paint: 1, dy: -0.48, snd: { f: 1.7, lp: 2.1 }, dial: 380,
+    blurb: 'A single-seater: carbon tub, needle nose, sidepods, halo, and wings that press it into the road harder the faster it goes. Unbeatable on tarmac, hopeless off it, and it scrapes over anything bigger than a kerb.',
+    p: { m: 760, a: 1.65, b: 1.45, Iz: 1050, rw: 0.34, fd: 3.4, gears: [3.0, 2.35, 1.9, 1.6, 1.38, 1.2, 1.05], idle: 3200, red: 11800, track: 1.6, cgh: 0.28, rd: 0.5, rsf: 0.5, ab: 0.46, cf: 13.5, cr: 15.5 },
+    t: { Tmax: 620, mu: 1.55, cd: 0.42, brk: 1.6, off: 0.38, cl: 2.4 },
+    stats: { spd: 10, acc: 10, hdl: 10, off: 1 },
+    body: { L: 4.9, W: 2.0, H: 0.3, C: 0.4, wr: 0.34, wrF: 0.33, twF: 0.3, y0: 0.18, tw: 0.4, rim: [0.12, 0.12, 0.13], rimStyle: 'multi', tire: 'sport', custom: 'formula' } }
 ];
 const CAR_BY_ID = {}; for (const d of CARS) { CAR_BY_ID[d.id] = d; const b = d.body; d.top = (b.y0 != null ? b.y0 : 0.36) + b.H + 0.1 + b.C; d.hl = b.L / 2; }
 const BASE_N = CARS.length;   /* CARS[0..BASE_N) are the dealership cars; stolen cars are appended at runtime (see 07_jack.js) */

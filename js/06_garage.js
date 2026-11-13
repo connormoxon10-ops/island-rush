@@ -81,7 +81,29 @@ const CARS = [
     p: { m: 940, a: 1.3, b: 1.25, Iz: 1250, rw: 0.46, fd: 4.9, gears: [3.4, 2.3, 1.68, 1.28, 1.02], idle: 950, red: 6900, track: 1.58, cgh: 0.68, rd: 0.4, rsf: 0.42, ab: 0.55, cf: 8.4, cr: 10.6 },
     t: { Tmax: 410, mu: 1.0, cd: 0.92, brk: 1.0, off: 1.4, cl: 0 },
     stats: { spd: 6, acc: 8, hdl: 7, off: 10 },
-    body: { L: 3.5, W: 2.04, H: 0.3, C: 0.82, wr: 0.46, y0: 0.7, tw: 0.44, rim: [0.85, 0.86, 0.88], rimStyle: 'bead', tire: 'knobby', buggy: true } }
+    body: { L: 3.5, W: 2.04, H: 0.3, C: 0.82, wr: 0.46, y0: 0.7, tw: 0.44, rim: [0.85, 0.86, 0.88], rimStyle: 'bead', tire: 'knobby', buggy: true } },
+
+  /* original designs, each hand-built (06_carmodel.js) rather than a body shell: a monster truck, a hot rod and an open-wheel single seater */
+  { id: 'monster', name: 'Goliath', cls: 'Monster truck', price: 24000, paint: 3, dy: 1.45, snd: { f: 0.62, lp: 0.55 }, dial: 200,
+    blurb: 'A pickup shell two metres up on a tube chassis, four-link solid axles with two shocks a corner, a blown big-block and 1.7 m knobby tyres. It climbs anything, crushes the rest, and rolls over if you ask it to corner.',
+    p: { m: 3700, a: 1.6, b: 1.6, Iz: 9800, rw: 0.84, fd: 4.6, gears: [3.4, 2.2, 1.5, 1.1, 0.88], idle: 750, red: 6200, track: 2.3, cgh: 1.25, rd: 0.4, awd: true, rsf: 0.5, ab: 0.5, cf: 6.4, cr: 7.4 },
+    t: { Tmax: 1500, mu: 1.0, cd: 2.4, brk: 1.1, off: 1.45, cl: 0 },
+    stats: { spd: 4, acc: 6, hdl: 2, off: 10 },
+    body: { L: 5.0, W: 3.1, H: 0.7, C: 0.55, wr: 0.84, y0: 1.85, tw: 0.74, rim: [0.8, 0.8, 0.82], rimStyle: 'bead', tire: 'knobby', custom: 'monster' } },
+
+  { id: 'rod', name: 'Ironside', cls: 'Hot rod', price: 18000, paint: 0, dy: -0.12, snd: { f: 0.78, lp: 0.95 }, dial: 280,
+    blurb: 'A chopped and channelled roadster on exposed rails: a supercharged V8 standing out of where the bonnet would be, zoomie headers, a dropped I-beam axle, skinny fronts and fat rears. Brutal in a straight line and loose everywhere else.',
+    p: { m: 1150, a: 1.45, b: 1.3, Iz: 1900, rw: 0.38, fd: 3.55, gears: [2.9, 1.95, 1.38, 1.0], idle: 850, red: 6800, track: 1.5, cgh: 0.46, rd: 0.5, rsf: 0.56, cf: 9.2, cr: 9.6 },
+    t: { Tmax: 880, mu: 1.08, cd: 0.7, brk: 0.9, off: 0.75, cl: 0 },
+    stats: { spd: 7, acc: 9, hdl: 4, off: 2 },
+    body: { L: 4.2, W: 1.96, H: 0.4, C: 0.45, wr: 0.38, wrF: 0.3, twF: 0.17, y0: 0.42, tw: 0.42, rim: [0.85, 0.86, 0.88], rimStyle: 'seven', custom: 'rod' } },
+
+  { id: 'formula', name: 'Vortex FR', cls: 'Open-wheel racer', price: 48000, paint: 1, dy: -0.48, snd: { f: 1.7, lp: 2.1 }, dial: 380,
+    blurb: 'A single-seater: carbon tub, needle nose, sidepods, halo, and wings that press it into the road harder the faster it goes. Unbeatable on tarmac, hopeless off it, and it scrapes over anything bigger than a kerb.',
+    p: { m: 760, a: 1.65, b: 1.45, Iz: 1050, rw: 0.34, fd: 3.4, gears: [3.0, 2.35, 1.9, 1.6, 1.38, 1.2, 1.05], idle: 3200, red: 11800, track: 1.6, cgh: 0.28, rd: 0.5, rsf: 0.5, ab: 0.46, cf: 13.5, cr: 15.5 },
+    t: { Tmax: 620, mu: 1.55, cd: 0.42, brk: 1.6, off: 0.38, cl: 2.4 },
+    stats: { spd: 10, acc: 10, hdl: 10, off: 1 },
+    body: { L: 4.9, W: 2.0, H: 0.3, C: 0.4, wr: 0.34, wrF: 0.33, twF: 0.3, y0: 0.18, tw: 0.4, rim: [0.12, 0.12, 0.13], rimStyle: 'multi', tire: 'sport', custom: 'formula' } }
 ];
 const CAR_BY_ID = {}; for (const d of CARS) { CAR_BY_ID[d.id] = d; const b = d.body; d.top = (b.y0 != null ? b.y0 : 0.36) + b.H + 0.1 + b.C; d.hl = b.L / 2; }
 const BASE_N = CARS.length;   /* CARS[0..BASE_N) are the dealership cars; stolen cars are appended at runtime (see 07_jack.js) */
