@@ -385,6 +385,7 @@ RYG.buildRails = function (group) {
   const hash = (a, b, c) => { let h = Math.imul(a * 73856093 ^ b * 19349663 ^ c * 83492791, 1) >>> 0; h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
   let tris = 0, ri = 0; RYG.rails = [];
   for (const rl of RY_RAILS) {
+    if (rl.k === 'net') continue;   /* crash nets: RYG.buildObstacles */
     ri++;
     const rock = rl.k === 'rock', stepS = rock ? 1.5 : 1.0, th = RY_RAIL_T[rl.k], sA = RY.starts[rl.e] + rl.at, n = Math.max(2, Math.round(rl.len / stepS));
     for (const side of rl.side === 0 ? [1, -1] : [rl.side]) {
@@ -433,6 +434,61 @@ RYG.buildRails = function (group) {
 };
 
 /* ---------------- gates ---------------- */
+/* ---------------- obstacles: ravine ramps, crash nets, tyre walls, streams ---------------- */
+function _rygNetTex() {
+  const c = mkCanvas(64, 64), g = c.getContext('2d'); g.clearRect(0, 0, 64, 64); g.strokeStyle = '#ffffff'; g.lineWidth = 3;
+  for (let i = 0; i <= 64; i += 16) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, 64); g.stroke(); g.beginPath(); g.moveTo(0, i); g.lineTo(64, i); g.stroke(); }
+  const t = canvasTex(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+}
+RYG.buildObstacles = function (group) {
+  const gb = new GB(0, 0, false), box = ni(new THREE.BoxGeometry(1, 1, 1)), cyl = ni(new THREE.CylinderGeometry(1, 1, 1, 14, 1)), m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sc = new THREE.Vector3();
+  const C = (r, g, b) => new THREE.Color(r, g, b), WOOD = C(0.17, 0.1, 0.05), WOOD2 = C(0.11, 0.065, 0.035), YEL = C(0.85, 0.5, 0.02), BLK = C(0.02, 0.02, 0.02), WHT = C(0.75, 0.75, 0.72), RED = C(0.55, 0.03, 0.02), RUB = C(0.025, 0.025, 0.028);   /* linear colours: the material does not convert them */
+  const put = (g, x, y, z, yaw, pitch, sx, sy, sz, col, sh) => { e.set(pitch || 0, yaw, 0, 'YXZ'); q.setFromEuler(e); m.compose(v.set(x, y, z), q, sc.set(sx, sy, sz)); gb.geo(g, m, col, sh || 0); };
+  const tmp = {};
+  /* ravines: a timber deck over the last stretch of the kicker, a plank face on the landing wall, chevron boards and posts at both lips */
+  for (const rv of RY.ravines) {
+    const f = rv.f;
+    for (let u = -f.up * 0.75; u < 0; u += 1) {
+      const a = RY.at(rv.s0 + u, 0, tmp), b = RY.at(rv.s0 + u + 1, 0, {}), ya = RY.heightAt(a.x, a.z), yb = RY.heightAt(b.x, b.z), pitch = -Math.atan2(yb - ya, 1), hw = a.hw * 0.86;
+      put(box, (a.x + b.x) / 2, (ya + yb) / 2 + 0.05, (a.z + b.z) / 2, a.yaw, pitch, hw * 2, 0.12, 1.02, (u | 0) % 2 ? WOOD : WOOD2, 0.15);
+      for (const sd of [-1, 1]) { const p = RY.at(rv.s0 + u + 0.5, sd * (hw + 0.1), {}); const y0 = RY.heightAt(p.x, p.z); put(box, p.x, (y0 + (ya + yb) / 2) / 2 - 0.2, p.z, a.yaw, 0, 0.18, Math.max(0.3, (ya + yb) / 2 - y0 + 0.6), 1.0, WOOD2, 0.2); }
+    }
+    { const a = RY.at(rv.s0 - 0.05, 0, {}); put(box, a.x, rv.lipY - 0.3, a.z, a.yaw, 0, a.hw * 1.8, 0.6, 0.25, YEL, 0); }
+    { const a = RY.at(rv.s0 + rv.span - 2.7, 0, {}), h = rv.deckY - (rv.lipY - f.depth - f.rise); put(box, a.x, rv.deckY - h / 2 - 0.15, a.z, a.yaw, 0, a.hw * 2.6, h, 0.3, WOOD, 0.3); }   /* plank face of the landing wall */
+    for (const u of [-1.2, rv.span + 0.5]) for (const sd of [-1, 1]) {
+      const a = RY.at(rv.s0 + u, 0, {}), p = RY.at(rv.s0 + u, sd * (a.hw + 1.1), {}), y = RY.heightAt(p.x, p.z);
+      put(cyl, p.x, y + 0.75, p.z, 0, 0, 0.07, 1.5, 0.07, WOOD2, 0.2);
+      put(box, p.x, y + 1.25, p.z, a.yaw, 0, 0.95, 0.42, 0.03, YEL, 0);   /* chevron board, face to the oncoming car: yellow with two black chevrons pointing across the gap */
+      for (const dx of [-0.2, 0.15]) for (const sy of [-1, 1]) { const o = RY.at(rv.s0 + u - 0.02, sd * (a.hw + 1.1) + dx * sd, {}); e.set(0, a.yaw, sy * sd * 0.62, 'YXZ'); q.setFromEuler(e); m.compose(v.set(o.x, y + 1.25 + sy * 0.08, o.z), q, sc.set(0.07, 0.22, 0.04)); gb.geo(box, m, BLK, 0); }
+    }
+  }
+  /* tyre walls: stacks of three or four tyres, plain or painted red and white */
+  for (const t of RY.tyres) { const y = RY.heightAt(t.x, t.z); for (let k = 0; k < t.n; k++) put(cyl, t.x, y + 0.13 + k * 0.25, t.z, 0, 0, 0.42, 0.24, 0.42, t.red ? (k % 2 ? RED : WHT) : RUB, 0.2); }
+  if (gb.count) { const mesh = gb.mesh(RYG.mats.wood, true, true); group.add(mesh); RYG.obsMesh = mesh; }
+  /* crash nets: posts every 3 m and a net hung between them */
+  const NP = [], NU = [], NI = [], pg = new GB(0, 0, false);
+  for (const rl of RY_RAILS) {
+    if (rl.k !== 'net') continue; const sA = RY.starts[rl.e] + rl.at, n = Math.max(2, Math.round(rl.len / 3));
+    let prev = null;
+    for (let c = 0; c <= n; c++) {
+      const s = sA + rl.len * c / n, a = RY.at(s, 0, {}), p = RY.at(s, rl.side * (a.hw + rl.gap + 0.1), {}), y = RY.heightAt(p.x, p.z);
+      e.set(0, 0, 0); q.identity(); m.compose(v.set(p.x, y + rl.h / 2, p.z), q, sc.set(0.06, rl.h + 0.1, 0.06)); pg.geo(cyl, m, C(0.55, 0.57, 0.6), 0.2);
+      const b0 = NP.length / 3; NP.push(p.x, y + 0.1, p.z, p.x, y + rl.h, p.z); const uu = s / 1.2; NU.push(uu, 0, uu, rl.h / 1.2);
+      if (prev != null) NI.push(prev, b0, prev + 1, prev + 1, b0, b0 + 1); prev = b0;
+    }
+  }
+  if (NP.length) {
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(NP, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(NU, 2)); g.setIndex(NI); g.computeVertexNormals();
+    const mat = new THREE.MeshStandardMaterial({ map: _rygNetTex(), color: 0xff6a14, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.8, metalness: 0 });
+    const mesh = new THREE.Mesh(g, mat); mesh.castShadow = true; group.add(mesh); group.add(pg.mesh(RYG.mats.wood, true, true));
+  }
+  /* streams: a sheet of water across the valley at each ford */
+  for (const f of RY.fords) {
+    const a = RY.at(f.s0 + f.len / 2, 0, {}), ice = !!f.ice;
+    const mat = new THREE.MeshStandardMaterial({ color: ice ? 0x9fc6d8 : 0x1f5560, roughness: ice ? 0.25 : 0.08, metalness: 0.1, transparent: true, opacity: ice ? 0.85 : 0.78, depthWrite: false });
+    const w = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat); w.rotation.set(-Math.PI / 2, 0, a.yaw, 'YXZ'); w.scale.set(140, f.len * 0.92, 1); w.position.set(a.x, f.wl, a.z); w.renderOrder = 2; group.add(w);
+  }
+};
 RYG.buildGates = function (group, sim) {
   const tex = _rygPlankTex(), pm = new THREE.MeshStandardMaterial({ map: tex, vertexColors: true, roughness: 0.9, metalness: 0 });
   const plank = _rygUnitBox(), stub = _rygJagged(true, 11), upper = _rygJagged(false, 23), rail = _rygUnitBox(), spl = _rygSplinter();
@@ -527,7 +583,7 @@ RYG.build = function (sim, opts) {
   RYG.far = opts.far || 380; RYG.tiles.length = 0; RYG.cells.length = 0; RYG.rocks.length = 0;
   RYG.buildTerrain(g, RYG.mats.ground); const t1 = performance.now();
   RYG.buildForest(g); RYG.buildRocks(g); RYG.buildLogs(g); RYG.buildRails(g); const t2 = performance.now();
-  RYG.buildGates(g, sim); RYG.buildGantries(g); RYG.buildShafts(g, opts.shafts == null ? 46 : opts.shafts);
+  RYG.buildGates(g, sim); RYG.buildObstacles(g); RYG.buildGantries(g); RYG.buildShafts(g, opts.shafts == null ? 46 : opts.shafts);
   /* three r128 reuses a material's program across instanced meshes without re-checking instanceColor: give every instanced mesh one */
   g.traverse((o) => { if (o.isInstancedMesh && !o.instanceColor) { const a = new Float32Array(o.count * 3).fill(1); o.instanceColor = new THREE.InstancedBufferAttribute(a, 3); } });
   RYG.stats.msTerrain = Math.round(t1 - t0); RYG.stats.msForest = Math.round(t2 - t1); RYG.stats.msTotal = Math.round(performance.now() - t0);
