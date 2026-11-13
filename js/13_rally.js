@@ -267,6 +267,9 @@ Rally.hud = function (dt) {
 
 /* ---------------- lobby ---------------- */
 /* which stage the lobby has chosen, and its record (Hollow Pines keeps its record where it always was; the others have their own) */
+/* the car you are lent for the stage: the Ridgeback rally car or the Sandviper buggy */
+const RY_CARS = [['ridge', 'Ridgeback RS'], ['buggy', 'Sandviper buggy']];
+Rally.carId = function () { return save.rally.car === 'buggy' ? 'buggy' : 'ridge'; };
 Rally.stageI = function () { return clamp(save.rally.stage | 0, 0, RY_STAGES.length - 1); };
 Rally.rec = function (i) { i = i == null ? (Rally.on ? RY.stage : Rally.stageI()) : i; if (i === 0) return save.rally; const st = save.rally.st || (save.rally.st = {}), id = RY_STAGES[i].id; return st[id] || (st[id] = { best: 0, splits: [] }); };
 Rally.open = function () {
@@ -280,18 +283,20 @@ Rally.paint = function () {
   const par = RY.stagePar(si), med = [par * RY_MEDAL[0], par * RY_MEDAL[1], par * RY_MEDAL[2]].map((v) => fmtLap(v));
   E.rlBody.innerHTML = '<div class="rlrow"><label>Stage</label>' + seg('stage', RY_STAGES.map((s, i) => [i, s.name]), si) + '</div>' +
     '<p class="rlp">' + ST.info + ' ' + ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six'][ST.walls.length] + ' plank walls block the road: drive straight through them. Pace notes call the road ahead. Three rival drivers start beside you.</p>' +
+    '<div class="rlrow"><label>Car</label>' + seg('car', RY_CARS, Rally.carId()) + '</div>' +
     '<div class="rlrow"><label>Light</label>' + seg('tod', RY_TODS.map((t, i) => [i, t.n]), Rally.tod) + '</div>' +
     '<div class="rlrow"><label>Rivals</label>' + seg('rivals', [[0, 'None'], [1, 'Rookie'], [2, 'Pro'], [3, 'Elite']], Rally.rivalLevel()) + '</div>' +
     '<div class="rlrow"><label>Assist</label>' + seg('assist', [[1, 'On · easy to control'], [0, 'Off · raw physics']], Rally.assistOn() ? 1 : 0) + '</div>' +
     '<div class="rlprize"><small>Medal times</small><span>Bronze <b>' + med[0] + '</b></span><span>Silver <b>' + med[1] + '</b></span><span>Gold <b>' + med[2] + '</b></span></div>' +
     '<div class="rlrec"><span>Runs <b>' + R.runs + '</b></span><span>Best here <b>' + fmtLap(B.best) + '</b></span><span>Wins <b>' + (R.wins || 0) + '</b></span><span>Planks smashed <b>' + R.gates + '</b></span><span>Longest jump <b>' + (R.jump ? Math.round(R.jump) + ' m' : '–') + '</b></span></div>' +
-    '<p class="rlp dim">You drive the <b>Ridgeback RS</b>, lent to you for the stage. ' + (TouchIn.on ? 'Use the pedals as normal; hold DRIFT for the handbrake.' : 'W/S throttle and brake, A/D steer, Space handbrake, Shift boost, R resets to the road (+3 s).') + '</p>';
+    '<p class="rlp dim">You drive the <b>' + CAR_BY_ID[Rally.carId()].name + '</b>, lent to you for the stage. ' + (TouchIn.on ? 'Use the pedals as normal; hold DRIFT for the handbrake.' : 'W/S throttle and brake, A/D steer, Space handbrake, Shift boost, R resets to the road (+3 s).') + '</p>';
 };
 Rally.lobbyClick = function (b) {
   const a = b.dataset.act;
   if (a === 'rback') { Rally.lobby = false; Race.paint(); Snd.beep(420, 0.05); }
   else if (a === 'rstart') Rally.start();
   else if (a === 'leave') { Rally.lobby = false; Race.leave(); }
+  else if (b.parentNode && b.parentNode.dataset.k === 'car') { save.rally.car = b.dataset.v === 'buggy' ? 'buggy' : 'ridge'; Rally.paint(); Snd.beep(520, 0.04); }
   else if (b.parentNode && b.parentNode.dataset.k === 'stage') { save.rally.stage = +b.dataset.v; Rally.paint(); Snd.beep(520, 0.04); }
   else if (b.parentNode && b.parentNode.dataset.k === 'rivals') { save.rally.rivals = +b.dataset.v; Rally.paint(); Snd.beep(520, 0.04); }
   else if (b.parentNode && b.parentNode.dataset.k === 'assist') { save.rally.assist = +b.dataset.v; Rally.paint(); Snd.beep(520, 0.04); }
@@ -323,7 +328,7 @@ Rally.start = async function () {
   RYG.group.visible = true; Rally.hideWorld();
   Race.near = null; Shop.near = null; Ven.near = null; Wk.near = null; if (typeof Mission !== 'undefined') Mission.nearby = null;
   Rally.on = true; save.set.cycle = 0; App.tod = RY_TODS[Rally.tod].tod;
-  applyCar('ridge', true); c.nitro = tune.nitroMax; c.health = 100; c.dmax = 0; if (Cam.view === 0) Cam.view = 2;
+  applyCar(Rally.carId(), true); c.nitro = tune.nitroMax; c.health = 100; c.dmax = 0; if (Cam.view === 0) Cam.view = 2;
   document.body.classList.add('rally'); Rally.el.root.hidden = false;
   Rally.reset0(); Snd.init(); Rally.sndStart();
   UI.progress(1, ''); UI.setMode('play'); Rally.loading = false;

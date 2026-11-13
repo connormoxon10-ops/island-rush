@@ -226,6 +226,7 @@ const pTop = (S, gb, xa, xb, za, zb, off, col, nu, nv) => patch(gb, (s, t) => { 
 /* ---------- wheel meshes (shared geometry, drawn instanced) ---------- */
 const Wheels = { recs: [], sets: null, ready: false, cap: 200, geo: null };
 function lathe(pts, seg) { const g = new THREE.LatheGeometry(pts.map((p) => new THREE.Vector2(p[0], p[1])), seg); g.rotateZ(-Math.PI / 2); return ni(g); }
+const TIRE_RHO = { std: 0.62, sport: 0.7, knobby: 0.56 };   /* rim radius as a share of the tyre's */
 function wheelGeos() {
   const out = { tire: {}, rim: {} }, M = new THREE.Matrix4(), c = new THREE.Color();
   const tireProfile = (rho, shoulder) => [[rho - 0.02, -0.4], [rho + 0.01, -0.46], [rho + 0.07, -0.5], [0.8, -0.5], [0.93, -0.49 + shoulder], [0.985, -0.43], [1, -0.32], [1, 0.32], [0.985, 0.43], [0.93, 0.49 - shoulder], [0.8, 0.5], [rho + 0.07, 0.5], [rho + 0.01, 0.46], [rho - 0.02, 0.4]];
@@ -240,6 +241,18 @@ function wheelGeos() {
     if (kind === 'sport') { const bx = ni(new THREE.BoxGeometry(1, 1, 1)); c.setRGB(0.75, 0.04, 0.03); M.compose(new THREE.Vector3(0.2, rho * 0.62, 0.12), new THREE.Quaternion(), new THREE.Vector3(0.14, rho * 0.34, rho * 0.4)); gb.geo(bx, M, c, 0); }
     out.tire[kind] = gb.mesh(MAT.tire).geometry;
   }
+  { /* knobby off-road tyre: a tall sidewall, two staggered rows of square tread blocks and shoulder lugs */
+    const gb = new GB(0, 0, false), rho = TIRE_RHO.knobby, bx = ni(new THREE.BoxGeometry(1, 1, 1)), q2 = new THREE.Quaternion(), e2 = new THREE.Euler();
+    c.setRGB(0.03, 0.03, 0.032); gb.geo(lathe(tireProfile(rho, 0.03).map((p) => [p[0] * 0.95, p[1]]), 22), M.identity(), c, 0);
+    const cyl = ni(new THREE.CylinderGeometry(1, 1, 1, 16)); cyl.rotateZ(Math.PI / 2); c.setRGB(0.02, 0.02, 0.022); M.compose(new THREE.Vector3(0.1, 0, 0), new THREE.Quaternion(), new THREE.Vector3(0.05, rho * 0.97, rho * 0.97)); gb.geo(cyl, M, c, 0);
+    c.setRGB(0.035, 0.035, 0.038);
+    for (let i = 0; i < 22; i++) for (const row of [-1, 1]) {
+      const a = (i + (row > 0 ? 0.5 : 0)) * TAU / 22; e2.set(a, 0, 0); q2.setFromEuler(e2);
+      M.compose(new THREE.Vector3(row * 0.22, Math.sin(a) * 0.975, Math.cos(a) * 0.975), q2, new THREE.Vector3(0.36, 0.1, 0.16)); gb.geo(bx, M, c, 0);
+      M.compose(new THREE.Vector3(row * 0.47, Math.sin(a) * 0.9, Math.cos(a) * 0.9), q2, new THREE.Vector3(0.1, 0.12, 0.1)); gb.geo(bx, M, c, 0);
+    }
+    out.tire.knobby = gb.mesh(MAT.tire).geometry;
+  }
   const bx = ni(new THREE.BoxGeometry(1, 1, 1)), cyl = ni(new THREE.CylinderGeometry(1, 1, 1, 18)); cyl.rotateZ(Math.PI / 2);
   const q = new THREE.Quaternion(), v = new THREE.Vector3(), s = new THREE.Vector3(), e = new THREE.Euler();
   const barrel = (gb) => { c.setRGB(1, 1, 1); gb.geo(lathe([[0.78, -0.4], [0.97, -0.38], [1, -0.3], [1, 0.4], [0.97, 0.47], [0.9, 0.46], [0.86, 0.38]], 22), M.identity(), c, 0); };
@@ -249,6 +262,10 @@ function wheelGeos() {
   const dish = (gb, r1, r0, a1, a0) => { c.setRGB(0.95, 0.95, 0.95); gb.geo(lathe([[r0, a0], [r1 * 0.5, (a0 + a1) / 2], [r1, a1]], 22), M.identity(), c, 0); };
   { const gb = new GB(0, 0, false); barrel(gb); spokes(gb, 10, 0.075, 0.06, 0.15); hub(gb, 0.4); out.rim.multi = gb.mesh(MAT.rim).geometry; }
   { const gb = new GB(0, 0, false); barrel(gb); spokes(gb, 5, 0.2, 0.07, 0.15); hub(gb, 0.4); out.rim.five = gb.mesh(MAT.rim).geometry; }
+  { /* beadlock: eight flat spokes and a bolted ring clamping the bead */
+    const gb = new GB(0, 0, false); barrel(gb); spokes(gb, 8, 0.12, 0.07, 0.15); hub(gb, 0.35); c.setRGB(0.6, 0.6, 0.62); gb.geo(lathe([[0.84, 0.42], [1.0, 0.42], [1.0, 0.5], [0.84, 0.5]], 22), M.identity(), c, 0);
+    c.setRGB(0.95, 0.95, 0.95); for (let i = 0; i < 16; i++) { const a = i * TAU / 16; M.compose(v.set(0.52, Math.sin(a) * 0.92, Math.cos(a) * 0.92), q.identity(), s.set(0.04, 0.035, 0.035)); gb.geo(cyl, M, c, 0); }
+    out.rim.bead = gb.mesh(MAT.rim).geometry; }
   { const gb = new GB(0, 0, false); barrel(gb); spokes(gb, 18, 0.042, 0.04, 0.15); hub(gb, 0.45); out.rim.mesh = gb.mesh(MAT.rim).geometry; }
   { const gb = new GB(0, 0, false); barrel(gb); spokes(gb, 3, 0.4, 0.08, 0.15); hub(gb, 0.4); out.rim.tri = gb.mesh(MAT.rim).geometry; }
   { const gb = new GB(0, 0, false); barrel(gb); spokes(gb, 7, 0.14, 0.06, 0.15); hub(gb, 0.4); out.rim.seven = gb.mesh(MAT.rim).geometry; }
@@ -259,10 +276,10 @@ function wheelGeos() {
 function wheelsInit() {
   if (Wheels.ready) return; const geo = wheelGeos(), white = new THREE.Color(1, 1, 1); Wheels.geo = geo; Wheels.sets = {}; Wheels.group = new THREE.Group();
   const mk = (key, g, mat) => { const m = new THREE.InstancedMesh(g, mat, Wheels.cap); m.frustumCulled = false; m.castShadow = false; m.receiveShadow = false; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); if (mat === MAT.rim) { for (let i = 0; i < Wheels.cap; i++) m.setColorAt(i, white); m.instanceColor.setUsage(THREE.DynamicDrawUsage); } m.count = 0; Wheels.group.add(m); Wheels.sets[key] = { m, n: 0 }; };
-  mk('t:std', geo.tire.std, MAT.tire); mk('t:sport', geo.tire.sport, MAT.tire); for (const k in geo.rim) mk('r:' + k, geo.rim[k], MAT.rim);
+  for (const k in geo.tire) mk('t:' + k, geo.tire[k], MAT.tire); for (const k in geo.rim) mk('r:' + k, geo.rim[k], MAT.rim);
   scene.add(Wheels.group); Wheels.ready = true;
 }
-function wheelsAdd(grp, S) { wheelsInit(); const b = S.b, rec = { obj: grp, S, roll: 0, tire: b.tire === 'sport' ? 'sport' : 'std', rimKey: b.rimStyle || 'multi', col: new THREE.Color(...(b.rim || [0.6, 0.6, 0.64])), player: false }; Wheels.recs.push(rec); grp.userData.wrec = rec; return rec; }
+function wheelsAdd(grp, S) { wheelsInit(); const b = S.b, rec = { obj: grp, S, roll: 0, tire: TIRE_RHO[b.tire] ? b.tire : 'std', rimKey: b.rimStyle || 'multi', col: new THREE.Color(...(b.rim || [0.6, 0.6, 0.64])), player: false }; Wheels.recs.push(rec); grp.userData.wrec = rec; return rec; }
 function wheelsRemove(grp) { const r = grp.userData && grp.userData.wrec; if (!r) return; const i = Wheels.recs.indexOf(r); if (i >= 0) Wheels.recs.splice(i, 1); grp.userData.wrec = null; }
 const _wm = new THREE.Matrix4(), _wl = new THREE.Matrix4(), _wq = new THREE.Quaternion(), _we = new THREE.Euler(), _wp = new THREE.Vector3(), _ws = new THREE.Vector3();
 function updateWheels(dt) {
@@ -273,7 +290,7 @@ function updateWheels(dt) {
     let v, steer = 0, brake = false; if (rec.player) { v = car.speed; steer = clamp(car.delta || 0, -0.6, 0.6); brake = (car.brk > 0.1 && !car.rev) || car.braking; } else { v = o.userData.v || 0; brake = !!o.userData.brake; steer = o.userData.steer || 0; }
     rec.roll = (rec.roll + v * dt / rec.S.wr) % TAU;
     const tail = o.userData.tail; if (tail) tail.material = brake ? MAT.carBrake : MAT.carTail;
-    const ts = Wheels.sets['t:' + rec.tire], rs = Wheels.sets['r:' + rec.rimKey], rho = rec.tire === 'sport' ? 0.7 : 0.62;
+    const ts = Wheels.sets['t:' + rec.tire], rs = Wheels.sets['r:' + rec.rimKey], rho = TIRE_RHO[rec.tire];
     for (const w of rec.S.wheels) {
       const left = w.side < 0; _we.set(left ? -rec.roll : rec.roll, (w.front ? steer : 0) + (left ? Math.PI : 0), 0, 'YXZ'); _wq.setFromEuler(_we);
       _wl.compose(_wp.set(w.x, w.r, w.z), _wq, _ws.set(w.w, w.r, w.r)); _wm.multiplyMatrices(o.matrixWorld, _wl); ts.m.setMatrixAt(ts.n++, _wm);
@@ -283,6 +300,66 @@ function updateWheels(dt) {
   for (const k in Wheels.sets) { const s = Wheels.sets[k]; s.m.count = s.n; s.m.instanceMatrix.needsUpdate = true; if (s.m.instanceColor) s.m.instanceColor.needsUpdate = true; }
 }
 
+/* ---------- a dune buggy: no body, a painted tube frame ----------
+   An open space frame on a lifted long-travel chassis: the floor rails, a main hoop behind the seats, A-pillars and roof bars, a nose cone of tubes and a bumper,
+   side bars, the rear stays over a flat-four engine with upswept exhaust, double wishbones and coilovers to every wheel, two bucket seats, a wheel and a dash,
+   a light bar on the roof, round lamps on the nose and a spare tyre on the back. The tubes take the paint colour. Car-local: x right is -side, z forward, y up. */
+function buggyFrame(S, gP, gG, gT, gD, gLt, tl, lod) {
+  const seg = lod ? 5 : 8, cyl = ni(new THREE.CylinderGeometry(1, 1, 1, seg, 1)), box = ni(new THREE.BoxGeometry(1, 1, 1)), up = new THREE.Vector3(0, 1, 0), d = new THREE.Vector3(), m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
+  const col = (r, g, b) => _tcol.setRGB(r, g, b), WH = [1, 1, 1];
+  const tube = (gb, a, b, r, c) => { d.set(b[0] - a[0], b[1] - a[1], b[2] - a[2]); const L = d.length(); q.setFromUnitVectors(up, d.normalize()); m.compose(_p3.set((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2), q, _s3.set(r, L, r)); gb.geo(cyl, m, col(...(c || WH)), 0); };
+  const path = (gb, P, r, c) => { for (let i = 0; i < P.length - 1; i++) tube(gb, P[i], P[i + 1], r, c); };
+  const both = (fn) => { for (const sx of [-1, 1]) fn(sx); };
+  const blk = (gb, x, y, z, sx, sy, sz, c, rx, ry, rz) => { e.set(rx || 0, ry || 0, rz || 0, 'YXZ'); q.setFromEuler(e); m.compose(_p3.set(x, y, z), q, _s3.set(sx, sy, sz)); gb.geo(box, m, col(...c), 0); };
+  const R = 0.024, R2 = 0.03, DK = [0.035, 0.035, 0.04], MET = [0.5, 0.52, 0.55], ST = [0.75, 0.62, 0.1];
+  const zF = S.wheels.find((w) => w.front).z, zR = S.wheels.find((w) => !w.front).z, xW = Math.abs(S.wheels[0].x), yH = S.wr;   /* hub positions */
+  /* the frame */
+  both((sx) => {
+    path(gP, [[sx * 0.48, 0.62, -0.95], [sx * 0.5, 0.6, -0.55], [sx * 0.5, 0.6, 0.6], [sx * 0.3, 0.66, 1.42]], R2);           /* floor rail into the nose */
+    path(gP, [[sx * 0.52, 0.6, -0.55], [sx * 0.5, 1.5, -0.55], [sx * 0.38, 1.72, -0.55]], R2);                              /* main hoop */
+    path(gP, [[sx * 0.52, 0.96, 0.58], [sx * 0.42, 1.66, 0.04], [sx * 0.38, 1.72, -0.55]], R2);                             /* A-pillar and roof bar */
+    path(gP, [[sx * 0.5, 0.6, 0.6], [sx * 0.52, 0.96, 0.58], [sx * 0.3, 0.88, 1.42], [sx * 0.3, 0.66, 1.42]], R);            /* cowl and nose */
+    tube(gP, [sx * 0.54, 0.92, -0.55], [sx * 0.54, 0.92, 0.58], R); tube(gP, [sx * 0.53, 0.62, -0.5], [sx * 0.54, 0.92, 0.5], R);   /* side bar and its diagonal */
+    path(gP, [[sx * 0.38, 1.72, -0.55], [sx * 0.4, 1.08, -1.55]], R2); path(gP, [[sx * 0.48, 0.62, -0.95], [sx * 0.4, 0.72, -1.55], [sx * 0.4, 1.08, -1.55]], R);   /* rear stays and rear frame */
+    tube(gP, [sx * 0.5, 1.4, -0.55], [sx * 0.4, 1.08, -1.2], R);                                                           /* engine-bay brace */
+    tube(gP, [sx * 0.3, 0.88, 1.42], [sx * 0.42, 0.66, 1.66], R); tube(gP, [sx * 0.3, 0.66, 1.42], [sx * 0.42, 0.62, 1.66], R);   /* bumper horns */
+  });
+  for (const [y, z, w] of [[1.72, -0.55, 0.38], [1.66, 0.04, 0.42], [0.96, 0.58, 0.52], [0.6, 0.6, 0.5], [0.6, -0.55, 0.5], [0.88, 1.42, 0.3], [0.66, 1.42, 0.3], [1.08, -1.55, 0.4], [0.72, -1.55, 0.4], [1.5, -0.55, 0.5]]) tube(gP, [-w, y, z], [w, y, z], R);
+  tube(gP, [-0.44, 0.64, 1.66], [0.44, 0.64, 1.66], R2); tube(gP, [-0.38, 1.72, -0.55], [0.5, 1.5, -0.55], R);                 /* front bumper; harness bar diagonal in the main hoop */
+  tube(gP, [-0.42, 1.66, 0.04], [0.38, 1.72, -0.55], R);                                                                   /* roof X */
+  /* floor pan, nose panel, dash, seats, steering */
+  blk(gD, 0, 0.6, 0.02, 1.0, 0.025, 1.15, DK);
+  blk(gP, 0, 0.93, 1.0, 0.62, 0.02, 0.82, WH, -0.1); blk(gD, 0, 0.98, 0.56, 0.98, 0.16, 0.06, DK);
+  blk(gG, -0.26, 1.02, 0.52, 0.22, 0.08, 0.02, [0.5, 0.55, 0.6]);                                                          /* gauge glass */
+  both((sx) => { const x = sx * 0.26, SEAT = [0.06, 0.06, 0.07], BOL = [0.5, 0.05, 0.04];
+    blk(gD, x, 0.7, -0.22, 0.42, 0.1, 0.46, SEAT); blk(gD, x, 1.05, -0.47, 0.42, 0.68, 0.1, SEAT, -0.18);
+    for (const bx of [-1, 1]) { blk(gD, x + bx * 0.2, 1.0, -0.42, 0.05, 0.62, 0.16, BOL, -0.18); blk(gD, x + bx * 0.2, 0.78, -0.2, 0.05, 0.14, 0.42, BOL); }
+    blk(gD, x, 1.33, -0.5, 0.2, 0.18, 0.08, SEAT, -0.18); });
+  tube(gD, [-0.26, 0.98, 0.56], [-0.26, 1.12, 0.28], 0.018, MET);
+  { const tor = ni(new THREE.TorusGeometry(0.17, 0.018, 6, 18)); e.set(-0.95, 0, 0); q.setFromEuler(e); m.compose(_p3.set(-0.26, 1.13, 0.26), q, _s3.set(1, 1, 1)); gD.geo(tor, m, col(0.02, 0.02, 0.025), 0); tor.dispose(); }
+  /* the engine out back: a flat-four block, heads, a pod air filter and two upswept pipes with megaphone tips */
+  blk(gT, 0, 0.9, -1.22, 0.62, 0.32, 0.5, MET); both((sx) => blk(gT, sx * 0.36, 0.86, -1.22, 0.12, 0.2, 0.42, [0.32, 0.33, 0.35])); blk(gT, 0, 1.08, -1.18, 0.42, 0.06, 0.3, [0.05, 0.05, 0.055]);
+  tube(gT, [0, 1.12, -1.15], [0, 1.28, -1.12], 0.1, [0.75, 0.08, 0.06]); tube(gT, [0, 1.12, -0.98], [0, 1.18, -0.92], 0.03, MET);
+  both((sx) => { path(gT, [[sx * 0.2, 0.82, -1.45], [sx * 0.22, 0.95, -1.62], [sx * 0.24, 1.32, -1.72]], 0.032, [0.55, 0.52, 0.48]); tube(gT, [sx * 0.24, 1.3, -1.72], [sx * 0.25, 1.46, -1.76], 0.055, [0.65, 0.62, 0.58]); });
+  /* suspension: double wishbones to the front hubs, trailing arms at the back, a coilover to every corner */
+  both((sx) => {
+    for (const [y0, yH2] of [[0.66, yH - 0.08], [0.88, yH + 0.12]]) { tube(gD, [sx * 0.3, y0, zF - 0.2], [sx * (xW - 0.12), yH2, zF], 0.02, DK); tube(gD, [sx * 0.3, y0, zF + 0.12], [sx * (xW - 0.12), yH2, zF], 0.02, DK); }
+    tube(gD, [sx * 0.48, 0.66, -0.4], [sx * (xW - 0.12), yH - 0.04, zR], 0.03, DK); tube(gD, [sx * 0.48, 0.92, -0.45], [sx * (xW - 0.12), yH + 0.12, zR], 0.022, DK);
+    tube(gD, [sx * (xW - 0.12), yH - 0.12, zF], [sx * (xW - 0.12), yH + 0.16, zF], 0.04, MET); tube(gD, [sx * (xW - 0.12), yH - 0.12, zR], [sx * (xW - 0.12), yH + 0.16, zR], 0.04, MET);   /* uprights */
+    for (const [top, bot] of [[[sx * 0.4, 1.32, zF - 0.1], [sx * (xW - 0.2), yH + 0.02, zF]], [[sx * 0.42, 1.42, zR + 0.32], [sx * (xW - 0.2), yH + 0.06, zR + 0.05]]]) {
+      tube(gT, top, bot, 0.026, [0.7, 0.72, 0.75]); const mid = [(top[0] + bot[0]) / 2, (top[1] + bot[1]) / 2, (top[2] + bot[2]) / 2], a = [lerp(top[0], bot[0], 0.25), lerp(top[1], bot[1], 0.25), lerp(top[2], bot[2], 0.25)];
+      tube(gT, a, mid, 0.055, ST); tube(gT, top, a, 0.04, [0.12, 0.12, 0.13]); }   /* coilover: shaft, spring, remote body */
+    tube(gP, [sx * 0.42, 0.96, 0.58], [sx * 0.4, 1.32, zF - 0.1], R);   /* shock tower */
+  });
+  /* lamps: a light bar on the roof, a pair of round lamps on the nose, small tail lamps; a spare on the back */
+  blk(gD, 0, 1.8, -0.5, 0.92, 0.1, 0.1, DK); for (let k = 0; k < 4; k++) blk(gLt, -0.33 + k * 0.22, 1.8, -0.448, 0.17, 0.07, 0.01, WH);
+  both((sx) => { const lamp = ni(new THREE.CylinderGeometry(0.075, 0.085, 0.09, 14)); lamp.rotateX(Math.PI / 2); m.compose(_p3.set(sx * 0.2, 0.98, 1.4), q.identity(), _s3.set(1, 1, 1)); gD.geo(lamp, m, col(0.04, 0.04, 0.045), 0);
+    const lens = ni(new THREE.CylinderGeometry(0.066, 0.066, 0.01, 14)); lens.rotateX(Math.PI / 2); m.compose(_p3.set(sx * 0.2, 0.98, 1.448), q.identity(), _s3.set(1, 1, 1)); gLt.geo(lens, m, col(1, 1, 1), 0); lamp.dispose(); lens.dispose();
+    blk(tl, sx * 0.36, 1.08, -1.58, 0.1, 0.06, 0.02, WH); });
+  { const sp = ni(new THREE.CylinderGeometry(0.4, 0.4, 0.24, 16)), hb = ni(new THREE.CylinderGeometry(0.24, 0.24, 0.25, 12)); e.set(-1.2, 0, Math.PI / 2, 'YXZ'); e.set(1.15, 0, 0, 'YXZ'); q.setFromEuler(e);
+    m.compose(_p3.set(0, 1.38, -1.5), q, _s3.set(1, 1, 1)); gD.geo(sp, m, col(0.03, 0.03, 0.033), 0); m.compose(_p3.set(0, 1.38, -1.5), q, _s3.set(1.02, 1.02, 1.02)); gT.geo(hb, m, col(0.7, 0.7, 0.72), 0); sp.dispose(); hb.dispose(); }
+  cyl.dispose(); box.dispose();
+}
 /* ---------- the car ---------- */
 function buildCarModel(def, hex, opts) {
   opts = opts || {};
@@ -290,6 +367,7 @@ function buildCarModel(def, hex, opts) {
   const S = carSpec(def), b = S.b, hl = S.hl, hw = S.hw, y0 = S.y0, y1 = S.y1, wr = S.wr, C = S.C, lod = opts.lod ? 1 : 0, tww = S.tww;
   const gP = new GB(0, 0, false), gG = new GB(0, 0, false), gT = new GB(0, 0, false), gD = new GB(0, 0, false), gLt = new GB(0, 0, false), tl = new GB(0, 0, false);
   const DK = [0.03, 0.03, 0.034], CH = [0.62, 0.64, 0.68];
+  if (b.buggy) buggyFrame(S, gP, gG, gT, gD, gLt, tl, lod); else {
   loftBody(S, gP, gG, lod);
   const tbx = (x0, ya, z0, x1, yb, z1, k) => gT.box(Math.min(x0, x1), Math.min(ya, yb), Math.min(z0, z1), Math.max(x0, x1), Math.max(ya, yb), Math.max(z0, z1), k == null ? 0.03 : k, k == null ? 0.03 : k, k == null ? 0.034 : k);
   /* hollow body: dark chassis block seen through the wheel arches, plus a dark liner round each wheel */
@@ -388,6 +466,7 @@ function buildCarModel(def, hex, opts) {
     pTop(S, gD, -0.36, 0.36, S.zRT - 0.02, S.zRT + 0.02, 0.01, [0.9, 0.9, 0.88], 4, 1);
     for (const sx of [-1, 1]) { gT.box(Math.min(sx * 0.58, sx * 0.64), yN2 - 0.42, hl - 0.05, Math.max(sx * 0.58, sx * 0.64), yN2 - 0.36, hl + 0.14, 0.9, 0.2, 0.1); gLt.box(sx * 0.34 - 0.09, yN2 - 0.3, hl - 0.06, sx * 0.34 + 0.09, yN2 - 0.2, hl + 0.025, 1, 1, 1); }
   }
+  }
   const grp = new THREE.Group(), paint = mkPaint(hex, !!opts.studio, cs && cs.fin);
   const mP = gP.mesh(paint, true, true), mG = gG.mesh(MAT.carGlass, true, false), mT = gT.mesh(MAT.carTrim, false, true), mD = gD.mesh(MAT.carTrim, false, true), mH = gLt.mesh(MAT.carHead, false, false), mTl = tl.mesh(MAT.carTail, false, false);
   if (opts.studio) { const gm = MAT.carGlass.clone(); gm.envMap = Env.studio; mG.material = gm; grp.userData.studioMats = [gm]; }
@@ -403,8 +482,8 @@ function buildCarModel(def, hex, opts) {
     wheelsInit(); const geo = Wheels.geo, rim = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.28, metalness: 0.8, envMapIntensity: 1.1, side: THREE.DoubleSide, envMap: Env.studio, color: new THREE.Color(...(b.rim || [0.6, 0.6, 0.64])) });
     grp.userData.studioMats = (grp.userData.studioMats || []).concat([rim]);
     for (const w of S.wheels) {
-      const left = w.side < 0, rho = (b.tire === 'sport') ? 0.7 : 0.62;
-      const t = new THREE.Mesh(geo.tire[b.tire === 'sport' ? 'sport' : 'std'], MAT.tire), r = new THREE.Mesh(geo.rim[b.rimStyle || 'multi'], rim);
+      const left = w.side < 0, tk = TIRE_RHO[b.tire] ? b.tire : 'std', rho = TIRE_RHO[tk];
+      const t = new THREE.Mesh(geo.tire[tk], MAT.tire), r = new THREE.Mesh(geo.rim[b.rimStyle || 'multi'], rim);
       for (const m of [t, r]) { m.position.set(w.x, w.r, w.z); m.rotation.y = left ? Math.PI : 0; m.castShadow = false; grp.add(m); }
       t.scale.set(w.w, w.r, w.r); r.scale.set(w.w, w.r * rho, w.r * rho);
     }
