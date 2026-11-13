@@ -26,69 +26,29 @@ function crHat(g, h) {
   else if (k === 'cowboy') { crEll(g, 0, 0.13, 0, 0.1, 0.085, 0.112, c, 0.3); crCyl(g, 0, 0.1, 0, 0.23, 0.012, 0.2, c, 0.3); crCyl(g, 0, 0.108, 0, 0.104, 0.016, 0.116, crShade(c, 0.6), 0.2); }
   else if (k === 'top') { crCyl(g, 0, 0.2, 0, 0.095, 0.12, 0.1, c, 0.3); crCyl(g, 0, 0.098, 0, 0.17, 0.012, 0.17, c, 0.3); crCyl(g, 0, 0.12, 0, 0.098, 0.018, 0.103, lc(0x7a1a22), 0.2); }
 }
-/* the same lofted body kit the street people use (06_body.js), assembled into a jointed rig: suit or robe, shirt and tie, face, hair, glasses, hands, shoes */
-const _crI = new THREE.Matrix4(), _crT = new THREE.Matrix4(), _crS = new THREE.Matrix4();
+/* an articulated person for the scenes: a Human (06_human.js) in a suit, robe or casual clothes. The joints handed back are its bones, which rest unrotated with
+   the limbs hanging down, so a pose is rotation.x/y/z on them exactly as before */
 function crPerson(o) {
-  const BG = Body.init(), M = (fn) => { const gb = new GB(0, 0, false); fn(gb); return gb.mesh(CR.mats.std, false, false); };
-  const B = (g, key, C, mx) => g.geo(BG[key], mx || _crI, C, 0);
-  const skin = o.skin, hair = o.hair, jacket = o.jacket, shirt = o.shirt || lc(0xeeeeee), pants = o.pants || jacket, shoe = o.shoe || lc(0x15151a), tie = o.tie, sleeve = o.sleeve || jacket;
-  const w = (o.build === 'stout' ? 1.16 : o.build === 'slim' ? 0.9 : 1) * (o.robe ? 1.1 : 1), s = o.s || 1, fem = !!o.fem;
-  const root = new THREE.Group(), hips = new THREE.Group(); hips.position.y = 0.955; root.add(hips); root.scale.setScalar(s);
-  hips.add(M((g) => {
-    B(g, 'hips', o.robe ? jacket : pants, _crS.makeScale(w, 1, (w + 1) / 2));
-    if (o.robe) B(g, 'skirt', jacket, _crS.makeScale(w * 1.12, 2.05, w * 1.08));
-  }));
-  const tor = new THREE.Group(); tor.position.y = 0.085; hips.add(tor);
-  tor.add(M((g) => {
-    const tm = _crS.makeScale(w, 1, (w + 1) / 2);
-    B(g, o.robe ? 'torsoC' : fem ? 'torsoF' : 'torsoM', jacket, tm);
-    if (!o.robe && !o.casual) {
-      const zf = fem ? 0.108 : 0.103;
-      crObx(g, 0, 0.36, zf * (w + 1) / 2 + 0.01, 0.1 * w, 0.26, 0.012, shirt, 0); if (tie) { crObx(g, 0, 0.34, zf * (w + 1) / 2 + 0.017, 0.04, 0.24, 0.01, tie, 0); crObx(g, 0, 0.455, zf * (w + 1) / 2 + 0.017, 0.05, 0.04, 0.014, crShade(tie, 0.85), 0); }
-      crObx(g, -0.065 * w, 0.43, zf * (w + 1) / 2 + 0.012, 0.055, 0.12, 0.01, jacket, 0, 0, 0, 0.42); crObx(g, 0.065 * w, 0.43, zf * (w + 1) / 2 + 0.012, 0.055, 0.12, 0.01, jacket, 0, 0, 0, -0.42);
-    } else if (o.robe) { crObx(g, 0, 0.33, 0.12 * (w + 1) / 2, 0.16, 0.3, 0.012, lc(0xf2f2f2), 0); crObx(g, 0, 0.5, 0.0, 0.16, 0.05, 0.12, lc(0xf2f2f2), 0); }
-  }));
-  const head = new THREE.Group(); head.position.set(0, Body.NECK, 0.004); tor.add(head);
-  head.add(M((g) => {
-    B(g, 'head', skin); B(g, 'eyes', _crW); B(g, 'brow', hair);
-    const st = o.hairStyle || 'short', hk = st === 'slick' ? 'buzz' : st === 'bald' ? '' : o.hat && !o.hat.isColor ? 'rim' : st;
-    if (hk && BG.hair[hk]) g.geo(BG.hair[hk], _crI, hair, 0);
-    if (o.beard) B(g, 'beard', hair);
-    if (o.glasses) { const gc = o.glassC || new THREE.Color(0.02, 0.02, 0.025); B(g, 'gls', gc); if (o.glassC) B(g, 'lens', gc); }
-  }));
-  /* extras written in the old head space (bandage, neck brace, hats), moved and scaled onto the new head */
-  const ex = new THREE.Group(); ex.position.y = 0.106; ex.scale.setScalar(0.9); head.add(ex);
-  if (o.bandage || o.brace || o.hat) ex.add(M((g) => {
-    if (o.bandage) { crObx(g, 0, 0.095, 0.01, 0.2, 0.05, 0.215, lc(0xf4f4ee), 0.1); crObx(g, 0.06, 0.02, 0.1, 0.07, 0.05, 0.02, lc(0xf4f4ee), 0); }
-    if (o.brace) crCyl(g, 0, -0.17, 0, 0.082, 0.07, 0.082, lc(0xe9e6dc), 0.2);
-    if (o.hat) { if (o.hat.isColor) { crCyl(g, 0, 0.14, 0, 0.12, 0.03, 0.125, o.hat, 0.2); crObx(g, 0, 0.12, 0.1, 0.22, 0.02, 0.1, o.hat, 0.2); } else crHat(g, o.hat); }
-  }));
-  const arm = (sx) => {
-    const sh = new THREE.Group(); sh.position.set(sx * 0.19 * w, 0.458, 0); tor.add(sh);
-    const wide = o.robe ? _crS.makeScale(1.3, 1, 1.3) : null, lower = o.shortSl ? skin : sleeve;
-    sh.add(M((g) => { B(g, 'uarm', sleeve, wide); B(g, 'uarm2', lower, wide); }));
-    const el = new THREE.Group(); el.position.y = -0.31; sh.add(el);
-    el.add(M((g) => { B(g, 'farm', lower, wide); B(g, 'hand', skin, _crT.makeTranslation(0, -0.3, 0)); if (!o.shortSl && !o.robe) crObx(g, 0, -0.275, 0, 0.082, 0.03, 0.082, shirt, 0); }));
-    return { sh, el };
-  };
-  const aL = arm(-1), aR = arm(1);
-  const leg = (sx) => {
-    const hp = new THREE.Group(); hp.position.set(sx * 0.098, -0.02, 0); hips.add(hp);
-    hp.add(M((g) => { B(g, 'thigh', o.shorts ? pants : pants); }));
-    const kn = new THREE.Group(); kn.position.y = -0.43; hp.add(kn);
-    kn.add(M((g) => { B(g, 'shin', o.shorts ? skin : pants); }));
-    const an = new THREE.Group(); an.position.y = -0.43; kn.add(an);
-    an.add(M((g) => { B(g, 'foot', shoe); }));
-    return { hp, kn };
-  };
-  const lL = leg(-1), lR = leg(1);
-  const rig = { root, hips, tor, head, armL: aL.sh, elL: aL.el, armR: aR.sh, elR: aR.el, legL: lL.hp, knL: lL.kn, legR: lR.hp, knR: lR.kn };
-  if (o.seated) { hips.position.y = o.seat || 0.62; for (const l of [rig.legL, rig.legR]) l.rotation.x = -Math.PI / 2; for (const k of [rig.knL, rig.knR]) k.rotation.x = Math.PI / 2; }
+  const hat = o.hat ? (o.hat.isColor ? { k: 'cap', c: o.hat, bc: o.hat } : o.hat) : null, st = o.hairStyle || 'short';
+  const h = Human.make({ fem: !!o.fem, s: o.s || 1, stout: (o.build === 'stout' ? 1.16 : o.build === 'slim' ? 0.9 : 1) * (o.robe ? 1.06 : 1), skin: o.skin, hair: o.hair, shirt: o.jacket, inner: o.shirt || lc(0xeeeeee), tie: o.tie, pants: o.pants || o.jacket, shoe: o.shoe || lc(0x15151a),
+    sleeve: !o.shortSl, shorts: !!o.shorts, robe: !!o.robe, suit: !o.robe && !o.casual && !o.shortSl, hst: st, beard: !!o.beard, glasses: !!o.glasses, glassC: o.glassC, hat: hat && HU_HAT[hat.k] ? hat : null, seed: (o.skin ? o.skin.r * 7 : 0) + (o.hair ? o.hair.g * 13 : 0) });
+  const b = h.b, rig = { root: h.root, hips: b.hips, tor: b.tor, head: b.head, armL: b.armL, elL: b.elL, armR: b.armR, elR: b.elR, legL: b.legL, knL: b.knL, legR: b.legR, knR: b.knR, hu: h };
+  /* bandage and neck brace ride on the head */
+  if (o.bandage || o.brace) {
+    const ex = new THREE.Group(); ex.position.y = 0.106; ex.scale.setScalar(0.9); b.head.add(ex); const gb = new GB(0, 0, false);
+    if (o.bandage) { crObx(gb, 0, 0.095, 0.01, 0.2, 0.05, 0.215, lc(0xf4f4ee), 0.1); crObx(gb, 0.06, 0.02, 0.1, 0.07, 0.05, 0.02, lc(0xf4f4ee), 0); }
+    if (o.brace) crCyl(gb, 0, -0.17, 0, 0.082, 0.07, 0.082, lc(0xe9e6dc), 0.2);
+    ex.add(gb.mesh(CR.mats.std, false, false));
+  }
+  if (o.seated) { b.hips.position.y = o.seat || 0.62; for (const l of [rig.legL, rig.legR]) l.rotation.x = -Math.PI / 2; for (const k of [rig.knL, rig.knR]) k.rotation.x = Math.PI / 2; }
   return rig;
 }
+/* freeze a posed person into a static crowd mesh */
 function crBake(rig, gb) {
   rig.root.updateMatrixWorld(true);
-  rig.root.traverse((m) => { if (m.isMesh) { gb.geo(m.geometry, m.matrixWorld, _crW, 0); m.geometry.dispose(); } });
+  if (rig.hu) { const g = Human.bake(rig.hu); gb.geo(g, rig.hu.mesh.matrixWorld, _crW, 0); g.dispose(); }
+  rig.root.traverse((m) => { if (m.isMesh && !m.isSkinnedMesh) { gb.geo(m.geometry, m.matrixWorld, _crW, 0); m.geometry.dispose(); } });
+  if (rig.hu) Human.dispose(rig.hu);
 }
 function crTex(text, w, h, o) {
   o = o || {}; const cv = mkCanvas(w, h), g = cv.getContext('2d');

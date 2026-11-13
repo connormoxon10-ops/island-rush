@@ -31,7 +31,7 @@ function huMx(x, y, z, rx, ry, rz, sx, sy, sz) {
 }
 
 /* ---------------- mesh builder: positions, region/slot/shade/uv per vertex (7 floats), four bone weights per vertex ---------------- */
-class HB {
+class HuB {
   constructor() { this.p = []; this.a = []; this.w = []; this.i = []; this.n = 0; this.reg = 0; this.slot = 0; this.wf = null; this.M = null; }
   use(reg, slot, wf, M) { this.reg = reg; this.slot = slot; this.wf = wf; this.M = M || null; return this; }
   _v(x, y, z, c, u, v) {
@@ -146,7 +146,7 @@ const HU_HIPS = [[-0.115, 0.152, 0.098, 0, 2.4, 0.85], [-0.06, 0.168, 0.108, 0, 
 const HU_SKIRT = [[0.07, 0.168, 0.108, 0, 2.5, 1], [0.0, 0.176, 0.114, 0, 2.4, 1], [-0.12, 0.2, 0.14, 0, 2.3, 1], [-0.24, 0.235, 0.178, 0, 2.2, 0.98], [-0.33, 0.255, 0.198, 0, 2.2, 0.9], [-0.345, 0.256, 0.2, 0, 2.2, 0.7]];
 function huBody(sex, outfit, q) {
   const key = 'b' + sex + outfit + q; if (HU.pieces[key]) return HU.pieces[key];
-  const B = new HB(), Y = HU_Y, R = HU_REG, S = HU_SL, W = sex === 'M' ? 0.19 : 0.172, Wt = huWeights(sex, W), sg = (n) => (q ? n : Math.max(6, Math.round(n * 0.5)));
+  const B = new HuB(), Y = HU_Y, R = HU_REG, S = HU_SL, W = sex === 'M' ? 0.19 : 0.172, Wt = huWeights(sex, W), sg = (n) => (q ? n : Math.max(6, Math.round(n * 0.5)));
   const rows = (T) => T.map((r) => ({ y: r[0], a: r[1], b: r[2], z: r[3], e: r[4], c: r[5] })), long = outfit === 'coat' || outfit === 'robe', lim = sex === 'M' ? 1 : sex === 'F' ? 0.9 : 0.94;
   /* torso (shoulders at .46 above the waist, neck base at .53); a coat or robe hangs to mid thigh */
   B.use(R.cloth, S.top, Wt.torso, huMx(0, Y.T, 0)); B.loft(rows(long ? HU_TC : sex === 'F' ? HU_TF : HU_TM), { seg: sg(22) });
@@ -205,7 +205,7 @@ const huFz = (y) => { const r = huRing(y); return r[3] + r[2]; };
 const HU_HEADK = { M: { jaw: 1.03, brow: 1.25, lip: 0.9, eye: 1, cheek: 1 }, F: { jaw: 0.94, brow: 0.6, lip: 1.25, eye: 1.07, cheek: 1.15 }, K: { jaw: 0.95, brow: 0.4, lip: 1.05, eye: 1.16, cheek: 1.3 } };
 function huHead(sex, q) {
   const key = 'h' + sex + q; if (HU.pieces[key]) return HU.pieces[key];
-  const B = new HB(), R = HU_REG, S = HU_SL, Wt = huWeights(sex, 0.19), K = HU_HEADK[sex], gau = (x, y, cx, cy, sx, sy) => Math.exp(-(((x - cx) / sx) ** 2 + ((y - cy) / sy) ** 2));
+  const B = new HuB(), R = HU_REG, S = HU_SL, Wt = huWeights(sex, 0.19), K = HU_HEADK[sex], gau = (x, y, cx, cy, sx, sy) => Math.exp(-(((x - cx) / sx) ** 2 + ((y - cy) / sy) ** 2));
   /* neck, then the skull as one loft, sculpted: eye sockets, brow ridge, cheekbones, cheek hollows, temples, chin, the bridge and ball of the nose, lips */
   B.use(R.skin, S.skin, Wt.neck); B.loft([[-0.16, 0.058, 0.054, -0.016, 0.96], [-0.1, 0.055, 0.052, -0.013, 1], [-0.04, 0.05, 0.048, -0.01, 0.95], [0.0, 0.045, 0.046, -0.006, 0.9], [0.03, 0.042, 0.045, -0.004, 0.9]].map((r) => ({ y: r[0], a: r[1], b: r[2], z: r[3], e: 2, c: r[4] })), { seg: q ? 16 : 8 });
   B.use(R.skin, S.skin, Wt.head);
@@ -272,7 +272,7 @@ const HU_HAIR = { short: [0.017, 0.009, 0.003], slick: [0.008, 0.007, 0.001], cu
 function huHair(st, sex, hat, q) {
   const T = HU_HAIR[st === 'rim' ? 'short' : st] === undefined ? HU_HAIR.short : HU_HAIR[st]; if (!T) return null;
   const key = 'r' + st + sex + (hat ? 1 : 0) + q; if (HU.pieces[key]) return HU.pieces[key];
-  const B = new HB(), R = HU_REG, S = HU_SL, Wt = huWeights(sex, 0.19), H = huHL(sex, st, false, sex === 'K'), sk = [0, 0], seg = q ? 32 : 12;
+  const B = new HuB(), R = HU_REG, S = HU_SL, Wt = huWeights(sex, 0.19), H = huHL(sex, st, false, sex === 'K'), sk = [0, 0], seg = q ? 32 : 12;
   B.use(R.hair, S.hair, Wt.one(HU_I.head));
   /* the cap: the skull pushed out by the hair's thickness, which fades to nothing where the coverage ends, so the visible hairline is the soft one painted on the skin */
   const YS = q ? [0.03, 0.045, 0.06, 0.075, 0.09, 0.105, 0.12, 0.135, 0.15, 0.165, 0.18, 0.195, 0.207, 0.218, 0.228, 0.236, 0.242, 0.2469] : [0.04, 0.08, 0.12, 0.16, 0.195, 0.225, 0.2469], base = B.n;
@@ -301,7 +301,7 @@ function huHair(st, sex, hat, q) {
 }
 function huGlasses(lens) {
   const key = 'g' + (lens ? 1 : 0); if (HU.pieces[key]) return HU.pieces[key];
-  const B = new HB(), Wt = huWeights('M', 0.19), tor = new THREE.TorusGeometry(0.027, 0.0034, 6, 16), z = huFz(0.128) + 0.007; B.use(HU_REG.hard, HU_SL.glass, Wt.one(HU_I.head));
+  const B = new HuB(), Wt = huWeights('M', 0.19), tor = new THREE.TorusGeometry(0.027, 0.0034, 6, 16), z = huFz(0.128) + 0.007; B.use(HU_REG.hard, HU_SL.glass, Wt.one(HU_I.head));
   for (const sx of [-1, 1]) { B.add(tor, huMx(sx * 0.0435, 0.128, z, 0, 0, 0, 1.06, 0.88, 1), 1); B.box(sx * 0.077, 0.13, z - 0.054, 0.004, 0.004, 0.108, 1, [0, -sx * 0.083, 0]); if (lens) B.ell(sx * 0.0435, 0.128, z, 0.0275, 0.0225, 0.003, 1, null, { seg: 10, lat: 3 }); }
   B.box(0, 0.132, z, 0.02, 0.004, 0.004, 1); tor.dispose(); B.shift(0, HU_Y.HD, 0.004); return (HU.pieces[key] = B.done());
 }
@@ -312,13 +312,13 @@ const HU_HAT = {
 };
 function huHat(k) {
   const hs = HU_HAT[k] || HU_HAT.cap, key = 't' + k; if (HU.pieces[key]) return HU.pieces[key];
-  const B = new HB(), Wt = huWeights('M', 0.19), dome = new THREE.SphereGeometry(0.12, 14, 8, 0, TAU, 0, Math.PI * 0.55), brim = new THREE.CylinderGeometry(0.6, 1, 0.05, 20);
+  const B = new HuB(), Wt = huWeights('M', 0.19), dome = new THREE.SphereGeometry(0.12, 14, 8, 0, TAU, 0, Math.PI * 0.55), brim = new THREE.CylinderGeometry(0.6, 1, 0.05, 20);
   B.use(HU_REG.cloth, HU_SL.hat, Wt.one(HU_I.head)); B.add(dome, huMx(0, hs.y + 0.004, hs.z, hs.rx, 0, 0, hs.sx * 0.95, hs.sy * 1.14, hs.sz * 0.95), 1);
   if (hs.br) { B.slot = HU_SL.hat2; B.add(brim, huMx(0, hs.by - 0.012, hs.bz, 0, 0, 0, hs.br[0], 1, hs.br[1]), 1); }
   dome.dispose(); brim.dispose(); B.shift(0, HU_Y.HD, 0.004); return (HU.pieces[key] = B.done());
 }
 function huBag() {
-  if (HU.pieces.bag) return HU.pieces.bag; const B = new HB(), I = HU_I, w = [I.bag, 0.6, I.chest, 0.4]; B.use(HU_REG.cloth, HU_SL.bag, () => w, huMx(0, HU_Y.T, 0));
+  if (HU.pieces.bag) return HU.pieces.bag; const B = new HuB(), I = HU_I, w = [I.bag, 0.6, I.chest, 0.4]; B.use(HU_REG.cloth, HU_SL.bag, () => w, huMx(0, HU_Y.T, 0));
   B.loft([[0.04, 0.104, 0.06, -0.175, 3.2, 0.9], [0.15, 0.124, 0.075, -0.18, 3.2, 1], [0.32, 0.124, 0.075, -0.178, 3.2, 1], [0.46, 0.106, 0.062, -0.172, 3.2, 0.9]].map((r) => ({ y: r[0], a: r[1], b: r[2], z: r[3], e: r[4], c: r[5] })), { seg: 14, cap: [1, 1] });
   B.box(0, 0.11, -0.222, 0.13, 0.1, 0.03, 0.82); B.wf = huWeights('M', 0.19).torso; for (const sx of [-1, 1]) B.box(sx * 0.09, 0.31, 0.112, 0.03, 0.3, 0.012, 0.42, [0.05, 0, 0]);
   return (HU.pieces.bag = B.done());

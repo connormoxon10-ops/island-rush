@@ -14,29 +14,7 @@ const _pM = new THREE.Matrix4(), _pR = new THREE.Matrix4(), _pH = new THREE.Matr
 const _pE = new THREE.Euler(), _pQ = new THREE.Quaternion(), _pV = new THREE.Vector3(), _pS = new THREE.Vector3();
 const _pr = { x: 0, z: 0 };
 
-function initPeds() {
-  const B = Body.init();
-  const mat = new THREE.MeshStandardMaterial({ roughness: 0.84, metalness: 0, vertexColors: true });
-  const g = Peds.group = new THREE.Group(), cap = (Peds.cap + 2) * 2;
-  const white = (geo) => { if (!geo.attributes.color) geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count * 3).fill(1), 3)); return geo; };
-  const hmat = new THREE.MeshStandardMaterial({ roughness: 0.58, metalness: 0, vertexColors: true });
-  const mk = (name, geo, shadow, mt) => {
-    const m = new THREE.InstancedMesh(white(geo), mt || mat, cap); m.frustumCulled = false; m.castShadow = !!shadow; m.receiveShadow = false;
-    m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.setColorAt(0, _pw); m.instanceColor.setUsage(THREE.DynamicDrawUsage);
-    m.count = 0; m.visible = false; g.add(m); Peds.mesh[name] = { m, n: 0 };
-  };
-  /* every part is its own InstancedMesh, filled each frame with only the people who have it (compacted slots, one draw call per part) */
-  mk('head', B.head, true); mk('eyes', B.eyes); mk('brow', B.brow);
-  for (const k in B.hairH) { mk('h_' + k, B.hairH[k], true, hmat); B.hairT[k].forEach((tl, i) => mk('ht_' + k + i, tl.geo, true, hmat)); }
-  mk('beard', B.beard);
-  mk('torsoM', B.torsoM, true); mk('torsoF', B.torsoF, true); mk('torsoC', B.torsoC, true); mk('hips', B.hips, true); mk('skirt', B.skirt, true);
-  mk('thigh', B.thigh, true); mk('shin', B.shin, true); mk('foot', B.foot, true);
-  mk('uarm', B.uarm, true); mk('uarm2', B.uarm2, true); mk('farm', B.farm, true); mk('hand', B.hand); mk('handL', B.handL);
-  mk('bag', B.bag, true);
-  mk('hdome', new THREE.SphereGeometry(0.12, 12, 8, 0, TAU, 0, Math.PI * 0.55), true); mk('hbrim', new THREE.CylinderGeometry(0.6, 1, 0.05, 20));
-  mk('gls', B.gls); mk('lens', B.lens);
-  Peds.ready = true;
-}
+function initPeds() { Peds.group = new THREE.Group(); Peds.ready = true; }   /* every person is a Human (06_human.js), made when first drawn */
 
 /* ---------- sidewalk graph ---------- */
 function pedNodePos(T, n, p, out) { out.x = T.x0 + n.i * T.cell + n.sx * PED_OFF + p.jx; out.z = T.z0 + n.j * T.cell + n.sz * PED_OFF + p.jz; }
@@ -297,48 +275,71 @@ function updatePeds(dt) {
   writePeds(App.time);
 }
 
-/* ---------- pose + upload ---------- */
-function relM(out, parent, x, y, z, rx, ry, rz, sc) {
-  _pE.set(rx || 0, ry || 0, rz || 0, 'YXZ'); _pQ.setFromEuler(_pE); _pU.compose(_pV.set(x, y, z), _pQ, _pS.set(sc || 1, sc || 1, sc || 1));
-  return out.multiplyMatrices(parent, _pU);
-}
-function relMS(out, parent, x, y, z, rx, sx, sy, sz) {
-  _pE.set(rx || 0, 0, 0, 'YXZ'); _pQ.setFromEuler(_pE); _pU.compose(_pV.set(x, y, z), _pQ, _pS.set(sx, sy, sz));
-  return out.multiplyMatrices(parent, _pU);
-}
-const _pA = new THREE.Matrix4(), _pB = new THREE.Matrix4(), _pC = new THREE.Matrix4(), _pD = new THREE.Matrix4(), _pG = new THREE.Matrix4(), _pJ = new THREE.Matrix4();
-function relMX(out, parent, x, y, z, rx, ry, rz, sx, sy, sz) {
-  _pE.set(rx || 0, ry || 0, rz || 0, 'YXZ'); _pQ.setFromEuler(_pE); _pU.compose(_pV.set(x, y, z), _pQ, _pS.set(sx == null ? 1 : sx, sy == null ? 1 : sy, sz == null ? 1 : sz));
-  return out.multiplyMatrices(parent, _pU);
-}
+/* ---------- pose ---------- */
 const pfr = (x) => x - Math.floor(x);
-function pput(name, M, col) { const o = Peds.mesh[name], k = o.n++; o.m.setMatrixAt(k, M); o.m.setColorAt(k, col); }
-function writePeds(time) {
-  const m = Peds.mesh, L = Peds.list, n = L.length, av = Foot.on && Foot.ped && !Bust.on ? 1 : 0, cx = camera.position.x, cz = camera.position.z;
-  for (const k in m) m[k].n = 0;
-  for (let i = 0; i < n; i++) { const p = L[i]; if (Bust.on && p.cop) continue; const dx = p.x - cx, dz = p.z - cz; writePed(p, time, false, dx * dx + dz * dz > 2400); }
-  if (av) writePed(Foot.ped, time, !Foot.tp, false);
-  for (const k in m) { const o = m[k]; o.m.count = o.n; o.m.visible = o.n > 0; if (o.n) { o.m.instanceMatrix.needsUpdate = true; o.m.instanceColor.needsUpdate = true; } }
+function pedSpec(a, seed) {
+  return { kid: a.kid, fem: a.fem, old: a.old, s: a.s, hs: a.hs, stout: a.stout, skin: a.skin, hair: a.hair, shirt: a.shirt, pants: a.pants, shoe: a.shoe, sleeve: a.sleeve, shorts: a.shorts, skirt: a.skirt, tights: a.tights, coat: a.coat,
+    hst: a.hst, beard: a.beard, glasses: a.glasses, glassC: a.glassC, sun: a.sun, hat: a.hat && HU_HAT[a.hat.k] ? a.hat : null, bag: a.bag, bagc: a.bagc, seed };
 }
-/* one person: gait with pelvis sway / counter-rotating shoulders / heel-toe feet, breathing, weight shifts, idle habits, mood body language, eye contact */
-function writePed(p, time, hideHead, far) {
-  const a = p.app, s = a.s, st = p.state, sd = p.seed, dt = Peds.dt || 0.016, pers = p.pers, mood = pers ? pers.mood : '';
-  _pE.set(p.tilt, p.yaw, 0, 'YXZ'); _pQ.setFromEuler(_pE); _pR.compose(_pV.set(p.x, p.y, p.z), _pQ, _pS.set(s * a.stout, s, s));
+/* the Human for a pedestrian: made on first sight, remade when their look changes */
+function pedHuman(p) {
+  const a = p.app; let h = p.hu;
+  if (h && (h.dead || h.app !== a && Human.sig(a) !== h.sig || (++h.chk > 120 && (h.chk = 0, Human.sig(a) !== h.sig)))) { if (!h.dead) { Human.dispose(h); HU.live.delete(h); } h = null; }
+  if (!h) { h = p.hu = Human.make(pedSpec(a, p.seed || 0)); h.sig = Human.sig(a); h.chk = 0; h.gy = p.y; h.ps = null; Peds.group.add(h.root); HU.live.add(h); }
+  h.app = a; return h;
+}
+function writePeds(time) {
+  const L = Peds.list, n = L.length, av = Foot.on && Foot.ped && !Bust.on ? 1 : 0, cx = camera.position.x, cz = camera.position.z, dt = Math.min(Peds.dt || 0.016, 0.05); HU.frame = (HU.frame || 0) + 1;
+  for (let i = 0; i < n; i++) { const p = L[i]; if (Bust.on && p.cop) continue; const dx = p.x - cx, dz = p.z - cz; pedPose(p, time, dt, false, dx * dx + dz * dz > 780); }
+  if (av) pedPose(Foot.ped, time, dt, !Foot.tp, false);
+  for (const h of HU.live) if (h.seen !== HU.frame) { Human.dispose(h); h.dead = true; HU.live.delete(h); }   /* whoever was not drawn this frame has left */
+}
+/* one leg of the walk at phase f (0 = heel strike): the ankle is carried back along the ground through stance (so the foot is planted, not sliding), peels off heel first,
+   swings forward clear of the ground, and the thigh and knee angles are solved to reach it from a hip joint at height hj. D = metres per full stride, rn = 0 walk .. 1 run */
+const _pl = { th: 0, bn: 0, pit: 0, top: 0 };
+function pedLeg(f, D, rn, hj, o) {
+  const fs = lerp(0.62, 0.4, rn), S = D * fs * 0.84, xF = 0.44 * S, xB = -0.56 * S; let x, y, pit;
+  if (f < fs) { const u = f / fs, off = sm01(clamp((u - 0.62) / 0.38, 0, 1)); x = lerp(xF, xB, u); y = 0.076 + 0.085 * off; pit = -0.24 * (1 - sm01(clamp(u / 0.16, 0, 1))) + 0.62 * off; }
+  else { const w = (f - fs) / (1 - fs); x = lerp(xB, xF, sm01(w)); y = 0.076 + 0.085 * (1 - w) * (1 - w) + (0.07 + 0.16 * rn) * Math.sin(Math.PI * w); pit = lerp(0.62, -0.24, sm01(clamp(w * 1.25, 0, 1))); }
+  o.top = f < fs ? y + Math.sqrt(Math.max(0.01, 0.737 - x * x)) : 9;      /* the highest the hip can ride over this foot while it is on the ground */
+  const dy = hj - y, d = Math.min(Math.hypot(x, dy), 0.8585), bn = Math.PI - Math.acos(clamp(1 - d * d / 0.3698, -1, 1));
+  o.th = Math.atan2(x, dy) + bn / 2; o.bn = bn; o.pit = pit; return o;
+}
+/* one person: a foot-planting gait with pelvis sway and counter-rotating shoulders, breathing, blinking, weight shifts, idle habits, mood body language, eye contact,
+   speech, then secondary motion; a ragdoll when knocked down, blended back into the animation as they get up */
+function pedPose(p, time, dt, hideHead, far) {
+  const a = p.app, h = pedHuman(p), b = h.b, s = a.s, st = p.state, sd = p.seed, pers = p.pers, mood = pers ? pers.mood : ''; h.seen = HU.frame; Human.lod(h, far);
+  /* knocked down: the ragdoll has the body */
+  if (st === 'down') {
+    if (!h.rag) Human.ragStart(h, (p.avatar ? Foot.vx : p.vx) || 0, (p.avatar ? Foot.vy : p.vy) || 2.5, (p.avatar ? Foot.vz : p.vz) || 0, h.gy - 0.02);
+    Human.ragStep(h, dt); Human.ragApply(h); const R = h.rag;
+    if (!p.avatar) { p.x = (R.p[0].x + R.p[1].x) / 2; p.z = (R.p[0].z + R.p[1].z) / 2; }
+    b.head.scale.setScalar(hideHead ? 0.001 : a.hs || 1); b.lid.rotation.x = 0.9; b.jaw.rotation.x = 0.06; if (!far) Human.physics(h, dt); return;
+  }
+  if (h.rag) { Human.ragEnd(h); h.blendT = 0; }
+  h.gy = p.y;
   const moving = st === 'walk' || st === 'flee' || st === 'follow' || st === 'chase' || st === 'fight';
   const wlk = moving ? clamp(p.v / 1.1, 0, 1) : 0, rn = moving ? clamp((p.v - 1.9) / 1.5, 0, 1) : 0, ph = p.ph, sp1 = Math.sin(ph), cp1 = Math.cos(ph);
-  const sw = 0.7 + 0.8 * pfr(sd * 3.77), asw = 0.75 + 0.5 * pfr(sd * 7.13), slouch = 0.025 * pfr(sd * 5.1) + (a.old ? 0.1 : 0), old = a.old ? 0.8 : 1, down = st === 'down' || st === 'rise';
-  const A = wlk * (0.4 + 0.38 * rn) * old, B = (0.5 + 0.7 * rn) * old, armA = wlk * (0.5 + 0.55 * rn) * asw * old, elb = 0.18 + wlk * (0.08 + 1.0 * rn);
-  let lean = wlk * (0.04 + 0.2 * rn) + slouch * (0.4 + 0.6 * wlk), twist = 0, nod = 0, hx = 0, roll = 0, gyaw = 0, gpit = 0, hroll = 0, bounce = 0;
+  const sw = 0.7 + 0.8 * pfr(sd * 3.77), asw = 0.75 + 0.5 * pfr(sd * 7.13), slouch = 0.025 * pfr(sd * 5.1) + (a.old ? 0.1 : 0), old = a.old ? 0.8 : 1;
+  const armA = wlk * (0.5 + 0.55 * rn) * asw * old, elb = 0.18 + wlk * (0.08 + 1.0 * rn);
+  let lean = wlk * (0.04 + 0.2 * rn) + slouch * (0.4 + 0.6 * wlk), twist = 0, nod = 0, hx = 0, roll = 0, gyaw = 0, gpit = 0, hroll = 0, bounce = 0, jaw = 0;
   const psi = 0.09 * wlk * (1 + 0.9 * rn) * sw;
   let hipYaw = psi * sp1, torYaw = -2.1 * psi * sp1;
   hx = 0.02 * sw * wlk * cp1 * (1 - 0.5 * rn); roll = 0.04 * sw * wlk * cp1;
-  const kn = (c, s_) => (down ? 0 : wlk * (0.08 + B * Math.max(0, c) + 0.32 * Math.max(0, s_) * Math.max(0, -c))), toe = (c, s_) => wlk * 0.9 * Math.max(0, -s_) * Math.max(0, -c);
-  let thL = A * sp1, thR = -thL, bnL = kn(cp1, sp1), bnR = kn(-cp1, -sp1), toL = toe(cp1, sp1), toR = toe(-cp1, -sp1);
+  /* legs: solved from planted feet while moving */
+  let thL = 0, thR = 0, bnL = 0.03, bnR = 0.03, toL = 0, toR = 0, yHipG = -1;
+  if (wlk > 0) {
+    const D = (1.45 + Math.max(0, p.v - 1.4) * 0.55) * old * (0.6 + 0.4 * wlk), fL = pfr(ph / TAU - 0.25), fR = pfr(fL + 0.5);
+    let hj = lerp(0.916, 0.89, rn) + lerp(0.019, 0.04, rn) * Math.cos(2 * TAU * (fL - 0.31));
+    pedLeg(fL, D, rn, hj, _pl); const tA = _pl.top; pedLeg(fR, D, rn, hj, _pl); hj = Math.min(hj, tA, _pl.top);
+    pedLeg(fL, D, rn, hj, _pl); thL = _pl.th * wlk; bnL = lerp(0.03, _pl.bn, wlk); toL = _pl.pit * wlk;
+    pedLeg(fR, D, rn, hj, _pl); thR = _pl.th * wlk; bnR = lerp(0.03, _pl.bn, wlk); toR = _pl.pit * wlk; yHipG = lerp(0.936, hj, wlk) + 0.02;
+  }
   let aL = -armA * sp1, aR = armA * sp1, eL = elb + wlk * 0.45 * Math.max(0, -sp1) * armA, eR = elb + wlk * 0.45 * Math.max(0, sp1) * armA, spread = 0.05 + 0.02 * wlk, eyL = 0, eyR = 0, wrL = 0.12, wrR = 0.12;
-  const still = st === 'stand' || st === 'wait' || st === 'talk' || st === 'accuse' || st === 'arrest' || (st === 'fight' && p.v < 0.8);
+  const still = st === 'stand' || st === 'wait' || st === 'talk' || st === 'accuse' || st === 'arrest' || st === 'rise' || (st === 'fight' && p.v < 0.8);
   if (still) {
     const br = Math.sin(time * 1.9 + sd), ws = Math.sin(time * 0.37 + sd * 2.1) * (st === 'talk' ? 0.6 : 1), wl = Math.max(0, ws), wr_ = Math.max(0, -ws);
-    lean = 0.02 + br * 0.012 + slouch * 0.6; hipYaw = torYaw = 0; hx = 0.022 * ws; roll = 0.03 * ws; thL = 0.07 * wl; thR = 0.07 * wr_; bnL = 0.03 + 0.22 * wl; bnR = 0.03 + 0.22 * wr_; toL = toR = 0;
+    lean = 0.02 + br * 0.012 + slouch * 0.6; hipYaw = torYaw = 0; hx = 0.022 * ws; roll = 0.03 * ws; thL = 0.07 * wl; thR = 0.07 * wr_; bnL = 0.03 + 0.22 * wl; bnR = 0.03 + 0.22 * wr_; toL = toR = 0; yHipG = -1;
     aL = 0.04 + 0.03 * br; aR = 0.04 - 0.03 * br; eL = eR = 0.2 + 0.05 * br; spread = 0.06;
     if ((st === 'stand' || st === 'wait') && !p.phone) {
       /* idle habits: every ~10 s a different one fades in and out */
@@ -354,6 +355,7 @@ function writePed(p, time, hideHead, far) {
     if (st === 'wait') { gyaw += 0.7 * Math.sin(time * 1.3 + sd) * 0.8; }
     if (st === 'talk') {
       const sp = p.spk || 0, g = 0.3 + 0.7 * sp, bt = Math.sin(time * 3.4 + sd);
+      jaw = sp * 0.11 * (0.5 + 0.5 * Math.sin(time * 11.3 + sd)) * (0.55 + 0.45 * Math.sin(time * 6.1 + sd * 3));
       aR = 0.45 + g * 0.5 * (0.5 + 0.5 * Math.sin(time * 2.3 + sd)); eR = 1.05 + g * 0.45 * Math.sin(time * 3.1 + sd); aL = 0.1 + g * 0.32 * Math.max(0, Math.sin(time * 1.7 + sd * 2)); eL = 0.3 + g * 0.9 * Math.max(0, Math.sin(time * 1.7 + sd * 2)); nod = 0.03 + sp * 0.1 * bt; spread = 0.09 + g * 0.1; wrR = 0.2;
       if (mood === 'grumpy') { aL = 0.35; aR = 0.38; eL = 1.95; eR = 2.05; eyL = 1.2; eyR = -1.2; spread = 0; nod = -0.05 + sp * 0.05 * bt; gpit -= 0.06; }
       else if (mood === 'shy') { aL = 0.3; aR = 0.3; eL = 1.4; eR = 1.45; eyL = 0.95; eyR = -0.95; spread = 0.02; gpit += 0.22; gyaw += 0.25 * Math.sin(time * 0.6 + sd); lean = 0.05; hroll += 0.07; }
@@ -364,17 +366,13 @@ function writePed(p, time, hideHead, far) {
       else if (mood === 'chatty') { aL = 0.55 + 0.4 * Math.sin(time * 3.7 + sd); eL = 0.9 + 0.5 * Math.sin(time * 4.3 + sd); }
     }
     else if (p.phone && st === 'stand') { aR = 0.95; eR = 1.55; nod = 0.38; lean = 0.07; aL = 0.0; wrR = 0.3; }
-    else if (st === 'accuse') { if (!p.called) { aR = 0.95; eR = 1.55; nod = 0.3; lean = 0.05; aL = 1.45; eL = 0.12; wrR = 0.3; } else { aL = 1.5 + 0.1 * Math.sin(time * 9 + sd); eL = 0.1; aR = 0.9; eR = 1.5; nod = 0.12 * Math.sin(time * 7 + sd); lean = 0.08; } }
+    else if (st === 'accuse') { if (!p.called) { aR = 0.95; eR = 1.55; nod = 0.3; lean = 0.05; aL = 1.45; eL = 0.12; wrR = 0.3; } else { aL = 1.5 + 0.1 * Math.sin(time * 9 + sd); eL = 0.1; aR = 0.9; eR = 1.5; nod = 0.12 * Math.sin(time * 7 + sd); lean = 0.08; jaw = 0.08 * (0.5 + 0.5 * Math.sin(time * 12 + sd)); } }
     else if (st === 'arrest') { aL = 0.18; aR = 0.18; eL = 0.7; eR = 0.7; lean = 0.03; }
     else if (st === 'fight') { aL = 0.5; aR = 0.5; eL = 1.75; eR = 1.75; lean = 0.1 + 0.03 * br; spread = 0.12; bnL = bnR = 0.22; thL = 0.18; thR = -0.1; }
-  } else if (down) {
-    const lie = st === 'down' ? clamp(p.t / 0.5, 0, 1) : 1 - clamp(p.t / 0.9, 0, 1), fl = p.air ? 1 : Math.exp(-p.t * 2) * 0.6;
-    thL = (0.25 + 0.6 * Math.sin(time * 11 + sd) * fl) * lie; thR = (-0.35 + 0.6 * Math.sin(time * 9 + sd * 2) * fl) * lie; bnL = 0.5 * lie; bnR = 0.9 * lie; toL = toR = 0; hx = roll = hipYaw = torYaw = 0;
-    aL = (1.0 + 0.9 * Math.sin(time * 12 + sd * 3) * fl) * lie; aR = (1.6 + 0.9 * Math.sin(time * 10 + sd) * fl) * lie; eL = 0.4 + 0.3 * lie; eR = 0.6 * lie; spread = 0.05 + 0.55 * lie; lean = 0; twist = 0;
   } else if (p.pw && st === 'walk') { aR = 0.95; eR = 1.55; nod = 0.34; lean += 0.05; wrR = 0.3; gpit += 0.1; }
-  if (p.jump) { thL = 0.6; thR = -0.3; bnL = 1.0; bnR = 0.35; aL = 1.0; aR = 1.2; eL = 0.5; eR = 0.6; lean = 0.08; twist = 0; spread = 0.25; hipYaw = torYaw = roll = hx = 0; toL = toR = 0; }
-  if (p.wave > 0 && !down) { aR = 2.75; eR = 0.35 + 0.5 * Math.sin(time * 10); eyR = 0; spread = 0.2; }
-  if (p.pn > 0 && !down) {
+  if (p.jump) { thL = 0.6; thR = -0.3; bnL = 1.0; bnR = 0.35; aL = 1.0; aR = 1.2; eL = 0.5; eR = 0.6; lean = 0.08; twist = 0; spread = 0.25; hipYaw = torYaw = roll = hx = 0; toL = toR = 0; yHipG = -1; }
+  if (p.wave > 0) { aR = 2.75; eR = 0.35 + 0.5 * Math.sin(time * 10); eyR = 0; spread = 0.2; }
+  if (p.pn > 0) {
     /* punch: rest -> guard -> strike -> hold -> back; the other fist stays up, the torso twists into it */
     const u = p.pn, sdd = p.hand ? 1 : 0, aP = sdd ? aR : aL, eP = sdd ? eR : eL;
     let a2, e2, ex = 0;
@@ -388,51 +386,35 @@ function writePed(p, time, hideHead, far) {
     twist += (sdd ? -0.42 : 0.42) * ex; lean += 0.12 * ex; spread = Math.min(spread, 0.1);
   }
   /* eye contact: people near the player glance at them (regulars who know you always do) */
-  if (!p.avatar && !far && !hideHead && !down) {
+  if (!p.avatar && !far && !hideHead) {
     let ty = 0, tp = 0;
     const dxp = Pl.x - p.x, dzp = Pl.z - p.z, d2 = dxp * dxp + dzp * dzp;
-    if (st === 'talk') { ty = 0; }
-    else if (d2 < 110 && d2 > 0.5) {
+    if (st !== 'talk' && d2 < 110 && d2 > 0.5) {
       const friend = p.reg && Rel.knows(p.reg.id), look = friend || (pfr(sd * 1.7) < 0.55 && pfr((time + sd * 13) / 6.5) < 0.55), rel = angDiff(p.yaw, Math.atan2(dxp, dzp));
       if (look && Math.abs(rel) < 2.0) { ty = clamp(rel, -1.0, 1.0); tp = -0.04; }
     }
     p.gz = (p.gz || 0) + (ty - (p.gz || 0)) * Math.min(1, dt * 5); p.gp = (p.gp || 0) + (tp - (p.gp || 0)) * Math.min(1, dt * 5);
     gyaw += p.gz; gpit += p.gp;
   }
+  /* the body leans into its own acceleration and into a turn */
+  { const acc = (p.v - (h.v0 == null ? p.v : h.v0)) / dt, wy = angDiff(h.y0 == null ? p.yaw : h.y0, p.yaw) / dt; h.v0 = p.v; h.y0 = p.yaw; h.acc = (h.acc || 0) + (clamp(acc, -6, 6) - (h.acc || 0)) * Math.min(1, dt * 4); h.wy = (h.wy || 0) + (clamp(wy, -4, 4) - (h.wy || 0)) * Math.min(1, dt * 5);
+    if (moving) { lean += clamp(h.acc * 0.035, -0.1, 0.14); roll += clamp(h.wy * p.v * 0.022, -0.12, 0.12); } }
+  /* upper-body targets are eased, so a change of gesture or state never snaps */
+  const U = h.pt || (h.pt = new Float32Array(16)); U[0] = aL; U[1] = aR; U[2] = eL; U[3] = eR; U[4] = eyL; U[5] = eyR; U[6] = wrL; U[7] = wrR; U[8] = spread; U[9] = lean; U[10] = nod; U[11] = gyaw; U[12] = gpit; U[13] = hroll; U[14] = twist; U[15] = jaw;
+  if (!h.ps) h.ps = Float32Array.from(U); else { const k = Math.min(1, dt * 16), S = h.ps; for (let i = 0; i < 16; i++) S[i] += (U[i] - S[i]) * (i === 15 ? Math.min(1, dt * 30) : k); }
+  { const S = h.ps; aL = S[0]; aR = S[1]; eL = S[2]; eR = S[3]; eyL = S[4]; eyR = S[5]; wrL = S[6]; wrR = S[7]; spread = S[8]; lean = S[9]; nod = S[10]; gyaw = S[11]; gpit = S[12]; hroll = S[13]; twist = S[14]; jaw = S[15]; }
   /* hips sit as low as the straightest leg allows, so feet plant on the ground */
-  const dL = 0.43 * Math.cos(thL) + 0.43 * Math.cos(thL - bnL) + 0.076, dR = 0.43 * Math.cos(thR) + 0.43 * Math.cos(thR - bnR) + 0.076, yHip = Math.max(dL, dR) - 0.004 + bounce;
-  const bre = 1 + 0.011 * Math.sin(time * 1.9 + sd * 1.3) * (1 - 0.5 * wlk);
-  relMX(_pH, _pR, hx, yHip, 0, 0, hipYaw - twist * 0.5, roll, 1, 1, 1);
-  relMX(_pT, _pH, -hx * 0.4, 0.085, 0, lean, torYaw + twist, -roll * 0.6, bre, 1, bre);
-  const sk = a.skin, hasSk = a.skirt > 0;
-  pput(a.coat ? 'torsoC' : a.fem ? 'torsoF' : 'torsoM', _pT, a.shirt);
-  pput('hips', _pH, a.skirt === 2 ? a.shirt : a.pants);
-  if (hasSk) pput('skirt', _pH, a.skirt === 2 ? a.shirt : a.pants);
-  if (a.bag) pput('bag', _pT, a.bagc);
-  /* head */
-  if (!hideHead) {
-    const hy = gyaw - (hipYaw + torYaw + twist * 0.5) * 0.85;
-    relMX(_pF, _pT, 0, Body.NECK, 0.004, nod - lean * 0.7 + gpit, hy, hroll - roll * 0.3, a.hs, a.hs, a.hs);
-    pput('head', _pF, sk);
-    if (!far) { pput('eyes', _pF, _pw); pput('brow', _pF, a.hair); }
-    const hs = a.hat && HAT[a.hat.k], hst = a.hst || 'short';
-    if (hs) {
-      if (hst !== 'bald') pput((hst === 'curly' || hst === 'bun' || hst === 'buzz' || hst === 'short') ? 'h_rim' : 'h_' + hst, _pF, a.hair);
-      relMS(_pM, _pF, 0, hs.y + 0.004, hs.z, hs.rx, hs.sx * 0.95, hs.sy * 1.14, hs.sz * 0.95); pput('hdome', _pM, a.hat.c);
-      if (hs.br) { relMS(_pM, _pF, 0, hs.by - 0.012, hs.bz, 0, hs.br[0], 1, hs.br[1]); pput('hbrim', _pM, a.hat.bc || a.hat.c); }
-    } else if (hst !== 'bald') pput('h_' + hst, _pF, a.hair);
-    { const TL = Body.G.hairT[hst]; if (hst !== 'bald' && TL && TL.length) { let par = _pF; for (let ti = 0; ti < TL.length; ti++) { relMX(ti ? _pA : _pB, par, TL[ti].pv[0], TL[ti].pv[1], TL[ti].pv[2], 0, 0, 0, 1, 1, 1); par = ti ? _pA : _pB; pput('ht_' + hst + ti, par, a.hair); } } }
-    if (a.beard && !far) pput('beard', _pF, a.hair);
-    if (a.glasses && !far) { pput('gls', _pF, a.glassC || PGLASS); if (a.glassC || a.sun) pput('lens', _pF, a.glassC || PGLASS); }
-  }
-  const shx = a.fem ? 0.172 : 0.19, slv = a.sleeve || a.coat ? a.shirt : sk, legSk = hasSk && !a.tights || a.shorts;
-  for (let sdd = 0; sdd < 2; sdd++) {
-    const sg = sdd ? 1 : -1, th = sdd ? thR : thL, bn = sdd ? bnR : bnL, ar = sdd ? aR : aL, el = sdd ? eR : eL, ey = sdd ? eyR : eyL, wr = sdd ? wrR : wrL, tz = sdd ? toR : toL;
-    relMX(_pA, _pT, sg * shx, 0.458, 0, -ar, 0, sg * spread, 1, 1, 1); pput('uarm', _pA, a.shirt); pput('uarm2', _pA, slv);
-    relMX(_pB, _pA, 0, -0.31, 0, -el, ey, 0, 1, 1, 1); pput('farm', _pB, slv);
-    if (!far) { relMX(_pJ, _pB, 0, -0.3, 0, -wr, 0, sg * 0.04, 1, 1, 1); pput(sdd ? 'hand' : 'handL', _pJ, sk); }
-    relMX(_pC, _pH, sg * 0.098, -0.02, 0, -th, 0, sg * 0.03, 1, 1, 1); pput('thigh', _pC, hasSk && !a.tights ? sk : a.pants);
-    relMX(_pD, _pC, 0, -0.43, 0, bn, 0, 0, 1, 1, 1); pput('shin', _pD, legSk ? sk : a.pants);
-    relMX(_pG, _pD, 0, -0.43, 0, (th - bn) * 0.9 + tz * 0.6, sg * 0.1, 0, 1, 1, 1); pput('foot', _pG, a.shoe);
-  }
+  const dL = 0.43 * Math.cos(thL) + 0.43 * Math.cos(thL - bnL) + 0.076, dR = 0.43 * Math.cos(thR) + 0.43 * Math.cos(thR - bnR) + 0.076, yHip = (yHipG > 0 ? yHipG : Math.max(dL, dR) + 0.016) + bounce;
+  h.root.position.set(p.x, p.y, p.z); h.root.rotation.set(0, p.yaw, 0); h.root.scale.set(s * a.stout, s, s);
+  b.hips.position.set(hx, yHip, 0); b.hips.rotation.set(0, hipYaw - twist * 0.5, roll);
+  b.tor.position.set(-hx * 0.4, 0.085, 0); b.tor.rotation.set(lean * 0.55, (torYaw + twist) * 0.45, -roll * 0.35); b.chest.rotation.set(lean * 0.45, (torYaw + twist) * 0.55, -roll * 0.25);
+  const hy = gyaw - (hipYaw + torYaw + twist * 0.5) * 0.85, hp = nod - lean * 0.7 + gpit, hr = hroll - roll * 0.3;
+  b.neck.rotation.set(hp * 0.35, hy * 0.35, hr * 0.4); b.head.rotation.set(hp * 0.65, hy * 0.65, hr * 0.6); b.head.scale.setScalar(hideHead ? 0.001 : a.hs || 1); b.jaw.rotation.x = jaw;
+  b.armL.rotation.set(-aL, 0, -spread); b.elL.rotation.set(-eL, eyL, 0); b.handL.rotation.set(-wrL, 0, -0.04);
+  b.armR.rotation.set(-aR, 0, spread); b.elR.rotation.set(-eR, eyR, 0); b.handR.rotation.set(-wrR, 0, 0.04);
+  b.legL.rotation.set(-thL, 0, -0.03); b.knL.rotation.set(bnL, 0, 0); b.footL.rotation.set(thL - bnL + toL, -0.1, 0);
+  b.legR.rotation.set(-thR, 0, 0.03); b.knR.rotation.set(bnR, 0, 0); b.footR.rotation.set(thR - bnR + toR, 0.1, 0);
+  Human.alive(h, dt, time, sd);
+  if (h.from) { h.blendT += dt; Human.blend(h, sm01(Math.min(1, h.blendT / 0.9))); }
+  if (!far) Human.physics(h, dt);
 }
