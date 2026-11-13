@@ -6,14 +6,14 @@
    Left of the direction of travel is the positive lateral offset, like the raceway; heading yaw = atan2(tx, tz), and turning left raises yaw. */
 const RY_ORG = [7000, -7000];                     /* where stage-local (0,0) sits in the world */
 /* corners are [kind, length m, angle deg]: 'S' straight, 'C' a bend whose curvature swells and fades (sin^2) so it turns in and out progressively; + = left */
-const RY_ELEMS = [
+const RY0_ELEMS = [
   ['S', 150], ['C', 150, -34], ['S', 80], ['C', 100, 42], ['C', 90, -58], ['C', 100, 36], ['S', 130],
   ['C', 80, -90], ['S', 90], ['C', 78, 148], ['S', 180], ['C', 140, -52], ['S', 120], ['C', 120, 62], ['C', 76, -74],
   ['S', 130], ['C', 92, 96], ['S', 220], ['C', 170, -42], ['S', 70], ['C', 64, -118], ['S', 120], ['C', 130, 48], ['C', 100, -48],
   ['S', 150], ['C', 74, 88], ['S', 100], ['C', 180, -32], ['S', 120], ['C', 110, 54], ['S', 330]
 ];
 /* height features: kind, element index, metres into that element, parameters. jump = kicker ramp then a landing slope; dip = hollow; whoops = rollers */
-const RY_FEATS = [
+const RY0_FEATS = [
   { k: 'jump', e: 6, at: 56, rise: 0.95, up: 16, down: 11, drop: 0.9, land: 28, name: 'Jump' },
   { k: 'whoops', e: 10, at: 24, n: 4, lam: 14, amp: 0.55 },
   { k: 'dip', e: 12, at: 14, depth: 1.5, len: 24 },
@@ -26,19 +26,19 @@ const RY_FEATS = [
   { k: 'jump', e: 30, at: 150, rise: 1.35, up: 18, down: 12, drop: 1.5, land: 40, name: 'Finish jump' }
 ];
 /* breakable plank gates across the road: element index + metres in */
-const RY_WALLS = [{ e: 8, at: 70 }, { e: 10, at: 130 }, { e: 17, at: 190 }, { e: 21, at: 85 }, { e: 26, at: 72 }, { e: 30, at: 70 }];   /* all on straights, a long run-up after the previous corner */
+const RY0_WALLS = [{ e: 8, at: 70 }, { e: 10, at: 130 }, { e: 17, at: 190 }, { e: 21, at: 85 }, { e: 26, at: 72 }, { e: 30, at: 70 }];   /* all on straights, a long run-up after the previous corner */
 /* surface sections by distance: 0 hard-packed dirt, 1 loose gravel, 2 wet mud, 3 sand */
-const RY_SECS = [[0, 0], [380, 1], [900, 0], [1180, 2], [1420, 0], [1900, 1], [2400, 3], [2620, 0], [3100, 2], [3300, 1], [3900, 0]];
+const RY0_SECS = [[0, 0], [380, 1], [900, 0], [1180, 2], [1420, 0], [1900, 1], [2400, 3], [2620, 0], [3100, 2], [3300, 1], [3900, 0]];
 /* road camber of the bends, by element index: b = cross-fall slope (+ banked into the bend, the outside is higher; - off-camber, the outside drops away), m = height of the dirt lip along the
    outer edge of a banked bend (a berm you can lean on). A bend that is not listed is flat. The straights between them get a crown and a cross-fall of their own (RY.sections). */
-const RY_CAMB = {
+const RY0_CAMB = {
   1: { b: 0.13, m: 0.3 }, 3: { b: 0.1, m: 0.2 }, 4: { b: 0.17, m: 0.35 }, 5: { b: -0.09, m: 0 }, 7: { b: 0.3, m: 0.7 }, 9: { b: 0.34, m: 0.8 },
   11: { b: -0.11, m: 0 }, 13: { b: 0.18, m: 0.4 }, 14: { b: 0.24, m: 0.5 }, 16: { b: 0.26, m: 0.55 }, 18: { b: 0.09, m: 0.2 }, 20: { b: 0.36, m: 0.85 },
   22: { b: -0.12, m: 0 }, 23: { b: 0.17, m: 0.35 }, 25: { b: 0.3, m: 0.7 }, 27: { b: 0.07, m: 0.2 }, 29: { b: 0.2, m: 0.4 }
 };
 /* solid walls beside the road: element, metres into it, length, side (+1 left, -1 right, 0 both), kind ('rock' = a rock cutting with the hillside risen behind it, 'stone' = a dry-stone wall),
    height m above the verge, and the gap m between the road edge and the face. Bank and berm put the car close to them on purpose. */
-const RY_RAILS = [
+const RY0_RAILS = [
   { e: 3, at: 0, len: 190, side: -1, k: 'rock', h: 4.2, gap: 1.3 },     /* the esses: a rock face down the right */
   { e: 7, at: 0, len: 84, side: 1, k: 'stone', h: 1.5, gap: 0.9 },      /* outside of the tight right: stone retaining wall */
   { e: 9, at: 12, len: 66, side: 1, k: 'rock', h: 4.6, gap: 1.6 },       /* inside of the left hairpin: cut into the hill */
@@ -50,7 +50,75 @@ const RY_RAILS = [
   { e: 29, at: 6, len: 100, side: -1, k: 'stone', h: 1.3, gap: 0.9 }
 ];
 
-const RY = { ready: false, GS: 2, DS: 2, seed: 7, MAXD: 108, name: 'Hollow Pines' };
+/* ---------- the stages ----------
+   Every stage is a list of corners, height features, plank gates, surface sections, camber and walls, plus a THEME that says what the land around the road is:
+   which four surfaces its section numbers mean, what grows there, and (for every stage but the forest) M(x, z), the lie of the land itself. Where a theme has an M
+   the road is draped over it (smoothed, and never steeper than 12 %) and the ground off the road returns to it, so a beach really shelves into the sea on one side
+   and a pass really climbs a mountain. The stage in use is copied into the RY_* tables below, which the rest of the rally reads. */
+const RY_ELEMS = [], RY_FEATS = [], RY_WALLS = [], RY_SECS = [], RY_RAILS = [], RY_CAMB = {};
+const RY_THEMES = {
+  forest: { surf: [0, 1, 2, 3], M: null },
+  beach: { surf: [8, 3, 9, 6], open: 1, tree: 0.2, trees: [8, 9, 10], edge: [8, 9, 10], under: ['grass', 'grass'], underK: 0.5, rocks: 0.4, plainOff: -4, sea: 1, blend: 22, off: { mu: 0.55, rr: 0.14, rough: 0.4, loose: 0.8 },
+    M: (x, z, B) => { const h = 3.2 + 0.06 * (x - _ryCl(B, z) + B.dev); return _ryIn(h, -3, 26) + 2.4 * fbm(x * 0.018, z * 0.018, 3) * _rySm(4.5, 9, h); },
+    dust: [[0.6, 0.52, 0.4], [0.84, 0.76, 0.58], [0.7, 0.78, 0.82], [0.88, 0.8, 0.62]], fogK: 0.45, tint: [1, 1.02, 1.05],
+    pal: { r: [[0.55, 0.47, 0.36], [0.80, 0.72, 0.55], [0.36, 0.40, 0.38], [0.86, 0.78, 0.60]], f: [[0.84, 0.76, 0.58], [0.76, 0.68, 0.50], [0.42, 0.50, 0.24], [0.9, 0.84, 0.7]], sh: [0.78, 0.70, 0.52], far: [0.70, 0.64, 0.48], farK: 0.4, tuftK: 0, plain: [0.05, 0.25, 0.32] } },
+  mountain: { surf: [0, 1, 2, 4], open: 0.9, tree: 0.3, trees: [0, 1, 2, 3], edge: [0, 2], under: ['scrub', 'grass'], underK: 0.5, rocks: 3, plainOff: -45, blend: 30, off: { mu: 0.5, rr: 0.13, rough: 0.9, loose: 0.5 }, treeLine: 0.62,
+    M: (x, z, B) => { const zc = (B.z0 + B.z1) / 2, sz = (B.z1 - B.z0) * 0.5 + 60, xc = (B.x0 + B.x1) / 2, sx = (B.x1 - B.x0) * 0.9 + 200; return 30 + 150 * Math.exp(-(((z - zc) / sz) ** 2) - (((x - xc) / sx) ** 2)) + 12 * fbm(x * 0.006 + 3, z * 0.006, 3) + 2 * fbm(x * 0.03, z * 0.03, 2); },
+    dust: [[0.5, 0.44, 0.38], [0.62, 0.6, 0.56], [0.26, 0.2, 0.15], [0.92, 0.94, 0.97]], fogK: 0.9, tint: [0.96, 1, 1.06],
+    pal: { r: [[0.42, 0.36, 0.30], [0.56, 0.54, 0.50], [0.24, 0.19, 0.14], [0.90, 0.92, 0.95]], f: [[0.36, 0.34, 0.30], [0.27, 0.25, 0.22], [0.20, 0.27, 0.12], [0.48, 0.46, 0.42]], sh: [0.33, 0.33, 0.26], far: [0.22, 0.23, 0.24], farK: 0.8, tuftK: 0.3, plain: [0.1, 0.14, 0.1] } },
+  desert: { surf: [0, 1, 6, 3], open: 1, tree: 0.07, trees: [14, 15, 16, 17], edge: [14, 15, 16, 17], under: ['scrub', 'scrub'], underK: 0.22, rocks: 2, plainOff: -6, blend: 24, off: { mu: 0.56, rr: 0.15, rough: 0.4, loose: 0.85 },
+    M: (x, z) => 30 + 8 * Math.sin(x / 90 + 1) * Math.sin(z / 120 + 2) + 5 * fbm(x * 0.012, z * 0.012, 3),
+    dust: [[0.74, 0.54, 0.34], [0.74, 0.64, 0.5], [0.86, 0.7, 0.46], [0.82, 0.66, 0.44]], fogK: 0.6, tint: [1.08, 1, 0.88],
+    pal: { r: [[0.66, 0.46, 0.28], [0.70, 0.60, 0.46], [0.82, 0.66, 0.42], [0.78, 0.62, 0.40]], f: [[0.80, 0.62, 0.38], [0.72, 0.52, 0.30], [0.62, 0.44, 0.26], [0.86, 0.70, 0.46]], sh: [0.74, 0.56, 0.34], far: [0.62, 0.46, 0.30], farK: 0.5, tuftK: 0, plain: [0.6, 0.44, 0.27] } },
+  snow: { surf: [4, 5, 7, 1], open: 0.75, tree: 0.75, trees: [11, 12, 13], edge: [11, 12, 13], under: null, rocks: 0.8, plainOff: -14, blend: 28, off: { mu: 0.42, rr: 0.16, rough: 0.35, loose: 0.9 },
+    M: (x, z, B) => 80 - 0.012 * (z - B.z0) + 16 * fbm(x * 0.004 + 3, z * 0.004, 3) + 3 * fbm(x * 0.02, z * 0.02, 2),
+    dust: [[0.92, 0.94, 0.97], [0.8, 0.88, 0.95], [0.97, 0.98, 1], [0.6, 0.58, 0.55]], fogK: 1.25, tint: [1.04, 1.06, 1.1],
+    pal: { r: [[0.84, 0.87, 0.92], [0.62, 0.74, 0.86], [0.95, 0.96, 0.98], [0.55, 0.52, 0.48]], f: [[0.93, 0.95, 0.98], [0.86, 0.9, 0.96], [0.80, 0.86, 0.94], [0.97, 0.98, 1]], sh: [0.9, 0.92, 0.96], far: [0.6, 0.67, 0.75], farK: 0.6, tuftK: 0, plain: [0.82, 0.86, 0.92] } }
+};
+/* the smoothed line the road follows across the map (x at a given z), for themes whose land is laid out along the road: a shore, a valley */
+function _ryCl(B, z) { const f = _ryIn((z - B.z0) / 20, 0, B.cl.length - 1.001), i = Math.floor(f); return lerp(B.cl[i], B.cl[i + 1], f - i); }
+const RY_STAGES = [
+  { id: 'pines', name: 'Hollow Pines', sub: 'Forest rally stage', theme: 'forest', seed: 7, pace: 26, elems: RY0_ELEMS, feats: RY0_FEATS, walls: RY0_WALLS, secs: RY0_SECS, camb: RY0_CAMB, rails: RY0_RAILS,
+    info: 'A 3.7 km point-to-point forest stage cut through dense pine and birch. Hard-packed dirt, loose gravel, a wet mud pocket and a sandy cut, with crests, big jumps and dips.' },
+  { id: 'coral', name: 'Coral Bay', sub: 'Beach rally stage', theme: 'beach', seed: 21, pace: 27.5,
+    elems: [['S', 160], ['C', 160, 30], ['S', 90], ['C', 140, -48], ['S', 120], ['C', 110, 40], ['C', 100, -36], ['S', 200], ['C', 90, 62], ['S', 70], ['C', 90, -70], ['S', 150], ['C', 150, -30], ['C', 120, 44], ['S', 180], ['C', 100, -56], ['S', 90], ['C', 110, 50], ['S', 140], ['C', 130, -38], ['S', 110], ['C', 100, 34], ['S', 300]],
+    feats: [{ k: 'jump', e: 7, at: 100, rise: 1.0, up: 16, down: 11, drop: 0.9, land: 30, name: 'Dune jump' }, { k: 'whoops', e: 11, at: 20, n: 5, lam: 13, amp: 0.5 }, { k: 'jump', e: 14, at: 96, rise: 1.2, up: 16, down: 12, drop: 1.3, land: 36, name: 'Big air' }, { k: 'dip', e: 18, at: 30, depth: 1.2, len: 22 }, { k: 'jump', e: 22, at: 150, rise: 1.3, up: 18, down: 12, drop: 1.4, land: 40, name: 'Finish jump' }],
+    walls: [{ e: 4, at: 74 }, { e: 11, at: 118 }, { e: 18, at: 104 }, { e: 22, at: 70 }], secs: [[0, 0], [500, 1], [900, 2], [1150, 0], [1700, 3], [2000, 0], [2450, 1], [2750, 0]],
+    rails: [{ e: 5, at: 0, len: 96, side: 1, k: 'stone', h: 1.2, gap: 1.0 }, { e: 12, at: 10, len: 130, side: -1, k: 'stone', h: 1.2, gap: 1.0 }],
+    info: 'A 3 km blast along the shore. Fast sweepers on hard wet sand at the waterline, soft dry sand that drags the car down, tidal shallows and dune jumps, with the sea on one side and palms on the other.' },
+  { id: 'eagle', name: 'Eagle Pass', sub: 'Mountain rally stage', theme: 'mountain', seed: 33, pace: 23,
+    elems: [['S', 150], ['C', 120, 40], ['S', 110], ['C', 84, -165], ['S', 150], ['C', 84, 165], ['S', 150], ['C', 84, -165], ['S', 140], ['C', 100, 125], ['S', 200], ['C', 140, -50], ['S', 120], ['C', 110, 60], ['C', 90, -70], ['S', 160], ['C', 84, 160], ['S', 150], ['C', 84, -160], ['S', 150], ['C', 120, 50], ['S', 120], ['C', 120, -45], ['S', 300]],
+    feats: [{ k: 'jump', e: 10, at: 104, rise: 0.9, up: 16, down: 11, drop: 0.9, land: 30, name: 'Summit crest' }, { k: 'dip', e: 12, at: 50, depth: 1.3, len: 22 }, { k: 'jump', e: 15, at: 84, rise: 1.0, up: 14, down: 11, drop: 1.2, land: 32, name: 'Jump' }, { k: 'whoops', e: 21, at: 26, n: 4, lam: 13, amp: 0.45 }, { k: 'jump', e: 23, at: 150, rise: 1.2, up: 18, down: 12, drop: 1.3, land: 38, name: 'Finish jump' }],
+    walls: [{ e: 4, at: 84 }, { e: 8, at: 84 }, { e: 19, at: 84 }, { e: 23, at: 70 }], secs: [[0, 1], [700, 0], [1250, 3], [1800, 0], [2300, 1], [2800, 0]],
+    rails: [{ e: 3, at: 0, len: 84, side: -1, k: 'rock', h: 4.6, gap: 1.6 }, { e: 5, at: 0, len: 84, side: 1, k: 'rock', h: 4.6, gap: 1.6 }, { e: 7, at: 0, len: 84, side: -1, k: 'rock', h: 4.6, gap: 1.6 }, { e: 13, at: 0, len: 110, side: -1, k: 'stone', h: 1.3, gap: 0.9 }, { e: 16, at: 0, len: 84, side: 1, k: 'rock', h: 4.4, gap: 1.6 }, { e: 18, at: 0, len: 84, side: -1, k: 'rock', h: 4.4, gap: 1.6 }],
+    info: 'A 3.1 km climb over a mountain and down the far side. Stacked hairpins cut into the rock, gravel on the way up, snow across the summit, and long drops beside the road.' },
+  { id: 'dunes', name: 'Sunscorch Dunes', sub: 'Desert sand rally stage', theme: 'desert', seed: 45, pace: 26.5,
+    elems: [['S', 180], ['C', 150, -38], ['S', 120], ['C', 120, 55], ['S', 100], ['C', 100, -64], ['C', 100, 48], ['S', 220], ['C', 90, -80], ['S', 110], ['C', 90, 95], ['S', 160], ['C', 140, -45], ['S', 140], ['C', 110, 58], ['C', 90, -52], ['S', 200], ['C', 100, 40], ['S', 100], ['C', 120, -50], ['S', 320]],
+    feats: [{ k: 'jump', e: 2, at: 60, rise: 0.9, up: 15, down: 11, drop: 0.9, land: 28, name: 'Jump' }, { k: 'whoops', e: 4, at: 16, n: 4, lam: 14, amp: 0.5 }, { k: 'jump', e: 7, at: 120, rise: 1.5, up: 18, down: 13, drop: 1.7, land: 44, name: 'Dune crest' }, { k: 'dip', e: 11, at: 50, depth: 1.5, len: 24 }, { k: 'jump', e: 13, at: 70, rise: 1.0, up: 14, down: 11, drop: 1.1, land: 32, name: 'Jump' }, { k: 'whoops', e: 16, at: 20, n: 6, lam: 13, amp: 0.5 }, { k: 'jump', e: 20, at: 160, rise: 1.4, up: 18, down: 12, drop: 1.5, land: 40, name: 'Finish jump' }],
+    walls: [{ e: 7, at: 44 }, { e: 11, at: 124 }, { e: 16, at: 150 }, { e: 20, at: 70 }], secs: [[0, 0], [450, 3], [900, 2], [1150, 3], [1500, 0], [1900, 1], [2200, 3], [2600, 0]],
+    rails: [{ e: 9, at: 4, len: 100, side: 0, k: 'rock', h: 5.2, gap: 1.6 }],
+    info: 'A 3 km sprint across open desert. Rolling dunes, loose sand and one stretch of deep soft sand that swallows speed, a rock canyon, cactus and the biggest jump of any stage.' },
+  { id: 'frost', name: 'Frostfall', sub: 'Snow rally stage', theme: 'snow', seed: 57, pace: 21.5,
+    elems: [['S', 150], ['C', 130, 44], ['S', 80], ['C', 100, -70], ['C', 90, 52], ['S', 140], ['C', 80, -100], ['S', 100], ['C', 80, 120], ['S', 160], ['C', 130, -48], ['C', 110, 40], ['S', 130], ['C', 90, -84], ['S', 110], ['C', 100, 66], ['S', 180], ['C', 150, -36], ['S', 90], ['C', 76, -110], ['S', 110], ['C', 100, 95], ['S', 300]],
+    feats: [{ k: 'jump', e: 5, at: 70, rise: 0.8, up: 15, down: 11, drop: 0.8, land: 28, name: 'Jump' }, { k: 'dip', e: 9, at: 36, depth: 1.3, len: 22 }, { k: 'jump', e: 9, at: 104, rise: 0.9, up: 14, down: 11, drop: 1.0, land: 30, name: 'Blind crest' }, { k: 'whoops', e: 12, at: 20, n: 4, lam: 13, amp: 0.45 }, { k: 'jump', e: 16, at: 80, rise: 1.1, up: 16, down: 12, drop: 1.2, land: 34, name: 'Big air' }, { k: 'jump', e: 22, at: 150, rise: 1.2, up: 18, down: 12, drop: 1.3, land: 38, name: 'Finish jump' }],
+    walls: [{ e: 12, at: 104 }, { e: 14, at: 64 }, { e: 20, at: 64 }, { e: 22, at: 70 }], secs: [[0, 0], [400, 2], [700, 0], [1000, 1], [1250, 0], [1700, 3], [1950, 0], [2300, 1], [2500, 0]],
+    rails: [{ e: 6, at: 0, len: 80, side: -1, k: 'rock', h: 4.2, gap: 1.5 }, { e: 10, at: 0, len: 124, side: 1, k: 'stone', h: 1.3, gap: 0.9 }],
+    info: 'A 2.7 km stage through a snowbound pine forest. Packed snow with little grip, sheet ice where there is almost none, and deep powder that grabs the wheels. Brake early.' }
+];
+const RY = { ready: false, GS: 2, DS: 2, seed: 7, MAXD: 108, name: 'Hollow Pines', stage: -1 };
+/* choose a stage: fill the tables the rest of the rally reads. A bend with no camber of its own gets one from its angle (tight bends are banked with a berm, and every
+   fifth gentle bend falls away off-camber). */
+RY.use = function (i) {
+  i = Math.max(0, Math.min(RY_STAGES.length - 1, i | 0)); const st = RY_STAGES[i];
+  const fill = (dst, src) => { dst.length = 0; for (const v of src) dst.push(v); };
+  fill(RY_ELEMS, st.elems); fill(RY_FEATS, st.feats); fill(RY_WALLS, st.walls); fill(RY_SECS, st.secs); fill(RY_RAILS, st.rails);
+  for (const k of Object.keys(RY_CAMB)) delete RY_CAMB[k];
+  if (st.camb) Object.assign(RY_CAMB, st.camb);
+  else st.elems.forEach((el, e) => { if (el[0] !== 'C') return; const a = Math.abs(el[2]), kp = 2 * a * Math.PI / 180 / el[1]; if (e % 5 === 3 && a < 60) RY_CAMB[e] = { b: -0.09, m: 0 }; else { const b = Math.round(_ryIn(0.06 + kp * 4.2, 0.07, 0.34) * 100) / 100; RY_CAMB[e] = { b, m: Math.round(b * 2.3 * 20) / 20 }; } });
+  RY.stage = i; RY.st = st; RY.T = RY_THEMES[st.theme]; RY.name = st.name; RY.seed = st.seed; RY.ready = false; return st;
+};
+RY.stageLen = function (i) { let L = 0; for (const e of RY_STAGES[i].elems) L += e[1]; return Math.floor(L / RY.DS) * RY.DS; };
+RY.stagePar = function (i) { return RY.stageLen(i) / RY_STAGES[i].pace; };
 const _ryIn = (v, a, b) => (v < a ? a : v > b ? b : v);
 const _rySm = (a, b, x) => { const t = _ryIn((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 
@@ -97,10 +165,27 @@ RY.featureH = function (f, u) {
 RY.profile = function () {
   const N = RY.N, ds = RY.DS, rnd = mulberry32(RY.seed * 31 + 5), p1 = rnd() * 6.28, p2 = rnd() * 6.28, p3 = rnd() * 6.28;
   const base = new Float32Array(N), hy = new Float32Array(N), feats = RY_FEATS.map((f) => Object.assign({ s0: RY.starts[f.e] + f.at }, f));
+  const T = RY.T; let land = null;
+  if (T.M) {   /* the road follows the land: sampled along the path, smoothed over 100 m, and held to a 12 % grade */
+    let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; for (let i = 0; i < N; i++) { const x = RY.px[i] - RY.px[0], z = RY.pz[i] - RY.pz[0]; x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+    { const nb = Math.ceil((z1 - z0) / 20) + 2, sx = new Float32Array(nb), sn = new Float32Array(nb), cl = new Float32Array(nb); for (let i = 0; i < N; i++) { const k = Math.round((RY.pz[i] - RY.pz[0] - z0) / 20); sx[k] += RY.px[i] - RY.px[0]; sn[k]++; }
+      for (let k = 0; k < nb; k++) { let a = 0, n = 0; for (let j = k - 10; j <= k + 10; j++) if (j >= 0 && j < nb) { a += sx[j]; n += sn[j]; } cl[k] = n ? a / n : 0; }
+      RY.B = { x0, x1, z0, z1, cl, dev: 0 }; for (let i = 0; i < N; i++) RY.B.dev = Math.max(RY.B.dev, Math.abs(RY.px[i] - RY.px[0] - _ryCl(RY.B, RY.pz[i] - RY.pz[0]))); }
+    land = new Float32Array(N); for (let i = 0; i < N; i++) land[i] = T.M(RY.px[i] - RY.px[0], RY.pz[i] - RY.pz[0], RY.B);
+    for (let pass = 0; pass < 2; pass++) { const src = Float32Array.from(land), W = 25; let acc = 0; for (let i = -W; i <= W; i++) acc += src[_ryIn(i, 0, N - 1)]; for (let i = 0; i < N; i++) { land[i] = acc / (2 * W + 1); acc += src[_ryIn(i + W + 1, 0, N - 1)] - src[_ryIn(i - W, 0, N - 1)]; } }
+    for (let pass = 0; pass < 3; pass++) { for (let i = 1; i < N; i++) land[i] = _ryIn(land[i], land[i - 1] - 0.12 * ds, land[i - 1] + 0.12 * ds); for (let i = N - 2; i >= 0; i--) land[i] = _ryIn(land[i], land[i + 1] - 0.12 * ds, land[i + 1] + 0.12 * ds); }
+    for (let pass = 0; pass < 2; pass++) { const src = Float32Array.from(land); for (let i = 0; i < N; i++) { let a = 0; for (let k = -6; k <= 6; k++) a += src[_ryIn(i + k, 0, N - 1)]; land[i] = a / 13; } }
+  } else { RY.B = null; RY.plain = null; RY.sea = null; }
   for (let i = 0; i < N; i++) {
-    const s = i * ds; let b = 70 - 0.011 * s + 9 * Math.sin(s / 310 + p1) + 4.2 * Math.sin(s / 137 + p2) + 1.5 * Math.sin(s / 58 + p3), t = 0;
+    const s = i * ds; let b = land ? land[i] : 70 - 0.011 * s + 9 * Math.sin(s / 310 + p1) + 4.2 * Math.sin(s / 137 + p2) + 1.5 * Math.sin(s / 58 + p3), t = 0;
     for (const f of feats) { const r = RY.featureH(f, s - f.s0); t += r[0]; b += r[1]; }
     base[i] = b; hy[i] = b + t;
+  }
+  if (land) {   /* each jump lands lower than it took off; over a whole stage that would sink the road into the land, so the drops are taken back out over the next few hundred metres */
+    const d = new Float32Array(N), W = 90; for (let i = 0; i < N; i++) d[i] = base[i] - land[i];
+    let acc = 0; for (let i = -W; i <= W; i++) acc += d[_ryIn(i, 0, N - 1)];
+    for (let i = 0; i < N; i++) { const m = acc / (2 * W + 1); base[i] -= m; hy[i] -= m; acc += d[_ryIn(i + W + 1, 0, N - 1)] - d[_ryIn(i - W, 0, N - 1)]; }
+    let lo = 1e9; for (let i = 0; i < N; i++) lo = Math.min(lo, base[i]); RY.plain = lo + (T.plainOff || 0); RY.sea = T.sea ? lo - 1.2 : null;
   }
   RY.base = base; RY.py = hy; RY.feats = feats;
   let mx = 0, ma = 0; for (let i = 1; i < N - 1; i++) { mx = Math.max(mx, Math.abs(hy[i + 1] - hy[i]) / ds); ma = Math.max(ma, Math.abs(hy[i + 1] - 2 * hy[i] + hy[i - 1]) / (ds * ds)); }
@@ -148,7 +233,7 @@ RY.sections = function () {
     bank[i] = _ryIn(cb + fall * (1 - cw), -0.4, 0.4) * fl; crown[i] = crn * (1 - 0.7 * cw) * fl; lip[i] = cl * fl; RY.bendW[i] = cw;
     hw[i] += 0.8 * _rySm(0.07, 0.3, Math.abs(bank[i])) * cw;          /* a banked bend is cut wider */
     let sc = 0; for (const r of RY_SECS) if (s >= r[0]) sc = r[1]; sec[i] = sc;
-    open[i] = _rySm(0.52, 0.78, 0.5 + 0.9 * fbm(s * 0.0046 + p, 3.3, 3));    /* 1 = a glade where the sun gets down to the road, 0 = canopy tunnel */
+    open[i] = RY.T.open != null ? RY.T.open : _rySm(0.52, 0.78, 0.5 + 0.9 * fbm(s * 0.0046 + p, 3.3, 3));    /* 1 = a glade where the sun gets down to the road, 0 = canopy tunnel */
   }
   /* soften the width changes */
   for (let pass = 0; pass < 6; pass++) { const t = Float32Array.from(hw); for (let i = 1; i < N - 1; i++) hw[i] = (t[i - 1] + 2 * t[i] + t[i + 1]) / 4; }
@@ -211,6 +296,12 @@ RY.heightFrom = function (o, x, z) {
   const e = Math.max(0, d - hw), roadH = py + RY.cross(_ryIn(l, -hw, hw), hw, bank, crown, lip);
   if (e <= 0) return roadH;
   const sd = l < 0 ? -1 : 1, edgeH = py + RY.cross(sd * hw, hw, bank, crown, lip);
+  if (RY.T.M) {   /* a themed stage: the verge runs out into the land itself, and far from the road the land settles onto a plain (the sea bed, the desert floor, the valley) */
+    const T = RY.T, m = T.M(x - RY.px[0], z - RY.pz[0], RY.B), R2 = sd > 0 ? RY.rails.L : RY.rails.R, cut2 = lerp(R2.cut[sg], R2.cut[sg + 1], fr);
+    let h = lerp(edgeH, m, _rySm(1.2, T.blend || 26, e)) - 0.2 * _rySm(0, 0.5, e) * (1 - _rySm(0.5, 2.2, e));
+    if (cut2 > 0.05) { const eW = e - Math.max(R2.g[sg], R2.g[sg + 1]); h += cut2 * _rySm(2.4, 8.0, eW) * (1 - _rySm(18, 46, eW)); }
+    return lerp(h, RY.plain, _rySm(RY.MAXD - 40, RY.MAXD - 8, e));
+  }
   /* verge: a shallow ditch, then the bank climbs into the hillside; the valley floor follows the smoothed base so jumps blend away */
   const ditch = -0.22 * _rySm(0, 0.5, e) * (1 - _rySm(0.5, 2.2, e));
   const rise = 0.17 * Math.min(e, 18) + 0.42 * _ryIn(e - 18, 0, 24) + 0.12 * Math.max(0, e - 42);
@@ -250,7 +341,7 @@ RY.bake = function () {
     }
   }
   /* the void beyond the bake range becomes a wall of hillside so nothing can wander into it */
-  for (let k = 0; k < H.length; k++) if (!(H[k] === H[k])) H[k] = hiH + 40;
+  for (let k = 0; k < H.length; k++) if (!(H[k] === H[k])) H[k] = RY.T.M ? RY.plain : hiH + 40;
   RY.gx0 = x0; RY.gz0 = z0; RY.gw = gw; RY.gh = gh; RY.H = H; RY.D = D; RY.I = I; RY.hiH = hiH;
 };
 
@@ -259,26 +350,33 @@ const RY_SURF = [
   { mu: 0.84, rr: 0.034, rough: 0.30, loose: 0.30 },   /* hard-packed */
   { mu: 0.72, rr: 0.046, rough: 0.42, loose: 0.62 },   /* loose gravel */
   { mu: 0.56, rr: 0.07, rough: 0.5, loose: 0.42 },     /* mud */
-  { mu: 0.64, rr: 0.09, rough: 0.34, loose: 0.55 }     /* sand */
+  { mu: 0.64, rr: 0.09, rough: 0.34, loose: 0.55 },    /* sand */
+  { mu: 0.52, rr: 0.05, rough: 0.22, loose: 0.5 },     /* 4 packed snow */
+  { mu: 0.34, rr: 0.022, rough: 0.1, loose: 0.1 },     /* 5 ice */
+  { mu: 0.58, rr: 0.13, rough: 0.3, loose: 0.8 },      /* 6 deep soft sand */
+  { mu: 0.46, rr: 0.12, rough: 0.3, loose: 0.85 },     /* 7 powder snow */
+  { mu: 0.8, rr: 0.04, rough: 0.2, loose: 0.3 },       /* 8 hard wet sand */
+  { mu: 0.6, rr: 0.1, rough: 0.3, loose: 0.4 }         /* 9 tidal shallows */
 ];
 /* ground query used by the car physics: fills the same fields groundAt() does, plus `loose` */
 RY.ground = function (x, z, o) {
   const gs = 1 / RY.GS, gx = (x - RY.gx0) * gs, gz = (z - RY.gz0) * gs, ix = Math.floor(gx), iz = Math.floor(gz), gw = RY.gw;
-  if (ix < 0 || iz < 0 || ix >= gw - 1 || iz >= RY.gh - 1) { o.h = RY.hiH + 30; o.mu = 0.5; o.rr = 0.1; o.rough = 0.5; o.road = false; o.water = false; o.loose = 0.5; o.sec = 0; return; }
+  if (ix < 0 || iz < 0 || ix >= gw - 1 || iz >= RY.gh - 1) { o.h = RY.T.M ? RY.plain : RY.hiH + 30; o.mu = 0.5; o.rr = 0.1; o.rough = 0.5; o.road = false; o.water = false; o.loose = 0.5; o.sec = 0; return; }
   const fx = gx - ix, fz = gz - iz, k = iz * gw + ix, H = RY.H, D = RY.D;
   const h = (H[k] * (1 - fx) + H[k + 1] * fx) * (1 - fz) + (H[k + gw] * (1 - fx) + H[k + gw + 1] * fx) * fz;
   const d = (D[k] * (1 - fx) + D[k + 1] * fx) * (1 - fz) + (D[k + gw] * (1 - fx) + D[k + gw + 1] * fx) * fz;
   const idx = RY.I[k + (fx > 0.5 ? 1 : 0) + (fz > 0.5 ? gw : 0)];
   o.h = h; o.water = false; o.road = false;
   if (idx < 0) { o.mu = 0.5; o.rr = 0.12; o.rough = 0.5; o.loose = 0.6; o.sec = 0; return; }
-  const hw = RY.hw[idx], e = d - hw, S = RY_SURF[RY.sec[idx]]; o.sec = RY.sec[idx];
+  const hw = RY.hw[idx], e = d - hw, S = RY_SURF[RY.T.surf[RY.sec[idx]]], OF = RY.T.off; o.sec = RY.sec[idx];
   if (e <= 0) {
     /* the road: two wheel ruts a little looser and rougher, a berm of loose gravel along both edges, hard line down the middle */
     const a = Math.abs(d), rut = _rySm(0.5, 0.9, a) * (1 - _rySm(1.5, 1.9, a)), edge = _rySm(hw - 1.6, hw - 0.4, a);
     o.mu = S.mu * (1 - 0.07 * rut - 0.16 * edge); o.rr = S.rr * (1 + 0.25 * rut + 0.5 * edge); o.rough = S.rough * (1 + 0.5 * rut + 0.7 * edge); o.loose = Math.min(1, S.loose + 0.3 * edge);
   } else {
     const t = _rySm(0, 2.5, e);   /* from the gravel shoulder out to the forest floor: soft, rough, slow */
-    o.mu = lerp(S.mu * 0.78, 0.5, t); o.rr = lerp(0.07, 0.15, t); o.rough = lerp(0.55, 0.9, t); o.loose = lerp(0.6, 0.45, t);
+    if (OF) { o.mu = lerp(S.mu * 0.85, OF.mu, t); o.rr = lerp(S.rr * 1.4, OF.rr, t); o.rough = lerp(0.45, OF.rough, t); o.loose = lerp(0.6, OF.loose, t); if (RY.sea != null && h < RY.sea - 0.25) { o.rr = 0.34; o.mu = 0.5; } }
+    else { o.mu = lerp(S.mu * 0.78, 0.5, t); o.rr = lerp(0.07, 0.15, t); o.rough = lerp(0.55, 0.9, t); o.loose = lerp(0.6, 0.45, t); }
   }
 };
 RY.heightAt = function (x, z) { RY.ground(x, z, _ryG); return _ryG.h; };
@@ -310,9 +408,10 @@ RY.locate = function (x, z, hint, o) {
 
 /* ---------- 6. forest, undergrowth, rocks, trunks ---------- */
 /* tree kinds: conifers dominate, birch lines the road, a few oak and autumn clumps. v = variant index into the game's TREE[kind] sources. */
-const RY_KINDS = [{ n: 'pine', v: 0 }, { n: 'pine', v: 1 }, { n: 'pine', v: 2 }, { n: 'pine', v: 3 }, { n: 'birch', v: 0 }, { n: 'birch', v: 1 }, { n: 'oak', v: 0 }, { n: 'autumn', v: 0 }];
+const RY_KINDS = [{ n: 'pine', v: 0 }, { n: 'pine', v: 1 }, { n: 'pine', v: 2 }, { n: 'pine', v: 3 }, { n: 'birch', v: 0 }, { n: 'birch', v: 1 }, { n: 'oak', v: 0 }, { n: 'autumn', v: 0 },
+  { n: 'palm', v: 0 }, { n: 'palm', v: 1 }, { n: 'palm', v: 2 }, { n: 'snowpine', v: 0 }, { n: 'snowpine', v: 1 }, { n: 'snowpine', v: 2 }, { n: 'cactus', v: 0 }, { n: 'cactus', v: 1 }, { n: 'cactus', v: 2 }, { n: 'cactus', v: 3 }];
 RY.forest = function (density) {
-  density = density == null ? 1 : density;
+  density = density == null ? 1 : density; const T = RY.T, tk = T.tree == null ? 1 : T.tree, uk = T.under === null ? 0 : T.underK == null ? 1 : T.underK, un = T.under || ['bush', 'grass'];
   const rnd = mulberry32(RY.seed * 131 + 9), GS = 3.4, tr = [], und = [], rocks = [];
   const x0 = RY.gx0, z0 = RY.gz0, x1 = x0 + (RY.gw - 1) * RY.GS, z1 = z0 + (RY.gh - 1) * RY.GS, A = _ryA;
   for (let z = z0 + GS; z < z1 - GS; z += GS) for (let x = x0 + GS; x < x1 - GS; x += GS) {
@@ -322,21 +421,23 @@ RY.forest = function (density) {
     if (e < (A.l > 0 ? RY.rails.L.band[A.i] : RY.rails.R.band[A.i])) continue;   /* the wall and its cap stand here */
     const clear = fbm(jx * 0.016 + 11, jz * 0.016 + 4, 2) > 0.18 ? 0.3 : 1;              /* the odd natural clearing */
     /* undergrowth first: bushes and ferns crowd the verge, thin out into the forest */
-    if (e > 1.4 && e < 36 && rnd() < 0.5 * density * (1 - _rySm(8, 36, e)) + 0.06) {
-      const kind = rnd() < 0.3 ? 'bush' : 'grass'; und.push({ k: kind, v: (rnd() * 4) | 0, x: jx + (rnd() - 0.5) * 1.6, z: jz + (rnd() - 0.5) * 1.6, sc: kind === 'bush' ? 0.7 + rnd() * 0.8 : 0.9 + rnd() * 0.9, rot: rnd() * TAU, t: rnd() });
+    if (RY.sea != null && hy < RY.sea + 0.5) continue;   /* nothing grows in the sea */
+    if (e > 1.4 && e < 36 && rnd() < (0.5 * density * (1 - _rySm(8, 36, e)) + 0.06) * uk) {
+      const kind = rnd() < 0.3 ? un[0] : un[1]; und.push({ k: kind, v: (rnd() * 4) | 0, x: jx + (rnd() - 0.5) * 1.6, z: jz + (rnd() - 0.5) * 1.6, sc: kind !== 'grass' ? 0.7 + rnd() * 0.8 : 0.9 + rnd() * 0.9, rot: rnd() * TAU, t: rnd() });
     }
     /* trunks stay off the road with a margin, and thin out inside glades */
-    const edge = _rySm(2.4, 9, e), p = edge * (0.28 + 0.72 * _rySm(2, 22, e)) * (1 - 0.55 * _rySm(44, 80, e)) * (e > 84 ? 0 : 1) * clear * lerp(1, 0.32, op * (1 - _rySm(6, 20, e))) * density;
+    const edge = _rySm(2.4, 9, e), p = edge * (0.28 + 0.72 * _rySm(2, 22, e)) * (1 - 0.55 * _rySm(44, 80, e)) * (e > 84 ? 0 : 1) * clear * lerp(1, T.M ? 1 : 0.32, op * (1 - _rySm(6, 20, e))) * density * tk * (T.treeLine ? 1 - _rySm(T.treeLine - 0.12, T.treeLine, (hy - RY.plain) / 200) : 1);
     if (e < 2.4 || rnd() > p * 1.25) continue;
     const r = rnd(); let ki;
     if (e < 9 && r < 0.3) ki = 4 + ((rnd() * 2) | 0);                            /* birch along the road edge */
     else if (r < 0.08) ki = 6; else if (r < 0.13) ki = 7; else ki = (rnd() * 4) | 0;
+    if (T.trees) { const set = e < 9 ? T.edge : T.trees; ki = set[(rnd() * set.length) | 0]; }
     const big = e < 9 ? 1.05 + rnd() * 0.4 : 0.75 + rnd() * 0.65;                 /* the avenue trees are the big ones */
-    const kd = RY_KINDS[ki], sc = kd.n === 'pine' ? big * (0.85 + rnd() * 0.5) : big * 0.9;
+    const kd = RY_KINDS[ki], sc = kd.n === 'pine' || kd.n === 'snowpine' ? big * (0.85 + rnd() * 0.5) : kd.n === 'cactus' ? 0.8 + rnd() * 0.7 : big * 0.9;
     tr.push({ k: ki, x: jx, y: hy, z: jz, sc, rot: rnd() * TAU, t: rnd(), rad: (kd.n === 'pine' ? 0.34 : 0.3) * sc + 0.06, e });
   }
   /* rocks, mostly just off the road, some in the ditch */
-  for (let i = 0; i < Math.round(RY.L / 26); i++) {
+  for (let i = 0; i < Math.round(RY.L / 26 * (T.rocks == null ? 1 : T.rocks)); i++) {
     const s = rnd() * RY.L, side = rnd() < 0.5 ? -1 : 1, off = RY.at(s, 0, {}), hw = off.hw, l = side * (hw + 1.2 + rnd() * rnd() * 14);
     if (hw + (side > 0 ? RY.rails.L : RY.rails.R).band[off.i] > Math.abs(l)) continue;
     const q = RY.at(s, l, {}); rocks.push({ v: (rnd() * 12) | 0, x: q.x, z: q.z, sc: 0.5 + rnd() * rnd() * 2.6, rot: rnd() * TAU });
@@ -401,7 +502,9 @@ RY.layout = function () {
 
 /* ---------- everything ---------- */
 RY.build = function (density) {
+  if (RY.stage < 0) RY.use(0);
   RY.path(); RY.profile(); RY.sections(); RY.index(); RY.bake(); RY.forest(density); RY.layout();
   /* a rough par: what an average run looks like (used for the splits and medals) */
-  RY.par = RY.L / 26.0; RY.ready = true; return RY;   /* ~148 s par: bronze 2:30.8, silver 2:16.0, gold 2:05.7 (RY_MEDAL); silver and gold need a real line, nitro and the jumps flat out */
+  RY.par = RY.L / RY.st.pace; RY.ready = true; return RY;   /* ~148 s par: bronze 2:30.8, silver 2:16.0, gold 2:05.7 (RY_MEDAL); silver and gold need a real line, nitro and the jumps flat out */
 };
+RY.use(0);

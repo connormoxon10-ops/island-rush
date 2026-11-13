@@ -9,5 +9,5 @@ module.exports = function load(files) {
   const i0 = core.findIndex((l) => /^function mulberry32/.test(l)), i1 = core.findIndex((l) => /^function fbm/.test(l));
   const pre = 'const TAU=Math.PI*2,DEG=Math.PI/180,G=9.81;const clamp=(v,a,b)=>v<a?a:v>b?b:v;const lerp=(a,b,t)=>a+(b-a)*t;const sstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};\n' + core.slice(i0, i1 + 1).join('\n') + '\n';
   const src = files.map((f) => fs.readFileSync(D + f, 'utf8')).join('\n');
-  return new Function(pre + src + ';return {RY,RY_ELEMS,RY_FEATS,RY_SURF,RY_WALLS,RY_CAMB,RY_RAILS,RW};')();
+  return new Function(pre + src + ';return {RY,RY_ELEMS,RY_FEATS,RY_SURF,RY_WALLS,RY_CAMB,RY_RAILS,RY_STAGES,RY_THEMES,RW};')();
 };

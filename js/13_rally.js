@@ -83,13 +83,13 @@ function ryInitFx() {
 }
 Rally.dustTint = [0.7, 0.62, 0.52];
 Rally.puff = function (x, y, z, vx, vy, vz, life, size, grow, a) {
-  const d = RY_DUST[Rally.sec] || RY_DUST[0], t = Rally.dustTint, k = 0.88 + Math.random() * 0.24;
+  const d = (RY.T.dust || RY_DUST)[Rally.sec] || RY_DUST[0], t = Rally.dustTint, k = 0.88 + Math.random() * 0.24;
   emit(RYP.dust, x, y, z, vx, vy, vz, life, size, grow, d[0] * t[0] * k, d[1] * t[1] * k, d[2] * t[2] * k, a, -0.25);
 };
 Rally.chip = function (x, y, z, vx, vy, vz, wood) {
   const k = 0.7 + Math.random() * 0.5;
   if (wood) emit(RYP.grit, x, y, z, vx, vy, vz, 0.8 + Math.random() * 1.1, 0.07 + Math.random() * 0.05, 0, 0.62 * k, 0.45 * k, 0.26 * k, 1, 9);
-  else { const d = RY_DUST[Rally.sec] || RY_DUST[0]; emit(RYP.grit, x, y, z, vx, vy, vz, 0.5 + Math.random() * 0.7, 0.05 + Math.random() * 0.05, 0, d[0] * k * 0.9, d[1] * k * 0.9, d[2] * k * 0.9, 1, 12); }
+  else { const d = (RY.T.dust || RY_DUST)[Rally.sec] || RY_DUST[0]; emit(RYP.grit, x, y, z, vx, vy, vz, 0.5 + Math.random() * 0.7, 0.05 + Math.random() * 0.05, 0, d[0] * k * 0.9, d[1] * k * 0.9, d[2] * k * 0.9, 1, 12); }
 };
 function ryPoolUpdate(S, dt) {
   for (let i = 0; i < S.n; i++) {
@@ -163,15 +163,16 @@ Rally.env = function (tod, focus, time) {
   if (cfg.lamps) env.lampOn = 1;
   env.sunCol.copy(_warm).lerp(_white, sstep(0.02, 0.5, e));
   /* haze takes the colour of the low sun */
-  env.hor.r *= cfg.tint[0]; env.hor.g *= cfg.tint[1]; env.hor.b *= cfg.tint[2];
+  { const tt = RY.T.tint || [1, 1, 1]; env.hor.r *= cfg.tint[0] * tt[0]; env.hor.g *= cfg.tint[1] * tt[1]; env.hor.b *= cfg.tint[2] * tt[2]; }   /* and of the place: cold over snow, warm over sand */
   /* openness around the car: clearings are brighter, deep forest is darker and the eye adapts with a lag */
   const O = RY.open[Rally.hint] || 0; Rally.opn += (O - Rally.opn) * Math.min(1, dtE * 1.5);
   const target = cfg.expo * (1.14 - 0.2 * Rally.opn); Rally.expo += (target - Rally.expo) * Math.min(1, dtE * 0.9);
-  scene.fog.color.copy(env.hor); scene.fog.density = cfg.fog * (Q.fog || 1) * (1 + 0.5 * (1 - Rally.opn) * 0.3);
+  scene.fog.color.copy(env.hor); scene.fog.density = cfg.fog * (RY.T.fogK || 1) * (Q.fog || 1) * (1 + 0.5 * (1 - Rally.opn) * 0.3);
   if (!hasPost) scene.fog.color.convertLinearToSRGB();
   L.sun.color.copy(env.sunCol); L.sun.intensity = cfg.sun * sstep(-0.02, 0.2, e) * (1 + 0.25 * Rally.opn);
   L.moon.intensity = 0.4 * env.night;
   _col.copy(env.zen).lerp(env.hor, 0.45); L.hemi.color.copy(_col); L.hemi.groundColor.setRGB(0.1 * env.day + 0.02, 0.085 * env.day + 0.018, 0.04 * env.day + 0.018);
+  if (RY.T.pal) { const fc = RY.T.pal.f[0], kk = 0.3 * env.day + 0.03; L.hemi.groundColor.setRGB(fc[0] * fc[0] * kk, fc[1] * fc[1] * kk, fc[2] * fc[2] * kk); }   /* light bounced off sand or snow */
   L.hemi.intensity = lerp(0.5, 0.95, env.day) * (0.82 + 0.3 * Rally.opn);
   const f = focus;
   L.sun.position.set(Math.round(f.x * 2) / 2 + env.sunDir.x * 350, f.y + env.sunDir.y * 350, Math.round(f.z * 2) / 2 + env.sunDir.z * 350); L.sun.target.position.set(Math.round(f.x * 2) / 2, f.y, Math.round(f.z * 2) / 2);
@@ -254,22 +255,25 @@ Rally.hud = function (dt) {
 };
 
 /* ---------------- lobby ---------------- */
-const RY_INFO = 'A 3.7 km point-to-point forest stage cut through dense pine and birch. Hard-packed dirt, loose gravel, a wet mud pocket and a sandy cut, with ' +
-  'crests, big jumps and dips. Six plank walls block the road: drive straight through them. Pace notes call the road ahead. Three rival drivers start beside you.';
+/* which stage the lobby has chosen, and its record (Hollow Pines keeps its record where it always was; the others have their own) */
+Rally.stageI = function () { return clamp(save.rally.stage | 0, 0, RY_STAGES.length - 1); };
+Rally.rec = function (i) { i = i == null ? (Rally.on ? RY.stage : Rally.stageI()) : i; if (i === 0) return save.rally; const st = save.rally.st || (save.rally.st = {}), id = RY_STAGES[i].id; return st[id] || (st[id] = { best: 0, splits: [] }); };
 Rally.open = function () {
   if (App.mode !== 'rlobby') return; Rally.lobby = true; Rally.tod = clamp(save.rally.tod, 0, 3); Rally.paint(); Snd.beep(620, 0.06);
 };
 Rally.paint = function () {
   const R = save.rally, seg = (k, opts, cur) => '<div class="rseg" data-k="' + k + '">' + opts.map(([v, l]) => '<button type="button" class="' + (cur === v ? 'on' : '') + '" data-v="' + v + '">' + l + '</button>').join('') + '</div>';
-  E.rlTitle.textContent = 'Hollow Pines'; E.rlSub.textContent = 'Forest rally stage'; E.rlCash.textContent = money(save.money); E.rlPanel.classList.remove('jk');
+  const si = Rally.stageI(), ST = RY_STAGES[si], B = Rally.rec(si);
+  E.rlTitle.textContent = ST.name; E.rlSub.textContent = ST.sub; E.rlCash.textContent = money(save.money); E.rlPanel.classList.remove('jk');
   E.rlFoot.innerHTML = '<button class="btn" type="button" data-act="rback">◂ Back</button><button class="btn primary" type="button" data-act="rstart">Start stage</button>';
-  const par = RY.ready ? RY.par : 3844 / 26.0, med = [par * RY_MEDAL[0], par * RY_MEDAL[1], par * RY_MEDAL[2]].map((v) => fmtLap(v));
-  E.rlBody.innerHTML = '<p class="rlp">' + RY_INFO + '</p>' +
+  const par = RY.stagePar(si), med = [par * RY_MEDAL[0], par * RY_MEDAL[1], par * RY_MEDAL[2]].map((v) => fmtLap(v));
+  E.rlBody.innerHTML = '<div class="rlrow"><label>Stage</label>' + seg('stage', RY_STAGES.map((s, i) => [i, s.name]), si) + '</div>' +
+    '<p class="rlp">' + ST.info + ' ' + ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six'][ST.walls.length] + ' plank walls block the road: drive straight through them. Pace notes call the road ahead. Three rival drivers start beside you.</p>' +
     '<div class="rlrow"><label>Light</label>' + seg('tod', RY_TODS.map((t, i) => [i, t.n]), Rally.tod) + '</div>' +
     '<div class="rlrow"><label>Rivals</label>' + seg('rivals', [[0, 'None'], [1, 'Rookie'], [2, 'Pro'], [3, 'Elite']], Rally.rivalLevel()) + '</div>' +
     '<div class="rlrow"><label>Assist</label>' + seg('assist', [[1, 'On · easy to control'], [0, 'Off · raw physics']], Rally.assistOn() ? 1 : 0) + '</div>' +
     '<div class="rlprize"><small>Medal times</small><span>Bronze <b>' + med[0] + '</b></span><span>Silver <b>' + med[1] + '</b></span><span>Gold <b>' + med[2] + '</b></span></div>' +
-    '<div class="rlrec"><span>Runs <b>' + R.runs + '</b></span><span>Best <b>' + fmtLap(R.best) + '</b></span><span>Wins <b>' + (R.wins || 0) + '</b></span><span>Planks smashed <b>' + R.gates + '</b></span><span>Longest jump <b>' + (R.jump ? Math.round(R.jump) + ' m' : '–') + '</b></span></div>' +
+    '<div class="rlrec"><span>Runs <b>' + R.runs + '</b></span><span>Best here <b>' + fmtLap(B.best) + '</b></span><span>Wins <b>' + (R.wins || 0) + '</b></span><span>Planks smashed <b>' + R.gates + '</b></span><span>Longest jump <b>' + (R.jump ? Math.round(R.jump) + ' m' : '–') + '</b></span></div>' +
     '<p class="rlp dim">You drive the <b>Ridgeback RS</b>, lent to you for the stage. ' + (TouchIn.on ? 'Use the pedals as normal; hold DRIFT for the handbrake.' : 'W/S throttle and brake, A/D steer, Space handbrake, Shift boost, R resets to the road (+3 s).') + '</p>';
 };
 Rally.lobbyClick = function (b) {
@@ -277,6 +281,7 @@ Rally.lobbyClick = function (b) {
   if (a === 'rback') { Rally.lobby = false; Race.paint(); Snd.beep(420, 0.05); }
   else if (a === 'rstart') Rally.start();
   else if (a === 'leave') { Rally.lobby = false; Race.leave(); }
+  else if (b.parentNode && b.parentNode.dataset.k === 'stage') { save.rally.stage = +b.dataset.v; Rally.paint(); Snd.beep(520, 0.04); }
   else if (b.parentNode && b.parentNode.dataset.k === 'rivals') { save.rally.rivals = +b.dataset.v; Rally.paint(); Snd.beep(520, 0.04); }
   else if (b.parentNode && b.parentNode.dataset.k === 'assist') { save.rally.assist = +b.dataset.v; Rally.paint(); Snd.beep(520, 0.04); }
   else if (b.parentNode && b.parentNode.dataset.k === 'tod') { Rally.tod = +b.dataset.v; save.rally.tod = Rally.tod; Rally.paint(); Snd.beep(520, 0.04); }
@@ -297,7 +302,7 @@ Rally.start = async function () {
   const c = car; Rally.saved = { x: c.x, z: c.z, yaw: c.yaw, car: save.car, tod: App.tod, cycle: save.set.cycle, view: Cam.view, nitro: c.nitro, health: c.health, lights: c.lights };
   UI.setMode('load'); UI.progress(0.08, 'Surveying the stage'); await tick();
   try {
-    if (!RY.ready) { RY.build(Rally.stageDensity()); }
+    if (RY.stage !== Rally.stageI() || !RY.ready) { RY.use(Rally.stageI()); RY.build(Rally.stageDensity()); Rally.sim = null; RYG.dispose(); RR.base = null; }   /* another stage: survey it, and take the last one down */
     UI.progress(0.35, 'Felling trees'); await tick();
     if (!Rally.sim) Rally.sim = RW.make(RY.walls, RY.heightAt, RY.seed);
     if (!RYG.built) { RYG.build(Rally.sim, { far: Q.shadow ? (Q.tree < 0.9 ? 320 : 400) : 260, shafts: Q.tree < 0.7 ? 24 : 46 }); }
@@ -317,7 +322,7 @@ Rally.reset0 = function () {
   const sim = Rally.sim; RW.reset(sim); for (const k of [0, 1, 2, 3, 4]) sim.dirty[k] = true;
   Rally.phase = 'grid'; Rally.t = 0; Rally.clock = 0; Rally.penalty = 0; Rally.cp = 0; Rally.splits = []; Rally.resets = 0; Rally.jumpBest = 0; Rally.air = null; Rally.combo = 0; Rally.stuck = 0; Rally.wrong = 0; Rally.noteI = 0; Rally.done = false;
   Rally.hint = 0; RR.setup(); { const gs = Rally.gridSlot(); Rally.placeAt(RY.startS - gs[0], gs[1]); }
-  Rally.best = save.rally.best > 0 ? save.rally.best : 0; if (Rally.el) { Rally.el.split.textContent = ''; Rally.el.split.className = ''; }
+  Rally.best = Rally.rec().best > 0 ? Rally.rec().best : 0; if (Rally.el) { Rally.el.split.textContent = ''; Rally.el.split.className = ''; }
   E.rres.hidden = true; for (const k of ['rcount']) E[k].hidden = true;
 };
 Rally.placeAt = function (s, off) {
@@ -394,25 +399,25 @@ Rally.update = function (dt) {
 };
 Rally.split = function () {
   const i = Rally.cp++, t = Rally.clock + Rally.penalty; Rally.splits.push(t);
-  const ref = save.rally.splits[i]; let txt = 'SPLIT ' + (i + 1) + ' · ' + fmtLap(t).replace(/\d$/, ''), cls = '';
+  const ref = Rally.rec().splits[i]; let txt = 'SPLIT ' + (i + 1) + ' · ' + fmtLap(t).replace(/\d$/, ''), cls = '';
   if (ref > 0) { const d = t - ref; txt += '  ' + (d <= 0 ? '−' : '+') + Math.abs(d).toFixed(2); cls = d <= 0 ? 'dn' : 'up'; }
   Rally.el.split.textContent = txt; Rally.el.split.className = cls; Snd.beep(700, 0.08);
 };
 Rally.finish = function () {
-  const t = Rally.clock + Rally.penalty, R = save.rally, par = RY.par, c = car;
+  const t = Rally.clock + Rally.penalty, R = save.rally, B = Rally.rec(), par = RY.par, c = car;
   Rally.phase = 'done'; Rally.doneT = 0; Rally.doneS = Rally.s;
-  const medal = t <= par * RY_MEDAL[2] ? 3 : t <= par * RY_MEDAL[1] ? 2 : t <= par * RY_MEDAL[0] ? 1 : 0, pb = !(R.best > 0) || t < R.best, prev = R.best;
+  const medal = t <= par * RY_MEDAL[2] ? 3 : t <= par * RY_MEDAL[1] ? 2 : t <= par * RY_MEDAL[0] ? 1 : 0, pb = !(B.best > 0) || t < B.best, prev = B.best;
   const rr = RR.on ? RR.results() : null, place = rr ? rr.findIndex((o) => o.me) + 1 : 0, pbonus = rr ? Math.round([900, 450, 220, 0][place - 1] * RR_TIERS[RR.tier].prize / 10) * 10 : 0, ord = ['', '1st', '2nd', '3rd', '4th'];
   const reward = Math.round((500 + medal * 450 + Math.min(300, Rally.sim.mine * 8) + (pb ? 150 : 0) + pbonus) / 10) * 10;
   if (rr && place === 1) R.wins = (R.wins || 0) + 1;
   R.runs++; R.gates += Rally.sim.mine; R.jump = Math.max(R.jump, Rally.jumpBest); R.earned += reward; save.money += reward;
-  if (pb) { R.best = t; R.splits = Rally.splits.slice(0, 3); }
+  if (pb) { B.best = t; B.splits = Rally.splits.slice(0, 3); }
   writeSave(); Snd.win();
   const names = ['No medal', 'Bronze', 'Silver', 'Gold'], col = ['#8a8f98', '#cd7f32', '#c8ccd2', '#ffd02e'][medal];
   E.rres.hidden = false;
   E.rres.innerHTML = '<div id="rresP"><h2 class="ok">' + (rr ? (place === 1 ? 'You won the stage' : 'Stage complete · ' + ord[place] + ' of ' + rr.length) : 'Stage complete') + '</h2><div class="rw" style="color:' + col + '">' + names[medal] + (pb ? ' · new best' : '') + ' <small>' + money(reward) + (pbonus ? ' (incl. ' + money(pbonus) + ' for ' + ord[place] + ')' : '') + '</small></div>' +
     '<table><tr><th>Split</th><th>Time</th><th>vs best</th></tr>' +
-    Rally.splits.map((s, i) => '<tr><td>' + (i + 1) + '</td><td>' + fmtLap(s) + '</td><td>' + (R.splits[i] > 0 && prev > 0 ? (s - (prev > 0 && !pb ? R.splits[i] : R.splits[i]) <= 0 ? '−' : '+') + Math.abs(s - R.splits[i]).toFixed(2) : '–') + '</td></tr>').join('') +
+    Rally.splits.map((s, i) => '<tr><td>' + (i + 1) + '</td><td>' + fmtLap(s) + '</td><td>' + (B.splits[i] > 0 && prev > 0 ? (s - (prev > 0 && !pb ? R.splits[i] : R.splits[i]) <= 0 ? '−' : '+') + Math.abs(s - R.splits[i]).toFixed(2) : '–') + '</td></tr>').join('') +
     '<tr class="me"><td>Finish</td><td>' + fmtLap(t) + '</td><td>' + (prev > 0 ? (t - prev <= 0 ? '−' : '+') + Math.abs(t - prev).toFixed(2) : '–') + '</td></tr></table>' +
     (rr ? '<table><tr><th>Pos</th><th>Driver</th><th>Time</th></tr>' + rr.map((o, i) => '<tr' + (o.me ? ' class="me"' : '') + '><td>' + (i + 1) + '</td><td>' + esc(o.name) + '</td><td>' + (o.est ? '~' : '') + fmtLap(o.t) + '</td></tr>').join('') + '</table>' : '') +
     '<p class="rlp dim" style="margin:10px 0">Planks smashed <b>' + Rally.sim.mine + ' / ' + Rally.sim.total + '</b> · longest jump <b>' + Math.round(Rally.jumpBest) + ' m</b> · resets <b>' + Rally.resets + '</b> (+' + Rally.resets * 3 + ' s)</p>' +
