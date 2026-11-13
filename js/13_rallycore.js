@@ -55,6 +55,11 @@ const RY0_RAILS = [
    which four surfaces its section numbers mean, what grows there, and (for every stage but the forest) M(x, z), the lie of the land itself. Where a theme has an M
    the road is draped over it (smoothed, and never steeper than 12 %) and the ground off the road returns to it, so a beach really shelves into the sea on one side
    and a pass really climbs a mountain. The stage in use is copied into the RY_* tables below, which the rest of the rally reads. */
+/* OBSTACLES (in a stage's obs list; they are height features too):
+     ravine  a timber kicker ramp, a gap across the whole valley you have to clear, and a landing deck; fall short and you are fished out before the ramp (+5 s)
+     ford    a stream across the road: the bed dips under water that drags the car and throws spray
+   and, laid out from the corners: crash nets (catch fences) on the outside of fast bends, tyre walls at the apex of hairpins */
+const RY_OBS = { ravine: { rise: 1.8, up: 18, span: 14, depth: 7, land: 26, drop: 1.2 }, ford: { len: 30, depth: 1.25, water: 0.5 } };
 const RY_ELEMS = [], RY_FEATS = [], RY_WALLS = [], RY_SECS = [], RY_RAILS = [], RY_CAMB = {};
 const RY_THEMES = {
   forest: { surf: [0, 1, 2, 3], M: null },
@@ -78,27 +83,27 @@ const RY_THEMES = {
 /* the smoothed line the road follows across the map (x at a given z), for themes whose land is laid out along the road: a shore, a valley */
 function _ryCl(B, z) { const f = _ryIn((z - B.z0) / 20, 0, B.cl.length - 1.001), i = Math.floor(f); return lerp(B.cl[i], B.cl[i + 1], f - i); }
 const RY_STAGES = [
-  { id: 'pines', name: 'Hollow Pines', sub: 'Forest rally stage', theme: 'forest', seed: 7, pace: 26, elems: RY0_ELEMS, feats: RY0_FEATS, walls: RY0_WALLS, secs: RY0_SECS, camb: RY0_CAMB, rails: RY0_RAILS,
+  { id: 'pines', obs: [{ k: 'ravine', e: 28, at: 50, name: 'Pine gorge' }, { k: 'ford', e: 2, at: 40, name: 'Creek' }],  name: 'Hollow Pines', sub: 'Forest rally stage', theme: 'forest', seed: 7, pace: 26, elems: RY0_ELEMS, feats: RY0_FEATS, walls: RY0_WALLS, secs: RY0_SECS, camb: RY0_CAMB, rails: RY0_RAILS,
     info: 'A 3.7 km point-to-point forest stage cut through dense pine and birch. Hard-packed dirt, loose gravel, a wet mud pocket and a sandy cut, with crests, big jumps and dips.' },
-  { id: 'coral', name: 'Coral Bay', sub: 'Beach rally stage', theme: 'beach', seed: 21, pace: 27.5,
+  { id: 'coral', obs: [{ k: 'ravine', e: 20, at: 44, name: 'Tidal cut' }, { k: 'ford', e: 16, at: 45, name: 'Lagoon' }],  name: 'Coral Bay', sub: 'Beach rally stage', theme: 'beach', seed: 21, pace: 27.5,
     elems: [['S', 160], ['C', 160, 30], ['S', 90], ['C', 140, -48], ['S', 120], ['C', 110, 40], ['C', 100, -36], ['S', 200], ['C', 90, 62], ['S', 70], ['C', 90, -70], ['S', 150], ['C', 150, -30], ['C', 120, 44], ['S', 180], ['C', 100, -56], ['S', 90], ['C', 110, 50], ['S', 140], ['C', 130, -38], ['S', 110], ['C', 100, 34], ['S', 300]],
     feats: [{ k: 'jump', e: 7, at: 100, rise: 1.0, up: 16, down: 11, drop: 0.9, land: 30, name: 'Dune jump' }, { k: 'whoops', e: 11, at: 20, n: 5, lam: 13, amp: 0.5 }, { k: 'jump', e: 14, at: 96, rise: 1.2, up: 16, down: 12, drop: 1.3, land: 36, name: 'Big air' }, { k: 'dip', e: 18, at: 30, depth: 1.2, len: 22 }, { k: 'jump', e: 22, at: 150, rise: 1.3, up: 18, down: 12, drop: 1.4, land: 40, name: 'Finish jump' }],
     walls: [{ e: 4, at: 74 }, { e: 11, at: 118 }, { e: 18, at: 104 }, { e: 22, at: 70 }], secs: [[0, 0], [500, 1], [900, 2], [1150, 0], [1700, 3], [2000, 0], [2450, 1], [2750, 0]],
     rails: [{ e: 5, at: 0, len: 96, side: 1, k: 'stone', h: 1.2, gap: 1.0 }, { e: 12, at: 10, len: 130, side: -1, k: 'stone', h: 1.2, gap: 1.0 }],
     info: 'A 3 km blast along the shore. Fast sweepers on hard wet sand at the waterline, soft dry sand that drags the car down, tidal shallows and dune jumps, with the sea on one side and palms on the other.' },
-  { id: 'eagle', name: 'Eagle Pass', sub: 'Mountain rally stage', theme: 'mountain', seed: 33, pace: 23,
+  { id: 'eagle', obs: [{ k: 'ravine', e: 17, at: 62, name: 'Gully' }, { k: 'ford', e: 6, at: 75, name: 'Snowmelt' }],  name: 'Eagle Pass', sub: 'Mountain rally stage', theme: 'mountain', seed: 33, pace: 23,
     elems: [['S', 150], ['C', 120, 40], ['S', 110], ['C', 84, -165], ['S', 150], ['C', 84, 165], ['S', 150], ['C', 84, -165], ['S', 140], ['C', 100, 125], ['S', 200], ['C', 140, -50], ['S', 120], ['C', 110, 60], ['C', 90, -70], ['S', 160], ['C', 84, 160], ['S', 150], ['C', 84, -160], ['S', 150], ['C', 120, 50], ['S', 120], ['C', 120, -45], ['S', 300]],
     feats: [{ k: 'jump', e: 10, at: 104, rise: 0.9, up: 16, down: 11, drop: 0.9, land: 30, name: 'Summit crest' }, { k: 'dip', e: 12, at: 50, depth: 1.3, len: 22 }, { k: 'jump', e: 15, at: 84, rise: 1.0, up: 14, down: 11, drop: 1.2, land: 32, name: 'Jump' }, { k: 'whoops', e: 21, at: 26, n: 4, lam: 13, amp: 0.45 }, { k: 'jump', e: 23, at: 150, rise: 1.2, up: 18, down: 12, drop: 1.3, land: 38, name: 'Finish jump' }],
     walls: [{ e: 4, at: 84 }, { e: 8, at: 84 }, { e: 19, at: 84 }, { e: 23, at: 70 }], secs: [[0, 1], [700, 0], [1250, 3], [1800, 0], [2300, 1], [2800, 0]],
     rails: [{ e: 3, at: 0, len: 84, side: -1, k: 'rock', h: 4.6, gap: 1.6 }, { e: 5, at: 0, len: 84, side: 1, k: 'rock', h: 4.6, gap: 1.6 }, { e: 7, at: 0, len: 84, side: -1, k: 'rock', h: 4.6, gap: 1.6 }, { e: 13, at: 0, len: 110, side: -1, k: 'stone', h: 1.3, gap: 0.9 }, { e: 16, at: 0, len: 84, side: 1, k: 'rock', h: 4.4, gap: 1.6 }, { e: 18, at: 0, len: 84, side: -1, k: 'rock', h: 4.4, gap: 1.6 }],
     info: 'A 3.1 km climb over a mountain and down the far side. Stacked hairpins cut into the rock, gravel on the way up, snow across the summit, and long drops beside the road.' },
-  { id: 'dunes', name: 'Sunscorch Dunes', sub: 'Desert sand rally stage', theme: 'desert', seed: 45, pace: 25.8,
+  { id: 'dunes', obs: [{ k: 'ravine', e: 18, at: 48, name: 'Arroyo' }, { k: 'ravine', e: 0, at: 128, name: 'Dry wash' }],  name: 'Sunscorch Dunes', sub: 'Desert sand rally stage', theme: 'desert', seed: 45, pace: 25.8,
     elems: [['S', 180], ['C', 150, -38], ['S', 120], ['C', 120, 55], ['S', 100], ['C', 100, -64], ['C', 100, 48], ['S', 220], ['C', 90, -80], ['S', 110], ['C', 90, 95], ['S', 160], ['C', 140, -45], ['S', 140], ['C', 110, 58], ['C', 90, -52], ['S', 200], ['C', 100, 40], ['S', 100], ['C', 120, -50], ['S', 320]],
     feats: [{ k: 'jump', e: 2, at: 60, rise: 0.9, up: 15, down: 11, drop: 0.9, land: 28, name: 'Jump' }, { k: 'whoops', e: 4, at: 16, n: 4, lam: 14, amp: 0.5 }, { k: 'jump', e: 7, at: 120, rise: 1.5, up: 18, down: 13, drop: 1.7, land: 44, name: 'Dune crest' }, { k: 'dip', e: 11, at: 50, depth: 1.5, len: 24 }, { k: 'jump', e: 13, at: 70, rise: 1.0, up: 14, down: 11, drop: 1.1, land: 32, name: 'Jump' }, { k: 'whoops', e: 16, at: 20, n: 6, lam: 13, amp: 0.5 }, { k: 'jump', e: 20, at: 160, rise: 1.4, up: 18, down: 12, drop: 1.5, land: 40, name: 'Finish jump' }],
     walls: [{ e: 7, at: 44 }, { e: 11, at: 124 }, { e: 16, at: 150 }, { e: 20, at: 70 }], secs: [[0, 0], [450, 3], [900, 2], [1150, 3], [1500, 0], [1900, 1], [2200, 3], [2600, 0]],
     rails: [{ e: 9, at: 4, len: 100, side: 0, k: 'rock', h: 5.2, gap: 1.6 }],
     info: 'A 3 km sprint across open desert. Rolling dunes, loose sand and one stretch of deep soft sand that swallows speed, a rock canyon, cactus and the biggest jump of any stage.' },
-  { id: 'frost', name: 'Frostfall', sub: 'Snow rally stage', theme: 'snow', seed: 57, pace: 21.5,
+  { id: 'frost', obs: [{ k: 'ravine', e: 7, at: 46, name: 'Frozen gorge' }, { k: 'ford', e: 18, at: 45, name: 'Icy stream', ice: 1 }],  name: 'Frostfall', sub: 'Snow rally stage', theme: 'snow', seed: 57, pace: 21.5,
     elems: [['S', 150], ['C', 130, 44], ['S', 80], ['C', 100, -70], ['C', 90, 52], ['S', 140], ['C', 80, -100], ['S', 100], ['C', 80, 120], ['S', 160], ['C', 130, -48], ['C', 110, 40], ['S', 130], ['C', 90, -84], ['S', 110], ['C', 100, 66], ['S', 180], ['C', 150, -36], ['S', 90], ['C', 76, -110], ['S', 110], ['C', 100, 95], ['S', 300]],
     feats: [{ k: 'jump', e: 5, at: 70, rise: 0.8, up: 15, down: 11, drop: 0.8, land: 28, name: 'Jump' }, { k: 'dip', e: 9, at: 36, depth: 1.3, len: 22 }, { k: 'jump', e: 9, at: 104, rise: 0.9, up: 14, down: 11, drop: 1.0, land: 30, name: 'Blind crest' }, { k: 'whoops', e: 12, at: 20, n: 4, lam: 13, amp: 0.45 }, { k: 'jump', e: 16, at: 80, rise: 1.1, up: 16, down: 12, drop: 1.2, land: 34, name: 'Big air' }, { k: 'jump', e: 22, at: 150, rise: 1.2, up: 18, down: 12, drop: 1.3, land: 38, name: 'Finish jump' }],
     walls: [{ e: 12, at: 104 }, { e: 14, at: 64 }, { e: 20, at: 64 }, { e: 22, at: 70 }], secs: [[0, 0], [400, 2], [700, 0], [1000, 1], [1250, 0], [1700, 3], [1950, 0], [2300, 1], [2500, 0]],
@@ -111,12 +116,16 @@ const RY = { ready: false, GS: 2, DS: 2, seed: 7, MAXD: 108, name: 'Hollow Pines
 RY.use = function (i) {
   i = Math.max(0, Math.min(RY_STAGES.length - 1, i | 0)); const st = RY_STAGES[i];
   const fill = (dst, src) => { dst.length = 0; for (const v of src) dst.push(v); };
-  fill(RY_ELEMS, st.elems); fill(RY_FEATS, st.feats); fill(RY_WALLS, st.walls); fill(RY_SECS, st.secs); fill(RY_RAILS, st.rails);
+  fill(RY_ELEMS, st.elems); fill(RY_FEATS, st.feats.concat((st.obs || []).map((o) => Object.assign({}, RY_OBS[o.k], o)))); fill(RY_WALLS, st.walls); fill(RY_SECS, st.secs); fill(RY_RAILS, st.rails);
+  /* crash nets: the outside of every other fast bend that has no wall there already (all of them if there are only a few), a catch fence two metres off the road */
+  const nc = []; st.elems.forEach((el, e) => { if (el[0] !== 'C' || el[1] < 90 || Math.abs(el[2]) < 28 || Math.abs(el[2]) > 80) return; const out = el[2] > 0 ? -1 : 1; if (!st.rails.some((r) => r.e === e && (r.side === 0 || r.side === out))) nc.push([e, out, el[1]]); });
+  (nc.length <= 3 ? nc : nc.filter((c, i) => i % 2 === 0)).slice(0, 5).forEach(([e, out, len]) => RY_RAILS.push({ e, at: Math.round(len * 0.15), len: Math.round(len * 0.8), side: out, k: 'net', h: 1.8, gap: 2.0 }));
   for (const k of Object.keys(RY_CAMB)) delete RY_CAMB[k];
   if (st.camb) Object.assign(RY_CAMB, st.camb);
   else st.elems.forEach((el, e) => { if (el[0] !== 'C') return; const a = Math.abs(el[2]), kp = 2 * a * Math.PI / 180 / el[1]; if (e % 5 === 3 && a < 60) RY_CAMB[e] = { b: -0.09, m: 0 }; else { const b = Math.round(_ryIn(0.06 + kp * 4.2, 0.07, 0.34) * 100) / 100; RY_CAMB[e] = { b, m: Math.round(b * 2.3 * 20) / 20 }; } });
   RY.stage = i; RY.st = st; RY.T = RY_THEMES[st.theme]; RY.name = st.name; RY.seed = st.seed; RY.ready = false; return st;
 };
+RY.railsList = function () { return RY_RAILS; };
 RY.stageLen = function (i) { let L = 0; for (const e of RY_STAGES[i].elems) L += e[1]; return Math.floor(L / RY.DS) * RY.DS; };
 RY.stagePar = function (i) { return RY.stageLen(i) / RY_STAGES[i].pace; };
 const _ryIn = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -158,9 +167,22 @@ RY.featureH = function (f, u) {
     else v = -tot;
     return [v - P, P];
   }
+  if (f.k === 'ravine') {   /* kicker to the lip (u = 0), the gap is cut by RY.cutH, then a landing deck that slopes away and leaves the road f.drop lower */
+    const P = u <= f.span ? 0 : -f.drop * _rySm(0, f.land, u - f.span); let v;
+    if (u <= -f.up) v = 0; else if (u < 0) v = f.rise * Math.pow((u + f.up) / f.up, 1.8); else if (u <= f.span) v = f.rise;
+    else if (u < f.span + f.land) v = _ryHerm((u - f.span) / f.land, f.rise * 0.45, -f.drop, -0.12, 0, f.land); else v = -f.drop;
+    return [v - P, P];
+  }
   if (f.k === 'dip') { if (u < 0 || u > f.len) return [0, 0]; const s = Math.sin(Math.PI * u / f.len); return [-f.depth * s * s, 0]; }
   if (f.k === 'whoops') { const w = f.n * f.lam; if (u < 0 || u > w) return [0, 0]; const s = Math.sin(Math.PI * u / f.lam); return [f.amp * s * s * _rySm(0, f.lam, u) * (1 - _rySm(w - f.lam, w, u) * 0.6), 0]; }
   return [0, 0];
+};
+/* the cuts across the whole valley (added after the road has been fitted to the land): a ravine's trench, a stream's bed. Its walls stand 2.6 m inside the gap so the
+   2 m ground grid keeps the lip and the landing edge sharp */
+RY.cutH = function (f, u) {
+  if (f.k === 'ravine') { if (u < 0 || u > f.span) return 0; return -(f.depth + f.rise) * _rySm(2.6, 4.4, u) * (1 - _rySm(f.span - 4.4, f.span - 2.6, u)); }
+  if (f.k === 'ford') { if (u < 0 || u > f.len) return 0; const q = Math.sin(Math.PI * u / f.len); return -f.depth * Math.pow(q, 1.4); }
+  return 0;
 };
 RY.profile = function () {
   const N = RY.N, ds = RY.DS, rnd = mulberry32(RY.seed * 31 + 5), p1 = rnd() * 6.28, p2 = rnd() * 6.28, p3 = rnd() * 6.28;
@@ -187,14 +209,19 @@ RY.profile = function () {
     for (let i = 0; i < N; i++) { const m = acc / (2 * W + 1); base[i] -= m; hy[i] -= m; acc += d[_ryIn(i + W + 1, 0, N - 1)] - d[_ryIn(i - W, 0, N - 1)]; }
     let lo = 1e9; for (let i = 0; i < N; i++) lo = Math.min(lo, base[i]); RY.plain = lo + (T.plainOff || 0); RY.sea = T.sea ? lo - 1.2 : null;
   }
+  const cut = new Float32Array(N), wl = new Float32Array(N).fill(-1e9), mask = new Uint8Array(N);
+  for (const f of feats) { if (f.k !== 'ravine' && f.k !== 'ford') continue; const a = f.s0 - (f.up || 0) - 4, b = f.s0 + (f.span || f.len) + (f.land || 0) + 4;
+    let lo = 1e9; for (let i = Math.max(0, Math.floor(a / ds)); i <= Math.min(N - 1, Math.ceil(b / ds)); i++) { const c = RY.cutH(f, i * ds - f.s0); cut[i] += c; base[i] += c; hy[i] += c; mask[i] = 1; if (f.k === 'ford' && c < 0) lo = Math.min(lo, hy[i]); }
+    if (f.k === 'ford') { f.wl = lo + f.water; for (let i = Math.floor(f.s0 / ds); i <= Math.ceil((f.s0 + f.len) / ds) && i < N; i++) wl[i] = f.wl; } }
+  RY.cut = cut; RY.wl = wl; RY.cutMask = mask;
   RY.base = base; RY.py = hy; RY.feats = feats;
-  let mx = 0, ma = 0; for (let i = 1; i < N - 1; i++) { mx = Math.max(mx, Math.abs(hy[i + 1] - hy[i]) / ds); ma = Math.max(ma, Math.abs(hy[i + 1] - 2 * hy[i] + hy[i - 1]) / (ds * ds)); }
+  let mx = 0, ma = 0; for (let i = 1; i < N - 1; i++) { if (RY.cutMask[i - 1] || RY.cutMask[i] || RY.cutMask[i + 1]) continue; mx = Math.max(mx, Math.abs(hy[i + 1] - hy[i]) / ds); ma = Math.max(ma, Math.abs(hy[i + 1] - 2 * hy[i] + hy[i - 1]) / (ds * ds)); }
   RY.maxSlope = mx; RY.maxCurv = ma;
 };
 
 /* ---------- 3. width, camber, rails, surface, openness ---------- */
 const RY_START_S = 62, RY_FIN_IN = 46;            /* stage-distance of the start line, and metres from the end to the finish line */
-const RY_RAIL_T = { rock: 2.4, stone: 0.8 };      /* how thick each kind of wall is (the face stands at the gap, the cap runs this far behind it) */
+const RY_RAIL_T = { rock: 2.4, stone: 0.8, net: 0.3 };      /* how thick each kind of wall is (the face stands at the gap, the cap runs this far behind it) */
 /* the cross-section of the road at lateral offset l (+ left), measured from the centre line: a cross-fall (bank), a crown that lowers both edges (negative = dished, the middle lower),
    and the lip of a berm along the outer edge (lip > 0 lifts the left edge, lip < 0 the right) */
 RY.cross = function (l, hw, bank, crown, lip) {
@@ -210,7 +237,7 @@ RY.sections = function () {
   /* camber stays flat where the car has to leave the ground straight (the run-in and landing of a jump), at the plank gates, and at the start and finish */
   const flatW = (s) => {
     let f = _rySm(RY_START_S + 6, RY_START_S + 40, s) * (1 - _rySm(RY.L - 112, RY.L - 72, s));
-    for (const jf of RY.feats) if (jf.k === 'jump') f *= 1 - win(s, jf.s0 - jf.up, jf.s0 + jf.down + 6, 12, 14);
+    for (const jf of RY.feats) if (jf.k === 'jump') f *= 1 - win(s, jf.s0 - jf.up, jf.s0 + jf.down + 6, 12, 14); else if (jf.k === 'ravine') f *= 1 - win(s, jf.s0 - jf.up, jf.s0 + jf.span + jf.land, 14, 14); else if (jf.k === 'ford') f *= 1 - win(s, jf.s0, jf.s0 + jf.len, 12, 12);
     for (const w of RY_WALLS) { const c = RY.starts[w.e] + w.at; f *= 1 - win(s, c - 8, c + 8, 18, 18); }
     return f;
   };
@@ -247,7 +274,7 @@ RY.sections = function () {
       const s = i * ds, h = rl.h * _rySm(0, 12, s - sA) * _rySm(0, 12, sB - s); if (h <= 0) continue;
       for (const side of rl.side === 0 ? [1, -1] : [rl.side]) {
         const o = side > 0 ? R.L : R.R; if (h < o.h[i]) continue;
-        o.g[i] = rl.gap; o.h[i] = h; o.k[i] = rl.k === 'rock' ? 1 : 2; o.cut[i] = rl.k === 'rock' ? h : 0; o.band[i] = rl.gap + th + 0.9;
+        o.g[i] = rl.gap; o.h[i] = h; o.k[i] = rl.k === 'rock' ? 1 : rl.k === 'net' ? 3 : 2; o.cut[i] = rl.k === 'rock' ? h : 0; o.band[i] = rl.gap + th + 0.9;
       }
     }
     maxGap = Math.max(maxGap, rl.gap + th);
@@ -300,6 +327,7 @@ RY.heightFrom = function (o, x, z) {
     const T = RY.T, m = T.M(x - RY.px[0], z - RY.pz[0], RY.B), R2 = sd > 0 ? RY.rails.L : RY.rails.R, cut2 = lerp(R2.cut[sg], R2.cut[sg + 1], fr);
     let h = lerp(edgeH, m, _rySm(1.2, T.blend || 26, e)) - 0.2 * _rySm(0, 0.5, e) * (1 - _rySm(0.5, 2.2, e));
     if (cut2 > 0.05) { const eW = e - Math.max(R2.g[sg], R2.g[sg + 1]); h += cut2 * _rySm(2.4, 8.0, eW) * (1 - _rySm(18, 46, eW)); }
+    h += lerp(RY.cut[sg], RY.cut[sg + 1], fr) * (1 - _rySm(32, 80, e));   /* the ravine or the stream bed runs on across the land */
     return lerp(h, RY.plain, _rySm(RY.MAXD - 40, RY.MAXD - 8, e));
   }
   /* verge: a shallow ditch, then the bank climbs into the hillside; the valley floor follows the smoothed base so jumps blend away */
@@ -366,9 +394,12 @@ RY.ground = function (x, z, o) {
   const h = (H[k] * (1 - fx) + H[k + 1] * fx) * (1 - fz) + (H[k + gw] * (1 - fx) + H[k + gw + 1] * fx) * fz;
   const d = (D[k] * (1 - fx) + D[k + 1] * fx) * (1 - fz) + (D[k + gw] * (1 - fx) + D[k + gw + 1] * fx) * fz;
   const idx = RY.I[k + (fx > 0.5 ? 1 : 0) + (fz > 0.5 ? gw : 0)];
-  o.h = h; o.water = false; o.road = false;
+  o.h = h; o.water = false; o.road = false; o.wade = 0;
   if (idx < 0) { o.mu = 0.5; o.rr = 0.12; o.rough = 0.5; o.loose = 0.6; o.sec = 0; return; }
   const hw = RY.hw[idx], e = d - hw, S = RY_SURF[RY.T.surf[RY.sec[idx]]], OF = RY.T.off; o.sec = RY.sec[idx];
+  if (RY.wl[idx] > h) {   /* wading through a stream: the water drags, and the bed is slick */
+    const wd = Math.min(0.9, RY.wl[idx] - h); o.wade = wd; o.mu = S.mu * (1 - Math.min(0.32, wd * 0.5)); o.rr = S.rr + 0.22 * wd + 0.06; o.rough = 0.4; o.loose = 0.5; return;
+  }
   if (e <= 0) {
     /* the road: two wheel ruts a little looser and rougher, a berm of loose gravel along both edges, hard line down the middle */
     const a = Math.abs(d), rut = _rySm(0.5, 0.9, a) * (1 - _rySm(1.5, 1.9, a)), edge = _rySm(hw - 1.6, hw - 0.4, a);
@@ -422,6 +453,7 @@ RY.forest = function (density) {
     const clear = fbm(jx * 0.016 + 11, jz * 0.016 + 4, 2) > 0.18 ? 0.3 : 1;              /* the odd natural clearing */
     /* undergrowth first: bushes and ferns crowd the verge, thin out into the forest */
     if (RY.sea != null && hy < RY.sea + 0.5) continue;   /* nothing grows in the sea */
+    if (RY.wl[A.i] > hy - 0.4) continue;                   /* or in a stream */
     if (e > 1.4 && e < 36 && rnd() < (0.5 * density * (1 - _rySm(8, 36, e)) + 0.06) * uk) {
       const kind = rnd() < 0.3 ? un[0] : un[1]; und.push({ k: kind, v: (rnd() * 4) | 0, x: jx + (rnd() - 0.5) * 1.6, z: jz + (rnd() - 0.5) * 1.6, sc: kind !== 'grass' ? 0.7 + rnd() * 0.8 : 0.9 + rnd() * 0.9, rot: rnd() * TAU, t: rnd() });
     }
@@ -449,6 +481,12 @@ RY.forest = function (density) {
   for (let i = 0; i < tr.length; i++) { const t = tr[i]; if (t.e > 40) continue; add(Math.floor((t.x - x0) / TH), Math.floor((t.z - z0) / TH), i); }
   /* rocks that are big enough to matter are solid too (circle) */
   RY.solidRocks = rocks.filter((r) => r.sc > 1.1);
+  /* tyre walls: a row of tyre stacks round the inside of every hairpin's apex, just off the road */
+  const ty = RY.tyres = [];
+  for (let e = 0; e < RY_ELEMS.length; e++) {
+    const el = RY_ELEMS[e]; if (el[0] !== 'C' || Math.abs(el[2]) < 85) continue; const side = el[2] > 0 ? 1 : -1, R_ = side > 0 ? RY.rails.L : RY.rails.R;
+    for (let k = -3; k <= 3; k++) { const s = RY.starts[e] + el[1] * 0.5 + k * 3.2, q = RY.at(s, 0, {}); if (R_.g[q.i] > 0 && R_.g[q.i] < 2.4) continue; const p = RY.at(s, side * (q.hw + 1.25), {}); ty.push({ x: p.x, z: p.z, n: 3 + ((k + e) & 1), red: (k + 3) % 2 === 0 }); }
+  }
 };
 /* every solid within reach of a circle; out is an array that gets {nx,nz,pen,hard} pushed (hard = the trunk side of the collision) */
 RY.hits = function (px, pz, R, out) {
@@ -457,6 +495,7 @@ RY.hits = function (px, pz, R, out) {
     const a = RY.thash.get((cx + dx) * 8192 + cz + dz); if (!a) continue;
     for (let k = 0; k < a.length; k++) { const t = tr[a[k]], ax = px - t.x, az = pz - t.z, rr = t.rad + R, d2 = ax * ax + az * az; if (d2 < rr * rr) { const d = Math.sqrt(d2) || 0.01; out.push({ nx: ax / d, nz: az / d, pen: rr - d }); } }
   }
+  for (const t of RY.tyres) { const ax = px - t.x, az = pz - t.z, rr = 0.5 + R, d2 = ax * ax + az * az; if (d2 < rr * rr) { const d = Math.sqrt(d2) || 0.01; out.push({ nx: ax / d, nz: az / d, pen: rr - d, tyre: true }); } }
   for (const r of RY.solidRocks) { const ax = px - r.x, az = pz - r.z, rr = r.sc * 0.78 + R; if (Math.abs(ax) < rr && Math.abs(az) < rr) { const d2 = ax * ax + az * az; if (d2 < rr * rr) { const d = Math.sqrt(d2) || 0.01; out.push({ nx: ax / d, nz: az / d, pen: rr - d }); } } }
   const d = RY.distAt(px, pz);
   /* rock cuttings and stone walls beside the road: a plane at the face, the normal points back across the road. Heights under 0.5 m (a wall sinking into the hillside at its end) are not solid */
@@ -467,7 +506,7 @@ RY.hits = function (px, pz, R, out) {
       for (let k = 0; k < 2; k++) {
         const side = k ? -1 : 1, R_ = k ? RY.rails.R : RY.rails.L; if (Math.min(R_.h[sg], R_.h[sg + 1]) < 0.5) continue;
         const pen = side * A.l + R - (hw + Math.max(R_.g[sg], R_.g[sg + 1]));
-        if (pen > -0.12) out.push({ nx: -side * tz, nz: side * tx, pen, rail: true });   /* a hair short of the face still counts, so a car sliding along a wall is scraped (the caller only pushes out of a positive pen) */
+        if (pen > -0.12) out.push({ nx: -side * tz, nz: side * tx, pen, rail: true, net: R_.k[sg] === 3 });   /* a hair short of the face still counts, so a car sliding along a wall is scraped (the caller only pushes out of a positive pen) */
       }
     }
   }
@@ -489,13 +528,19 @@ RY.layout = function () {
     const cc = RY_CAMB[e]; if (cc && cc.b >= 0.15) txt += ' · BANKED'; else if (cc && cc.b <= -0.08) txt += ' · OFF-CAMBER';
     notes.push({ s: RY.starts[e] + el[1] * 0.18, t: txt, sev, dir: el[2] > 0 ? 1 : -1, k: 'bend' });
   }
+  RY.ravines = RY.feats.filter((f) => f.k === 'ravine').map((f) => { const q = RY.at(f.s0, 0, {}), i = Math.round(f.s0 / RY.DS), j = Math.round((f.s0 + f.span) / RY.DS) + 1;
+    return { f, s0: f.s0, span: f.span, x: q.x, z: q.z, tx: Math.sin(q.yaw), tz: Math.cos(q.yaw), lipY: RY.py[i], deckY: RY.py[Math.min(RY.N - 1, j)], back: f.s0 - f.up - 55 }; });
+  RY.fords = RY.feats.filter((f) => f.k === 'ford');
+  { const r = mulberry32(RY.seed * 17 + 3); for (const rv of RY.ravines) for (let k = 0; k < 26; k++) { const u = rv.s0 + 3 + r() * (rv.span - 6), l = (r() - 0.5) * 70, q = RY.at(u, l, {}); RY.rocks.push({ v: (r() * 12) | 0, x: q.x, z: q.z, sc: 0.8 + r() * 1.8, rot: r() * TAU }); } }   /* boulders down in the ravine */
   for (const f of RY.feats) {
-    if (f.k === 'jump') notes.push({ s: f.s0 - f.up - 2, t: (f.name || 'JUMP').toUpperCase() + ' · KEEP IT STRAIGHT', sev: 6, dir: 0, k: 'jump' });
+    if (f.k === 'ravine') notes.push({ s: f.s0 - f.up - 40, t: (f.name || 'Ravine').toUpperCase() + ' · RAVINE JUMP · FLAT OUT', sev: 6, dir: 0, k: 'jump' });
+    else if (f.k === 'ford') notes.push({ s: f.s0 - 30, t: (f.name || 'Stream').toUpperCase() + ' · WATER SPLASH', sev: 6, dir: 0, k: 'dip' });
+    else if (f.k === 'jump') notes.push({ s: f.s0 - f.up - 2, t: (f.name || 'JUMP').toUpperCase() + ' · KEEP IT STRAIGHT', sev: 6, dir: 0, k: 'jump' });
     else if (f.k === 'dip') notes.push({ s: f.s0 - 6, t: 'DIP', sev: 6, dir: 0, k: 'dip' });
     else if (f.k === 'whoops') notes.push({ s: f.s0 - 8, t: 'WHOOPS', sev: 6, dir: 0, k: 'dip' });
   }
   for (const w of RY.walls) notes.push({ s: w.s - 24, t: 'WALL · GO THROUGH', sev: 6, dir: 0, k: 'wall' });
-  for (const rl of RY_RAILS) notes.push({ s: RY.starts[rl.e] + rl.at - 30, t: (rl.k === 'rock' ? 'ROCK FACE ' : 'STONE WALL ') + (rl.side === 0 ? 'BOTH SIDES' : rl.side > 0 ? 'LEFT' : 'RIGHT'), sev: 5, dir: rl.side, k: 'rail' });
+  for (const rl of RY_RAILS) notes.push({ s: RY.starts[rl.e] + rl.at - 30, t: (rl.k === 'rock' ? 'ROCK FACE ' : rl.k === 'net' ? 'CRASH NET ' : 'STONE WALL ') + (rl.side === 0 ? 'BOTH SIDES' : rl.side > 0 ? 'LEFT' : 'RIGHT'), sev: 5, dir: rl.side, k: 'rail' });
   notes.sort((a, b) => a.s - b.s); RY.notes = notes;
   RY.startS = RY_START_S; RY.finishS = RY.L - RY_FIN_IN; RY.cps = [0.26, 0.52, 0.76].map((f) => RY.startS + (RY.finishS - RY.startS) * f);
 };

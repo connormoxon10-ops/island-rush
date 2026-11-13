@@ -14,8 +14,8 @@ const G = path.resolve(__dirname, '../dist/test.html');
   await page.addInitScript(() => { window.__noAdapt = true; try { localStorage.setItem('island-rush-v1', JSON.stringify({ set: { quality: 'low' } })); } catch (e) { /* ignore */ } });
   await page.goto('file://' + G);
   await page.waitForFunction(() => window.__ready || window.__bootError, null, { timeout: 170000 });
-  const res = await page.evaluate(async () => {
-    const g = window.__game, R = g.Rally, RY = g.RY, car = g.car, out = [];
+  const R0 = await page.evaluate(async () => {
+    const g = window.__game, R = g.Rally, RY = g.RY, car = g.car, out = []; out.nets = [];
     g.App.mode = 'rlobby'; g.save.rally.rivals = 0; await R.start(); R.assistOn = () => false;
     const pad = { connected: true, axes: [0, 0], buttons: Array.from({ length: 16 }, () => ({ value: 0, pressed: false })) }; navigator.getGamepads = () => [pad];
     const tmp = {}, o = {}, dt = 1 / 120;
@@ -34,9 +34,21 @@ const G = path.resolve(__dirname, '../dist/test.html');
       }
       vEnd = Math.abs(car.speed); out.push({ curve: !!r.curve, name: r.name, maxPenCentre: +maxPen.toFixed(2), scrapeSteps: scrape, speedAtFirstScrape: +vHit.toFixed(1), minSpeedAfter: +minV.toFixed(1), endSpeed: +vEnd.toFixed(1), health: +car.health.toFixed(0), s: +R.s.toFixed(0), from: +s.toFixed(0) });
     }
-    return out;
+    /* crash nets: driven into at 30 m/s and a shallow angle they catch the car within half a metre of the net, take most of the speed and do no damage */
+    for (let k = 0; k < RY.railsList().length; k++) {
+      const rl = RY.railsList()[k]; if (rl.k !== 'net') continue;
+      const s = RY.starts[rl.e] + rl.at + rl.len * 0.45, q = RY.at(s, 0, tmp), ang = 14 * Math.PI / 180, side = rl.side;
+      R.phase = 'run'; R.placeAt(s - 20, 0); g.App.dmg = 0; car.health = 100; R.stuck = 0; car.yaw = RY.at(s - 20, 0, {}).yaw + side * ang; const v = 30; car.vx = Math.sin(car.yaw) * v; car.vz = Math.cos(car.yaw) * v; car.speed = v; car.w = 0;
+      let maxPen = -9, vMin = 99;
+      for (let n = 0; n < 2.5 / dt; n++) { pad.axes[0] = 0; pad.buttons[7].value = 0.5; pad.buttons[6].value = 0; g.stepSim(dt); RY.nearest(car.x, car.z, -1, 0, o); const i = Math.min(RY.N - 2, o.seg), face = RY.hw[i] + rl.gap; maxPen = Math.max(maxPen, side * o.l + 1.0 - face); if (side * o.l > face - 2.4) vMin = Math.min(vMin, Math.hypot(car.vx, car.vz)); }   /* (at an angle the front corner meets the net while the centre is still 1.5 m off it) */
+      out.nets.push({ e: rl.e, maxPen: +maxPen.toFixed(2), vMin: +vMin.toFixed(1), health: Math.round(car.health) });
+    }
+    return { rows: out, nets: out.nets };
   });
   let fails = 0; const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console.log('ok  ', m); };
+  const res = R0.rows, nets = R0.nets || [];
+  for (const n of nets) { console.log(JSON.stringify(n)); ok(n.maxPen < 0.6, 'crash net e' + n.e + ' catches the car (' + n.maxPen + ' m into it)'); ok(n.health >= 99, 'crash net e' + n.e + ' does no damage (health ' + n.health + ')'); ok(n.vMin < 25, 'crash net e' + n.e + ' takes speed off (down to ' + n.vMin + ' m/s)'); }
+  ok(nets.length > 0, 'the stage has crash nets');
   for (const r of res) {
     console.log(JSON.stringify(r));
     /* the car's centre stays about a car's half width inside the face; the scrape drags it down but never stops it dead; it keeps going along the wall */

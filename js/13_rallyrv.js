@@ -146,7 +146,8 @@ RR.think = function (b, h) {
   /* stuck against a trunk or out in the trees: back on the road */
   if (spd < 1.5 && !b.fin) b.stuckT += h; else b.stuckT = Math.max(0, b.stuckT - 2 * h);
   if (b.dist > hw + 9 && !c.air && !b.fin) b.offRoadT += h; else b.offRoadT = Math.max(0, b.offRoadT - h);   /* (a car that has finished may roll off the end of the road) */
-  if (b.stuckT > 2.2 || b.offRoadT > 3) RR.recover(b, b.stuckT > 2.2 ? 'stuck' : 'off the road');
+  if (c.fell) { const rv = c.fell; c.fell = null; b.s = rv.s0 + rv.span + 10; RR.recover(b, 'ravine'); }   /* fished out on the far side */
+  else if (b.stuckT > 2.2 || b.offRoadT > 3) RR.recover(b, b.stuckT > 2.2 ? 'stuck' : 'off the road');
 };
 RR.recover = function (b, why) {
   (RR.rlog || (RR.rlog = [])).push([b.name, why, Math.round(b.s), +Rally.clock.toFixed(1), +Math.abs(b.c.speed).toFixed(1), +b.dist.toFixed(1)]);

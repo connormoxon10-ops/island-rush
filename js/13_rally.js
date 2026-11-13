@@ -42,7 +42,18 @@ Rally.assist = function (c, h, force) {
 /* ---------------- physics hooks ---------------- */
 Rally.collide = function (c, px, pz, R, P) {
   RY.hits(px, pz, R, _ryH);
-  for (let i = 0; i < _ryH.length; i++) { const h = _ryH[i]; if (h.pen > 0) contact(c, px, pz, h.nx, h.nz, h.pen, 0, 0, P); if (h.rail && h.pen + 0.1 > (c.rail || 0)) { c.rail = h.pen + 0.1; c.railX = px - h.nx * R; c.railZ = pz - h.nz * R; } }   /* a wall in the way: stepCar scrapes speed off while it lasts (and the effects pass throws stone dust from the contact point) */
+  for (let i = 0; i < _ryH.length; i++) { const h = _ryH[i];
+    if (h.net) {   /* a crash net gives: it takes the car in, soaks up the speed going into it and lets go without a bounce or a dent */
+      if (h.pen > 0) { const push = h.pen > 0.3 ? h.pen - 0.3 + 0.1 : h.pen * 0.35; c.x += h.nx * push; c.z += h.nz * push; const vn = c.vx * h.nx + c.vz * h.nz; if (vn < 0) { const k = h.pen > 0.3 ? 1 : 0.9; c.vx -= h.nx * vn * k; c.vz -= h.nz * vn * k; }   /* it gives 30 cm, never more */ c.vx *= 0.997; c.vz *= 0.997; c.w *= 0.985; c.net = 1; }
+      continue;
+    }
+    if (h.pen > 0) contact(c, px, pz, h.nx, h.nz, h.pen, 0, 0, P); if (h.rail && h.pen + 0.1 > (c.rail || 0)) { c.rail = h.pen + 0.1; c.railX = px - h.nx * R; c.railZ = pz - h.nz * R; } }   /* a wall in the way: stepCar scrapes speed off while it lasts (and the effects pass throws stone dust from the contact point) */
+  /* a ravine: below the lip the far wall is solid (no climbing a cliff), and a car down there has fallen in */
+  for (const rv of RY.ravines) {
+    const dx = px - rv.x, dz = pz - rv.z, u = dx * rv.tx + dz * rv.tz; if (u < -2 || u > rv.span + 2 || Math.abs(dx * rv.tz - dz * rv.tx) > 60) continue;
+    if (c.y < rv.lipY - 2.2 && u > 0.5) c.fell = rv;
+    if (c.y < rv.deckY - 0.8 && u > rv.span - 2.8) contact(c, px, pz, -rv.tx, -rv.tz, u - (rv.span - 2.8), 0, 0, P);
+  }
   const sim = Rally.sim; if (!sim) return;
   for (const G of sim.walls) {
     const gx = px - G.x, gz = pz - G.z; if (gx * gx + gz * gz > 144) continue;
@@ -350,7 +361,7 @@ Rally.reset = function () {
   const c = car, d = Rally.phase === 'run';
   const s = Math.max(RY.startS - 7, Rally.safeS - 4); Rally.placeAt(s, 0); c.nitro = Math.max(c.nitro, 40);
   if (d) { Rally.penalty += 3; Rally.resets++; Rally.pop('+3 s', ''); }
-  Rally.stuck = 0; Rally.wrong = 0; Rally.air = null; Cam.shake = 0;
+  Rally.stuck = 0; Rally.wrong = 0; Rally.air = null; Cam.shake = 0; c.fell = null; Rally.fellT = 0;
 };
 
 /* ---------------- per-frame update ---------------- */
@@ -371,6 +382,14 @@ Rally.update = function (dt) {
   const hw = RY.hw[_ryLoc.i];
   if (!c.air && Rally.dist < hw + 1.5 && c.speed > 3) { Rally.safeT -= dt; if (Rally.safeT <= 0) { Rally.safeS = Rally.s; Rally.safeT = 0.6; } }
   /* splits and the finish */
+  /* into the ravine: a moment to see it, then fished out before the ramp with a run-up (+5 s) */
+  if (c.fell) { Rally.fellT = (Rally.fellT || 0) + dt; if (Rally.fellT > 1.1) { const rv = c.fell; c.fell = null; Rally.fellT = 0; Rally.placeAt(rv.back, 0); const sp = 17; c.vx = Math.sin(c.yaw) * sp; c.vz = Math.cos(c.yaw) * sp; c.speed = sp; c.gear = Math.max(c.gear || 1, 3); c.nitro = Math.max(c.nitro, 50); if (Rally.phase === 'run') { Rally.penalty += 5; Rally.resets++; Rally.pop('+5 s', 'bad'); } UI.toast('Into the ravine! Hit the ramp flat out', 'bad'); Rally.air = null; } }
+  else Rally.fellT = 0;
+  /* wading: spray from the wheels */
+  if (RYP.ok && RY.wl[_ryLoc.i] > c.y - 0.35 && Math.abs(c.speed) > 3) { const wl = RY.wl[_ryLoc.i], n = Math.min(14, Math.abs(c.speed) * 0.5), fx = Math.sin(c.yaw), fz = Math.cos(c.yaw);
+    for (let k = 0; k < n; k++) { const sd = Math.random() < 0.5 ? -1 : 1, x = c.x + fz * sd * 0.9 + fx * (Math.random() - 0.3) * 3, z = c.z - fx * sd * 0.9 + fz * (Math.random() - 0.3) * 3, sp = Math.abs(c.speed);
+      emit(RYP.dust, x, wl + 0.1, z, fz * sd * sp * 0.18 + c.vx * 0.3, 2 + Math.random() * sp * 0.22, -fx * sd * sp * 0.18 + c.vz * 0.3, 0.5 + Math.random() * 0.5, 0.25 + Math.random() * 0.3, 1.6, 0.86, 0.92, 0.98, 0.55, -2.5); }
+    if (Rally.splashT == null || Rally.t - Rally.splashT > 0.35) { Rally.splashT = Rally.t; Cam.shake = Math.max(Cam.shake, 0.25); } }
   if (Rally.phase === 'run') {
     if (Rally.cp < RY.cps.length && Rally.s >= RY.cps[Rally.cp]) Rally.split();
     if (Rally.s >= RY.finishS) Rally.finish();
