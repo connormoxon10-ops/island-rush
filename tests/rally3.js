@@ -15,14 +15,14 @@ const OUT = process.env.OUT || __dirname, NOISE = +(process.env.NOISE || 0), LAG
   page.on('pageerror', (e) => logs.push('PAGEERROR: ' + String(e.stack || e).slice(0, 600)));
   await page.route('**/three.min.js', (r) => r.fulfill({ path: path.resolve(__dirname, 'three.min.js'), contentType: 'application/javascript' }));
   await page.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
-  await page.addInitScript((st) => { window.__STAGE = st; }, +(process.env.STAGE || 0));   /* STAGE = which rally stage (0 Hollow Pines .. 4 Frostfall) */
+  await page.addInitScript(([st, car]) => { window.__STAGE = st; window.__CAR = car; }, [+(process.env.STAGE || 0), process.env.CAR || 'ridge']);   /* CAR = ridge | buggy */   /* STAGE = which rally stage (0 Hollow Pines .. 4 Frostfall) */
   await page.addInitScript((ay) => { window.__AY = ay; window.__noAdapt = true; try { localStorage.setItem('island-rush-v1', JSON.stringify({ set: { quality: 'low' } })); } catch (e) { /* ignore */ } }, +(process.env.AY || 0.8));
   await page.goto('file://' + G);
   await page.waitForFunction(() => window.__ready || window.__bootError, null, { timeout: 170000 });
   console.log('boot err', await page.evaluate(() => window.__bootError || null));
   const res = await page.evaluate(async ([tod, maxT, shots, TRACE, NOISE, LAG, RIV]) => {
     const g = window.__game, R = g.Rally, RY = g.RY, car = g.car, out = { log: [], marks: [], events: [] };
-    g.App.mode = 'rlobby'; g.save.rally.stage = window.__STAGE || 0; g.save.rally.tod = tod; g.save.rally.rivals = RIV; R.tod = tod; await R.start();
+    g.App.mode = 'rlobby'; g.save.rally.stage = window.__STAGE || 0; g.save.rally.car = window.__CAR || 'ridge'; g.save.rally.tod = tod; g.save.rally.rivals = RIV; R.tod = tod; await R.start();
     /* fake analog gamepad: axes[0] = -steer, buttons 7 = throttle, 6 = brake */
     const pad = { connected: true, axes: [0, 0], buttons: Array.from({ length: 16 }, () => ({ value: 0, pressed: false })) };
     navigator.getGamepads = () => [pad];

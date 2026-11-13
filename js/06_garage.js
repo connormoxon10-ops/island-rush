@@ -73,7 +73,15 @@ const CARS = [
     t: { Tmax: 1500, mu: 1.62, cd: 0.36, brk: 0.95, off: 0.95, cl: 0.6 },
     stats: { spd: 10, acc: 10, hdl: 1, off: 3 },
     body: { L: 4.7, W: 1.96, H: 0.46, C: 0.44, wr: 0.4, y0: 0.42, tw: 0.4, rim: [0.08, 0.08, 0.09], rimStyle: 'five', glass: [0.01, 0.012, 0.016], lw: 0.36, lh: 0.07,
-      cab: { cz: -0.4, bd: 1.05, tw: 0.6, td: 0.62, zoff: -0.24, inset: 0.11 }, wing: { h: 0.2, z: 0.2, span: 0.8, chord: 0.3 }, splitter: true, skirts: true, flares: true, scoop: { z: 0.95, len: 0.6, w: 0.26, h: 0.1 }, exhaust: 4, drag: true } }
+      cab: { cz: -0.4, bd: 1.05, tw: 0.6, td: 0.62, zoff: -0.24, inset: 0.11 }, wing: { h: 0.2, z: 0.2, span: 0.8, chord: 0.3 }, splitter: true, skirts: true, flares: true, scoop: { z: 0.95, len: 0.6, w: 0.26, h: 0.1 }, exhaust: 4, drag: true } },
+
+  /* an original design: a lifted long-travel sand buggy. A light rear-engined space frame on knobby tyres; high and soft, so it rolls and floats over everything and lands jumps that break other cars */
+  { id: 'buggy', name: 'Sandviper', cls: 'Dune buggy', price: 9500, paint: 6, dy: 0.27, snd: { f: 1.22, lp: 0.85 }, dial: 240,
+    blurb: 'A lifted long-travel dune buggy: an open tube frame, a flat-four out back with upswept pipes, knobby tyres on beadlocks and half a metre of suspension travel. Light, loud and happiest in the air. It can be your car on any rally stage.',
+    p: { m: 940, a: 1.3, b: 1.25, Iz: 1250, rw: 0.46, fd: 4.9, gears: [3.4, 2.3, 1.68, 1.28, 1.02], idle: 950, red: 6900, track: 1.58, cgh: 0.68, rd: 0.4, rsf: 0.42, ab: 0.55, cf: 8.4, cr: 10.6 },
+    t: { Tmax: 410, mu: 1.0, cd: 0.92, brk: 1.0, off: 1.4, cl: 0 },
+    stats: { spd: 6, acc: 8, hdl: 7, off: 10 },
+    body: { L: 3.5, W: 2.04, H: 0.3, C: 0.82, wr: 0.46, y0: 0.7, tw: 0.44, rim: [0.85, 0.86, 0.88], rimStyle: 'bead', tire: 'knobby', buggy: true } }
 ];
 const CAR_BY_ID = {}; for (const d of CARS) { CAR_BY_ID[d.id] = d; const b = d.body; d.top = (b.y0 != null ? b.y0 : 0.36) + b.H + 0.1 + b.C; d.hl = b.L / 2; }
 const BASE_N = CARS.length;   /* CARS[0..BASE_N) are the dealership cars; stolen cars are appended at runtime (see 07_jack.js) */
