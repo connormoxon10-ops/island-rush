@@ -1,4 +1,5 @@
 CONTEXT.md
+node_modules
 # build and test output
 dist/game.js
 dist/test.html

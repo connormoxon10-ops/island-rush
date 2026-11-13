@@ -190,7 +190,7 @@ Foot.sync = function (dt, sp) {
     else if (F.tp && sp > 0.3) F.body += angDiff(F.body, Math.atan2(F.vx, F.vz)) * Math.min(1, dt * 11); else if (!F.tp) F.body = F.yaw;
     else if (F.tp && Talk.on) F.body += angDiff(F.body, F.yaw) * Math.min(1, dt * 6);
     P.yaw = F.body; P.v += (sp - P.v) * Math.min(1, dt * 10);
-    const cyc = 1.45 + Math.max(0, P.v - 1.4) * 0.55; P.ph += TAU * P.v / cyc * dt;
+    P.ph += TAU * P.v / pedCyc(P.v, P.app) * dt;
     P.jump = F.air; P.state = sp > 0.25 ? 'walk' : 'stand'; if (P.wave > 0) P.wave -= dt;
   } else { P.yaw = F.body; P.state = F.state; P.jump = false; }
   if (P.state === 'stand' && !P.wave) P.phone = false;
