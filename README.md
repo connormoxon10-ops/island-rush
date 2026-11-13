@@ -67,6 +67,7 @@ node tests/vac1.js     # airless bodies are true vacuum
 node tests/sys4.js     # Home-to-Rust transfer optimiser and simulator cross-check
 node tests/rally1.js   # rally stage model: route, ground, camber, forest, jumps, plank and rock walls
 node tests/rally2.js   # breakable plank walls
+node tests/cutscenes.js   # every court venue, the arrest and the booking room: their people animate on screen (browser)
 node tests/rally_stages.js   # every rally stage as a model: builds, never crosses itself, drivable grades, gates on straights, surfaces
 ```
 

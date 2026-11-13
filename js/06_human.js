@@ -13,7 +13,7 @@
      physics    Human.physics(): the soft bones are damped springs chasing their rest point (so tissue lags and settles when the body accelerates) and the hair,
                 hem and bag are pendulums under gravity. Human.rag*(): a 13-point Verlet ragdoll with stick constraints and ground contact that takes over when
                 someone is knocked down, then blends back into the animation as they get up. Children get the hair, hem and bag motion only. */
-const Human = {}, HU = { pieces: {}, mat: null, live: new Set(), n: 0, lidA: {} };
+const Human = {}, HU = { pieces: {}, mat: null, live: new Set(), cut: new Set(), n: 0, lidA: {} };
 const HU_BONES = [['hips', -1, 0, 0.955, 0], ['tor', 0, 0, 0.085, 0], ['chest', 1, 0, 0.25, 0], ['neck', 2, 0, 0.265, -0.005], ['head', 3, 0, 0.053, 0.009],
   ['armL', 2, -1, 0.208, 0], ['elL', 5, 0, -0.31, 0], ['handL', 6, 0, -0.3, 0], ['armR', 2, 1, 0.208, 0], ['elR', 8, 0, -0.31, 0], ['handR', 9, 0, -0.3, 0],
   ['legL', 0, -0.098, -0.02, 0], ['knL', 11, 0, -0.43, 0], ['footL', 12, 0, -0.43, 0], ['legR', 0, 0.098, -0.02, 0], ['knR', 14, 0, -0.43, 0], ['footR', 15, 0, -0.43, 0],
@@ -538,7 +538,9 @@ Human.make = function (o) {
   if (o.bag) pd('bag', new THREE.Vector3(0, -0.2, 0), 160, 0.2, 0.18);
   return inst;
 };
-Human.dispose = function (h) { if (h.root.parent) h.root.parent.remove(h.root); h.geoHi.dispose(); h.geoLo.dispose(); h.mesh.skeleton.dispose(); };
+/* the people in cutscenes (courtroom, booking, shop): blink and breathe. Ones that have been disposed or taken out of every scene are dropped */
+function huCutTick(dt, time) { for (const h of HU.cut) { if (h.dead) { HU.cut.delete(h); continue; } let o = h.root; while (o.parent) o = o.parent; if (o.isScene) Human.alive(h, dt, time, h.id * 0.37); } }
+Human.dispose = function (h) { h.dead = true; HU.cut.delete(h); if (h.root.parent) h.root.parent.remove(h.root); h.geoHi.dispose(); h.geoLo.dispose(); h.mesh.skeleton.dispose(); };
 Human.lod = function (h, far) { if (h.far !== far) { h.far = far; h.mesh.geometry = far ? h.geoLo : h.geoHi; h.mesh.castShadow = !far; } };
 /* a short string that changes whenever a person's look does */
 Human.sig = function (o) {
