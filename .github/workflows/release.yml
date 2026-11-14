@@ -1,0 +1,36 @@
+name: Release
+
+# Publishing a release rebuilds the game from that tag, runs the full test suite and
+# redeploys Pages. Player progress is unaffected: saves live in the browser under the
+# site's origin, not in the deployed files.
+
+on:
+  release:
+    types: [published]
+  # Manual re-deploy, e.g. to republish after changing the archive settings.
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release tag to build and publish (must already exist).
+        required: true
+        type: string
+      browser_tests:
+        description: Run the Playwright suites before publishing.
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/deploy-pages.yml
+    # A reusable workflow cannot widen these, so the full set is granted here.
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    with:
+      version: ${{ github.event.release.tag_name || inputs.version }}
+      ref: ${{ github.event.release.tag_name || inputs.version }}
+      browser_tests: ${{ github.event_name != 'workflow_dispatch' || inputs.browser_tests }}
+      attach_asset: true
+      archive_keep: 10

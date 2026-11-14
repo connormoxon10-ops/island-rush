@@ -98,6 +98,50 @@ bash tests/regression.sh && bash tests/flight.sh      # the two regression suite
 
 Each suite writes `*.done` and `*.log` files in `tests/` (and `{shot}` steps write PNGs to the current directory); every scenario should exit 0 with no `PAGEERROR` in its log. Note that the suite scripts themselves always exit 0 — the per-scenario exit codes in `tests/regression.done` and `tests/flight.done` are what matter, and that is what CI checks.
 
+## Deploying
+
+The game is a single static file, so GitHub Pages hosts all of it. Publishing a GitHub
+release builds that tag, runs the full test suite and redeploys the site.
+
+| Workflow | Trigger | What it does |
+| --- | --- | --- |
+| `build-test.yml` | `workflow_call` | Reusable: build, check the bundle is self-contained, run the suites. |
+| `deploy-pages.yml` | `workflow_call` | Reusable: calls `build-test.yml`, then publishes to Pages. |
+| `release.yml` | release published, or manual | Calls `deploy-pages.yml` with the full suite. Attaches the build to the release. |
+| `build-check.yml` | pull request, push to `main` | Calls `build-test.yml` with the browser suites off. No deploy. |
+
+The build and test steps live in `build-test.yml` so a release is gated by exactly the steps
+a pull request runs. They are a separate workflow from the deploy rather than one workflow
+with a `deploy: false` switch because a reusable workflow can only ever *reduce* the caller's
+permissions: a pull request calls `build-test.yml` with a read-only token, while only
+`release.yml` grants the `pages: write` the deploy needs. Had both lived in one workflow,
+every pull request would have had to grant write access to satisfy a job it never runs.
+
+The newest release is served from the site root. The ten most recent releases also stay
+playable at `/v/<tag>/`, listed at `/v/`. That archive is rebuilt on every deploy from the
+`island-rush.html` asset attached to each release, so old builds are never kept in git —
+releases made before this workflow existed simply have no asset and are skipped.
+
+The deploy always builds from source rather than publishing the committed `dist/island-rush.html`,
+so a stale commit of that file cannot ship.
+
+One-time setup: under **Settings → Pages**, set **Source** to **GitHub Actions**. Builds are
+stamped with their release tag, shown on the title screen and under **Settings → Save → Build**.
+
+### Your save data
+
+Progress lives in `localStorage` under the key `island-rush-v1`, keyed to the site's
+**origin** — not to a path or a build. Deploying a new release therefore never touches it, and
+the money and unlocks you earned stay put. `loadSave()` in `js/01_core.js` merges each field
+over a complete set of defaults, so a save written by an older build still loads after an
+upgrade (and vice versa). Because the archived builds under `/v/` share the origin, they all
+read the same save.
+
+Three things *will* lose progress: clearing browser data, changing `SAVE_KEY`, or moving the
+game to a different origin (a custom domain, or a different browser or device). For those
+cases **Settings → Save** has **Download save** and **Load save file**. Import writes the file
+to `localStorage` and reloads, so `loadSave()` still does all the validation.
+
 ## Known rough edges
 
 The solar system is about 1/10 scale with circular, coplanar orbits and non-rotating planets; there is no re-entry heating, no planet shadows or eclipses, and Jove has no surface. EVA surfaces are flat. The Workshop is keyboard and mouse only.

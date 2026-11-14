@@ -1,0 +1,149 @@
+name: Build and test
+
+# Reusable workflow: builds the single-file game and gates it on the test suites.
+# This is the one definition of "a good build" -- build-check.yml calls it for pull
+# requests and deploy-pages.yml calls it before publishing.
+#
+# It deliberately needs no more than `contents: read`. Permissions can only be
+# reduced through a reusable-workflow call, never raised, so keeping the deploy
+# (which needs `pages: write`) in a separate workflow lets pull requests run these
+# same steps with a read-only token.
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Label stamped into the bundle as IR_VERSION.
+        required: true
+        type: string
+      ref:
+        description: Git ref to build. Empty builds the ref that triggered the caller.
+        required: false
+        type: string
+        default: ''
+      browser_tests:
+        description: Run the Playwright regression and flight suites. They take close to an hour.
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # No lockfile is committed and playwright is the only dependency, so a plain
+      # install is used here rather than `npm ci`.
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      # build.sh stamps IR_VERSION into the bundle and runs `node --check` on it.
+      - name: Build
+        env:
+          IR_VERSION: ${{ inputs.version }}
+        run: bash build.sh
+
+      - name: Verify the build is self-contained
+        run: |
+          set -euo pipefail
+          test -s dist/island-rush.html
+          test -s dist/test.html
+          # three.js is inlined from vendor/, so nothing may be pulled from a script CDN.
+          if grep -oq '<script[^>]*src=' dist/island-rush.html; then
+            echo "::error::dist/island-rush.html still references an external script"
+            grep -o '<script[^>]*src=[^>]*>' dist/island-rush.html
+            exit 1
+          fi
+          grep -q "const IR_VERSION='" dist/island-rush.html \
+            || { echo "::error::build stamp is missing"; exit 1; }
+          echo "built $(wc -c < dist/island-rush.html) bytes"
+
+      - name: Physics tests
+        run: npm run test:physics
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: game
+          path: |
+            dist/island-rush.html
+            dist/test.html
+          retention-days: 7
+          if-no-files-found: error
+
+  test:
+    name: ${{ matrix.suite }}
+    needs: build
+    if: ${{ inputs.browser_tests }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [regression, flights]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      # The suites run against dist/test.html, so reuse the exact bundle that was built.
+      - uses: actions/download-artifact@v4
+        with:
+          name: game
+          path: dist
+
+      # The suite scripts record each scenario's exit code in tests/<suite>.done and
+      # always exit 0 themselves, so the results file is what actually decides pass/fail.
+      - name: Run ${{ matrix.suite }} suite
+        run: npm run test:${{ matrix.suite }}
+
+      - name: Check results
+        run: |
+          set -euo pipefail
+          case "${{ matrix.suite }}" in
+            regression) done_file=tests/regression.done ;;
+            flights)    done_file=tests/flight.done ;;
+          esac
+          test -f "$done_file" || { echo "::error::$done_file was never written"; exit 1; }
+          echo "--- $done_file ---"; cat "$done_file"
+          grep -qx ALL "$done_file" \
+            || { echo "::error::suite did not run to completion"; exit 1; }
+          if grep ' exit ' "$done_file" | grep -qv ' exit 0$'; then
+            echo "::error::one or more scenarios failed"
+            grep ' exit ' "$done_file" | grep -v ' exit 0$'
+            exit 1
+          fi
+          echo "all scenarios passed"
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.suite }}-logs
+          path: |
+            tests/*.log
+            tests/*.done
+          retention-days: 7
+          if-no-files-found: ignore
