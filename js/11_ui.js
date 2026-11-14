@@ -141,7 +141,7 @@ UI.update = function (dt) {
   /* prompt */
   const near = !Mi && !Foot.on && !Fly.on && !Boat.on && App.mode === 'play' ? Mission.nearby : null;
   const pr = E.prompt;
-  if (Rally.on || Drag.on) { if (!pr.hidden) pr.hidden = true; }
+  if (Rally.on || Drag.on || Derby.on) { if (!pr.hidden) pr.hidden = true; }
   else if (Fly.on) { Fly.prompt(pr); Fly.hud(dt); }
   else if (Boat.on) { Boat.prompt(pr); Boat.hud(dt); }
   else if (Foot.on) UI.footPrompt();
@@ -239,7 +239,7 @@ const upCost = (l) => Math.round(350 * Math.pow(1.7, l) * (1 - Rel.perk('garage'
 const seg = (key, opts, cur) => '<div class="seg" role="group">' + opts.map((o) => '<button type="button" data-act="set" data-k="' + key + '" data-v="' + o[0] + '" aria-pressed="' + (String(cur) === String(o[0])) + '">' + o[1] + '</button>').join('') + '</div>';
 UI.renderPane = function () {
   E.menuCash.textContent = money(save.money); const p = E.pane, s = save.set, c = car;
-  E.btnAbort.hidden = !(Mi || VM.m || Rally.on || Drag.on); let h = '';
+  E.btnAbort.hidden = !(Mi || VM.m || Rally.on || Drag.on || Derby.on); let h = '';
   if (App.tab === 'missions') {
     const list = missions.map((m) => ({ m, d: Math.hypot(m.x - c.x, m.z - c.z) })).sort((a, b) => a.d - b.d);
     const done = missions.filter((m) => save.done[m.id]).length;
@@ -357,7 +357,7 @@ function bindUI() {
   E.tabs.addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) UI.tabTo(b.dataset.tab); });
   E.btnResume.onclick = () => UI.closeMenu();
   E.btnRespawn.onclick = () => { UI.closeMenu(); App.respawn(true); };
-  E.btnAbort.onclick = () => { UI.closeMenu(); if (Rally.on) Rally.exit(true); else if (Drag.on) Drag.exit(true); else if (VM.m) VM.abort('Run abandoned'); else abortMission(); };
+  E.btnAbort.onclick = () => { UI.closeMenu(); if (Rally.on) Rally.exit(true); else if (Drag.on) Drag.exit(true); else if (Derby.on) Derby.exit(true); else if (VM.m) VM.abort('Run abandoned'); else abortMission(); };
   E.btnPause.onclick = () => UI.openMenu('missions');
   E.btnCam.onclick = () => UI.cycleView();
   E.btnStart.onclick = () => App.start();
@@ -394,6 +394,7 @@ function onKey(code) {
   if (App.mode !== 'play') return;
   if (GAR.edit) { Home.key(code); return; }
   if (Talk.on) { Talk.key(code); return; }
+  if (Derby.on && /^(KeyE|Enter|KeyF|KeyG|KeyM|KeyQ|KeyH|KeyR)$/.test(code)) return;
   if (Drag.on) { if (code === 'KeyR') { Drag.again(); return; } if (/^(KeyE|Enter|KeyF|KeyG|KeyM|KeyQ|KeyH)$/.test(code)) return; }
   if (Rally.on) { if (code === 'KeyR') { Rally.reset(); return; } if (/^(KeyE|Enter|KeyF|KeyG|KeyM|KeyQ|KeyH)$/.test(code)) return; }
   switch (code) {
