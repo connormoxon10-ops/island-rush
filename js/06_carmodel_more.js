@@ -20,7 +20,7 @@ function bodyZs(z0, z1, step, AX, pad) {
 }
 const zRange = (z0, z1, n) => Array.from({ length: n + 1 }, (_, i) => z0 + (z1 - z0) * i / n);
 /* height of a ring's top surface at x */
-function secTopY(r, x) { const u = Math.abs(x - (r.x || 0)) / r.a; return u >= 1 ? r.y : r.y + r.b * Math.pow(1 - Math.pow(u, r.e), 1 / r.e); }
+function secTopY(r, x) { const u = Math.abs(x - (r.x || 0)) / r.a, y = u >= 1 ? -1e9 : r.y + r.b * Math.pow(1 - Math.pow(u, r.e), 1 / r.e); return r.under ? Math.max(y, secTopY(r.under, x)) : (u >= 1 ? r.y : y); }
 /* a flat strip between two rows of points (stripes, decals), lit with per-segment normals that face 'up' */
 function ribbonStrip(gb, L, R, c, up) {
   up = up || [0, 1, 0]; _tcol.setRGB(c[0], c[1], c[2]); const cr = _tcol.r, cg = _tcol.g, cb = _tcol.b;
@@ -63,12 +63,13 @@ function muscleCar(S, gP, gG, gT, gD, gLt, tl, lod) {
   glass(-0.74, -1.62, 10, P * 0.3, P * 0.7);                                                                             /* fastback rear glass */
   for (const [a0, a1] of [[P * 0.16, P * 0.19], [P * 0.81, P * 0.84]]) K.loft(gT, zRange(0.6, 0.04, 6).map((z) => cab(z, 1.016)), CHR, { seg: 2, tA: a0, tB: a1 });   /* chrome along the A pillars */
   /* power bulge with a shaker scoop standing through it, hood pins */
-  K.loft(gP, zRange(2.12, 0.66, 10).map((z) => ({ z, y: tabZ(B.top, z) - 0.04, a: 0.31, b: 0.042 + 0.05 * (2.12 - z) / 1.46, e: 3 })), K.WH, { seg: sg, cap: [1, 0] });
+  const bulge = (z) => ({ z, y: tabZ(B.top, z) - 0.04, a: 0.31, b: 0.042 + 0.05 * (2.12 - z) / 1.46, e: 3 });
+  K.loft(gP, zRange(2.12, 0.66, 10).map(bulge), K.WH, { seg: sg, cap: [1, 0] });
   K.blk(gD, 0, 1.04, 1.12, 0.42, 0.11, 0.46, BLK); K.blk(gD, 0, 1.04, 1.352, 0.36, 0.07, 0.01, [0.002, 0.002, 0.002]); K.blk(gT, 0, 1.098, 1.12, 0.44, 0.014, 0.48, CHR);
   for (const sx of [-1, 1]) { K.drum(gT, sx * 0.55, secTopY(body(2.12), 0.55) + 0.005, 2.12, 0.025, 0.012, CHR, 'y'); K.tube(gT, [sx * 0.55, secTopY(body(2.12), 0.55) + 0.012, 2.1], [sx * 0.55, secTopY(body(2.0), 0.55) + 0.012, 2.0], 0.006, CHR); }
   /* stripes over bonnet, roof and tail */
   const XS = [[-0.25, -0.11], [0.11, 0.25]];
-  topStripes(gD, (z) => body(z), 2.36, 0.68, 22, XS, 0.006, STR); topStripes(gD, (z) => cab(z), 0.03, -0.72, 8, XS, 0.008, STR); topStripes(gD, (z) => cab(z), -1.64, -1.94, 4, XS, 0.008, STR); topStripes(gD, (z) => body(z), -1.96, -2.39, 5, XS, 0.006, STR);
+  topStripes(gD, (z) => { const r = body(z); if (z > 2.12 || z < 0.66) return r; const q = bulge(z); return { z, x: 0, y: q.y, a: q.a, b: q.b, e: q.e, under: r }; }, 2.36, 0.68, 30, XS, 0.006, STR); topStripes(gD, (z) => cab(z), 0.03, -0.72, 8, XS, 0.008, STR); topStripes(gD, (z) => cab(z), -1.64, -1.94, 4, XS, 0.008, STR); topStripes(gD, (z) => body(z), -1.96, -2.39, 5, XS, 0.006, STR);
   /* front: a recessed grille with four round lamps, a chrome blade bumper wrapping the corners, a dark valance */
   K.blk(gD, 0, 0.6, 2.418, 1.36, 0.2, 0.02, BLK); for (let k = 0; k < 4; k++) K.blk(gT, 0, 0.53 + k * 0.045, 2.426, 1.3, 0.008, 0.01, [0.4, 0.4, 0.42]);
   for (const sx of [-1, 1]) for (const xl of [0.38, 0.58]) { K.drum(gT, sx * xl, 0.6, 2.43, 0.082, 0.02, CHR, 'z'); K.drum(gLt, sx * xl, 0.6, 2.442, 0.066, 0.01, GL, 'z'); }
@@ -126,10 +127,10 @@ function hyperCar(S, gP, gG, gT, gD, gLt, tl, lod) {
   for (const sx of [-1, 1]) { for (const z of [1.18, -0.06]) K.blk(gD, sx * (aw(z) + 0.004), 0.48, z, 0.006, 0.5, 0.008, BLK);
     K.tube(gD, [sx * 0.66, 0.84, 0.95], [sx * 0.9, 0.86, 0.9], 0.012, CF); K.loft(gP, [{ z: 0.98, x: sx * 0.95, y: 0.86, a: 0.01, b: 0.01, e: 2 }, { z: 0.93, x: sx * 0.95, y: 0.86, a: 0.09, b: 0.045, e: 2.4 }, { z: 0.86, x: sx * 0.95, y: 0.86, a: 0.09, b: 0.045, e: 2.4 }], K.WH, { seg: 12, cap: [0, 1] }); }
   /* front: splitter, intakes, slim lamps, a short bonnet vent */
-  K.blk(gD, 0, 0.095, 2.25, 1.86, 0.02, 0.36, CF); for (const sx of [-1, 1]) K.blk(gD, sx * 0.9, 0.16, 2.2, 0.02, 0.12, 0.4, CF);
+  K.blk(gD, 0, 0.1, 2.2, 1.8, 0.02, 0.3, CF); for (const sx of [-1, 1]) K.blk(gD, sx * 0.9, 0.16, 2.2, 0.02, 0.12, 0.4, CF);
   for (const sx of [-1, 1]) { K.blk(gD, sx * 0.48, 0.27, 2.33, 0.5, 0.15, 0.04, BLK, 0, -sx * 0.18); K.blk(gD, sx * 0.48, 0.27, 2.35, 0.48, 0.008, 0.01, CF, 0, -sx * 0.18); }
   K.blk(gD, 0, 0.27, 2.36, 0.3, 0.1, 0.02, BLK);
-  for (const sx of [-1, 1]) { const x = sx * 0.66, z = 2.08, y = secTopY(body(z), 0.66); K.blk(gD, x, y - 0.005, z, 0.46, 0.05, 0.16, BLK, -0.42, -sx * 0.22); K.blk(gLt, x, y + 0.016, z + 0.01, 0.42, 0.012, 0.13, GL, -0.42, -sx * 0.22); K.blk(gLt, sx * 0.86, y - 0.04, z + 0.06, 0.08, 0.04, 0.012, [1, 0.6, 0.2], -0.42, -sx * 0.5); }
+  for (const sx of [-1, 1]) { topStripes(gD, (z) => body(z), 2.2, 1.94, 6, [[sx > 0 ? 0.44 : -0.86, sx > 0 ? 0.86 : -0.44]], 0.004, BLK); topStripes(gLt, (z) => body(z), 2.17, 2.08, 3, [[sx > 0 ? 0.5 : -0.82, sx > 0 ? 0.82 : -0.5]], 0.008, GL); topStripes(gLt, (z) => body(z), 2.02, 1.98, 1, [[sx > 0 ? 0.56 : -0.8, sx > 0 ? 0.8 : -0.56]], 0.008, [1, 0.6, 0.2]); }
   for (let k = 0; k < 3; k++) K.blk(gD, 0, tabZ(B.top, 1.85 - k * 0.09) + 0.004, 1.85 - k * 0.09, 0.5, 0.008, 0.04, BLK, -0.3);
   /* engine-cover louvres either side of the glass */
   for (const sx of [-1, 1]) for (let k = 0; k < 7; k++) { const z = -1.5 - k * 0.09, x = sx * 0.6; K.blk(gD, x, secTopY(body(z), 0.6) + 0.005, z, 0.38, 0.01, 0.045, BLK, -0.15); }
@@ -137,7 +138,7 @@ function hyperCar(S, gP, gG, gT, gD, gLt, tl, lod) {
   K.blk(gD, 0, 0.62, -2.362, 1.7, 0.36, 0.02, BLK); for (let k = 0; k < 5; k++) K.blk(gD, 0, 0.48 + k * 0.07, -2.372, 1.66, 0.008, 0.01, CF);
   K.blk(tl, 0, 0.89, -2.37, 1.8, 0.03, 0.012, GL); for (const sx of [-1, 1]) K.blk(tl, sx * 0.88, 0.8, -2.36, 0.06, 0.16, 0.012, GL);
   for (const sx of [-1, 1]) { K.drum(gT, sx * 0.13, 0.66, -2.36, 0.075, 0.08, TI, 'z'); K.drum(gD, sx * 0.13, 0.66, -2.402, 0.058, 0.01, BLK, 'z'); }
-  K.blk(gD, 0, 0.22, -2.1, 1.6, 0.02, 0.6, CF, -0.32); for (const fx of [-0.6, -0.3, 0, 0.3, 0.6]) K.blk(gD, fx, 0.22, -2.12, 0.012, 0.18, 0.56, CF, -0.32);
+  K.blk(gD, 0, 0.2, -2.04, 1.6, 0.02, 0.5, CF, -0.3); for (const fx of [-0.6, -0.3, 0, 0.3, 0.6]) K.blk(gD, fx, 0.17, -2.06, 0.012, 0.12, 0.44, CF, -0.3);
   /* the wing on swan necks */
   for (const sx of [-1, 1]) K.path(gD, [[sx * 0.42, secTopY(body(-1.78), 0.42) - 0.01, -1.78], [sx * 0.42, 1.18, -1.95], [sx * 0.42, 1.34, -2.1], [sx * 0.42, 1.31, -2.2]], 0.02, CF);
   K.blk(gD, 0, 1.3, -2.18, 1.84, 0.03, 0.4, CF, 0.1); K.blk(gP, 0, 1.34, -2.38, 1.84, 0.012, 0.08, K.WH, 0.6); for (const sx of [-1, 1]) K.blk(gD, sx * 0.93, 1.27, -2.2, 0.02, 0.24, 0.5, CF);
@@ -159,8 +160,8 @@ function roadster(S, gP, gG, gT, gD, gLt, tl, lod) {
   K.loft(gP, bodyZs(2.12, -2.12, 0.06, AX, pad).map((z) => body(z)), K.WH, { seg: sg, cap: [1, 1] });
   wheelWells(K, gD, S, pad, 0.3, aw);
   /* raised wings over all four wheels; the front ones run forward to carry the lamps */
-  for (const sx of [-1, 1]) for (const [w, f0, f1, h] of [[wf, 0.86, 0.66, 0.1], [wr, 0.62, 0.8, 0.07]]) {
-    const R = []; for (let k = 0; k <= 14; k++) { const t = 1 - 2 * k / 14, z = w.z + (t > 0 ? t * f0 : t * f1), sq = Math.sqrt(Math.max(0, 1 - t * t)); R.push({ z, x: sx * (Math.abs(w.x) - 0.04), y: tabZ(B.top, z) - 0.07, a: 0.05 + 0.17 * sq, b: 0.04 + (h + 0.04) * sq, e: 2.3 }); }
+  for (const sx of [-1, 1]) for (const [w, f0, f1, h] of [[wf, 0.84, 0.66, 0.07], [wr, 0.62, 0.78, 0.05]]) {
+    const R = []; for (let k = 0; k <= 14; k++) { const t = 1 - 2 * k / 14, z = w.z + (t > 0 ? t * f0 : t * f1), sq = Math.sqrt(Math.max(0, 1 - t * t)); R.push({ z, x: sx * (Math.abs(w.x) - 0.06), y: tabZ(B.top, z) - 0.07, a: 0.04 + 0.14 * sq, b: 0.04 + (h + 0.04) * sq, e: 2.3 }); }
     K.loft(gP, R, K.WH, { seg: lod ? 12 : 20, tA: -0.1, tB: P + 0.1 });
   }
   /* faired headlamps with glass covers, small side lamps, three vents on each wing */
@@ -173,7 +174,7 @@ function roadster(S, gP, gG, gT, gD, gLt, tl, lod) {
     for (let k = 0; k < 3; k++) K.blk(gT, 0, gy - 0.04 + k * 0.04, 2.14, ga * 1.8, 0.008, 0.01, CHR);
     for (let i = 0; i <= 20; i++) { const t = i / 20 * TAU; pts.push([Math.cos(t) * (ga + 0.015), gy + Math.sin(t) * (gb + 0.015), 2.138]); } K.path(gT, pts, 0.014, CHR); }
   /* bumpers: slim blades with overriders */
-  for (const [z, s] of [[2.16, 1], [-2.16, -1]]) { K.blk(gT, 0, 0.4, z, 1.3, 0.05, 0.04, CHR); for (const sx of [-1, 1]) { K.blk(gT, sx * 0.3, 0.44, z + s * 0.01, 0.05, 0.14, 0.05, CHR); K.blk(gT, sx * 0.68, 0.4, z - s * 0.1, 0.05, 0.05, 0.22, CHR, 0, sx * s * 0.5); } }
+  for (const [z, s] of [[2.13, 1], [-2.13, -1]]) { K.blk(gT, 0, 0.47, z, 1.2, 0.05, 0.04, CHR); for (const sx of [-1, 1]) { K.blk(gT, sx * 0.3, 0.5, z + s * 0.01, 0.05, 0.14, 0.05, CHR); K.blk(gT, sx * 0.62, 0.47, z - s * 0.08, 0.05, 0.05, 0.18, CHR, 0, sx * s * 0.5); } }
   /* the cockpit: a dark opening with a padded rim, two tan buckets, a wooden wheel, a dash with dials */
   K.loft(gD, zRange(0.36, -0.86, 10).map((z) => body(z, 1.006)), BLK, { seg: 10, tA: P * 0.27, tB: P * 0.73 });
   K.loft(gD, zRange(0.38, -0.88, 12).map((z) => body(z, 1.01)), TAN, { seg: 2, tA: P * 0.25, tB: P * 0.27 }); K.loft(gD, zRange(0.38, -0.88, 12).map((z) => body(z, 1.01)), TAN, { seg: 2, tA: P * 0.73, tB: P * 0.75 });
@@ -189,7 +190,7 @@ function roadster(S, gP, gG, gT, gD, gLt, tl, lod) {
   for (const sx of [-1, 1]) { const x = sx * (Math.abs(wr.x) - 0.04), z = wr.z - 0.66, y = tabZ(B.top, z) + 0.01; K.drum(gT, x, y, z, 0.062, 0.05, CHR, 'z'); K.drum(tl, x, y, z - 0.027, 0.05, 0.01, GL, 'z'); }
   { const yb = (z) => tabZ(B.top, z) + 0.03; for (const sx of [-1, 1]) K.path(gT, [[sx * 0.36, yb(-1.75) - 0.03, -1.75], [sx * 0.36, yb(-1.78), -1.78], [sx * 0.36, yb(-2.0), -2.0], [sx * 0.36, yb(-2.02) - 0.03, -2.02]], 0.01, CHR); for (const z of [-1.82, -1.9, -1.98]) K.tube(gT, [-0.36, yb(z), z], [0.36, yb(z), z], 0.008, CHR); }
   K.drum(gT, -0.5, secTopY(body(-1.5), 0.5) + 0.01, -1.5, 0.06, 0.02, CHR, 'y');
-  for (const sx of [-1, 1]) K.drum(gT, sx * 0.3, 0.3, -2.12, 0.032, 0.2, CHR, 'z');
+  for (const sx of [-1, 1]) K.drum(gT, sx * 0.3, 0.33, -2.08, 0.032, 0.16, CHR, 'z');
   for (const sx of [-1, 1]) { K.blk(gT, sx * (aw(-0.2) + 0.006), 0.62, -0.25, 0.01, 0.02, 1.1, CHR); K.tube(gT, [sx * 0.74, 0.86, 0.36], [sx * 0.84, 0.92, 0.36], 0.008, CHR); K.ball(gT, sx * 0.86, 0.93, 0.36, 0.055, 0.04, 0.03, CHR); }
   K.done();
 }
@@ -239,7 +240,7 @@ function expedition4x4(S, gP, gG, gT, gD, gLt, tl, lod) {
   K.blk(gD, 0, 0.72, -2.4, 2.0, 0.2, 0.18, STL); for (const sx of [-1, 1]) { K.blk(tl, sx * 0.88, 1.2, -2.322, 0.12, 0.3, 0.01, GL); K.blk(gLt, sx * 0.88, 1.03, -2.322, 0.12, 0.05, 0.01, [1, 0.7, 0.3]); }
   K.path(gD, [[-0.72, 0.84, -2.36], [-0.72, 2.17, -2.36]], 0.02, STL); K.path(gD, [[-0.48, 0.84, -2.36], [-0.48, 2.17, -2.36]], 0.02, STL); for (let k = 0; k < 6; k++) K.tube(gD, [-0.72, 0.98 + k * 0.2, -2.36], [-0.48, 0.98 + k * 0.2, -2.36], 0.014, STL);
   K.blk(gD, 0.3, 1.25, -2.36, 0.08, 0.6, 0.06, STL); K.drum(gD, 0.3, 1.25, -2.52, 0.42, 0.28, BLK, 'z'); K.drum(gT, 0.3, 1.25, -2.52, 0.25, 0.29, [0.12, 0.12, 0.13], 'z'); K.drum(gT, 0.3, 1.25, -2.52, 0.08, 0.3, CHR, 'z');
-  for (let i = 0; i < 12; i++) { const a = i / 12 * TAU; K.blk(gD, 0.3 + Math.cos(a) * 0.42, 1.25 + Math.sin(a) * 0.42, -2.52, 0.08, 0.08, 0.3, BLK, 0, 0, a); }   /* tread blocks */
+  for (let i = 0; i < 20; i++) { const a = i / 20 * TAU; K.blk(gD, 0.3 + Math.cos(a) * 0.42, 1.25 + Math.sin(a) * 0.42, -2.52 + (i % 2 ? 0.06 : -0.06), 0.04, 0.07, 0.12, BLK, 0, 0, a); }   /* tread blocks */
   K.done();
 }
 CUSTOM_CARS.muscle = muscleCar; CUSTOM_CARS.hyper = hyperCar; CUSTOM_CARS.roadster = roadster; CUSTOM_CARS.overland = expedition4x4;

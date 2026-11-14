@@ -123,14 +123,14 @@ const CARS = [
   { id: 'muscle', name: 'Hammerhead 440', cls: 'Muscle car', price: 16000, paint: 5, dy: 0.0, snd: { f: 0.66, lp: 0.78 }, dial: 320,
     blurb: 'A long-bonnet fastback with a shaker scoop punched through the power bulge, four round lamps in a deep grille, a ducktail and fat tyres at the back. A big-block V8 with more torque than the rear tyres will ever use. Point it straight.',
     p: { m: 1600, a: 1.42, b: 1.33, Iz: 3200, rw: 0.36, fd: 3.4, gears: [2.9, 1.9, 1.4, 1.1, 0.88, 0.72], idle: 750, red: 6800, track: 1.56, cgh: 0.5, rd: 0.95, rsf: 0.54, cf: 10.6, cr: 11.8 },
-    t: { Tmax: 760, mu: 1.14, cd: 0.6, brk: 1.0, off: 0.85, cl: 0 },
+    t: { Tmax: 820, mu: 1.14, cd: 0.5, brk: 1.0, off: 0.85, cl: 0 },
     stats: { spd: 8, acc: 8, hdl: 5, off: 3 },
     body: { L: 4.84, W: 1.94, H: 0.45, C: 0.53, wr: 0.36, wrF: 0.35, twF: 0.27, y0: 0.3, tw: 0.33, rim: [0.78, 0.78, 0.8], rimStyle: 'five', custom: 'muscle' } },
 
   { id: 'hyper', name: 'Aether X', cls: 'Hypercar', price: 65000, paint: 1, dy: -0.18, snd: { f: 1.42, lp: 1.7 }, dial: 420,
     blurb: 'Mid-engined, all-wheel drive and barely a metre tall: a teardrop canopy, side intakes cut deep into the waist, an engine under glass and a wing on swan necks that leans on the car harder the faster you go. The fastest thing on four wheels on the island.',
     p: { m: 1350, a: 1.48, b: 1.22, Iz: 2100, rw: 0.36, fd: 3.3, gears: [3.1, 2.2, 1.65, 1.3, 1.06, 0.88, 0.74], idle: 1100, red: 9500, track: 1.74, cgh: 0.4, rd: 0.6, awd: true, rsf: 0.48, ab: 0.56, cf: 11.4, cr: 12.8 },
-    t: { Tmax: 900, mu: 1.5, cd: 0.42, brk: 1.4, off: 0.7, cl: 1.0 },
+    t: { Tmax: 980, mu: 1.5, cd: 0.38, brk: 1.4, off: 0.7, cl: 1.0 },
     stats: { spd: 10, acc: 10, hdl: 10, off: 1 },
     body: { L: 4.72, W: 2.06, H: 0.35, C: 0.48, wr: 0.36, wrF: 0.34, twF: 0.3, y0: 0.2, tw: 0.37, rim: [0.1, 0.1, 0.11], rimStyle: 'tri', tire: 'sport', custom: 'hyper' } },
 
