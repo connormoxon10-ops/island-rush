@@ -1,6 +1,10 @@
 #!/bin/bash
 # Assemble js/*.js into one IIFE and wrap with head.html -> dist/island-rush.html (published) and dist/test.html (local test)
 set -e
+# Pin collation: the globs below decide load order, and every file shares one scope. Under a UTF-8
+# locale the shell ignores the underscore when sorting, so 07_airport_gfx.js would come before
+# 07_airport.js -- a different bundle on a Mac than on a CI runner. LC_ALL=C makes it byte order.
+export LC_ALL=C
 cd "$(dirname "$0")"; mkdir -p dist
 { echo "(function(){'use strict';"; for f in js/0[1-9]_*.js js/1[0-9]_*.js js/99_main.js; do echo "/* ---- $f ---- */"; cat "$f"; echo; done; echo "})();"; } > dist/game.js
 node --check dist/game.js
