@@ -45,8 +45,8 @@ const { chromium } = require('playwright'); const path = require('path');
       pad.buttons[7].value = 0; return { id, crash: +crash.toFixed(1), lift: +lift.toFixed(2), past: +prog.toFixed(1), health: Math.round(c.health), nan, roll: +((c.roll0 || 0) * 57.3).toFixed(0), air: +air.toFixed(2), vmax: +(vmax * 3.6).toFixed(0) };
     };
     const low = find(0.6, 0.8); out.low = low;
-    if (low) out.lowRuns = ['monster', 'overland', 'buggy', 'rook'].map((id) => drive(id, low));
-    if (low) out.slowRuns = ['monster', 'overland', 'buggy'].map((id) => drive(id, low, 0.5));
+    if (low) out.lowRuns = ['monster', 'overland', 'buggy', 'trail', 'rook'].map((id) => drive(id, low));
+    if (low) out.slowRuns = ['monster', 'overland', 'buggy', 'trail'].map((id) => drive(id, low, 0.5));
     const tall = find(1.65, 3.5); out.tall = tall; if (tall) out.tallRun = drive('monster', tall);
     g.applyCar('rook', true);
     return out;
@@ -56,7 +56,7 @@ const { chromium } = require('playwright'); const path = require('path');
   for (const r of res.slowRuns || []) { console.log('slow', JSON.stringify(r)); ok(r.past > 3 && r.crash < 2 && r.air < 0.2 && r.lift > 0.15 && r.roll > 5, r.id + ' crawls one side over it at walking pace (' + r.vmax + ' km/h, past by ' + r.past + ' m, body lifted ' + r.lift + ' m and rolled ' + r.roll + ' deg, ' + r.air + ' s in the air)'); }
   ok(res.low, 'found a lone rock ' + (res.low ? res.low.h.toFixed(2) + ' m tall' : '') + ' to drive at');
   const L = Object.fromEntries((res.lowRuns || []).map((r) => [r.id, r]));
-  for (const id of ['monster', 'overland', 'buggy']) { const r = L[id]; ok(r && !r.nan && r.past > 6 && r.crash < 3 && r.lift > 0.2, id + ' climbs up and over it (' + (r ? 'past by ' + r.past + ' m, body lifted ' + r.lift + ' m, impact ' + r.crash + ' m/s' : '-') + ')'); }
+  for (const id of ['monster', 'overland', 'buggy', 'trail']) { const r = L[id]; ok(r && !r.nan && r.past > 6 && r.crash < 3 && r.lift > 0.2, id + ' climbs up and over it (' + (r ? 'past by ' + r.past + ' m, body lifted ' + r.lift + ' m, impact ' + r.crash + ' m/s' : '-') + ')'); }
   const rk = L.rook; ok(rk && rk.past < 1 && rk.crash > 3, 'an ordinary car still hits it like a wall (' + (rk ? 'stopped at ' + rk.past + ' m, impact ' + rk.crash + ' m/s' : '-') + ')');
   const T = res.tallRun; ok(!res.tall || (T && T.past < 1 && T.crash > 2), 'a rock taller than the monster truck can climb still stops it (' + (T ? 'stopped at ' + T.past + ' m' : 'no tall rock found') + ')');
   console.log(logs.length ? logs.slice(0, 6).join('\n') : 'no page or console errors'); console.log(fails ? fails + ' FAILED' : 'ALL OK');

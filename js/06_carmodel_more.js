@@ -243,4 +243,61 @@ function expedition4x4(S, gP, gG, gT, gD, gLt, tl, lod) {
   for (let i = 0; i < 20; i++) { const a = i / 20 * TAU; K.blk(gD, 0.3 + Math.cos(a) * 0.42, 1.25 + Math.sin(a) * 0.42, -2.52 + (i % 2 ? 0.06 : -0.06), 0.04, 0.07, 0.12, BLK, 0, 0, a); }   /* tread blocks */
   K.done();
 }
-CUSTOM_CARS.muscle = muscleCar; CUSTOM_CARS.hyper = hyperCar; CUSTOM_CARS.roadster = roadster; CUSTOM_CARS.overland = expedition4x4;
+/* a trail 4x4 (an original design in the spirit of the classic open-top off-roader): a short boxy tub with deep wheel cut-outs, a flat bonnet between flat
+   front wings standing clear over the wheels, an upright windscreen in a painted frame, an open top under a black roll cage, round lamps either side of a
+   horizontal-bar grille, steel bumpers with red tow hooks, black flares, rock sliders and the spare wheel on the tailgate */
+function trail4x4(S, gP, gG, gT, gD, gLt, tl, lod) {
+  const K = carKit(lod), BLK = [0.012, 0.012, 0.014], DK = [0.03, 0.03, 0.034], STL = [0.06, 0.06, 0.065], CHR = [0.72, 0.73, 0.75], RED = [0.6, 0.05, 0.03], SEAT = [0.05, 0.05, 0.055], GL = [1, 1, 1], sg = lod ? 16 : 28, P = Math.PI;
+  const wf = S.wheels.find((w) => w.front), wr = S.wheels.find((w) => !w.front), AX = [wf, wr], pad = 0.08, zC = 0.56;
+  /* the tub, from the cowl back, and the bonnet in front of it */
+  const T = { top: [[zC, 1.16], [-1.96, 1.16], [-2.0, 1.12]], bot: [[zC, 0.62], [-2.0, 0.66]], wid: [[zC, 0.84], [-2.0, 0.84]], exp: [[zC, 9], [-2.0, 9]] };
+  const Hd = { top: [[1.98, 1.13], [1.92, 1.18], [zC, 1.24]], bot: [[1.98, 0.76], [zC, 0.74]], wid: [[1.98, 0.6], [zC, 0.62]], exp: [[1.98, 7], [zC, 8]] };
+  const tub = bodySec(T, AX, pad), hood = bodySec(Hd, AX, pad), aw = (z) => (z > zC ? 0.62 : 0.84);
+  K.loft(gP, bodyZs(zC, -2.0, 0.06, AX, pad).map((z) => tub(z)), K.WH, { seg: sg, cap: [1, 1] });
+  K.loft(gP, bodyZs(1.98, zC - 0.04, 0.06, AX, pad).map((z) => hood(z)), K.WH, { seg: sg, cap: [1, 0] });
+  wheelWells(K, gD, S, pad, 0.62, aw);
+  /* open top: a dark floor inside the tub, with the tub's rolled top edge left in paint */
+  K.loft(gD, zRange(zC - 0.06, -1.9, 10).map((z) => tub(z, 1.004)), SEAT, { seg: 8, tA: P * 0.16, tB: P * 0.84 });
+  /* flat front wings standing out over the wheels, sloping down at the front, with black flares under their edges; a kick panel behind each */
+  for (const sx of [-1, 1]) {
+    const xm = sx * 0.81;
+    K.blk(gP, xm, 1.03, (1.55 + zC) / 2, 0.42, 0.04, 1.55 - zC, K.WH);
+    K.blk(gP, xm, 0.96, 1.77, 0.42, 0.04, 0.46, K.WH, -0.32);
+    K.blk(gP, xm, 0.84, zC + 0.02, 0.42, 0.42, 0.04, K.WH);
+    K.arc(gD, xm, wf.r, wf.z, wf.r + pad + 0.02, 0.44, 0.12, P - 0.2, BLK);
+    K.blk(gD, sx * 1.025, 1.0, 1.2, 0.03, 0.06, 1.0, BLK);
+    K.arc(gD, sx * 0.88, wr.r, wr.z, wr.r + pad + 0.03, 0.12, 0.08, P - 0.08, BLK);
+    for (let k = 0; k < 3; k++) K.blk(gD, sx * 0.81, 1.056, 0.9 + k * 0.08, 0.3, 0.008, 0.03, BLK);   /* vents on the wing */
+  }
+  /* the front: a grille panel with horizontal bars between two round lamps, indicators, bonnet latches */
+  K.blk(gP, 0, 0.95, 1.99, 1.16, 0.4, 0.03, K.WH);
+  for (let k = 0; k < 5; k++) K.blk(gD, 0, 0.84 + k * 0.055, 2.006, 0.54, 0.03, 0.01, BLK);
+  for (const sx of [-1, 1]) { K.drum(gT, sx * 0.44, 0.98, 2.0, 0.115, 0.04, CHR, 'z'); K.drum(gLt, sx * 0.44, 0.98, 2.022, 0.095, 0.01, GL, 'z'); K.blk(gLt, sx * 0.44, 0.82, 2.008, 0.12, 0.04, 0.01, [1, 0.7, 0.3]);
+    K.blk(gD, sx * 0.61, 1.15, 1.72, 0.03, 0.08, 0.05, BLK); K.blk(gD, sx * 0.5, 1.205, 0.62, 0.06, 0.012, 0.08, BLK); }
+  /* steel bumpers with red tow hooks; the tailgate's spare wheel */
+  K.blk(gD, 0, 0.66, 2.1, 1.86, 0.16, 0.18, STL); for (const sx of [-1, 1]) { K.drum(gT, sx * 0.6, 0.6, 2.2, 0.035, 0.05, RED, 'x'); K.tube(gD, [sx * 0.62, 0.66, 2.0], [sx * 0.5, 0.74, 1.6], 0.03, STL); }
+  K.blk(gD, 0, 0.66, -2.1, 1.82, 0.14, 0.16, STL); for (const sx of [-1, 1]) K.drum(gT, sx * 0.64, 0.6, -2.2, 0.035, 0.05, RED, 'x');
+  K.blk(gD, 0, 1.0, -2.04, 0.1, 0.3, 0.1, STL); K.drum(gD, 0, 1.0, -2.22, 0.4, 0.26, BLK, 'z'); K.drum(gT, 0, 1.0, -2.23, 0.24, 0.27, [0.1, 0.1, 0.11], 'z'); K.drum(gT, 0, 1.0, -2.24, 0.07, 0.28, CHR, 'z');
+  for (let i = 0; i < 18; i++) { const a = i / 18 * TAU; K.blk(gD, Math.cos(a) * 0.4, 1.0 + Math.sin(a) * 0.4, -2.22 + (i % 2 ? 0.05 : -0.05), 0.04, 0.07, 0.12, BLK, 0, 0, a); }
+  for (const sx of [-1, 1]) { K.blk(tl, sx * 0.7, 0.95, -2.006, 0.1, 0.16, 0.01, GL); K.blk(gLt, sx * 0.7, 0.83, -2.006, 0.1, 0.05, 0.01, [1, 0.7, 0.3]); }
+  /* an upright windscreen in a painted frame, hinged at the cowl, mirrors on its posts */
+  { const rx = -0.22, h = 0.56, yb = 1.18, zb = zC, yt = yb + h * Math.cos(rx), zt = zb + h * Math.sin(rx), ym = (yb + yt) / 2, zm = (zb + zt) / 2;
+    K.blk(gG, 0, ym, zm, 1.5, h - 0.06, 0.012, GL, rx);
+    for (const sx of [-1, 1]) { K.blk(gP, sx * 0.78, ym, zm, 0.06, h, 0.05, K.WH, rx); K.blk(gD, sx * 0.6, yb + 0.02, zb + 0.03, 0.08, 0.04, 0.06, BLK);
+      K.tube(gD, [sx * 0.8, yb + 0.16, zb - 0.02], [sx * 1.0, yb + 0.2, zb + 0.02], 0.012, BLK); K.blk(gD, sx * 1.02, yb + 0.24, zb + 0.02, 0.07, 0.16, 0.03, BLK); }
+    K.blk(gP, 0, yt, zt, 1.62, 0.06, 0.06, K.WH, rx); K.blk(gP, 0, yb + 0.03, zb, 1.62, 0.06, 0.06, K.WH, rx);
+    /* the roll cage: from the screen header back over the seats to a rear hoop */
+    for (const sx of [-1, 1]) K.path(gD, [[sx * 0.76, yt - 0.02, zt], [sx * 0.76, 1.74, -0.62], [sx * 0.76, 1.74, -1.88], [sx * 0.76, 1.16, -1.88]], 0.035, BLK);
+    for (const sx of [-1, 1]) K.tube(gD, [sx * 0.76, 1.74, -0.62], [sx * 0.76, 1.16, -0.62], 0.035, BLK);
+    for (const z of [-0.62, -1.88]) K.tube(gD, [-0.76, 1.74, z], [0.76, 1.74, z], 0.035, BLK); K.tube(gD, [-0.76, 1.74, -0.62], [0.76, 1.16, -1.88], 0.025, BLK); }
+  /* inside: two buckets, a rear bench, a dash, a wheel and a gear lever */
+  for (const sx of [-1, 1]) { K.blk(gD, sx * 0.38, 1.38, -0.42, 0.46, 0.5, 0.12, SEAT, 0.12); K.blk(gD, sx * 0.38, 1.18, -0.2, 0.46, 0.1, 0.44, SEAT); }
+  K.blk(gD, 0, 1.33, -1.62, 1.4, 0.4, 0.12, SEAT, 0.1); K.blk(gD, 0, 1.17, -1.4, 1.4, 0.1, 0.4, SEAT);
+  K.blk(gD, 0, 1.28, 0.4, 1.52, 0.14, 0.18, DK); torusAt(gD, -0.38, 1.42, 0.2, 0.17, 0.016, -1.15, 0, BLK, lod); K.tube(gD, [0, 1.17, 0.05], [0, 1.4, -0.02], 0.012, BLK);
+  /* sides: rock sliders, door hinges and shut lines, a filler cap */
+  for (const sx of [-1, 1]) { K.tube(gD, [sx * 0.9, 0.62, wf.z - wf.r - pad - 0.04], [sx * 0.9, 0.62, wr.z + wr.r + pad + 0.04], 0.04, STL); for (const z of [0.3, -0.4]) K.tube(gD, [sx * 0.9, 0.62, z], [sx * 0.78, 0.66, z], 0.03, STL);
+    for (const y of [0.8, 1.04]) K.blk(gD, sx * 0.85, y, 0.48, 0.03, 0.06, 0.1, BLK); for (const z of [0.54, -0.62]) K.blk(gD, sx * 0.843, 0.9, z, 0.006, 0.5, 0.01, BLK); K.blk(gD, sx * 0.845, 1.05, -0.5, 0.012, 0.03, 0.1, BLK); }
+  K.drum(gT, -0.845, 1.0, -1.5, 0.06, 0.02, [0.3, 0.3, 0.32], 'x');
+  K.done();
+}
+CUSTOM_CARS.muscle = muscleCar; CUSTOM_CARS.hyper = hyperCar; CUSTOM_CARS.roadster = roadster; CUSTOM_CARS.overland = expedition4x4; CUSTOM_CARS.trail = trail4x4;
