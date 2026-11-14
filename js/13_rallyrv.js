@@ -65,6 +65,7 @@ RR.profile = function (ay, dec) {
     const h = B.help[i], sn = h / Math.sqrt(1 + h * h), cs = 1 / Math.sqrt(1 + h * h), a0 = ay * Math.min(1.1, B.mu[i]), a = Math.max(0.3 * a0, a0 * (cs + a0 * sn) + sn) * G;
     v[i] = Math.min(66, Math.sqrt(a / Math.max(Math.abs(B.k[i]), 1e-4)));
   }
+  for (const rv of RY.ravines || []) for (let i = 0; i < N; i++) { const s = B.S0 + i * DS; if (s > rv.s0 - rv.f.up - 25 && s < rv.s0 + rv.span + 5) v[i] = Math.max(v[i], 22); }   /* a ravine is taken flat out: never arrive slow enough to drop in */
   for (let i = N - 2; i >= 0; i--) v[i] = Math.min(v[i], Math.sqrt(v[i + 1] * v[i + 1] + 2 * dec * DS));
   for (let i = N - 2; i >= 0; i--) tog[i] = tog[i + 1] + DS / (0.93 * Math.max(8, v[i]));
   return (RR.profs[key] = { v, tog });

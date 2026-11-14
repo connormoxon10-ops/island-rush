@@ -462,6 +462,20 @@ RYG.buildObstacles = function (group) {
       for (const dx of [-0.2, 0.15]) for (const sy of [-1, 1]) { const o = RY.at(rv.s0 + u - 0.02, sd * (a.hw + 1.1) + dx * sd, {}); e.set(0, a.yaw, sy * sd * 0.62, 'YXZ'); q.setFromEuler(e); m.compose(v.set(o.x, y + 1.25 + sy * 0.08, o.z), q, sc.set(0.07, 0.22, 0.04)); gb.geo(box, m, BLK, 0); }
     }
   }
+  /* warning signs: a big yellow diamond each side of the road 90 m and 45 m before every ravine and water splash, with a black symbol (a gap, or waves) */
+  for (const f of RY.feats) {
+    if (f.k !== 'ravine' && f.k !== 'ford') continue; const rv = f.k === 'ravine';
+    for (const back of [90, 45]) for (const sd of [-1, 1]) {
+      const a = RY.at(f.s0 - (rv ? f.up : 0) - back, 0, {}), p = RY.at(f.s0 - (rv ? f.up : 0) - back, sd * (a.hw + 1.6), {}), y = RY.heightAt(p.x, p.z), fx = Math.sin(a.yaw) * 0.05, fz = Math.cos(a.yaw) * 0.05;
+      put(cyl, p.x, y + 1.4, p.z, 0, 0, 0.07, 2.8, 0.07, C(0.5, 0.5, 0.52), 0.2);
+      e.set(0, a.yaw, Math.PI / 4, 'YXZ'); q.setFromEuler(e); m.compose(v.set(p.x + fx, y + 2.9, p.z + fz), q, sc.set(1.5, 1.5, 0.04)); gb.geo(box, m, BLK, 0);
+      m.compose(v.set(p.x + fx * 1.4, y + 2.9, p.z + fz * 1.4), q, sc.set(1.36, 1.36, 0.04)); gb.geo(box, m, YEL, 0);
+      const bx = (dx, dy, w, h, rz) => { dx *= 1.5; dy *= 1.5; w *= 1.5; h *= 1.5; e.set(0, a.yaw, rz || 0, 'YXZ'); q.setFromEuler(e); const ox = Math.cos(a.yaw) * dx, oz = -Math.sin(a.yaw) * dx; m.compose(v.set(p.x + fx * 2.2 + ox, y + 2.9 + dy, p.z + fz * 2.2 + oz), q, sc.set(w, h, 0.03)); gb.geo(box, m, BLK, 0); };
+      if (rv) { bx(-0.27, -0.06, 0.34, 0.1); bx(0.27, -0.06, 0.34, 0.1); bx(-0.08, -0.2, 0.05, 0.22, 0.3); bx(0.08, -0.2, 0.05, 0.22, -0.3); bx(0, 0.2, 0.08, 0.2); bx(0, 0.05, 0.08, 0.06); }   /* a road ending at a drop, and a ! */
+      else for (const dy of [-0.18, 0, 0.18]) for (const dx of [-0.2, 0, 0.2]) bx(dx, dy + (dx === 0 ? 0.04 : 0), 0.2, 0.05, dx === 0 ? -0.35 : 0.35);   /* waves */
+    }
+    if (!rv) for (const u of [0, f.len]) for (const sd of [-1, 1]) { const a = RY.at(f.s0 + u, 0, {}), p = RY.at(f.s0 + u, sd * (a.hw + 0.9), {}), y = RY.heightAt(p.x, p.z); for (let k = 0; k < 6; k++) put(cyl, p.x, y + 0.2 + k * 0.25, p.z, 0, 0, 0.07, 0.25, 0.07, k % 2 ? RED : WHT, 0); }   /* depth posts at the water's edge */
+  }
   /* tyre walls: stacks of three or four tyres, plain or painted red and white */
   for (const t of RY.tyres) { const y = RY.heightAt(t.x, t.z); for (let k = 0; k < t.n; k++) put(cyl, t.x, y + 0.13 + k * 0.25, t.z, 0, 0, 0.42, 0.24, 0.42, t.red ? (k % 2 ? RED : WHT) : RUB, 0.2); }
   if (gb.count) { const mesh = gb.mesh(RYG.mats.wood, true, true); group.add(mesh); RYG.obsMesh = mesh; }
