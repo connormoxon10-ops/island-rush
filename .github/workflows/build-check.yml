@@ -1,0 +1,20 @@
+name: Build check
+
+# Pull requests and pushes to main get the build and the fast physics tests, but not
+# the Playwright suites, which take close to an hour. Those run on release instead.
+#
+# This calls build-test.yml rather than deploy-pages.yml so the token stays read-only.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-test.yml
+    permissions:
+      contents: read
+    with:
+      version: ci-${{ github.run_number }}
+      browser_tests: false

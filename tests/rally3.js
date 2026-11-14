@@ -13,7 +13,6 @@ const OUT = process.env.OUT || __dirname, NOISE = +(process.env.NOISE || 0), LAG
   const logs = [];
   page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') logs.push(m.type() + ': ' + m.text().slice(0, 300)); });
   page.on('pageerror', (e) => logs.push('PAGEERROR: ' + String(e.stack || e).slice(0, 600)));
-  await page.route('**/three.min.js', (r) => r.fulfill({ path: path.resolve(__dirname, 'three.min.js'), contentType: 'application/javascript' }));
   await page.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
   await page.addInitScript(([st, car]) => { window.__STAGE = st; window.__CAR = car; }, [+(process.env.STAGE || 0), process.env.CAR || 'ridge']);   /* CAR = ridge | buggy */   /* STAGE = which rally stage (0 Hollow Pines .. 4 Frostfall) */
   await page.addInitScript((ay) => { window.__AY = ay; window.__noAdapt = true; try { localStorage.setItem('island-rush-v1', JSON.stringify({ set: { quality: 'low' } })); } catch (e) { /* ignore */ } }, +(process.env.AY || 0.8));

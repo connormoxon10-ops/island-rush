@@ -9,7 +9,7 @@ bash build.sh                 # rebuild dist/island-rush.html from js/ sources (
 open dist/island-rush.html    # launch the game in your default browser (macOS)
 ```
 
-The game loads three.js from a CDN, so you need an internet connection. You can also serve it (useful if your browser restricts `file://` pages):
+The build inlines three.js from `vendor/`, so the game needs no internet connection. You can also serve it (useful if your browser restricts `file://` pages):
 
 ```bash
 python3 -m http.server 8000   # then visit http://localhost:8000/dist/island-rush.html
@@ -28,7 +28,7 @@ An open-world racing, flying and boating game that runs in a single HTML file, p
 
 ## Play it
 
-Open `dist/island-rush.html` in a desktop browser. It loads three.js r128 from cdnjs, so it needs an internet connection. The in-game **Controls** tab lists every key; turn on **Settings → Developer mode** for cheats, a free camera and teleports.
+Run `bash build.sh`, then open `dist/island-rush.html` in a desktop browser. three.js is inlined into the file, so it plays offline from `file://`. The in-game **Controls** tab lists every key; turn on **Settings → Developer mode** for cheats, a free camera and teleports.
 
 ## What's in it
 
@@ -96,7 +96,51 @@ bash tests/regression.sh && bash tests/flight.sh      # the two regression suite
 
 `tests/rally3.js` drives the whole rally stage with an autopilot on the real car physics (`AY=0.8 node tests/rally3.js` gives a clean ~144 s lap; `NOISE=0.25 LAG=6` makes the driver sloppy; `RIV=0..3` picks the rival level (the log lists each rival's progress, the finishing order and a per-wall map of which planks you and the rivals broke); `TRACE=s0,s1` prints a frame trace) `tests/rally4.js` takes a screenshot tour of it and `tests/rally5.js` a tour of a race against the rivals (grid, pack, wall). `node tests/drag1.js` runs the drag strip in every bracket, a jump start and leaving (`SHOTS=1` for screenshots). `node tests/bench_bank.js` checks that banked road holds more lateral g than flat and off-camber less (raw tyre model, assist off). `node tests/bench_handling.js` is a step-steer benchmark of the rally car (spin-outs, sideslip and settle time at 25/35/45 m/s). `STAGE=1..4 node tests/rally3.js` drives one of the other stages; `node tests/rally_tour.js` starts every stage in turn and takes screenshots.
 
-Each suite writes `*.done` and `*.log` files in `tests/` (and `{shot}` steps write PNGs to the current directory); every scenario should exit 0 with no `PAGEERROR` in its log. The harness serves `tests/three.min.js` in place of the CDN copy.
+Each suite writes `*.done` and `*.log` files in `tests/` (and `{shot}` steps write PNGs to the current directory); every scenario should exit 0 with no `PAGEERROR` in its log. Note that the suite scripts themselves always exit 0 — the per-scenario exit codes in `tests/regression.done` and `tests/flight.done` are what matter, and that is what CI checks.
+
+## Deploying
+
+The game is a single static file, so GitHub Pages hosts all of it. Publishing a GitHub
+release builds that tag, runs the full test suite and redeploys the site.
+
+| Workflow | Trigger | What it does |
+| --- | --- | --- |
+| `build-test.yml` | `workflow_call` | Reusable: build, check the bundle is self-contained, run the suites. |
+| `deploy-pages.yml` | `workflow_call` | Reusable: calls `build-test.yml`, then publishes to Pages. |
+| `release.yml` | release published, or manual | Calls `deploy-pages.yml` with the full suite. Attaches the build to the release. |
+| `build-check.yml` | pull request, push to `main` | Calls `build-test.yml` with the browser suites off. No deploy. |
+
+The build and test steps live in `build-test.yml` so a release is gated by exactly the steps
+a pull request runs. They are a separate workflow from the deploy rather than one workflow
+with a `deploy: false` switch because a reusable workflow can only ever *reduce* the caller's
+permissions: a pull request calls `build-test.yml` with a read-only token, while only
+`release.yml` grants the `pages: write` the deploy needs. Had both lived in one workflow,
+every pull request would have had to grant write access to satisfy a job it never runs.
+
+The newest release is served from the site root. The ten most recent releases also stay
+playable at `/v/<tag>/`, listed at `/v/`. That archive is rebuilt on every deploy from the
+`island-rush.html` asset attached to each release, so old builds are never kept in git —
+releases made before this workflow existed simply have no asset and are skipped.
+
+The deploy always builds from source rather than publishing the committed `dist/island-rush.html`,
+so a stale commit of that file cannot ship.
+
+One-time setup: under **Settings → Pages**, set **Source** to **GitHub Actions**. Builds are
+stamped with their release tag, shown on the title screen and under **Settings → Save → Build**.
+
+### Your save data
+
+Progress lives in `localStorage` under the key `island-rush-v1`, keyed to the site's
+**origin** — not to a path or a build. Deploying a new release therefore never touches it, and
+the money and unlocks you earned stay put. `loadSave()` in `js/01_core.js` merges each field
+over a complete set of defaults, so a save written by an older build still loads after an
+upgrade (and vice versa). Because the archived builds under `/v/` share the origin, they all
+read the same save.
+
+Three things *will* lose progress: clearing browser data, changing `SAVE_KEY`, or moving the
+game to a different origin (a custom domain, or a different browser or device). For those
+cases **Settings → Save** has **Download save** and **Load save file**. Import writes the file
+to `localStorage` and reloads, so `loadSave()` still does all the validation.
 
 ## Known rough edges
 

@@ -142,6 +142,7 @@ body.cut #hud, body.cut #touch { opacity: 0 !important; pointer-events: none !im
 .mark { font-family: var(--display); font-style: italic; font-weight: 700; line-height: 0.88; font-size: clamp(54px, 11vw, 132px); letter-spacing: 0.01em; text-transform: uppercase; margin: 0; }
 .mark span { color: var(--amber); }
 .tag { font-size: clamp(17px, 2.4vw, 22px); color: var(--dim); max-width: 34em; margin: 14px 0 22px; text-wrap: pretty; }
+#titleVer { position: absolute; right: max(24px, env(safe-area-inset-right, 0px)); bottom: calc(10px + env(safe-area-inset-bottom, 0px)); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); opacity: 0.55; }
 #loadbar { width: min(420px, 80vw); height: 6px; background: rgba(255, 255, 255, 0.12); margin-top: 22px; } #loadbar i { display: block; height: 100%; width: 0; background: var(--amber); transition: width 0.15s; }
 #loadmsg { margin-top: 10px; font-size: 14px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); }
 .btn { border: 1px solid var(--line); background: rgba(255, 255, 255, 0.07); padding: 9px 22px; font-size: 18px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; transition: background 0.12s, transform 0.12s; }
@@ -683,6 +684,7 @@ body.dogfight.fly #tFire { display: grid; }
     <p class="tag" id="tagline">An open island, seven towns and a road for every mood. Pick a run, or just drive.</p>
     <div class="row-btns"><button class="btn primary" id="btnStart" type="button">Start engine</button><button class="btn" id="btnTitleCtl" type="button">Controls</button></div>
     <div class="keys"><span><kbd>W</kbd><kbd>S</kbd> gas / brake</span><span><kbd>A</kbd><kbd>D</kbd> steer</span><span><kbd>Shift</kbd> nitro</span><span><kbd>Space</kbd> handbrake</span><span><kbd>E</kbd> start run / talk</span><span><kbd>F</kbd> get out / in</span><span><kbd>Q</kbd> punch (on foot)</span><span><kbd>C</kbd> change view</span><span><kbd>M</kbd> map</span></div>
+    <div id="titleVer"></div>
   </div>
   <div id="menu" class="screen" hidden>
     <div id="menuHead"><h2>Island Rush</h2><div id="tabs" role="tablist"></div><div id="menuCash"></div></div>

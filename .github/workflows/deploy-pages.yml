@@ -1,0 +1,158 @@
+name: Build and deploy to Pages
+
+# Reusable workflow: builds and tests the game via build-test.yml, then publishes it to
+# GitHub Pages. The newest build is served from the site root and the last `archive_keep`
+# releases stay playable under /v/<tag>/.
+#
+# The /v/ archive is rebuilt on every run from the `island-rush.html` asset attached to
+# each release, so nothing about the site is stored in git history.
+#
+# A caller must grant contents/pages/id-token write, since the deploy job needs them.
+# Callers that only want the gate (pull requests) should use build-test.yml directly,
+# which needs nothing beyond `contents: read`.
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Label for the in-game build stamp and the /v/<version>/ archive path.
+        required: true
+        type: string
+      ref:
+        description: Git ref to build. Empty builds the ref that triggered the caller.
+        required: false
+        type: string
+        default: ''
+      browser_tests:
+        description: Run the Playwright regression and flight suites before publishing.
+        required: false
+        type: boolean
+        default: true
+      attach_asset:
+        description: Attach the built HTML to the release named by `version`.
+        required: false
+        type: boolean
+        default: false
+      archive_keep:
+        description: How many of the most recent releases stay playable under /v/.
+        required: false
+        type: number
+        default: 10
+
+jobs:
+  # Nested call, so a release is gated by exactly the steps a pull request runs.
+  verify:
+    name: Verify
+    uses: ./.github/workflows/build-test.yml
+    permissions:
+      contents: read
+    with:
+      version: ${{ inputs.version }}
+      ref: ${{ inputs.ref }}
+      browser_tests: ${{ inputs.browser_tests }}
+
+  deploy:
+    name: Deploy
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      # write is needed to attach the build to the release; read alone cannot do that
+      contents: write
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages-deploy
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: game
+          path: build
+
+      - name: Attach build to the release
+        if: ${{ inputs.attach_asset }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          cp build/island-rush.html island-rush.html
+          # --clobber so re-running a deploy for the same release replaces the asset.
+          gh release upload "$VERSION" island-rush.html --clobber --repo "$GITHUB_REPOSITORY"
+
+      - name: Assemble site
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+          KEEP: ${{ inputs.archive_keep }}
+        run: |
+          set -euo pipefail
+
+          # Tags become path segments, so allow only characters that are safe in a path.
+          slug() { printf '%s' "$1" | tr -cd 'A-Za-z0-9._-' | cut -c1-64; }
+
+          cur="$(slug "$VERSION")"
+          [ -n "$cur" ] || { echo "::error::version '$VERSION' has no usable characters"; exit 1; }
+
+          mkdir -p site/v
+          touch site/.nojekyll
+          cp build/island-rush.html site/index.html
+          mkdir -p "site/v/$cur"
+          cp build/island-rush.html "site/v/$cur/index.html"
+          echo "$cur (this build)"
+
+          # Rebuild the rest of the archive from the assets attached to past releases.
+          gh release list --limit 100 --exclude-drafts \
+             --json tagName --jq '.[].tagName' --repo "$GITHUB_REPOSITORY" > tags.txt || : > tags.txt
+
+          n=0
+          while IFS= read -r tag; do
+            [ -n "$tag" ] || continue
+            s="$(slug "$tag")"
+            [ -n "$s" ] || continue
+            [ "$s" = "$cur" ] && continue
+            n=$((n + 1))
+            if [ "$n" -ge "$KEEP" ]; then break; fi
+            rm -rf tmp && mkdir -p tmp
+            if gh release download "$tag" -p island-rush.html -D tmp \
+                 --repo "$GITHUB_REPOSITORY" 2>/dev/null; then
+              mkdir -p "site/v/$s"
+              mv tmp/island-rush.html "site/v/$s/index.html"
+              echo "$s (from release asset)"
+            else
+              echo "$s skipped: no island-rush.html asset"
+            fi
+          done < tags.txt
+
+          # Landing page listing everything that is playable.
+          {
+            echo '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+            echo '<meta name="viewport" content="width=device-width,initial-scale=1">'
+            echo '<title>Island Rush builds</title>'
+            echo '<style>body{background:#05070b;color:#e9eef5;font:16px/1.6 system-ui,sans-serif;margin:0;padding:48px 24px;}'
+            echo 'main{max-width:40em;margin:0 auto}a{color:#ffb020}li{margin:.3em 0}code{opacity:.7}</style>'
+            echo '</head><body><main><h1>Island Rush builds</h1>'
+            echo "<p><a href=\"../\">Play the current build</a> &mdash; <code>$cur</code></p>"
+            echo '<p>Older releases are kept playable here. They all share the same save data,'
+            echo 'because progress is stored per site address rather than per build.</p><ul>'
+            for d in $(ls -1 site/v 2>/dev/null | sort -rV); do
+              [ -d "site/v/$d" ] || continue
+              echo "<li><a href=\"./$d/\">$d</a></li>"
+            done
+            echo '</ul></main></body></html>'
+          } > site/v/index.html
+
+          echo "--- site ---"; du -ah site | sort -k2
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
