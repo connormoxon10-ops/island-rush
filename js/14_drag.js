@@ -309,6 +309,6 @@ Drag.finish = function () {
 };
 Drag.visual = function () {
   const b = Drag.rival; if (!b) return; const c = b.c, m = b.mesh;
-  m.position.set(c.x, c.y + c.sY * 0.4, c.z); m.rotation.set(-c.pitch, c.yaw, c.roll, 'YXZ'); m.userData.v = c.speed; m.userData.brake = c.brk > 0.25 && !c.rev; m.userData.steer = clamp(c.delta || 0, -0.6, 0.6);
+  m.position.set(c.x, c.y + c.sY * 0.4, c.z); m.rotation.set(-c.pitch, c.yaw, c.roll, 'YXZ'); m.userData.cs = c; m.userData.v = c.speed; m.userData.brake = c.brk > 0.25 && !c.rev; m.userData.steer = clamp(c.delta || 0, -0.6, 0.6);
   if (c.spin && Math.random() < 0.5) emit(Part.smoke, c.x - Math.sin(c.yaw) * b.P.b + (Math.random() - 0.5) * 1.4, c.y + 0.2, c.z - Math.cos(c.yaw) * b.P.b, (Math.random() - 0.5) * 2, 0.8 + Math.random(), -2 - Math.random() * 2, 1.2 + Math.random(), 1.2, 3, 0.8, 0.8, 0.8, 0.35, -0.3);
 };

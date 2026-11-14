@@ -186,7 +186,7 @@ RR.results = function () {
 RR.visual = function (dt) {
   if (!RR.on) return;
   for (const b of RR.list) {
-    const c = b.c, m = b.mesh; m.position.set(c.x, c.y + c.sY * 0.4, c.z); m.rotation.set(-c.pitch, c.yaw, c.roll, 'YXZ');
+    const c = b.c, m = b.mesh; m.position.set(c.x, c.y + c.sY * 0.4, c.z); m.rotation.set(-c.pitch, c.yaw, c.roll, 'YXZ'); m.userData.cs = c;
     m.userData.v = c.speed; m.userData.brake = c.brk > 0.25 && !c.rev; m.userData.steer = clamp(c.delta || 0, -0.6, 0.6);
     const dd = Math.hypot(c.x - car.x, c.z - car.z), spd = Math.abs(c.speed); b.dustT -= dt;
     if (!RYP.ok || dd > 110 || c.air || spd < 6 || b.dustT > 0) continue;
