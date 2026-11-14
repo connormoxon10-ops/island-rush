@@ -9,7 +9,7 @@ bash build.sh                 # rebuild dist/island-rush.html from js/ sources (
 open dist/island-rush.html    # launch the game in your default browser (macOS)
 ```
 
-The game loads three.js from a CDN, so you need an internet connection. You can also serve it (useful if your browser restricts `file://` pages):
+The build inlines three.js from `vendor/`, so the game needs no internet connection. You can also serve it (useful if your browser restricts `file://` pages):
 
 ```bash
 python3 -m http.server 8000   # then visit http://localhost:8000/dist/island-rush.html
@@ -28,7 +28,7 @@ An open-world racing, flying and boating game that runs in a single HTML file, p
 
 ## Play it
 
-Open `dist/island-rush.html` in a desktop browser. It loads three.js r128 from cdnjs, so it needs an internet connection. The in-game **Controls** tab lists every key; turn on **Settings → Developer mode** for cheats, a free camera and teleports.
+Run `bash build.sh`, then open `dist/island-rush.html` in a desktop browser. three.js is inlined into the file, so it plays offline from `file://`. The in-game **Controls** tab lists every key; turn on **Settings → Developer mode** for cheats, a free camera and teleports.
 
 ## What's in it
 
@@ -96,7 +96,7 @@ bash tests/regression.sh && bash tests/flight.sh      # the two regression suite
 
 `tests/rally3.js` drives the whole rally stage with an autopilot on the real car physics (`AY=0.8 node tests/rally3.js` gives a clean ~144 s lap; `NOISE=0.25 LAG=6` makes the driver sloppy; `RIV=0..3` picks the rival level (the log lists each rival's progress, the finishing order and a per-wall map of which planks you and the rivals broke); `TRACE=s0,s1` prints a frame trace) `tests/rally4.js` takes a screenshot tour of it and `tests/rally5.js` a tour of a race against the rivals (grid, pack, wall). `node tests/drag1.js` runs the drag strip in every bracket, a jump start and leaving (`SHOTS=1` for screenshots). `node tests/bench_bank.js` checks that banked road holds more lateral g than flat and off-camber less (raw tyre model, assist off). `node tests/bench_handling.js` is a step-steer benchmark of the rally car (spin-outs, sideslip and settle time at 25/35/45 m/s). `STAGE=1..4 node tests/rally3.js` drives one of the other stages; `node tests/rally_tour.js` starts every stage in turn and takes screenshots.
 
-Each suite writes `*.done` and `*.log` files in `tests/` (and `{shot}` steps write PNGs to the current directory); every scenario should exit 0 with no `PAGEERROR` in its log. The harness serves `tests/three.min.js` in place of the CDN copy.
+Each suite writes `*.done` and `*.log` files in `tests/` (and `{shot}` steps write PNGs to the current directory); every scenario should exit 0 with no `PAGEERROR` in its log. Note that the suite scripts themselves always exit 0 — the per-scenario exit codes in `tests/regression.done` and `tests/flight.done` are what matter, and that is what CI checks.
 
 ## Known rough edges
 

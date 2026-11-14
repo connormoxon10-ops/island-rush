@@ -9,7 +9,6 @@ const steps = JSON.parse(process.argv[3] || '[]');
   const logs = [];
   page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') logs.push(m.type() + ': ' + m.text().slice(0, 400)); });
   page.on('pageerror', (e) => logs.push('PAGEERROR: ' + String(e.stack || e).slice(0, 800)));
-  await page.route('**/three.min.js', (r) => r.fulfill({ path: path.resolve(__dirname, 'three.min.js'), contentType: 'application/javascript' }));
   await page.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
   await page.addInitScript(([q, extra]) => { window.__noAdapt = true; try { if (!sessionStorage.getItem('seeded')) { localStorage.setItem('island-rush-v1', JSON.stringify(Object.assign({ set: { quality: q } }, extra))); sessionStorage.setItem('seeded', '1'); } } catch (e) {} }, [Q, JSON.parse(process.env.SAVE || '{}')]);
   await page.goto('file://' + G);

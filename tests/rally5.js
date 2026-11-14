@@ -11,7 +11,6 @@ const SHOTS = JSON.parse(process.argv[2] || '[]'), OUT = process.env.OUT || __di
   const logs = [];
   page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') logs.push(m.type() + ': ' + m.text().slice(0, 300)); });
   page.on('pageerror', (e) => logs.push('PAGEERROR: ' + String(e.stack || e).slice(0, 600)));
-  await page.route('**/three.min.js', (r) => r.fulfill({ path: path.resolve(__dirname, 'three.min.js'), contentType: 'application/javascript' }));
   await page.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
   await page.addInitScript((q) => { window.__noAdapt = true; try { localStorage.setItem('island-rush-v1', JSON.stringify({ set: { quality: q } })); } catch (e) { /* ignore */ } }, process.env.QUALITY || 'low');
   await page.goto('file://' + G);

@@ -10,7 +10,6 @@ const G = path.resolve(__dirname, '../dist/test.html');
   const ctx = await browser.newContext({ viewport: { width: 640, height: 360 } }); const page = await ctx.newPage();
   const logs = [];
   page.on('pageerror', (e) => logs.push('PAGEERROR: ' + String(e.stack || e).slice(0, 400)));
-  await page.route('**/three.min.js', (r) => r.fulfill({ path: path.resolve(__dirname, 'three.min.js'), contentType: 'application/javascript' }));
   await page.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
   await page.addInitScript(() => { window.__noAdapt = true; try { localStorage.setItem('island-rush-v1', JSON.stringify({ set: { quality: 'low' } })); } catch (e) { /* ignore */ } });
   await page.goto('file://' + G);
