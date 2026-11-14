@@ -246,7 +246,7 @@ Dmg.update = function (dt) {
   if (c.health > Dmg.hp + 0.01) Dmg.heal(c.health); Dmg.hp = c.health;
   Dmg.debris(dt);
   if (Dmg.st === 'blown') Dmg.blowT += dt;
-  else if (c.health < 14 && c.health > 0 && !Race.on && !devOn('god') && c.wrecked <= 0 && App.mode === 'play') {
+  else if (c.health < 14 && c.health > 0 && !Race.on && !Derby.on && !devOn('god') && c.wrecked <= 0 && App.mode === 'play') {
     /* the engine is burning: it will go up in a few seconds unless it gets repaired */
     if (!Dmg.fireOn) { Dmg.fireOn = true; UI.banner('ENGINE FIRE', 'Get clear, she is going to blow'); Snd.fail(); }
     c.health -= dt * (0.8 + 1.5 * (1 - c.health / 14)); Dmg.hp = c.health;

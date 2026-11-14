@@ -9,7 +9,7 @@
      the rule   as in a real derby you must keep making contact: forty seconds without a hit and the officials' clock eats your health.
      rivals     each picks a target (often you), leads it, rams it, backs out when it is pinned or has driven past, and steers off the wall.
      result     last car running wins. Prize money by place, a bonus for every car you put out (the last car to hit a car gets the credit). */
-const DD = { X0: -7000, Z0: -7000, Y: 20, A: 34, R: 30 };
+const DD = { X0: -7000, Z0: -7000, Y: 20, A: 34, R: 30, ARMOUR: 0.4 };   /* ARMOUR: the share of crash damage your own car takes in the derby (the rivals take it all) */
 const DD_ISL = [[-15, 0, 2.4], [15, 0, 2.4]];   /* tyre islands: x, z, radius */
 const DD_PRIZE = [2600, 1200, 600];
 const DD_NAMES = ['Crusher Kowalski', 'Big Lou Marchetti', 'Rusty Abernathy', 'Dee "Dent" Okafor', 'Tank Halvorsen', 'Mags Delacroix', 'Boom-Boom Tran', 'Scrap Callahan', 'Hammer Ruiz', 'Patch Whitfield', 'Grit Sorensen', 'Junkyard June'];
@@ -76,7 +76,8 @@ Derby.think = function (b, h) {
   if (b.out || Derby.phase !== 'run') { c.thr = 0; c.brk = 1; c.hand = 1; c.steer = approach(c.steer, 0, 4 * h); return; }
   b.re -= h; let t = b.tgt;
   if (!t || t.out || b.re <= 0) {   /* a new target: near, weak, and you more often than not */
-    let best = 1e9; t = null; for (const o of Derby.list) { if (o === b || o.out) continue; const sc = Math.hypot(o.c.x - c.x, o.c.z - c.z) + (o.me ? -18 * b.grudge : 0) + o.hp * 0.08 + Math.random() * 14; if (sc < best) { best = sc; t = o; } }
+    let best = 1e9; t = null; for (const o of Derby.list) { if (o === b || o.out) continue; const hunt = o.me ? Derby.list.filter((x) => x !== b && !x.out && !x.me && x.tgt === o).length : 0;   /* at most two rivals hunt you at once */
+      const sc = Math.hypot(o.c.x - c.x, o.c.z - c.z) + (o.me ? (hunt >= 2 ? 60 : -10 * b.grudge) : 0) + o.hp * 0.08 + Math.random() * 14; if (sc < best) { best = sc; t = o; } }
     b.tgt = t; b.re = 2.5 + Math.random() * 2.5;
   }
   if (!t) { c.thr = 0; c.brk = 0.5; return; }
@@ -166,7 +167,7 @@ Derby.paint = function () {
   const R = Derby.rec(), seg = (k, opts, cur) => '<div class="rseg" data-k="' + k + '">' + opts.map(([v, l]) => '<button type="button" class="' + (cur === v ? 'on' : '') + '" data-v="' + v + '">' + l + '</button>').join('') + '</div>';
   E.rlTitle.textContent = 'Scrapyard Bowl'; E.rlSub.textContent = 'Destruction derby'; E.rlCash.textContent = money(save.money); E.rlPanel.classList.remove('jk');
   E.rlFoot.innerHTML = '<button class="btn" type="button" data-dd="back">◂ Circuit</button><button class="btn primary" type="button" data-dd="start">Into the bowl</button>';
-  E.rlBody.innerHTML = '<p class="rlp">A walled dirt bowl and a field of bangers. Ram, spin and wreck them: the last car still running wins. The front of a car is its weak spot and the back its strongest, so hit them in the nose and take hits on the boot. Go forty seconds without contact and the officials start taking your health.</p>' +
+  E.rlBody.innerHTML = '<p class="rlp">A walled dirt bowl and a field of bangers. Ram, spin and wreck them: the last car still running wins. The front of a car is its weak spot and the back its strongest, so hit them in the nose and take hits on the boot. Go forty seconds without contact and the officials start taking your health. Your car is <b>derby-armoured</b>: it takes ' + Math.round(DD.ARMOUR * 100) + '% of the damage the others do, and no more than two of them hunt you at once.</p>' +
     '<div class="rlrow"><label>Field</label>' + seg('ddn', [[6, '6 cars'], [8, '8 cars'], [10, '10 cars']], R.n) + '</div>' +
     '<div class="rlrow"><label>Your car</label>' + seg('ddcar', [['rook', 'Banger · Rook GT'], ['hauler', 'Banger · Hauler 4x4'], ['own', 'Your ' + esc(CUR.name)]], R.car) + '</div>' +
     '<div class="rlprize"><small>Prize money</small>' + DD_PRIZE.map((p, i) => '<span>' + (i + 1) + '. <b>' + money(p) + '</b></span>').join('') + '<span>+ <b>' + money(150) + '</b> a wreck</span></div>' +
