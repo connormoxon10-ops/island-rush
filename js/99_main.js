@@ -103,13 +103,13 @@ function step(dt) {
   const v = c.crashFlag;
   if (v > 2.2 && App.time - c.lastImpact > 0.12 && c.wrecked <= 0) {
     c.lastImpact = App.time; const hpB = c.health;
-    c.health -= Math.pow(v - 2, 1.35) * 1.3 * tune.dmg * (Police.ram ? 0.55 : 1) * (Race.on ? 0.4 : Rally.on ? 0.3 : 1); Dmg.hit(c, v, hpB - c.health);
+    c.health -= Math.pow(v - 2, 1.35) * 1.3 * tune.dmg * (Police.ram ? 0.55 : 1) * (Race.on ? 0.4 : Rally.on ? 0.3 : Derby.on ? DD.ARMOUR : 1); Dmg.hit(c, v, hpB - c.health);
     Cam.shake = Math.max(Cam.shake, Math.min(2.5, v * 0.12)); App.dmg = Math.min(1, App.dmg + v / 24);
     Snd.crash(v); sparks(c.cx, c.y + 0.6, c.cz, Math.min(34, Math.round(v * 2.2)), 2 + v * 0.45); if (!devOn('god')) onMissionCrash(v);
   } else if (v > 0.6 && Math.abs(c.speed) > 6 && c.wrecked <= 0) Dmg.scrape(c);
   if (c.landImpact > 0) {
     const li = c.landImpact; Cam.shake = Math.max(Cam.shake, Math.min(2, li * 0.12)); Snd.crash(li * 0.6); sparks(c.x, c.y + 0.2, c.z, 10, 5);
-    if (li > 11) { c.health -= (li - 11) * 3 * tune.dmg * (Rally.on ? 0.12 : 1); App.dmg = Math.min(1, App.dmg + (Rally.on ? 0.1 : 0.3)); }
+    if (li > 11) { c.health -= (li - 11) * 3 * tune.dmg * (Rally.on ? 0.12 : Derby.on ? DD.ARMOUR : 1); App.dmg = Math.min(1, App.dmg + (Rally.on ? 0.1 : 0.3)); }
   }
   if (devOn('god')) c.health = 100; else if ((Race.on || Rally.on || Drag.on) && c.health < 12) c.health = 12;   /* no tow trucks mid-race */
   else if (Derby.on && c.health < 0.5) c.health = 0.5;   /* the derby decides when you are out */

@@ -37,6 +37,7 @@ const { chromium } = require('playwright'); const path = require('path'); const 
   ok(a.on && a.n === 8 && a.car === 'rook', 'the derby starts with 8 cars and lends you the banger');
   ok(b.firstHit > 0 && b.firstHit < 30, 'the rivals find each other and hit (first damage at ' + b.firstHit + ' s)');
   ok(b.myHp < b.hp0, 'you get rammed (health ' + b.myHp + ')');
+  ok(/YOU WIN|2nd|3rd|4th/.test(b.res) || b.myHp > 1, 'your armoured car outlasts at least half the field, even sitting still (' + b.res.slice(0, 40) + ')');
   ok(b.out >= 6 && b.phase === 'done' && b.res, 'cars are wrecked one by one to a result (' + b.out + ' out after ' + b.t + ' s): ' + b.res);
   ok(b.outside === 0 && b.nan === 0, 'nobody leaves the bowl or blows up the physics');
   ok(b.kills > 0, 'wrecks are credited to whoever hit last (' + b.kills + ')');
