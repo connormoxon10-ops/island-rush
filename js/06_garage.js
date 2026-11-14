@@ -146,7 +146,14 @@ const CARS = [
     p: { crawl: 0.85, m: 2250, a: 1.4, b: 1.35, Iz: 5000, rw: 0.44, fd: 4.1, gears: [3.8, 2.2, 1.45, 1.0, 0.8], idle: 750, red: 4600, track: 1.62, cgh: 0.85, rd: 0.6, awd: true, rsf: 0.5, ab: 0.5, cf: 8.6, cr: 10.2 },
     t: { Tmax: 600, mu: 1.02, cd: 1.4, brk: 0.95, off: 1.45, cl: 0 },
     stats: { spd: 4, acc: 3, hdl: 3, off: 10 },
-    body: { susp: 0.24, L: 4.64, W: 2.02, H: 0.6, C: 0.78, wr: 0.44, y0: 0.62, tw: 0.34, rim: [0.1, 0.1, 0.11], rimStyle: 'steel', tire: 'knobby', custom: 'overland' } }
+    body: { susp: 0.24, L: 4.64, W: 2.02, H: 0.6, C: 0.78, wr: 0.44, y0: 0.62, tw: 0.34, rim: [0.1, 0.1, 0.11], rimStyle: 'steel', tire: 'knobby', custom: 'overland' } },
+
+  { id: 'trail', name: 'Badger TR', cls: 'Trail 4x4', price: 7000, paint: 3, dy: 0.32, snd: { f: 0.7, lp: 0.75 }, dial: 200,
+    blurb: 'A short, open-top trail 4x4: a boxy tub, flat wings over chunky tyres, an upright screen, a roll cage and the spare on the back. Short overhangs and a short wheelbase let it climb almost anything; the top comes off the moment the sun comes out.',
+    p: { crawl: 0.8, m: 1750, a: 1.2, b: 1.22, Iz: 3100, rw: 0.42, fd: 4.1, gears: [4.0, 2.4, 1.5, 1.1, 0.85], idle: 750, red: 5200, track: 1.56, cgh: 0.72, rd: 0.55, awd: true, rsf: 0.5, ab: 0.5, cf: 9.0, cr: 10.6 },
+    t: { Tmax: 480, mu: 1.05, cd: 1.05, brk: 1.0, off: 1.42, cl: 0 },
+    stats: { spd: 4, acc: 4, hdl: 4, off: 10 },
+    body: { susp: 0.2, L: 4.2, W: 1.88, H: 0.5, C: 0.6, wr: 0.42, y0: 0.62, tw: 0.33, rim: [0.1, 0.1, 0.11], rimStyle: 'five', tire: 'knobby', custom: 'trail' } }
 ];
 const CAR_BY_ID = {}; for (const d of CARS) { CAR_BY_ID[d.id] = d; const b = d.body; d.top = (b.y0 != null ? b.y0 : 0.36) + b.H + 0.1 + b.C; d.hl = b.L / 2; }
 const BASE_N = CARS.length;   /* CARS[0..BASE_N) are the dealership cars; stolen cars are appended at runtime (see 07_jack.js) */
