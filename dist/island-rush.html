@@ -23644,11 +23644,11 @@ Derby.finish = function () {
   if (place === 1) Snd.win(); else Snd.beep(240, 0.4);
   const ord = ['', '1st', '2nd', '3rd'], order = Derby.list.slice().sort((a, b) => (a.out ? a.place : 1) - (b.out ? b.place : 1));
   E.rres.hidden = false;
-  E.rres.innerHTML = '<div id="rresP"><h2 class="' + (place === 1 ? 'ok' : '') + '">' + (place === 1 ? 'LAST CAR RUNNING' : 'WRECKED · ' + (ord[place] || place + 'th')) + '</h2>' +
+  E.rres.innerHTML = '<div id="rresP"><h2 class="' + (place === 1 ? 'ok' : '') + '">' + (place === 1 ? 'LAST CAR RUNNING · YOU WIN' : 'YOU’RE OUT · ' + (ord[place] || place + 'th') + ' of ' + Derby.list.length) + '</h2>' +
     '<div class="rw">' + (reward ? '+' + money(reward) : 'No prize') + (bonus ? ' <small>incl. ' + money(bonus) + ' for ' + me.kills + ' wreck' + (me.kills > 1 ? 's' : '') + '</small>' : '') + '</div>' +
     '<table><tr><th>Pos</th><th>Driver</th><th>Wrecks</th></tr>' + order.map((o) => '<tr class="' + (o.me ? 'me' : '') + '"><td>' + (o.out ? o.place : 1) + '</td><td>' + esc(o.name) + '</td><td>' + o.kills + '</td></tr>').join('') + '</table>' +
     '<div class="racts"><button class="btn" type="button" data-dd="done">Leave the bowl</button><button class="btn primary" type="button" data-dd="again">Go again</button></div></div>';
-  Derby.say(place === 1 ? 'YOU WIN!' : 'YOU’RE OUT', 3);
+  Derby.el.msg.textContent = ''; Derby.sayT = 0;   /* the results panel says it */
 };
 /* the rivals' cars on screen, smoking and burning as they get hurt */
 Derby.visual = function (dt) {
