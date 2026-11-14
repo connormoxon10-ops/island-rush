@@ -153,7 +153,14 @@ const CARS = [
     p: { crawl: 0.8, m: 1750, a: 1.2, b: 1.22, Iz: 3100, rw: 0.42, fd: 4.1, gears: [4.0, 2.4, 1.5, 1.1, 0.85], idle: 750, red: 5200, track: 1.56, cgh: 0.72, rd: 0.55, awd: true, rsf: 0.5, ab: 0.5, cf: 9.0, cr: 10.6 },
     t: { Tmax: 480, mu: 1.05, cd: 1.05, brk: 1.0, off: 1.42, cl: 0 },
     stats: { spd: 4, acc: 4, hdl: 4, off: 10 },
-    body: { susp: 0.2, L: 4.2, W: 1.88, H: 0.5, C: 0.6, wr: 0.42, y0: 0.62, tw: 0.33, rim: [0.1, 0.1, 0.11], rimStyle: 'five', tire: 'knobby', custom: 'trail' } }
+    body: { susp: 0.2, L: 4.2, W: 1.88, H: 0.5, C: 0.6, wr: 0.42, y0: 0.62, tw: 0.33, rim: [0.1, 0.1, 0.11], rimStyle: 'five', tire: 'knobby', custom: 'trail' } },
+
+  { id: 'rtruck', name: 'Atlas RX', cls: 'Rally-raid truck', price: 38000, paint: 2, dy: 1.45, snd: { f: 0.5, lp: 0.55 }, dial: 200,
+    blurb: 'A desert rally-raid truck: a cab-over cab on its own springs, two solid axles with two long-travel dampers a corner, fuel tanks, two spare wheels and a box full of tools. It soaks up ground that would launch anything else, rocks and leans like the real thing, and keeps going flat out where the road runs out. Enter it on any rally stage.',
+    p: { crawl: 1.1, m: 4600, a: 2.05, b: 2.15, Iz: 15000, rw: 0.62, fd: 5.6, gears: [3.9, 2.6, 1.8, 1.35, 1.05, 0.85], idle: 700, red: 3400, track: 2.02, cgh: 1.05, rd: 0.5, awd: true, rsf: 0.5, ab: 0.5, cf: 6.8, cr: 7.6 },
+    t: { Tmax: 2000, mu: 1.0, cd: 2.1, brk: 1.0, off: 1.55, cl: 0 },
+    stats: { spd: 5, acc: 4, hdl: 3, off: 10 },
+    body: { susp: 0.42, sway: { w: 6.0, z: 0.3, k: 1.35 }, L: 7.2, W: 2.5, H: 0.9, C: 0.9, wr: 0.62, y0: 1.75, tw: 0.4, rim: [0.12, 0.12, 0.13], rimStyle: 'bead', tire: 'knobby', custom: 'rtruck' } }
 ];
 const CAR_BY_ID = {}; for (const d of CARS) { CAR_BY_ID[d.id] = d; const b = d.body; d.top = (b.y0 != null ? b.y0 : 0.36) + b.H + 0.1 + b.C; d.hl = b.L / 2; }
 const BASE_N = CARS.length;   /* CARS[0..BASE_N) are the dealership cars; stolen cars are appended at runtime (see 07_jack.js) */

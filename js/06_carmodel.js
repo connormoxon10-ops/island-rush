@@ -304,7 +304,7 @@ function updateWheels(dt) {
     rec.roll = (rec.roll + v * dt / rec.S.wr) % TAU;
     const tail = o.userData.tail; if (tail) tail.material = brake ? MAT.carBrake : MAT.carTail;
     const ts = Wheels.sets['t:' + rec.tire], rs = Wheels.sets['r:' + rec.rimKey], rho = TIRE_RHO[rec.tire];
-    const cs = rec.player ? car : o.userData.cs, sus = rec.sus || (rec.sus = [0, 0, 0, 0]); if (cs && cs.wh) wheelTravel(rec, cs, o, sus, dt); else sus[0] = sus[1] = sus[2] = sus[3] = 0;
+    const cs = rec.player ? car : o.userData.cs, sus = rec.sus || (rec.sus = [0, 0, 0, 0]); if (cs && cs.wh) wheelTravel(rec, cs, o, sus, dt); else sus[0] = sus[1] = sus[2] = sus[3] = 0; if (o.userData.rig) o.userData.rig(o, sus, cs, dt);
     for (const w of rec.S.wheels) {
       const left = w.side < 0, wy = w.r + sus[(w.front ? 0 : 2) + (w.x > 0 ? 1 : 0)]; _we.set(left ? -rec.roll : rec.roll, (w.front ? steer : 0) + (left ? Math.PI : 0), 0, 'YXZ'); _wq.setFromEuler(_we);
       _wl.compose(_wp.set(w.x, wy, w.z), _wq, _ws.set(w.w, w.r, w.r)); _wm.multiplyMatrices(o.matrixWorld, _wl); ts.m.setMatrixAt(ts.n++, _wm);
@@ -581,7 +581,11 @@ function buildCarModel(def, hex, opts) {
   const S = carSpec(def), b = S.b, hl = S.hl, hw = S.hw, y0 = S.y0, y1 = S.y1, wr = S.wr, C = S.C, lod = opts.lod ? 1 : 0, tww = S.tww;
   const gP = new GB(0, 0, false), gG = new GB(0, 0, false), gT = new GB(0, 0, false), gD = new GB(0, 0, false), gLt = new GB(0, 0, false), tl = new GB(0, 0, false);
   const DK = [0.03, 0.03, 0.034], CH = [0.62, 0.64, 0.68];
-  if (b.custom || b.buggy) CUSTOM_CARS[b.custom || 'buggy'](S, gP, gG, gT, gD, gLt, tl, lod); else {
+  /* moving parts: a hand-built car may draw some of itself into named parts (S.part) and return a rig function; each part becomes its own group, pivoting
+     about its given point (optionally inside another part), and the rig poses them every frame from the wheels' travel and the car's motion */
+  S.parts = []; S.part = (name, pivot, parent) => { const q = { name, pv: pivot || [0, 0, 0], parent: parent || null, P: new GB(0, 0, false), G: new GB(0, 0, false), T: new GB(0, 0, false), D: new GB(0, 0, false), L: new GB(0, 0, false), TL: new GB(0, 0, false) }; S.parts.push(q); return q; };
+  let rig = null;
+  if (b.custom || b.buggy) rig = CUSTOM_CARS[b.custom || 'buggy'](S, gP, gG, gT, gD, gLt, tl, lod) || null; else {
   loftBody(S, gP, gG, lod);
   const tbx = (x0, ya, z0, x1, yb, z1, k) => gT.box(Math.min(x0, x1), Math.min(ya, yb), Math.min(z0, z1), Math.max(x0, x1), Math.max(ya, yb), Math.max(z0, z1), k == null ? 0.03 : k, k == null ? 0.03 : k, k == null ? 0.034 : k);
   /* hollow body: dark chassis block seen through the wheel arches, plus a dark liner round each wheel */
@@ -691,6 +695,16 @@ function buildCarModel(def, hex, opts) {
     if (cs.head != null) { const hm = new THREE.MeshBasicMaterial({ color: MAT.carHead.color.clone() }); hm.polygonOffset = true; hm.polygonOffsetFactor = -1; hm.polygonOffsetUnits = -2; mH.material = hm; grp.userData.headMat = hm; grp.userData.headTint = lc(cs.head); if (opts.studio) hm.color.copy(lc(cs.head)).multiplyScalar(1.4); grp.userData.studioMats = (grp.userData.studioMats || []).concat([hm]); }
     if (cs.glow) { const gm2 = makeGlow(S, cs.glow.hex, cs.glow.mode); grp.add(gm2); grp.userData.glowM = gm2; grp.userData.studioMats = (grp.userData.studioMats || []).concat([gm2.material]); gm2.userData.geoOwn = gm2.geometry; }
   }
+  if (S.parts.length) {
+    const parts = {};
+    for (const q of S.parts) {
+      const outer = new THREE.Group(), inner = new THREE.Group(); outer.position.set(q.pv[0], q.pv[1], q.pv[2]); inner.position.set(-q.pv[0], -q.pv[1], -q.pv[2]); outer.add(inner); outer.userData.inner = inner;
+      for (const [gb, m, a, c2] of [[q.P, paint, true, true], [q.G, mG.material, true, false], [q.T, MAT.carTrim, false, true], [q.D, MAT.carTrim, false, true], [q.L, mH.material, false, false], [q.TL, MAT.carTail, false, false]]) if (gb.count) inner.add(gb.mesh(m, a, c2));
+      (q.parent && parts[q.parent] ? parts[q.parent].userData.inner : grp).add(outer); parts[q.name] = outer;
+    }
+    grp.userData.parts = parts;
+  }
+  if (rig) { grp.userData.rig = rig; rig(grp, [0, 0, 0, 0], null, 0); }   /* posed at rest once, so thumbnails and the first frame are right */
   if (opts.static) {
     /* thumbnails: ordinary wheel meshes (no instancing) */
     wheelsInit(); const geo = Wheels.geo, rim = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.28, metalness: 0.8, envMapIntensity: 1.1, side: THREE.DoubleSide, envMap: Env.studio, color: new THREE.Color(...(b.rim || [0.6, 0.6, 0.64])) });

@@ -300,4 +300,114 @@ function trail4x4(S, gP, gG, gT, gD, gLt, tl, lod) {
   K.drum(gT, -0.845, 1.0, -1.5, 0.06, 0.02, [0.3, 0.3, 0.32], 'x');
   K.done();
 }
-CUSTOM_CARS.muscle = muscleCar; CUSTOM_CARS.hyper = hyperCar; CUSTOM_CARS.roadster = roadster; CUSTOM_CARS.overland = expedition4x4; CUSTOM_CARS.trail = trail4x4;
+/* a rally-raid truck (an original design in the spirit of the desert-rally trucks): a cab-over cab perched over the front axle, an engine and service
+   module behind it with snorkels and a stack, two spare wheels upright on a rack, a box body at the back with sand ladders, fuel tanks between the axles,
+   and the running gear in full view: two solid axles that tilt with the ground, two long-travel dampers a corner (a coilover and a bypass damper with
+   its tubes), four trailing links an axle. The cab sits on its own springs and rocks on the chassis; a whip antenna and the mud flaps swing.
+   Everything that moves is a part (S.part) posed by the rig this builder returns: it runs every frame from the wheels' travel and the truck's motion. */
+function rallyTruck(S, gP, gG, gT, gD, gLt, tl, lod) {
+  const K = carKit(lod), BLK = [0.012, 0.012, 0.014], DK = [0.03, 0.03, 0.034], STL = [0.07, 0.07, 0.075], CHR = [0.8, 0.81, 0.83], AL = [0.5, 0.51, 0.53], RED = [0.62, 0.05, 0.03], GOLD = [0.72, 0.46, 0.08], ORG = [0.8, 0.34, 0.04], WHT = [0.88, 0.88, 0.86], GL = [1, 1, 1], PI = Math.PI, sg = lod ? 14 : 24;
+  const wf = S.wheels.find((w) => w.front), wb = S.wheels.find((w) => !w.front), xW = Math.abs(wf.x), r = wf.r, zF = wf.z, zR = wb.z;
+  const ring = (z, lo, hi, a, e) => ({ z, x: 0, y: (lo + hi) / 2, a, b: (hi - lo) / 2, e });
+  const coil = (gb, c) => { for (let k = 0; k < 8; k++) { const g = ni(new THREE.TorusGeometry(0.105, 0.018, 4, lod ? 8 : 12)); _q.setFromEuler(new THREE.Euler(PI / 2, 0, 0)); _m4.compose(_p3.set(0, (k + 0.5) / 8, 0), _q, _s3.set(1, 1, 1)); gb.geo(g, _m4, _tcol.setRGB(c[0], c[1], c[2]), 0); g.dispose(); } };
+  /* ---- chassis: ladder frame, bumpers, steps, fenders, fuel tanks ---- */
+  for (const sx of [-1, 1]) K.blk(gD, sx * 0.5, 1.12, -0.15, 0.13, 0.26, 6.7, STL);
+  for (const z of [3.1, zF + 0.6, zF - 0.6, 0.6, -0.6, zR + 0.6, zR - 0.6, -3.35]) K.blk(gD, 0, 1.12, z, 1.0, 0.16, 0.12, STL);
+  K.blk(gD, 0, 1.02, 3.6, 2.3, 0.3, 0.24, STL); K.blk(gD, 0, 0.8, 3.3, 1.3, 0.04, 0.8, STL, -0.45);   /* front bumper and skid plate */
+  for (const sx of [-1, 1]) { K.drum(gT, sx * 0.72, 0.96, 3.74, 0.05, 0.08, RED, 'z'); K.blk(gD, sx * 0.9, 1.3, 3.55, 0.12, 0.34, 0.06, STL); }
+  for (const sx of [-1, 1]) for (const y of [1.28, 1.56]) K.blk(gD, sx * 1.06, y, 1.18, 0.3, 0.035, 0.36, STL);   /* steps up to the door */
+  for (const sx of [-1, 1]) for (const z of [zF, zR]) K.arc(gD, sx * xW, r, z, r + 0.47, 0.5, PI * 0.3, PI * 0.7, BLK);   /* black fenders over the top of each wheel, clear of it at full bump */
+  for (const sx of [-1, 1]) { K.blk(gD, sx * 0.5, 1.43, 0.53, 0.16, 0.36, 1.62, STL); K.blk(gD, sx * 0.5, 1.45, -2.56, 0.16, 0.4, 1.94, STL); K.blk(gD, sx * 0.5, 1.4, -0.9, 0.16, 0.3, 1.2, STL); }   /* subframes under the module, the rack and the box */
+  for (const sx of [-1, 1]) for (const z of [3.15, 1.6]) { K.blk(gD, sx * 0.5, 1.5, z, 0.14, 0.5, 0.14, STL); K.drum(gD, sx * 0.5, 1.72, z, 0.09, 0.1, BLK, 'y'); }   /* cab mounts: posts and rubber bushes */
+  for (const sx of [-1, 1]) { K.drum(gT, sx * 0.95, 1.3, -0.05, 0.28, 1.7, AL, 'z'); for (const z of [-0.7, 0.6]) K.drum(gD, sx * 0.95, 1.3, z, 0.29, 0.05, BLK, 'z'); K.drum(gT, sx * 0.95, 1.6, 0.4, 0.05, 0.05, CHR, 'y'); }
+  /* shock towers and link brackets on the frame */
+  for (const z of [zF, zR]) for (const sx of [-1, 1]) for (const dz of [-0.2, 0.2]) { K.blk(gD, sx * 0.62, 1.52, z + dz, 0.2, 0.36, 0.08, STL); K.blk(gD, sx * 0.7, 1.7, z + dz, 0.14, 0.06, 0.12, STL); }
+  /* ---- the engine and service module behind the cab: louvres, two snorkels, the stack ---- */
+  K.loft(gP, [ring(1.32, 1.62, 2.9, 1.04, 8), ring(1.28, 1.6, 2.98, 1.08, 9), ring(-0.22, 1.6, 2.98, 1.08, 9), ring(-0.26, 1.62, 2.9, 1.04, 8)], K.WH, { seg: sg, cap: [1, 1] });
+  for (const sx of [-1, 1]) { for (let k = 0; k < 5; k++) K.blk(gD, sx * 1.085, 2.0 + k * 0.12, 0.55, 0.012, 0.035, 0.95, BLK); K.path(gD, [[sx * 0.72, 2.95, 0.55], [sx * 0.72, 3.5, 0.55], [sx * 0.72, 3.62, 0.72]], 0.09, BLK); K.drum(gD, sx * 0.72, 3.62, 0.78, 0.11, 0.12, DK, 'z'); }
+  K.path(gT, [[0.9, 1.45, 0.25], [1.14, 1.7, 0.1], [1.14, 3.55, 0.1]], 0.075, CHR); K.blk(gD, 1.23, 2.5, 0.1, 0.02, 1.0, 0.22, BLK);
+  /* two spare wheels standing on a rack */
+  K.blk(gD, 0, 1.66, -0.9, 2.1, 0.06, 1.25, STL);
+  for (const x of [-0.3, 0.3]) { K.drum(gD, x, 2.3, -0.9, 0.6, 0.38, BLK, 'x'); K.drum(gT, x, 2.3, -0.9, 0.36, 0.39, DK, 'x'); K.drum(gT, x, 2.3, -0.9, 0.1, 0.4, CHR, 'x');
+    for (let i = 0; i < 18; i++) { const a = i / 18 * TAU; K.blk(gD, x + (i % 2 ? 0.09 : -0.09), 2.3 + Math.sin(a) * 0.6, -0.9 + Math.cos(a) * 0.6, 0.12, 0.07, 0.05, BLK, a); } }
+  for (const sx of [-1, 1]) K.path(gD, [[sx * 0.62, 1.7, -0.3], [sx * 0.62, 2.95, -0.45], [sx * 0.62, 2.95, -1.4], [sx * 0.62, 1.7, -1.5]], 0.03, STL);
+  K.tube(gD, [-0.62, 2.95, -0.45], [0.62, 2.95, -0.45], 0.03, STL); K.tube(gD, [-0.62, 2.95, -1.4], [0.62, 2.95, -1.4], 0.03, STL);
+  /* ---- the box body at the back: roller door, ladder, sand ladders, lamps, bumper ---- */
+  K.loft(gP, [ring(-1.58, 1.74, 2.92, 1.16, 8), ring(-1.62, 1.72, 3.0, 1.2, 9), ring(-3.5, 1.72, 3.0, 1.2, 9), ring(-3.55, 1.74, 2.92, 1.16, 8)], K.WH, { seg: sg, cap: [1, 1] });
+  for (let k = 0; k < 9; k++) K.blk(gD, 0, 1.85 + k * 0.12, -3.556, 1.9, 0.012, 0.01, DK);
+  K.path(gD, [[-0.95, 1.75, -3.6], [-0.95, 3.0, -3.6]], 0.02, STL); K.path(gD, [[-0.72, 1.75, -3.6], [-0.72, 3.0, -3.6]], 0.02, STL); for (let k = 0; k < 6; k++) K.tube(gD, [-0.95, 1.9 + k * 0.2, -3.6], [-0.72, 1.9 + k * 0.2, -3.6], 0.014, STL);
+  for (const sx of [-1, 1]) { K.blk(gD, sx * 1.215, 2.36, -2.55, 0.03, 0.36, 1.6, ORG); for (let k = 0; k < 7; k++) K.blk(gD, sx * 1.235, 2.36, -3.25 + k * 0.23, 0.01, 0.3, 0.05, BLK);
+    K.blk(tl, sx * 1.0, 1.9, -3.556, 0.16, 0.2, 0.01, GL); K.blk(gLt, sx * 1.0, 2.06, -3.556, 0.16, 0.06, 0.01, [1, 0.7, 0.3]); K.blk(gLt, sx * 0.72, 1.86, -3.556, 0.1, 0.08, 0.01, GL); }
+  K.blk(gD, 0, 1.2, -3.6, 2.2, 0.22, 0.2, STL); K.drum(gD, 0, 1.12, -3.74, 0.06, 0.12, STL, 'z');
+  /* ---- the cab: a part on its own springs ---- */
+  const cab = S.part('cab', [0, 1.78, 2.4]);
+  K.loft(cab.P, [ring(3.5, 1.82, 3.0, 1.1, 6), ring(3.45, 1.78, 3.14, 1.2, 8), ring(3.25, 1.78, 3.36, 1.22, 8), ring(1.42, 1.78, 3.38, 1.22, 8), ring(1.36, 1.82, 3.3, 1.16, 7)], K.WH, { seg: sg, cap: [1, 1] });
+  K.blk(cab.G, 0, 2.68, 3.506, 1.96, 0.56, 0.015, GL); K.blk(cab.P, 0, 2.68, 3.514, 0.06, 0.56, 0.012, K.WH);
+  K.blk(cab.D, 0, 3.08, 3.6, 2.1, 0.03, 0.26, BLK, -0.12);   /* sun visor */
+  K.blk(cab.D, 0, 2.08, 3.506, 1.5, 0.42, 0.012, BLK); for (let k = 0; k < 5; k++) K.blk(cab.T, 0, 1.93 + k * 0.075, 3.512, 1.42, 0.022, 0.012, AL);
+  for (const sx of [-1, 1]) { K.drum(cab.T, sx * 0.97, 2.12, 3.5, 0.11, 0.04, CHR, 'z'); K.drum(cab.L, sx * 0.97, 2.12, 3.522, 0.09, 0.01, GL, 'z'); K.blk(cab.L, sx * 0.97, 1.92, 3.508, 0.16, 0.06, 0.01, [1, 0.7, 0.3]); }
+  K.blk(cab.D, 0, 3.48, 3.18, 1.9, 0.16, 0.22, BLK); for (let i = 0; i < 6; i++) { const x = -0.8 + i * 0.32; K.drum(cab.T, x, 3.48, 3.29, 0.068, 0.02, CHR, 'z'); K.drum(cab.L, x, 3.48, 3.302, 0.056, 0.006, GL, 'z'); }   /* roof light pod */
+  K.blk(cab.P, 0, 3.47, 2.0, 0.9, 0.18, 1.0, K.WH); K.blk(cab.D, 0, 3.47, 2.505, 0.8, 0.13, 0.012, BLK);   /* roof scoop */
+  for (const sx of [-1, 1]) {
+    K.blk(cab.G, sx * 1.222, 2.76, 2.75, 0.012, 0.5, 1.0, GL); K.blk(cab.D, sx * 1.224, 2.42, 2.2, 0.006, 1.15, 0.012, BLK); K.blk(cab.D, sx * 1.224, 2.42, 3.28, 0.006, 1.15, 0.012, BLK); K.blk(cab.T, sx * 1.23, 2.36, 2.35, 0.02, 0.03, 0.14, CHR);
+    K.drum(cab.D, sx * 1.224, 2.12, 2.74, 0.27, 0.004, BLK, 'x'); K.drum(cab.D, sx * 1.228, 2.12, 2.74, 0.24, 0.004, WHT, 'x');   /* number roundel */
+    K.tube(cab.D, [sx * 1.2, 2.62, 3.2], [sx * 1.5, 2.76, 3.32], 0.02, BLK); K.blk(cab.D, sx * 1.52, 2.74, 3.32, 0.07, 0.34, 0.2, BLK); K.blk(cab.G, sx * 1.52, 2.74, 3.218, 0.06, 0.3, 0.005, GL);
+  }
+  for (const sx of [-1, 1]) K.blk(cab.D, sx * 0.5, 2.6, 3.0, 0.5, 0.5, 0.12, DK, 0.15);   /* seats seen through the screen */
+  /* the whip antenna and its flag, on the cab's rear corner */
+  const whip = S.part('whip', [-1.05, 3.4, 1.5], 'cab'); K.tube(whip.D, [-1.05, 3.4, 1.5], [-1.05, 5.1, 1.5], 0.008, BLK); K.drum(whip.D, -1.05, 3.42, 1.5, 0.03, 0.05, BLK, 'y'); K.blk(whip.P, -1.05, 4.98, 1.4, 0.01, 0.16, 0.2, K.WH);
+  /* ---- running gear: axles, dampers, links, mud flaps (all parts) ---- */
+  const AX = {};
+  for (const [nm, z, front] of [['axF', zF, true], ['axR', zR, false]]) {
+    const a = S.part(nm, [0, r, z]); AX[nm] = z;
+    K.drum(a.D, 0, r, z, 0.09, 2 * xW - 0.3, DK, 'x'); K.ball(a.D, 0.12, r, z, 0.25, 0.23, 0.23, DK); K.drum(a.T, 0.12, r, z + (front ? -0.24 : 0.24), 0.1, 0.12, AL, 'z');
+    for (const sx of [-1, 1]) { K.drum(a.D, sx * (xW - 0.24), r, z, 0.17, 0.16, STL, 'x'); for (const dz of [-0.2, 0.2]) K.blk(a.D, sx * 0.7, r + 0.1, z + dz, 0.16, 0.05, 0.14, STL); }
+    if (front) K.tube(a.D, [-(xW - 0.3), r - 0.06, z + 0.26], [xW - 0.3, r - 0.06, z + 0.26], 0.026, STL);
+  }
+  const shocks = [], links = [];
+  for (const [ax, z, sgn] of [['axF', zF, -1], ['axR', zR, 1]]) for (const sx of [-1, 1]) {
+    for (const [dz, coilover] of [[-0.2, true], [0.2, false]]) {
+      const id = ax + sx + dz, bo = S.part('sb' + id), sh = S.part('ss' + id);
+      K.drum(bo.T, 0, 0.27, 0, coilover ? 0.065 : 0.058, 0.54, coilover ? GOLD : BLK, 'y'); K.drum(bo.T, 0, 0.03, 0, 0.075, 0.06, AL, 'y');
+      if (coilover) K.drum(bo.T, 0.1, 0.2, 0, 0.04, 0.28, GOLD, 'y'); else for (const ox of [-0.075, 0.075]) K.tube(bo.T, [ox, 0.06, 0], [ox, 0.48, 0], 0.014, AL);   /* piggyback reservoir, or bypass tubes */
+      K.drum(sh.T, 0, 0.32, 0, 0.026, 0.64, CHR, 'y'); K.drum(sh.T, 0, 0.03, 0, 0.05, 0.06, STL, 'y');
+      const q = { ax, sx, z: z + dz, body: 'sb' + id, shaft: 'ss' + id, coil: null };
+      if (coilover) { const c = S.part('sc' + id); coil(c.P, K.WH); q.coil = 'sc' + id; }
+      shocks.push(q);
+    }
+    for (const [lo, A, x, dy] of [[true, [sx * 0.55, 0.92, z + sgn * 1.05], sx * 0.62, -0.12], [false, [sx * 0.3, 1.1, z + sgn * 0.8], sx * 0.3, 0.17]]) {
+      const id = 'ln' + ax + sx + (lo ? 'l' : 'u'), l = S.part(id); K.tube(l.D, [0, 0, 0], [0, 1, 0], lo ? 0.042 : 0.034, STL); K.ball(l.D, 0, 0, 0, 0.06, 0.06, 0.06, DK); K.ball(l.D, 0, 1, 0, 0.06, 0.06, 0.06, DK);
+      links.push({ ax, A, x, dy, z, part: id });
+    }
+  }
+  const flaps = []; for (const sx of [-1, 1]) for (const [z, y] of [[zF - r - 0.5, 1.5], [zR - r - 0.5, 1.3]]) { const id = 'fl' + sx + z.toFixed(1), f = S.part(id, [sx * xW, y, z]); K.blk(f.D, sx * xW, y - 0.36, z, 0.44, 0.72, 0.02, BLK); K.blk(f.D, sx * xW, y - 0.62, z - 0.012, 0.36, 0.08, 0.005, WHT); flaps.push({ part: id, rear: z < 0 }); }
+  K.done();
+  /* ---- the rig ---- */
+  const up = new THREE.Vector3(0, 1, 0), d = new THREE.Vector3(), st = { cp: 0, cpv: 0, cr: 0, crv: 0, wx: 0, wxv: 0, wz: 0, wzv: 0, f: flaps.map(() => 0), fv: flaps.map(() => 0), pF: 0, pR: 0, pT: 0 };
+  const place = (o, A, B, stretch) => { d.set(B[0] - A[0], B[1] - A[1], B[2] - A[2]); const L = d.length(); if (L < 1e-4) return; o.position.set(A[0], A[1], A[2]); o.quaternion.setFromUnitVectors(up, d.multiplyScalar(1 / L)); o.scale.set(1, stretch ? L : 1, 1); };
+  const pt = (s, x, dy, z) => { const c = Math.cos(s.th), sn = Math.sin(s.th); return [x * c - dy * sn, r + s.m + dy * c + x * sn, z]; };
+  const spring = (x, v, want, w, zt, h) => v + (w * w * (want - x) - 2 * zt * w * v) * h;
+  return (g, sus, cs, dt) => {
+    const Pt = g.userData.parts; if (!Pt) return;
+    const SA = { axF: { m: (sus[0] + sus[1]) / 2, th: Math.atan2(sus[1] - sus[0], 2 * xW) }, axR: { m: (sus[2] + sus[3]) / 2, th: Math.atan2(sus[3] - sus[2], 2 * xW) } };
+    Pt.axF.position.y = r + SA.axF.m; Pt.axF.rotation.z = SA.axF.th; Pt.axR.position.y = r + SA.axR.m; Pt.axR.rotation.z = SA.axR.th;
+    /* dampers: the body hangs from the frame and points at the axle, the shaft stands on the axle and points at the frame, the coil spans the two seats */
+    for (const q of shocks) { const s = SA[q.ax], A = [q.sx * 0.7, 1.68, q.z], B = pt(s, q.sx * 0.7, 0.13, q.z); place(Pt[q.body], A, B, false); place(Pt[q.shaft], B, A, false);
+      if (q.coil) { d.set(B[0] - A[0], B[1] - A[1], B[2] - A[2]).normalize(); place(Pt[q.coil], [A[0] + d.x * 0.12, A[1] + d.y * 0.12, A[2] + d.z * 0.12], [B[0] - d.x * 0.1, B[1] - d.y * 0.1, B[2] - d.z * 0.1], true); } }
+    for (const l of links) place(Pt[l.part], l.A, pt(SA[l.ax], l.x, l.dy, l.z), true);
+    /* the cab on its mounts, the whip and the flaps: springs driven by the truck's acceleration and by how fast the axles are moving */
+    if (cs && dt > 0) {
+      const h = Math.min(dt, 0.05), vF = clamp((SA.axF.m - st.pF) / h, -6, 6), vR = clamp((SA.axR.m - st.pR) / h, -6, 6), vT = clamp((SA.axF.th + SA.axR.th - st.pT) / h, -5, 5);
+      st.pF = SA.axF.m; st.pR = SA.axR.m; st.pT = SA.axF.th + SA.axR.th;
+      const ax = clamp(cs.axL || 0, -25, 25), ay = clamp(cs.ayL || 0, -25, 25), sp = Math.abs(cs.speed || 0);
+      st.cpv = spring(st.cp, st.cpv, -ax * 0.0032, 7.5, 0.2, h) + (vF - vR) * 0.045; st.cp += st.cpv * h; if (Math.abs(st.cp) > 0.07) { st.cp = Math.sign(st.cp) * 0.07; st.cpv *= -0.35; }   /* the rubber bump stops: it bounces off them */
+      st.crv = spring(st.cr, st.crv, ay * 0.0045, 7.0, 0.2, h) + vT * 0.08; st.cr += st.crv * h; if (Math.abs(st.cr) > 0.06) { st.cr = Math.sign(st.cr) * 0.06; st.crv *= -0.35; }
+      st.wxv = spring(st.wx, st.wxv, -Math.min(0.6, sp * 0.007) - ax * 0.008, 10, 0.06, h) + vF * 0.05 - st.cpv * 0.3 * h * 10; st.wx = clamp(st.wx + st.wxv * h, -0.9, 0.6);
+      st.wzv = spring(st.wz, st.wzv, ay * 0.012, 10, 0.06, h) + vT * 0.12; st.wz = clamp(st.wz + st.wzv * h, -0.7, 0.7);
+      for (let i = 0; i < flaps.length; i++) { st.fv[i] = spring(st.f[i], st.fv[i], Math.min(0.75, sp * 0.02), 9, 0.14, h) + (flaps[i].rear ? vR : vF) * 0.09; st.f[i] = clamp(st.f[i] + st.fv[i] * h, -0.3, 1.0); }
+    }
+    Pt.cab.rotation.set(st.cp, 0, st.cr); Pt.whip.rotation.set(st.wx, 0, st.wz);
+    for (let i = 0; i < flaps.length; i++) Pt[flaps[i].part].rotation.x = st.f[i];
+  };
+}
+CUSTOM_CARS.muscle = muscleCar; CUSTOM_CARS.hyper = hyperCar; CUSTOM_CARS.roadster = roadster; CUSTOM_CARS.overland = expedition4x4; CUSTOM_CARS.trail = trail4x4; CUSTOM_CARS.rtruck = rallyTruck;

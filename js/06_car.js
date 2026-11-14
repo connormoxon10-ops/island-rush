@@ -300,8 +300,9 @@ const _eye = new THREE.Vector3(), _eul = new THREE.Euler(0, 0, 0, 'YXZ');
 function updateCamera(dt, speedFx) {
   const c = car, b = car.body;
   /* body pitch/roll ride on a sprung, slightly under-damped mount: squat on throttle, dive under braking, roll and settle in corners (taller cars lean more) */
-  const sc = CARP.cgh / 0.5 * 1.25, tP = c.axL * 0.0022 * sc, tR = c.ayL * 0.0035 * sc;
-  const SW = 11, SZ = 0.5, sn = Math.max(1, Math.ceil(Math.min(dt, 0.1) / 0.008)), sh_ = Math.min(dt, 0.1) / sn;
+  const sw = CUR.body && CUR.body.sway;   /* a car may ask for its own body spring: a tall truck rocks slower, further and with more overshoot */
+  const sc = CARP.cgh / 0.5 * 1.25 * (sw ? sw.k : 1), tP = c.axL * 0.0022 * sc, tR = c.ayL * 0.0035 * sc;
+  const SW = sw ? sw.w : 11, SZ = sw ? sw.z : 0.5, sn = Math.max(1, Math.ceil(Math.min(dt, 0.1) / 0.008)), sh_ = Math.min(dt, 0.1) / sn;
   for (let i = 0; i < sn; i++) {
     c.leanPv += (SW * SW * (tP - c.leanP) - 2 * SZ * SW * c.leanPv) * sh_; c.leanP += c.leanPv * sh_;
     c.leanRv += (SW * SW * (tR - c.leanR) - 2 * SZ * SW * c.leanRv) * sh_; c.leanR += c.leanRv * sh_;
