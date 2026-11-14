@@ -160,6 +160,8 @@ Bots.place = function (b, o) {
   Track.locate(c.x, c.z, o.i, _bl); b.idx = _bl.i; b.sPrev = _bl.s; b.prog = _bl.s > Track.L / 2 ? _bl.s - Track.L : _bl.s; b.stuckT = 0; b.wrongT = 0; b.off = 0; b.offT = 0; b.go = false; b.fin = false; b.resets = 0;
   b.mesh.position.set(c.x, c.y, c.z); b.mesh.rotation.set(0, c.yaw, 0, 'YXZ');
 };
+/* take one car off the track (a knocked-out car in an elimination race) */
+Bots.drop = function (b) { const i = Bots.list.indexOf(b); if (i < 0) return; scene.remove(b.mesh); disposeCar(b.mesh); Bots.list.splice(i, 1); };
 Bots.clear = function () { for (const b of Bots.list) { scene.remove(b.mesh); disposeCar(b.mesh); } Bots.list.length = 0; Bots.on = false; };
 /* drop a bot back on the racing line, facing the right way, when it is stuck, facing backwards or lost */
 Bots.reset = function (b, why) {
