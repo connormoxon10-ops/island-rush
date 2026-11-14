@@ -272,9 +272,9 @@ Rally.hud = function (dt) {
 
 /* ---------------- lobby ---------------- */
 /* which stage the lobby has chosen, and its record (Hollow Pines keeps its record where it always was; the others have their own) */
-/* the car you are lent for the stage: the Ridgeback rally car or the Sandviper buggy */
-const RY_CARS = [['ridge', 'Ridgeback RS'], ['buggy', 'Sandviper buggy']];
-Rally.carId = function () { return save.rally.car === 'buggy' ? 'buggy' : 'ridge'; };
+/* the car you are lent for the stage: the Ridgeback rally car, the Sandviper buggy or the Atlas rally-raid truck */
+const RY_CARS = [['ridge', 'Ridgeback RS'], ['buggy', 'Sandviper buggy'], ['rtruck', 'Atlas truck']];
+Rally.carId = function () { return RY_CARS.some((c) => c[0] === save.rally.car) ? save.rally.car : 'ridge'; };
 Rally.stageI = function () { return clamp(save.rally.stage | 0, 0, RY_STAGES.length - 1); };
 Rally.rec = function (i) { i = i == null ? (Rally.on ? RY.stage : Rally.stageI()) : i; if (i === 0) return save.rally; const st = save.rally.st || (save.rally.st = {}), id = RY_STAGES[i].id; return st[id] || (st[id] = { best: 0, splits: [] }); };
 Rally.open = function () {
@@ -301,7 +301,7 @@ Rally.lobbyClick = function (b) {
   if (a === 'rback') { Rally.lobby = false; Race.paint(); Snd.beep(420, 0.05); }
   else if (a === 'rstart') Rally.start();
   else if (a === 'leave') { Rally.lobby = false; Race.leave(); }
-  else if (b.parentNode && b.parentNode.dataset.k === 'car') { save.rally.car = b.dataset.v === 'buggy' ? 'buggy' : 'ridge'; Rally.paint(); Snd.beep(520, 0.04); }
+  else if (b.parentNode && b.parentNode.dataset.k === 'car') { save.rally.car = RY_CARS.some((c) => c[0] === b.dataset.v) ? b.dataset.v : 'ridge'; Rally.paint(); Snd.beep(520, 0.04); }
   else if (b.parentNode && b.parentNode.dataset.k === 'stage') { save.rally.stage = +b.dataset.v; Rally.paint(); Snd.beep(520, 0.04); }
   else if (b.parentNode && b.parentNode.dataset.k === 'rivals') { save.rally.rivals = +b.dataset.v; Rally.paint(); Snd.beep(520, 0.04); }
   else if (b.parentNode && b.parentNode.dataset.k === 'assist') { save.rally.assist = +b.dataset.v; Rally.paint(); Snd.beep(520, 0.04); }
