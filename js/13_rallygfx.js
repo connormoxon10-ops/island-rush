@@ -466,7 +466,7 @@ RYG.buildObstacles = function (group) {
   for (const f of RY.feats) {
     if (f.k !== 'ravine' && f.k !== 'ford') continue; const rv = f.k === 'ravine';
     for (const back of [90, 45]) for (const sd of [-1, 1]) {
-      const a = RY.at(f.s0 - (rv ? f.up : 0) - back, 0, {}), p = RY.at(f.s0 - (rv ? f.up : 0) - back, sd * (a.hw + 1.6), {}), y = RY.heightAt(p.x, p.z), fx = Math.sin(a.yaw) * 0.05, fz = Math.cos(a.yaw) * 0.05;
+      const a = RY.at(f.s0 - (rv ? f.up : 0) - back, 0, {}), p = RY.at(f.s0 - (rv ? f.up : 0) - back, sd * (a.hw + 1.6), {}), y = RY.heightAt(p.x, p.z), fx = -Math.sin(a.yaw) * 0.05, fz = -Math.cos(a.yaw) * 0.05;   /* the yellow face and symbol stand on the side facing the oncoming car (they were on the far side, so drivers saw a black back) */
       put(cyl, p.x, y + 1.4, p.z, 0, 0, 0.07, 2.8, 0.07, C(0.5, 0.5, 0.52), 0.2);
       e.set(0, a.yaw, Math.PI / 4, 'YXZ'); q.setFromEuler(e); m.compose(v.set(p.x + fx, y + 2.9, p.z + fz), q, sc.set(1.5, 1.5, 0.04)); gb.geo(box, m, BLK, 0);
       m.compose(v.set(p.x + fx * 1.4, y + 2.9, p.z + fz * 1.4), q, sc.set(1.36, 1.36, 0.04)); gb.geo(box, m, YEL, 0);
@@ -500,7 +500,19 @@ RYG.buildObstacles = function (group) {
   for (const f of RY.fords) {
     const a = RY.at(f.s0 + f.len / 2, 0, {}), ice = !!f.ice;
     const mat = new THREE.MeshStandardMaterial({ color: ice ? 0x9fc6d8 : 0x1f5560, roughness: ice ? 0.25 : 0.08, metalness: 0.1, transparent: true, opacity: ice ? 0.85 : 0.78, depthWrite: false });
-    const w = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat); w.rotation.set(-Math.PI / 2, 0, a.yaw, 'YXZ'); w.scale.set(140, f.len * 0.92, 1); w.position.set(a.x, f.wl, a.z); w.renderOrder = 2; group.add(w);
+    /* the water is drawn only where the ground really is under water (where the car wades), faded in from the shoreline. It used to be one 140 m sheet at
+       the waterline: wherever the hillside dipped near that height the sheet showed through as a pale rectangle, and at a distance it flickered against the
+       ground (depth fighting), which read as flashing coloured squares on every stage */
+    w0: {
+      const fx = Math.sin(a.yaw), fz = Math.cos(a.yaw), rx = fz, rz = -fx, ST = 1.5, nu = 95, nv = Math.max(2, Math.ceil(f.len * 0.96 / ST)), go = {}, P = [], D = [];
+      for (let j = 0; j <= nv; j++) for (let i = 0; i <= nu; i++) { const u = (i - nu / 2) * ST, v = (j / nv - 0.5) * f.len * 0.96, x = a.x + rx * u + fx * v, z = a.z + rz * u + fz * v; RY.ground(x, z, go); P.push(x, f.wl, z); D.push(go.wade || 0); }
+      const col = new Float32Array(D.length * 4), idx = []; for (let k = 0; k < D.length; k++) { col[k * 4] = col[k * 4 + 1] = col[k * 4 + 2] = 1; col[k * 4 + 3] = Math.min(1, Math.max(0, (D[k] - 0.02) / 0.3)); }
+      const V = (i, j) => j * (nu + 1) + i;
+      for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) { const q = [V(i, j), V(i + 1, j), V(i + 1, j + 1), V(i, j + 1)]; if (Math.max(D[q[0]], D[q[1]], D[q[2]], D[q[3]]) <= 0.02) continue; idx.push(q[0], q[2], q[1], q[0], q[3], q[2]); }
+      if (!idx.length) break w0;
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(P), 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 4)); g.setIndex(idx); g.computeVertexNormals();
+      mat.vertexColors = true; const w = new THREE.Mesh(g, mat); w.renderOrder = 2; group.add(w); RYG.fordMeshes = (RYG.fordMeshes || 0) + 1;
+    }
   }
 };
 RYG.buildGates = function (group, sim) {
@@ -544,7 +556,7 @@ RYG.buildGantries = function (group) {
     const ban = new THREE.Mesh(new THREE.PlaneGeometry(hw * 2 - 0.3, (hw * 2 - 0.3) * 0.19), new THREE.MeshBasicMaterial({ map: _rygBannerTex(label, sub, col), side: THREE.DoubleSide, fog: true, toneMapped: false }));
     ban.position.set(q.x, y + 5.0, q.z); ban.quaternion.copy(yaw).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI)); group.add(ban);  /* text reads from the approach side */
   };
-  mk(RY.startS, null, 'WRC-STYLE FOREST STAGE · 3.7 KM', '#d83a1e', 'HOLLOW PINES');
+  mk(RY.startS, null, ((RY.st && RY.st.sub) || 'Rally stage').toUpperCase() + ' · ' + ((RY.finishS - RY.startS) / 1000).toFixed(1) + ' KM', '#d83a1e', (RY.name || 'Stage').toUpperCase());   /* this stage's own name, not the first stage's */
   mk(RY.finishS, null, 'STAGE FINISH · FLYING FINISH', '#1e5fd8', 'FINISH');
   for (let i = 0; i < RY.cps.length; i++) mk(RY.cps[i], null, 'SPLIT ' + (i + 1), '#2a2d33', 'SPLIT ' + (i + 1));
   if (gb.count) { const mesh = gb.mesh(RYG.mats.wood, true, true); group.add(mesh); }
@@ -561,15 +573,20 @@ RYG.buildShafts = function (group, n) {
   const mat = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false,
     uniforms: { uSun: { value: new THREE.Vector3(0, 1, 0) }, uCol: { value: new THREE.Color(1, 0.8, 0.5) }, uAmt: { value: 1 }, uTime: RYG.U.time, uCam: { value: new THREE.Vector3() }, uFog: { value: 0.005 } },
-    vertexShader: `attribute vec3 aBase; attribute float aSeed; varying vec2 vUv; varying float vA; uniform vec3 uSun, uCam; uniform float uTime, uAmt, uFog;
+    /* Each shaft is a quad turned about the sun's axis to face the camera. It must never become a flat coloured rectangle across the view: the shaft axis is
+       kept at least ~40 degrees above the horizon (a low sun used to lay 40 m quads across the road at camera height), the quad fades out as the camera
+       looks along it (where the facing direction is undefined and the quad used to spin and flash), the fade near the camera is done per pixel (per corner
+       it left the near end of a long quad bright as the car drove through it), both ends are feathered, and the shimmer is gentle. */
+    vertexShader: `attribute vec3 aBase; attribute float aSeed; varying vec2 vUv; varying float vA; varying vec3 vW; uniform vec3 uSun, uCam; uniform float uTime, uAmt, uFog;
       void main(){ vUv = uv; vec3 b = aBase; float W = 1.4 + 3.6 * fract(aSeed * 91.7), L = 16.0 + 26.0 * fract(aSeed * 37.1);
-        vec3 toC = normalize(uCam - b); vec3 side = normalize(cross(uSun, toC)); float v = uv.y, u = uv.x * 2.0 - 1.0;
-        vec3 p = b + uSun * L * v + side * u * W * (0.55 + 0.45 * v);
+        vec3 ax = normalize(vec3(uSun.x, max(uSun.y, 0.65 * length(uSun.xz)), uSun.z));
+        vec3 toC = normalize(uCam - b), cr = cross(ax, toC); float sl = length(cr); vec3 side = sl > 1e-4 ? cr / sl : vec3(1.0, 0.0, 0.0); float v = uv.y, u = uv.x * 2.0 - 1.0;
+        vec3 p = b + ax * L * v + side * u * W * (0.55 + 0.45 * v); vW = p;
         vec4 mv = viewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mv; float d = length(p - uCam);
-        float fl = 0.6 + 0.4 * sin(uTime * (0.7 + fract(aSeed * 13.0)) + aSeed * 40.0) * sin(uTime * 0.37 + aSeed * 17.0);
-        vA = uAmt * fl * smoothstep(3.0, 14.0, d) * exp(-d * uFog * 1.4) * (1.0 - v * 0.85) * smoothstep(0.0, 0.12, v); }`,
-    fragmentShader: `varying vec2 vUv; varying float vA; uniform vec3 uCol;
-      void main(){ float u = abs(vUv.x * 2.0 - 1.0); float a = (1.0 - smoothstep(0.0, 1.0, u)); a *= a; gl_FragColor = vec4(uCol * 0.55, a * vA * 0.5); }`
+        float fl = 0.85 + 0.15 * sin(uTime * (0.5 + 0.5 * fract(aSeed * 13.0)) + aSeed * 40.0);
+        vA = uAmt * fl * smoothstep(0.35, 0.75, sl) * exp(-d * uFog * 1.4) * smoothstep(0.0, 0.12, v) * (1.0 - smoothstep(0.55, 1.0, v)); }`,
+    fragmentShader: `varying vec2 vUv; varying float vA; varying vec3 vW; uniform vec3 uCol, uCam;
+      void main(){ float u = abs(vUv.x * 2.0 - 1.0); float a = (1.0 - smoothstep(0.0, 1.0, u)); a *= a; a *= smoothstep(10.0, 28.0, length(vW - uCam)); gl_FragColor = vec4(uCol * 0.55, a * vA * 0.45); }`
   });
   const mesh = new THREE.Mesh(g, mat); mesh.frustumCulled = false; mesh.renderOrder = 4; group.add(mesh);
   RYG.shafts = { mesh, n, pos, base, geo: g, mat, next: 0, life: new Float32Array(n) };
@@ -591,7 +608,7 @@ RYG.build = function (sim, opts) {
     for (let k = 0; k < 4; k++) { U['r' + k].value.fromArray(Q2.r[k]); U['f' + k].value.fromArray(Q2.f[k]); } U.sh.value.fromArray(Q2.sh); U.far.value.fromArray(Q2.far); U.pk.value.set(Q2.farK, Q2.tuftK);
     if (RY.plain != null) {
       const cx = RY.gx0 + RY.gw * RY.GS / 2, cz = RY.gz0 + RY.gh * RY.GS / 2, flat = (y, mat) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(12000, 12000), mat); m.rotation.x = -Math.PI / 2; m.position.set(cx, y, cz); m.receiveShadow = false; g.add(m); return m; };
-      flat(RY.plain - 0.45, new THREE.MeshStandardMaterial({ color: new THREE.Color().fromArray(P.plain).convertSRGBToLinear(), roughness: 1, metalness: 0 }));
+      flat(RY.plain - 0.45, new THREE.MeshStandardMaterial({ color: new THREE.Color().fromArray(P.plain).convertSRGBToLinear(), roughness: 1, metalness: 0, polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 8 }));   /* pushed back in depth: far away it is within the depth buffer's precision of the ground and used to flicker through it */
       if (RY.sea != null) RYG.sea = flat(RY.sea, new THREE.MeshStandardMaterial({ color: new THREE.Color(0.05, 0.3, 0.38).convertSRGBToLinear(), roughness: 0.14, metalness: 0.05, transparent: true, opacity: 0.84 }));
     } }
   RYG.far = opts.far || 380; RYG.tiles.length = 0; RYG.cells.length = 0; RYG.rocks.length = 0;
@@ -607,7 +624,7 @@ RYG.dispose = function () {
   if (!RYG.built) return; const g = RYG.group;
   g.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material.map) { /* shared atlas stays */ } }); RYG.sea = null;
   if (g.parent) g.parent.remove(g);
-  RYG.built = false; RYG.group = null; RYG.tiles.length = 0; RYG.cells.length = 0; RYG.rocks.length = 0; RYG.gates = null; RYG.shafts = null; RYG.vars = {};
+  RYG.built = false; RYG.fordMeshes = 0; RYG.group = null; RYG.tiles.length = 0; RYG.cells.length = 0; RYG.rocks.length = 0; RYG.gates = null; RYG.shafts = null; RYG.vars = {};
 };
 
 /* ---------------- per-frame ---------------- */
@@ -640,7 +657,7 @@ RYG.update = function (dt, cam, car, sun, tod) {
     for (let i = 0; i < S.n; i++) {
       const bx = S.base[i * 12], bz = S.base[i * 12 + 2], dx = bx - px, dz = bz - pz, d2 = dx * dx + dz * dz, ahead = dx * fx + dz * fz;
       if (S.life[i] === 0 || d2 > 260 * 260 || ahead < -60) {
-        const loc = car.rs != null ? car.rs : 0, s = loc + 15 + Math.random() * 230, off = (Math.random() - 0.5) * 2 * (RY.at(s, 0, {}).hw + 11), q = RY.at(s, off, {});
+        const loc = car.rs != null ? car.rs : 0, s = loc + 40 + Math.random() * 210, hw = RY.at(s, 0, {}).hw, off = (Math.random() < 0.5 ? -1 : 1) * (hw + 7 + Math.random() * 14), q = RY.at(s, off, {});   /* beside the road, never across it */
         RYG.placeShaft(i, q.x, q.z); S.life[i] = 1;
       }
     }
