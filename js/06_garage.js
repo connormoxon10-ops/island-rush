@@ -103,7 +103,21 @@ const CARS = [
     p: { m: 760, a: 1.65, b: 1.45, Iz: 1050, rw: 0.34, fd: 3.4, gears: [3.0, 2.35, 1.9, 1.6, 1.38, 1.2, 1.05], idle: 3200, red: 11800, track: 1.6, cgh: 0.28, rd: 0.5, rsf: 0.5, ab: 0.46, cf: 13.5, cr: 15.5 },
     t: { Tmax: 620, mu: 1.55, cd: 0.42, brk: 1.6, off: 0.38, cl: 2.4 },
     stats: { spd: 10, acc: 10, hdl: 10, off: 1 },
-    body: { L: 4.9, W: 2.0, H: 0.3, C: 0.4, wr: 0.34, wrF: 0.33, twF: 0.3, y0: 0.18, tw: 0.4, rim: [0.12, 0.12, 0.13], rimStyle: 'multi', tire: 'sport', custom: 'formula' } }
+    body: { L: 4.9, W: 2.0, H: 0.3, C: 0.4, wr: 0.34, wrF: 0.33, twF: 0.3, y0: 0.18, tw: 0.4, rim: [0.12, 0.12, 0.13], rimStyle: 'multi', tire: 'sport', custom: 'formula' } },
+
+  { id: 'kart', name: 'Ripper', cls: 'Go-kart', price: 1500, paint: 2, dy: -0.78, snd: { f: 1.9, lp: 2.4 }, dial: 160,
+    blurb: 'A racing go-kart: a tube chassis a hand\'s width off the ground, a single-cylinder engine beside the seat and no suspension at all. It weighs next to nothing, turns on a coin, and feels twice as fast as it is.',
+    p: { m: 240, a: 0.55, b: 0.5, Iz: 140, rw: 0.14, fd: 4.3, gears: [1.7, 1.0], idle: 2200, red: 9000, track: 1.1, cgh: 0.22, rd: 0.5, rsf: 0.5, cf: 11, cr: 12.5 },
+    t: { Tmax: 46, mu: 1.32, cd: 0.32, brk: 1.0, off: 0.55, cl: 0 },
+    stats: { spd: 3, acc: 6, hdl: 10, off: 2 },
+    body: { L: 1.9, W: 1.36, H: 0.2, C: 0.3, wr: 0.14, wrF: 0.13, twF: 0.14, y0: 0.08, tw: 0.2, rim: [0.85, 0.86, 0.88], rimStyle: 'five', tire: 'sport', custom: 'kart' } },
+
+  { id: 'retro', name: 'Pebble', cls: 'Retro compact', price: 2800, paint: 1, dy: -0.06, snd: { f: 0.9, lp: 0.7 }, dial: 160,
+    blurb: 'A round little rear-engined compact in the fifties style: a domed body and roof, bulbous fenders with the lamps set in them, running boards, chrome blade bumpers and skinny tyres on dished steel wheels. Slow, cheerful and unkillable.',
+    p: { m: 820, a: 1.2, b: 1.2, Iz: 1150, rw: 0.31, fd: 4.4, gears: [3.6, 2.1, 1.3, 0.9], idle: 850, red: 5200, track: 1.3, cgh: 0.55, rd: 0.4, rsf: 0.44, cf: 9.0, cr: 10.6 },
+    t: { Tmax: 112, mu: 0.98, cd: 0.62, brk: 0.85, off: 1.05, cl: 0 },
+    stats: { spd: 2, acc: 2, hdl: 5, off: 5 },
+    body: { L: 4.1, W: 1.64, H: 0.4, C: 0.6, wr: 0.31, y0: 0.4, tw: 0.17, rim: [0.85, 0.85, 0.85], rimStyle: 'steel', custom: 'retro' } }
 ];
 const CAR_BY_ID = {}; for (const d of CARS) { CAR_BY_ID[d.id] = d; const b = d.body; d.top = (b.y0 != null ? b.y0 : 0.36) + b.H + 0.1 + b.C; d.hl = b.L / 2; }
 const BASE_N = CARS.length;   /* CARS[0..BASE_N) are the dealership cars; stolen cars are appended at runtime (see 07_jack.js) */

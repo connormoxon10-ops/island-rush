@@ -1,4 +1,4 @@
-/* The hand-built cars (Sandviper buggy, Goliath monster truck, Ironside hot rod, Vortex FR open-wheeler): each is for sale, builds its own model (with
+/* The hand-built cars (Sandviper buggy, Goliath monster truck, Ironside hot rod, Vortex FR open-wheeler, Ripper go-kart, Pebble retro compact): each is for sale, builds its own model (with
    different front and rear tyres where it should), and drives the way it is meant to: the open-wheeler is the fastest thing in the game, the hot rod is
    quick off the line, the monster truck is slow but goes; none of them goes unstable on a hard slalom.   usage: node tests/cars_custom.js   (needs dist/test.html) */
 const { chromium } = require('playwright'); const path = require('path');
@@ -15,10 +15,10 @@ const { chromium } = require('playwright'); const path = require('path');
   const res = await page.evaluate(() => {
     const g = window.__game, out = {}; g.App.start(); const pad = { connected: true, axes: [0, 0, 0, 0], buttons: Array.from({ length: 16 }, () => ({ value: 0, pressed: false })) }; navigator.getGamepads = () => [pad];
     const c = g.car, x0 = c.x, z0 = c.z, yaw0 = c.yaw;
-    for (const id of ['buggy', 'monster', 'rod', 'formula']) {
+    for (const id of ['buggy', 'monster', 'rod', 'formula', 'kart', 'retro']) {
       const d = g.CAR_BY_ID[id], m = g.buildCarModel(d, 0x2a9d4a, { static: true }), bb = new THREE.Box3().setFromObject(m), S = m.userData.S, f = S.wheels.find((w) => w.front), r = S.wheels.find((w) => !w.front);
       const o = out[id] = { name: d.name, price: d.price, h: +bb.max.y.toFixed(2), len: +(bb.max.z - bb.min.z).toFixed(2), tris: Object.values(m.userData.dm).reduce((a, mm) => a + mm.geometry.attributes.position.count / 3, 0), fr: +f.r.toFixed(2), rr: +r.r.toFixed(2) };
-      g.applyCar(id, true); c.x = x0; c.z = z0; c.yaw = yaw0; c.vx = c.vz = c.w = 0; c.speed = 0; c.health = 100; c.gear = 1;
+      g.applyCar(id, true); c.x = x0; c.z = z0; c.yaw = yaw0; c.vx = c.vz = c.w = 0; c.speed = 0; c.health = 100; c.gear = 1; c.wrecked = 0; c.dmax = 0; c.air = false;   /* (the car before may have ended up wrecked) */
       let t100 = 0, vmax = 0; for (let i = 0; i < 60 * 20; i++) { pad.axes[0] = 0; pad.buttons[7].value = 1; g.stepSim(1 / 60); const v = Math.abs(c.speed) * 3.6; if (!t100 && v >= 100) t100 = i / 60; vmax = Math.max(vmax, v); }
       o.t100 = +t100.toFixed(1); o.vmax = Math.round(vmax);
       /* slalom at speed: steer hard left and right for 6 s, nothing may go NaN or fly off */
@@ -29,12 +29,14 @@ const { chromium } = require('playwright'); const path = require('path');
   });
   let fails = 0; const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console.log('ok  ', m); };
   for (const id in res) { const o = res[id]; console.log(id, JSON.stringify(o)); ok(o.price > 0 && o.tris > 1200, o.name + ' is for sale and builds its own model (' + Math.round(o.tris) + ' triangles, ' + o.h + ' m tall)'); ok(o.stable, o.name + ' stays stable through a hard slalom'); }
-  const B = res.buggy, M = res.monster, R = res.rod, F = res.formula;
+  const B = res.buggy, M = res.monster, R = res.rod, F = res.formula, G = res.kart, P = res.retro;
   ok(M.h > 3 && M.fr > 0.8, 'the monster truck stands ' + M.h + ' m tall on ' + (M.fr * 2).toFixed(1) + ' m tyres');
   ok(R.fr < R.rr && F.fr <= F.rr, 'the hot rod (' + R.fr + ' / ' + R.rr + ' m) and the open-wheeler have smaller front tyres than rear');
   ok(F.vmax > Math.max(B.vmax, M.vmax, R.vmax) && F.vmax > 260 && F.t100 < 3.5, 'the open-wheeler is the fastest: 0-100 in ' + F.t100 + ' s, ' + F.vmax + ' km/h');
   ok(R.t100 > 0 && R.t100 < 5, 'the hot rod is quick off the line: 0-100 in ' + R.t100 + ' s');
   ok(M.t100 > 0 && M.t100 < 12 && M.vmax > 110 && M.vmax < 200, 'the monster truck gets going: 0-100 in ' + M.t100 + ' s, ' + M.vmax + ' km/h');
+  ok(G.h < 0.75 && G.len < 2.2 && G.vmax > 80 && G.vmax < 140, 'the go-kart is tiny (' + G.len + ' m long, ' + G.h + ' m tall) and does ' + G.vmax + ' km/h');
+  ok(P.h > 1.4 && P.h < 1.65 && P.vmax > 90 && P.vmax < 150 && P.t100 > 12, 'the retro compact is round and slow: ' + P.h + ' m tall, 0-100 in ' + (P.t100 || 'never') + ' s, ' + P.vmax + ' km/h');
   console.log(logs.length ? logs.slice(0, 6).join('\n') : 'no page or console errors'); console.log(fails ? fails + ' FAILED' : 'ALL OK');
   await browser.close(); process.exit(fails || logs.length ? 1 : 0);
 })();
