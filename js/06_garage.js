@@ -160,7 +160,36 @@ const CARS = [
     p: { crawl: 1.1, m: 4600, a: 2.05, b: 2.15, Iz: 15000, rw: 0.62, fd: 5.6, gears: [3.9, 2.6, 1.8, 1.35, 1.05, 0.85], idle: 700, red: 3400, track: 2.02, cgh: 1.05, rd: 0.5, awd: true, rsf: 0.5, ab: 0.5, cf: 6.8, cr: 7.6 },
     t: { Tmax: 2000, mu: 1.0, cd: 2.1, brk: 1.0, off: 1.55, cl: 0 },
     stats: { spd: 5, acc: 4, hdl: 3, off: 10 },
-    body: { susp: 0.42, sway: { w: 6.0, z: 0.3, k: 1.35 }, L: 7.2, W: 2.5, H: 0.9, C: 0.9, wr: 0.62, y0: 1.75, tw: 0.4, rim: [0.12, 0.12, 0.13], rimStyle: 'bead', tire: 'knobby', custom: 'rtruck' } }
+    body: { susp: 0.42, sway: { w: 6.0, z: 0.3, k: 1.35 }, L: 7.2, W: 2.5, H: 0.9, C: 0.9, wr: 0.62, y0: 1.75, tw: 0.4, rim: [0.12, 0.12, 0.13], rimStyle: 'bead', tire: 'knobby', custom: 'rtruck' } },
+
+  /* four more (06_carmodel_xtra.js): a low sand rail, a box-flared rally hatch, a woodie surf wagon and a lowrider on air */
+  { id: 'sandrail', name: 'Stinger', cls: 'Sand rail', price: 8000, paint: 2, dy: -0.18, snd: { f: 1.15, lp: 0.8 }, dial: 200,
+    blurb: 'A low, long sand rail: a painted pipe frame you sit inside rather than on, skinny fronts on a twin-tube beam, paddle-wide rears on long trailing arms with gold coilovers, and an air-cooled flat-four hanging out the back with a chrome muffler. Light, loud and fast across sand. Enter it on any rally stage.',
+    p: { crawl: 0.5, m: 760, a: 1.45, b: 1.4, Iz: 1050, rw: 0.36, fd: 4.4, gears: [3.2, 2.1, 1.5, 1.15, 0.92], idle: 950, red: 6600, track: 1.55, cgh: 0.42, rd: 0.95, rsf: 0.45, ab: 0.5, cf: 8.6, cr: 11.2 },
+    t: { Tmax: 330, mu: 1.0, cd: 0.78, brk: 1.0, off: 1.35, cl: 0 },
+    stats: { spd: 6, acc: 8, hdl: 8, off: 9 },
+    body: { susp: 0.26, sway: { w: 9, z: 0.35, k: 1.0 }, L: 3.9, W: 1.9, H: 0.3, C: 0.7, wr: 0.36, wrF: 0.3, twF: 0.2, y0: 0.35, tw: 0.36, rim: [0.72, 0.72, 0.74], rimStyle: 'five', tire: 'knobby', custom: 'sandrail' } },
+
+  { id: 'rallyhatch', name: 'Typhoon S4', cls: 'Rally hatch', price: 22000, paint: 0, dy: -0.02, snd: { f: 1.25, lp: 1.4 }, dial: 240,
+    blurb: 'A short, wild rally hatch in the eighties style: box flares bolted over every wheel, four lamps on the nose, a wing on the hatch, a turbo and four-wheel drive. Tiny, savage and happiest sideways on gravel. Enter it on any rally stage.',
+    p: { crawl: 0.3, m: 1100, a: 1.15, b: 1.2, Iz: 1500, rw: 0.32, fd: 4.2, gears: [3.0, 2.1, 1.6, 1.28, 1.05, 0.88], idle: 1000, red: 8000, track: 1.56, cgh: 0.48, rd: 0.5, awd: true, rsf: 0.5, ab: 0.55, cf: 10.4, cr: 11.8 },
+    t: { Tmax: 520, mu: 1.18, cd: 0.5, brk: 1.1, off: 1.25, cl: 0.3 },
+    stats: { spd: 7, acc: 9, hdl: 9, off: 7 },
+    body: { susp: 0.16, L: 4.0, W: 1.9, H: 0.45, C: 0.55, wr: 0.32, y0: 0.3, tw: 0.28, rim: [0.88, 0.88, 0.9], rimStyle: 'seven', custom: 'rallyhatch' } },
+
+  { id: 'woodie', name: 'Surfside', cls: 'Surf wagon', price: 6500, paint: 4, dy: 0.0, snd: { f: 0.72, lp: 0.7 }, dial: 160,
+    blurb: 'A fifties woodie wagon for the beach: timber sides framed in maple, a cream roof, a toothy chrome grille, heavy bumpers and two surfboards on the rack. Slow, soft and very, very cool.',
+    p: { m: 1550, a: 1.45, b: 1.5, Iz: 2900, rw: 0.36, fd: 3.5, gears: [2.8, 1.75, 1.2, 0.95], idle: 650, red: 4800, track: 1.5, cgh: 0.58, rd: 0.95, rsf: 0.52, cf: 9.4, cr: 10.4 },
+    t: { Tmax: 330, mu: 1.0, cd: 0.62, brk: 0.85, off: 1.0, cl: 0 },
+    stats: { spd: 3, acc: 3, hdl: 4, off: 4 },
+    body: { susp: 0.12, sway: { w: 7, z: 0.35, k: 1.3 }, L: 5.1, W: 1.9, H: 0.5, C: 0.6, wr: 0.36, y0: 0.4, tw: 0.24, rim: [0.9, 0.9, 0.9], rimStyle: 'disc', custom: 'woodie' } },
+
+  { id: 'lowrider', name: 'Velvet', cls: 'Lowrider', price: 12000, paint: 5, dy: -0.12, snd: { f: 0.7, lp: 0.75 }, dial: 200,
+    blurb: 'A long, low sixties hardtop on air bags and gold wire wheels: skirts over the rear wheels, a chrome spear, pinstripes and red tuck-and-roll. It lays down on the ground when parked, pumps up to drive, floats over bumps, and if you leave it standing it starts to hop.',
+    p: { m: 1700, a: 1.5, b: 1.55, Iz: 3200, rw: 0.32, fd: 3.2, gears: [2.5, 1.5, 1.0], idle: 600, red: 4600, track: 1.55, cgh: 0.5, rd: 0.95, rsf: 0.52, cf: 9.2, cr: 10 },
+    t: { Tmax: 420, mu: 1.02, cd: 0.58, brk: 0.9, off: 0.6, cl: 0 },
+    stats: { spd: 4, acc: 4, hdl: 4, off: 1 },
+    body: { susp: 0.08, sway: { w: 5, z: 0.3, k: 1.5 }, L: 5.4, W: 2.0, H: 0.42, C: 0.45, wr: 0.3, y0: 0.3, tw: 0.2, rim: [0.92, 0.72, 0.3], rimStyle: 'mesh', custom: 'lowrider' } }
 ];
 const CAR_BY_ID = {}; for (const d of CARS) { CAR_BY_ID[d.id] = d; const b = d.body; d.top = (b.y0 != null ? b.y0 : 0.36) + b.H + 0.1 + b.C; d.hl = b.L / 2; }
 const BASE_N = CARS.length;   /* CARS[0..BASE_N) are the dealership cars; stolen cars are appended at runtime (see 07_jack.js) */

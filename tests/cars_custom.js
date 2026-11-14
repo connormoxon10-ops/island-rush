@@ -15,7 +15,7 @@ const { chromium } = require('playwright'); const path = require('path');
   const res = await page.evaluate(() => {
     const g = window.__game, out = {}; g.App.start(); const pad = { connected: true, axes: [0, 0, 0, 0], buttons: Array.from({ length: 16 }, () => ({ value: 0, pressed: false })) }; navigator.getGamepads = () => [pad];
     const c = g.car, x0 = c.x, z0 = c.z, yaw0 = c.yaw;
-    for (const id of ['buggy', 'monster', 'rod', 'formula', 'kart', 'retro', 'muscle', 'hyper', 'roadster', 'overland', 'trail', 'rtruck']) {
+    for (const id of ['buggy', 'monster', 'rod', 'formula', 'kart', 'retro', 'muscle', 'hyper', 'roadster', 'overland', 'trail', 'rtruck', 'sandrail', 'rallyhatch', 'woodie', 'lowrider']) {
       const d = g.CAR_BY_ID[id], m = g.buildCarModel(d, 0x2a9d4a, { static: true }), bb = new THREE.Box3().setFromObject(m), S = m.userData.S, f = S.wheels.find((w) => w.front), r = S.wheels.find((w) => !w.front);
       const o = out[id] = { name: d.name, price: d.price, h: +bb.max.y.toFixed(2), len: +(bb.max.z - bb.min.z).toFixed(2), tris: Object.values(m.userData.dm).reduce((a, mm) => a + mm.geometry.attributes.position.count / 3, 0), fr: +f.r.toFixed(2), rr: +r.r.toFixed(2) };
       g.applyCar(id, true); c.x = x0; c.z = z0; c.yaw = yaw0; c.vx = c.vz = c.w = 0; c.speed = 0; c.health = 100; c.gear = 1; c.wrecked = 0; c.dmax = 0; c.air = false;   /* (the car before may have ended up wrecked) */
