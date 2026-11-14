@@ -466,7 +466,7 @@ RYG.buildObstacles = function (group) {
   for (const f of RY.feats) {
     if (f.k !== 'ravine' && f.k !== 'ford') continue; const rv = f.k === 'ravine';
     for (const back of [90, 45]) for (const sd of [-1, 1]) {
-      const a = RY.at(f.s0 - (rv ? f.up : 0) - back, 0, {}), p = RY.at(f.s0 - (rv ? f.up : 0) - back, sd * (a.hw + 1.6), {}), y = RY.heightAt(p.x, p.z), fx = Math.sin(a.yaw) * 0.05, fz = Math.cos(a.yaw) * 0.05;
+      const a = RY.at(f.s0 - (rv ? f.up : 0) - back, 0, {}), p = RY.at(f.s0 - (rv ? f.up : 0) - back, sd * (a.hw + 1.6), {}), y = RY.heightAt(p.x, p.z), fx = -Math.sin(a.yaw) * 0.05, fz = -Math.cos(a.yaw) * 0.05;   /* the yellow face and symbol stand on the side facing the oncoming car (they were on the far side, so drivers saw a black back) */
       put(cyl, p.x, y + 1.4, p.z, 0, 0, 0.07, 2.8, 0.07, C(0.5, 0.5, 0.52), 0.2);
       e.set(0, a.yaw, Math.PI / 4, 'YXZ'); q.setFromEuler(e); m.compose(v.set(p.x + fx, y + 2.9, p.z + fz), q, sc.set(1.5, 1.5, 0.04)); gb.geo(box, m, BLK, 0);
       m.compose(v.set(p.x + fx * 1.4, y + 2.9, p.z + fz * 1.4), q, sc.set(1.36, 1.36, 0.04)); gb.geo(box, m, YEL, 0);
@@ -556,7 +556,7 @@ RYG.buildGantries = function (group) {
     const ban = new THREE.Mesh(new THREE.PlaneGeometry(hw * 2 - 0.3, (hw * 2 - 0.3) * 0.19), new THREE.MeshBasicMaterial({ map: _rygBannerTex(label, sub, col), side: THREE.DoubleSide, fog: true, toneMapped: false }));
     ban.position.set(q.x, y + 5.0, q.z); ban.quaternion.copy(yaw).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI)); group.add(ban);  /* text reads from the approach side */
   };
-  mk(RY.startS, null, 'WRC-STYLE FOREST STAGE · 3.7 KM', '#d83a1e', 'HOLLOW PINES');
+  mk(RY.startS, null, ((RY.st && RY.st.sub) || 'Rally stage').toUpperCase() + ' · ' + ((RY.finishS - RY.startS) / 1000).toFixed(1) + ' KM', '#d83a1e', (RY.name || 'Stage').toUpperCase());   /* this stage's own name, not the first stage's */
   mk(RY.finishS, null, 'STAGE FINISH · FLYING FINISH', '#1e5fd8', 'FINISH');
   for (let i = 0; i < RY.cps.length; i++) mk(RY.cps[i], null, 'SPLIT ' + (i + 1), '#2a2d33', 'SPLIT ' + (i + 1));
   if (gb.count) { const mesh = gb.mesh(RYG.mats.wood, true, true); group.add(mesh); }

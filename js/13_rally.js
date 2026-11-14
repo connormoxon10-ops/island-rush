@@ -89,7 +89,9 @@ Rally.landed = function (c) {
 
 /* ---------------- effects ---------------- */
 /* soft point sprites: a particle smaller than 4 px is drawn 4 px wide and faded by its area instead of collapsing into a hard 1-2 px square (which the lens fringing turns into a flashing coloured speck) */
-const RY_PT_VS = 'attribute vec4 aCol; attribute float aSize; varying vec4 vC; uniform float uScale; void main(){ vC=aCol; vec4 mv=modelViewMatrix*vec4(position,1.0); vC.a*=smoothstep(2.0,9.0,-mv.z); float px=aSize*uScale/max(0.5,-mv.z); float k=clamp(px/4.0,0.0,1.0); vC.a*=k*k; gl_Position=projectionMatrix*mv; gl_PointSize=max(px,4.0); }';
+/* ...and a puff drifting back at the chase camera never grows past 320 px: it fades out from 160 px and within 12 m. A sprite hundreds of pixels wide is
+   dropped whole by the GPU the moment its centre leaves the screen, so big puffs used to pop in and out at the edges of the view */
+const RY_PT_VS = 'attribute vec4 aCol; attribute float aSize; varying vec4 vC; uniform float uScale; void main(){ vC=aCol; vec4 mv=modelViewMatrix*vec4(position,1.0); vC.a*=smoothstep(3.0,12.0,-mv.z); float px=aSize*uScale/max(0.5,-mv.z); float k=clamp(px/4.0,0.0,1.0); vC.a*=k*k; vC.a*=1.0-smoothstep(160.0,320.0,px); gl_Position=projectionMatrix*mv; gl_PointSize=clamp(px,4.0,320.0); }';
 function ryPoints(n) { const P = mkPoints(n, THREE.NormalBlending); P.pts.material.vertexShader = RY_PT_VS; return P; }
 function ryInitFx() {
   if (RYP.ok) return; RYP.dust = ryPoints(1500); RYP.grit = ryPoints(420);
