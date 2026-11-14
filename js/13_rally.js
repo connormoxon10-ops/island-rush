@@ -272,8 +272,8 @@ Rally.hud = function (dt) {
 
 /* ---------------- lobby ---------------- */
 /* which stage the lobby has chosen, and its record (Hollow Pines keeps its record where it always was; the others have their own) */
-/* the car you are lent for the stage: the Ridgeback rally car, the Sandviper buggy or the Atlas rally-raid truck */
-const RY_CARS = [['ridge', 'Ridgeback RS'], ['buggy', 'Sandviper buggy'], ['rtruck', 'Atlas truck']];
+/* the car you are lent for the stage: two rally cars, two buggies or the rally-raid truck */
+const RY_CARS = [['ridge', 'Ridgeback RS'], ['rallyhatch', 'Typhoon S4'], ['buggy', 'Sandviper buggy'], ['sandrail', 'Stinger rail'], ['rtruck', 'Atlas truck']];
 Rally.carId = function () { return RY_CARS.some((c) => c[0] === save.rally.car) ? save.rally.car : 'ridge'; };
 Rally.stageI = function () { return clamp(save.rally.stage | 0, 0, RY_STAGES.length - 1); };
 Rally.rec = function (i) { i = i == null ? (Rally.on ? RY.stage : Rally.stageI()) : i; if (i === 0) return save.rally; const st = save.rally.st || (save.rally.st = {}), id = RY_STAGES[i].id; return st[id] || (st[id] = { best: 0, splits: [] }); };
