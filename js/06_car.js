@@ -15,12 +15,27 @@ const car = {
   lights: false, heading: 0, safe: { x: 0, z: 0, yaw: 0 }, safeT: 0, lastImpact: 0, crashFlag: 0, skid: 0
 };
 const _gs = { h: 0, mu: 1, rr: 0, rough: 0, road: false, water: false, loose: 0 }, WH = [0, 0, 0, 0];
+/* rock crawling: for a car with a climb height (P.crawl), rocks no taller than that are part of the ground under its wheels instead of walls. Each one is a
+   smooth hump as wide as the rock plus most of a tyre radius (the tyre meets the rock's flank before its contact patch is under it), as high as the rock,
+   so the wheels ride up it, the suspension soaks it up and the body pitches and rolls over the top. Taller rocks are still walls. */
+function rockGround(x, z, P, o) {
+  if (Rally.on || Drag.on || Derby.on) return;
+  const cx = Math.floor(x / CHUNK), cz = Math.floor(z / CHUNK), wr = P.rw || 0.35;
+  for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+    const ch = Chunks.get(cx + dx, cz + dz); if (!ch) continue; const cc = ch.cols.c;
+    for (let i = 0; i < cc.length; i++) {
+      const q = cc[i]; if (q[6] !== 1) continue; const H = q[4] - q[3]; if (H > P.crawl) continue;
+      const R = q[2] + wr * 0.8, ddx = x - q[0], ddz = z - q[1], d2 = ddx * ddx + ddz * ddz; if (d2 >= R * R) continue;
+      const y = q[3] + 0.05 + H * (0.5 + 0.5 * Math.cos(Math.PI * Math.sqrt(d2) / R)); if (y > o.h) { o.h = y; o.mu = Math.min(o.mu, 0.85); o.road = false; o.rough = Math.max(o.rough, 0.3); }
+    }
+  }
+}
 function wheelGround(c, P) {
   P = P || CARP; const s = Math.sin(c.yaw), co = Math.cos(c.yaw), hw = P.track / 2; let mu = 0, rr = 0, rough = 0, road = 0, water = 0, loose = 0;
   const PT = [[-hw, P.a], [hw, P.a], [-hw, -P.b], [hw, -P.b]];
   for (let k = 0; k < 4; k++) {
     const lx = PT[k][0], lz = PT[k][1];
-    _gs.loose = 0; groundAt(c.x + s * lz + co * lx, c.z + co * lz - s * lx, _gs);
+    _gs.loose = 0; const wx = c.x + s * lz + co * lx, wz = c.z + co * lz - s * lx; groundAt(wx, wz, _gs); if (P.crawl) rockGround(wx, wz, P, _gs);
     WH[k] = _gs.h; (c.wh || (c.wh = [0, 0, 0, 0]))[k] = _gs.h; loose += _gs.loose; mu += _gs.mu; rr += _gs.rr; rough += _gs.rough; road += _gs.road ? 1 : 0; water += _gs.water ? 1 : 0;
   }
   const sf = c.surf; sf.mu = mu / 4; sf.rr = rr / 4; sf.rough = rough / 4; sf.road = road >= 2; sf.water = water >= 3; sf.loose = loose / 4;
@@ -56,7 +71,8 @@ function collideStatic(c, P, circ) {
       const ch = Chunks.get(ccx + dx, ccz + dz); if (!ch) continue;
       const cc = ch.cols.c, bb = ch.cols.b;
       for (let i = 0; i < cc.length; i++) {
-        const o = cc[i], ddx = px - o[0], ddz = pz - o[1], rr = o[2] + R; const d2 = ddx * ddx + ddz * ddz;
+        const o = cc[i]; if (o[6] === 1 && P.crawl && o[4] - o[3] <= P.crawl) continue;   /* a rock low enough to climb: the wheels ride over it (rockGround) */
+        const ddx = px - o[0], ddz = pz - o[1], rr = o[2] + R; const d2 = ddx * ddx + ddz * ddz;
         if (d2 < rr * rr && !(c.y > o[4] + 0.4 || c.y + 3 < o[3])) {   /* only what is actually at the car's height */ const d = Math.sqrt(d2) || 0.01; contact(c, px, pz, ddx / d, ddz / d, rr - d, 0, 0, P); }
       }
       for (let i = 0; i < bb.length; i++) {
