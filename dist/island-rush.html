@@ -3749,7 +3749,67 @@ function formulaCar(S, gP, gG, gT, gD, gLt, tl, lod) {
   }
   K.done();
 }
-const CUSTOM_CARS = { buggy: buggyFrame, monster: monsterTruck, rod: hotRod, formula: formulaCar };
+/* a go-kart: a flat tube chassis a hand's width off the ground, a moulded seat, a nose cone and side pods, a single-cylinder engine beside the seat driving
+   the rear axle by chain, a steering wheel on a column, a rear bumper, and four little slicks with no suspension at all */
+function goKart(S, gP, gG, gT, gD, gLt, tl, lod) {
+  const K = carKit(lod), DK = [0.03, 0.03, 0.035], CHR = [0.7, 0.71, 0.74], BLK = [0.015, 0.015, 0.018], RED = [0.5, 0.04, 0.03], GL = [1, 1, 1];
+  const wf = S.wheels.find((w) => w.front), wr = S.wheels.find((w) => !w.front), xF = Math.abs(wf.x), xR = Math.abs(wr.x), y = 0.1;
+  for (const sx of [-1, 1]) { K.path(gT, [[sx * 0.22, y, wr.z - 0.2], [sx * 0.3, y, -0.2], [sx * 0.28, y, 0.4], [sx * 0.18, y, wf.z + 0.15]], 0.016, CHR); K.tube(gT, [sx * 0.3, y, -0.2], [sx * 0.45, y, -0.1], 0.014, CHR); }
+  for (const z of [wr.z, -0.2, 0.4, wf.z]) K.tube(gT, [-0.28, y, z], [0.28, y, z], 0.014, CHR);
+  K.blk(gD, 0, y - 0.005, 0.15, 0.5, 0.008, 0.9, DK);                                                                    /* floor tray */
+  /* bodywork: nose cone, two side pods, a front panel in front of the driver's knees */
+  K.loft(gP, [{ z: wf.z + 0.34, y: 0.14, a: 0.22, b: 0.05, e: 2.6 }, { z: wf.z + 0.26, y: 0.16, a: 0.36, b: 0.08, e: 3 }, { z: wf.z - 0.02, y: 0.17, a: 0.42, b: 0.09, e: 3 }, { z: wf.z - 0.14, y: 0.16, a: 0.4, b: 0.07, e: 3 }], K.WH, { cap: [1, 1] });
+  K.blk(gP, 0, 0.3, 0.42, 0.42, 0.26, 0.04, K.WH, -0.35);
+  for (const sx of [-1, 1]) K.loft(gP, [{ z: 0.3, x: sx * 0.5, y: 0.13, a: 0.07, b: 0.05, e: 3 }, { z: 0.18, x: sx * 0.52, y: 0.15, a: 0.1, b: 0.07, e: 3 }, { z: -0.5, x: sx * 0.52, y: 0.15, a: 0.1, b: 0.07, e: 3 }, { z: -0.62, x: sx * 0.5, y: 0.13, a: 0.07, b: 0.05, e: 3 }], K.WH, { cap: [1, 1] });
+  /* seat, steering, number plate */
+  K.loft(gD, [{ z: -0.15, y: 0.18, a: 0.2, b: 0.07, e: 2.4 }, { z: -0.35, y: 0.2, a: 0.21, b: 0.08, e: 2.4 }], BLK, { cap: [1, 1] }); K.blk(gD, 0, 0.36, -0.42, 0.4, 0.38, 0.06, BLK, -0.3);
+  K.tube(gT, [0, 0.14, 0.42], [0, 0.4, 0.16], 0.012, CHR);
+  { const tor = ni(new THREE.TorusGeometry(0.13, 0.014, 6, 18)); _q.setFromEuler(new THREE.Euler(-0.95, 0, 0)); _m4.compose(_p3.set(0, 0.42, 0.13), _q, _s3.set(1, 1, 1)); gD.geo(tor, _m4, _tcol.setRGB(...BLK), 0); tor.dispose(); }
+  K.blk(gT, 0, 0.42, 0.155, 0.14, 0.06, 0.02, [0.85, 0.85, 0.85], -0.95);                                                  /* a little display on the wheel */
+  K.blk(gT, 0, 0.27, wf.z + 0.33, 0.2, 0.14, 0.01, [0.9, 0.9, 0.86], -0.5);                                              /* number plate */
+  /* engine beside the seat, exhaust, chain to the axle, rear axle and bumper */
+  K.blk(gT, 0.34, 0.22, -0.42, 0.14, 0.16, 0.18, [0.35, 0.36, 0.38]); for (let k = 0; k < 4; k++) K.blk(gT, 0.34, 0.31 + k * 0.025, -0.42, 0.16, 0.008, 0.2, CHR);   /* finned cylinder */
+  K.drum(gT, 0.22, 0.2, -0.36, 0.06, 0.06, [0.15, 0.15, 0.16], 'x'); K.path(gT, [[0.42, 0.24, -0.45], [0.48, 0.2, -0.6], [0.45, 0.16, -0.78]], 0.02, CHR); K.drum(gD, 0.45, 0.16, -0.82, 0.04, 0.12, BLK, 'z');
+  K.blk(gD, 0.2, y + 0.02, (wr.z - 0.36) / 2, 0.02, 0.05, -wr.z - 0.36, BLK);                                            /* chain */
+  K.drum(gT, 0, wr.r, wr.z, 0.018, 2 * xR - 0.1, CHR, 'x'); K.drum(gT, 0.2, wr.r, wr.z, 0.09, 0.012, CHR, 'x');
+  K.path(gP, [[-0.55, 0.14, wr.z - 0.32], [0.55, 0.14, wr.z - 0.32]], 0.03, K.WH); for (const sx of [-1, 1]) K.tube(gT, [sx * 0.22, y, wr.z - 0.2], [sx * 0.5, 0.14, wr.z - 0.32], 0.014, CHR);
+  for (const sx of [-1, 1]) K.tube(gT, [sx * 0.18, y, wf.z], [sx * (xF - 0.05), wf.r, wf.z], 0.014, CHR);                  /* stub axles */
+  K.blk(gLt, 0, 0.18, wf.z + 0.35, 0.12, 0.02, 0.01, GL); K.blk(tl, 0, 0.15, wr.z - 0.355, 0.12, 0.03, 0.01, GL); K.blk(gG, 0, 0.42, 0.157, 0.1, 0.04, 0.005, GL, -0.95);
+  K.done();
+}
+
+/* a retro compact (an original design in the spirit of the round little rear-engined cars of the fifties): a domed body, a glass band under a rounded roof,
+   separate bulbous fenders with the lamps set into them, running boards, blade bumpers with overriders, skinny tyres on dished steel wheels, louvres over the engine */
+function retroCompact(S, gP, gG, gT, gD, gLt, tl, lod) {
+  const K = carKit(lod), DK = [0.025, 0.025, 0.03], CHR = [0.82, 0.83, 0.85], GL = [1, 1, 1], sg = lod ? 14 : 26;
+  const wf = S.wheels.find((w) => w.front), wr = S.wheels.find((w) => !w.front), xF = Math.abs(wf.x), xR = Math.abs(wr.x);
+  /* the body is one dome from nose to tail: a short sloping bonnet, the roof's high point over the front seats, and a long rounded fall to the engine lid.
+     Rows: z, top height, half width, superellipse exponent; the bottom stays at the sills */
+  const yS = 0.36, T = [[2.0, 0.6, 0.46, 2.2], [1.88, 0.74, 0.58, 2.4], [1.55, 0.86, 0.66, 2.5], [1.05, 0.95, 0.71, 2.6], [0.72, 1.04, 0.73, 2.6], [0.45, 1.3, 0.74, 2.5], [0.12, 1.48, 0.75, 2.4], [-0.25, 1.52, 0.75, 2.4], [-0.62, 1.44, 0.75, 2.4], [-1.0, 1.24, 0.73, 2.4], [-1.38, 1.02, 0.69, 2.4], [-1.72, 0.82, 0.62, 2.3], [-1.95, 0.64, 0.5, 2.2], [-2.02, 0.52, 0.38, 2.1]];
+  const ring = (z, k) => { let i = 0; while (i < T.length - 2 && z < T[i + 1][0]) i++; const A = T[i], B = T[i + 1], f = clamp((z - A[0]) / (B[0] - A[0]), 0, 1), top = lerp(A[1], B[1], f), a = lerp(A[2], B[2], f), e = lerp(A[3], B[3], f);
+    return { z, y: (yS + top) / 2, a: a * (k || 1), b: (top - yS) / 2 * (k || 1), e }; };
+  K.loft(gP, T.map((r) => ring(r[0])), K.WH, { seg: sg, cap: [1, 1] });
+  const zs = (z0, z1, n) => Array.from({ length: n * 3 + 1 }, (_, i) => lerp(z0, z1, i / (n * 3))), P = Math.PI, gk = 1.016;
+  K.loft(gG, zs(0.74, 0.36, 4).map((z) => ring(z, gk)), GL, { seg: sg, tA: P * 0.2, tB: P * 0.8 });                          /* windscreen */
+  for (const [a0, a1] of [[P * 0.1, P * 0.36], [P * 0.64, P * 0.9]]) { K.loft(gG, zs(0.3, -0.18, 4).map((z) => ring(z, gk)), GL, { seg: sg, tA: a0, tB: a1 }); K.loft(gG, zs(-0.3, -0.9, 5).map((z) => ring(z, gk)), GL, { seg: sg, tA: a0, tB: a1 }); }   /* side windows, front and rear */
+  K.loft(gG, zs(-1.0, -1.22, 2).map((z) => ring(z, gk)), GL, { seg: sg, tA: P * 0.38, tB: P * 0.62 });                    /* small rear window */
+  K.loft(gT, [ring(0.36, 1.01), ring(0.33, 1.01)], CHR, { seg: sg, tA: P * 0.08, tB: P * 0.92 });                           /* chrome window surround at the A pillar */
+  /* fenders: a bulbous half-shell over each wheel, the headlamps set into the front ones */
+  for (const sx of [-1, 1]) for (const w of [wf, wr]) {
+    const x = sx * (Math.abs(w.x) - 0.02), f = w.front, L = f ? 0.55 : 0.62, rr = w.r + 0.1, tA = sx > 0 ? -0.15 : Math.PI * 0.35, tB = sx > 0 ? Math.PI * 0.65 : Math.PI + 0.15;
+    const fr = []; for (let k = 0; k <= 10; k++) { const t = 1 - 2 * k / 10, sq = Math.sqrt(Math.max(0, 1 - t * t * 0.94)); fr.push({ z: w.z + t * L, x, y: w.r + 0.01, a: 0.05 + 0.15 * sq, b: 0.05 + (rr + 0.08) * sq, e: 2.1 }); }   /* round in side view and in plan, like half a ball over the wheel */
+    K.loft(gP, fr, K.WH, { seg: lod ? 12 : 22, tA, tB });
+    if (f) { K.drum(gT, x, w.r + 0.3, w.z + 0.42, 0.11, 0.06, CHR, 'z'); K.drum(gLt, x, w.r + 0.3, w.z + 0.455, 0.095, 0.01, GL, 'z'); K.drum(gT, sx * 0.3, 0.58, 1.86, 0.035, 0.03, [0.85, 0.55, 0.1], 'z'); }   /* headlamp, indicator */
+    else { K.blk(tl, x, w.r + 0.26, w.z - 0.5, 0.06, 0.16, 0.02, GL, 0.35); }
+  }
+  for (const sx of [-1, 1]) K.blk(gD, sx * (xF - 0.04), 0.32, (wf.z + wr.z) / 2, 0.2, 0.025, wf.z - wr.z - 1.0, DK);   /* running boards */
+  /* bumpers with overriders, a bonnet strip, louvres over the engine, twin tailpipes */
+  for (const [z, sgn] of [[2.04, 1], [-2.04, -1]]) { K.blk(gT, 0, 0.42, z, 1.5, 0.08, 0.05, CHR); for (const sx of [-1, 1]) { K.blk(gT, sx * 0.72, 0.42, z - sgn * 0.12, 0.06, 0.08, 0.26, CHR); K.blk(gT, sx * 0.38, 0.48, z + sgn * 0.01, 0.05, 0.2, 0.06, CHR); } }
+  K.blk(gT, 0, 0.93, 1.3, 0.04, 0.012, 1.0, CHR, 0.18); for (let k = 0; k < 5; k++) K.blk(gD, 0, 0.99 - k * 0.045, -1.42 - k * 0.07, 0.4, 0.012, 0.03, DK, 0.62);   /* bonnet strip; engine-lid louvres */
+  for (const sx of [-1, 1]) K.drum(gT, sx * 0.3, 0.33, -2.0, 0.035, 0.18, CHR, 'z');
+  K.done();
+}
+const CUSTOM_CARS = { buggy: buggyFrame, monster: monsterTruck, rod: hotRod, formula: formulaCar, kart: goKart, retro: retroCompact };
 
 /* ---------- the car ---------- */
 function buildCarModel(def, hex, opts) {
@@ -4188,7 +4248,21 @@ const CARS = [
     p: { m: 760, a: 1.65, b: 1.45, Iz: 1050, rw: 0.34, fd: 3.4, gears: [3.0, 2.35, 1.9, 1.6, 1.38, 1.2, 1.05], idle: 3200, red: 11800, track: 1.6, cgh: 0.28, rd: 0.5, rsf: 0.5, ab: 0.46, cf: 13.5, cr: 15.5 },
     t: { Tmax: 620, mu: 1.55, cd: 0.42, brk: 1.6, off: 0.38, cl: 2.4 },
     stats: { spd: 10, acc: 10, hdl: 10, off: 1 },
-    body: { L: 4.9, W: 2.0, H: 0.3, C: 0.4, wr: 0.34, wrF: 0.33, twF: 0.3, y0: 0.18, tw: 0.4, rim: [0.12, 0.12, 0.13], rimStyle: 'multi', tire: 'sport', custom: 'formula' } }
+    body: { L: 4.9, W: 2.0, H: 0.3, C: 0.4, wr: 0.34, wrF: 0.33, twF: 0.3, y0: 0.18, tw: 0.4, rim: [0.12, 0.12, 0.13], rimStyle: 'multi', tire: 'sport', custom: 'formula' } },
+
+  { id: 'kart', name: 'Ripper', cls: 'Go-kart', price: 1500, paint: 2, dy: -0.78, snd: { f: 1.9, lp: 2.4 }, dial: 160,
+    blurb: 'A racing go-kart: a tube chassis a hand\'s width off the ground, a single-cylinder engine beside the seat and no suspension at all. It weighs next to nothing, turns on a coin, and feels twice as fast as it is.',
+    p: { m: 240, a: 0.55, b: 0.5, Iz: 140, rw: 0.14, fd: 4.3, gears: [1.7, 1.0], idle: 2200, red: 9000, track: 1.1, cgh: 0.22, rd: 0.5, rsf: 0.5, cf: 11, cr: 12.5 },
+    t: { Tmax: 46, mu: 1.32, cd: 0.32, brk: 1.0, off: 0.55, cl: 0 },
+    stats: { spd: 3, acc: 6, hdl: 10, off: 2 },
+    body: { L: 1.9, W: 1.36, H: 0.2, C: 0.3, wr: 0.14, wrF: 0.13, twF: 0.14, y0: 0.08, tw: 0.2, rim: [0.85, 0.86, 0.88], rimStyle: 'five', tire: 'sport', custom: 'kart' } },
+
+  { id: 'retro', name: 'Pebble', cls: 'Retro compact', price: 2800, paint: 1, dy: -0.06, snd: { f: 0.9, lp: 0.7 }, dial: 160,
+    blurb: 'A round little rear-engined compact in the fifties style: a domed body and roof, bulbous fenders with the lamps set in them, running boards, chrome blade bumpers and skinny tyres on dished steel wheels. Slow, cheerful and unkillable.',
+    p: { m: 820, a: 1.2, b: 1.2, Iz: 1150, rw: 0.31, fd: 4.4, gears: [3.6, 2.1, 1.3, 0.9], idle: 850, red: 5200, track: 1.3, cgh: 0.55, rd: 0.4, rsf: 0.44, cf: 9.0, cr: 10.6 },
+    t: { Tmax: 112, mu: 0.98, cd: 0.62, brk: 0.85, off: 1.05, cl: 0 },
+    stats: { spd: 2, acc: 2, hdl: 5, off: 5 },
+    body: { L: 4.1, W: 1.64, H: 0.4, C: 0.6, wr: 0.31, y0: 0.4, tw: 0.17, rim: [0.85, 0.85, 0.85], rimStyle: 'steel', custom: 'retro' } }
 ];
 const CAR_BY_ID = {}; for (const d of CARS) { CAR_BY_ID[d.id] = d; const b = d.body; d.top = (b.y0 != null ? b.y0 : 0.36) + b.H + 0.1 + b.C; d.hl = b.L / 2; }
 const BASE_N = CARS.length;   /* CARS[0..BASE_N) are the dealership cars; stolen cars are appended at runtime (see 07_jack.js) */
