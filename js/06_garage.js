@@ -117,7 +117,36 @@ const CARS = [
     p: { m: 820, a: 1.2, b: 1.2, Iz: 1150, rw: 0.31, fd: 4.4, gears: [3.6, 2.1, 1.3, 0.9], idle: 850, red: 5200, track: 1.3, cgh: 0.55, rd: 0.4, rsf: 0.44, cf: 9.0, cr: 10.6 },
     t: { Tmax: 112, mu: 0.98, cd: 0.62, brk: 0.85, off: 1.05, cl: 0 },
     stats: { spd: 2, acc: 2, hdl: 5, off: 5 },
-    body: { L: 4.1, W: 1.64, H: 0.4, C: 0.6, wr: 0.31, y0: 0.4, tw: 0.17, rim: [0.85, 0.85, 0.85], rimStyle: 'steel', custom: 'retro' } }
+    body: { L: 4.1, W: 1.64, H: 0.4, C: 0.6, wr: 0.31, y0: 0.4, tw: 0.17, rim: [0.85, 0.85, 0.85], rimStyle: 'steel', custom: 'retro' } },
+
+  /* more hand-built originals (06_carmodel_more.js): a muscle fastback, a hypercar, a classic roadster and an expedition 4x4 */
+  { id: 'muscle', name: 'Hammerhead 440', cls: 'Muscle car', price: 16000, paint: 5, dy: 0.0, snd: { f: 0.66, lp: 0.78 }, dial: 320,
+    blurb: 'A long-bonnet fastback with a shaker scoop punched through the power bulge, four round lamps in a deep grille, a ducktail and fat tyres at the back. A big-block V8 with more torque than the rear tyres will ever use. Point it straight.',
+    p: { m: 1600, a: 1.42, b: 1.33, Iz: 3200, rw: 0.36, fd: 3.4, gears: [2.9, 1.9, 1.4, 1.1, 0.88, 0.72], idle: 750, red: 6800, track: 1.56, cgh: 0.5, rd: 0.95, rsf: 0.54, cf: 10.6, cr: 11.8 },
+    t: { Tmax: 760, mu: 1.14, cd: 0.6, brk: 1.0, off: 0.85, cl: 0 },
+    stats: { spd: 8, acc: 8, hdl: 5, off: 3 },
+    body: { L: 4.84, W: 1.94, H: 0.45, C: 0.53, wr: 0.36, wrF: 0.35, twF: 0.27, y0: 0.3, tw: 0.33, rim: [0.78, 0.78, 0.8], rimStyle: 'five', custom: 'muscle' } },
+
+  { id: 'hyper', name: 'Aether X', cls: 'Hypercar', price: 65000, paint: 1, dy: -0.18, snd: { f: 1.42, lp: 1.7 }, dial: 420,
+    blurb: 'Mid-engined, all-wheel drive and barely a metre tall: a teardrop canopy, side intakes cut deep into the waist, an engine under glass and a wing on swan necks that leans on the car harder the faster you go. The fastest thing on four wheels on the island.',
+    p: { m: 1350, a: 1.48, b: 1.22, Iz: 2100, rw: 0.36, fd: 3.3, gears: [3.1, 2.2, 1.65, 1.3, 1.06, 0.88, 0.74], idle: 1100, red: 9500, track: 1.74, cgh: 0.4, rd: 0.6, awd: true, rsf: 0.48, ab: 0.56, cf: 11.4, cr: 12.8 },
+    t: { Tmax: 900, mu: 1.5, cd: 0.42, brk: 1.4, off: 0.7, cl: 1.0 },
+    stats: { spd: 10, acc: 10, hdl: 10, off: 1 },
+    body: { L: 4.72, W: 2.06, H: 0.35, C: 0.48, wr: 0.36, wrF: 0.34, twF: 0.3, y0: 0.2, tw: 0.37, rim: [0.1, 0.1, 0.11], rimStyle: 'tri', tire: 'sport', custom: 'hyper' } },
+
+  { id: 'roadster', name: 'Swallow', cls: 'Roadster', price: 7500, paint: 4, dy: -0.14, snd: { f: 1.05, lp: 1.0 }, dial: 220,
+    blurb: 'A classic open two-seater: a long rounded bonnet between raised wings, lamps under glass, a chrome-framed screen, tan leather and wire wheels. Not quick in a straight line, but light, balanced and a joy on a twisty road.',
+    p: { m: 980, a: 1.2, b: 1.15, Iz: 1500, rw: 0.32, fd: 3.7, gears: [3.2, 2.0, 1.4, 1.08, 0.86], idle: 850, red: 6400, track: 1.36, cgh: 0.44, rd: 0.95, rsf: 0.53, cf: 10.4, cr: 11.4 },
+    t: { Tmax: 290, mu: 1.18, cd: 0.5, brk: 1.0, off: 0.8, cl: 0 },
+    stats: { spd: 5, acc: 5, hdl: 9, off: 3 },
+    body: { L: 4.24, W: 1.68, H: 0.4, C: 0.3, wr: 0.32, y0: 0.3, tw: 0.19, rim: [0.86, 0.87, 0.89], rimStyle: 'mesh', custom: 'roadster' } },
+
+  { id: 'overland', name: 'Nomad', cls: 'Expedition 4x4', price: 11000, paint: 6, dy: 0.5, snd: { f: 0.58, lp: 0.62 }, dial: 200,
+    blurb: 'An expedition truck kitted to cross a continent: a square body on knobby tyres, a winch bumper and bull bar, a snorkel, a roof rack with a tent, jerry cans and a light bar, rock sliders and a spare on the back. Slow on the road and unstoppable off it.',
+    p: { m: 2250, a: 1.4, b: 1.35, Iz: 5000, rw: 0.44, fd: 4.1, gears: [3.8, 2.2, 1.45, 1.0, 0.8], idle: 750, red: 4600, track: 1.62, cgh: 0.85, rd: 0.6, awd: true, rsf: 0.5, ab: 0.5, cf: 8.6, cr: 10.2 },
+    t: { Tmax: 600, mu: 1.02, cd: 1.4, brk: 0.95, off: 1.45, cl: 0 },
+    stats: { spd: 4, acc: 3, hdl: 3, off: 10 },
+    body: { L: 4.64, W: 2.02, H: 0.6, C: 0.78, wr: 0.44, y0: 0.62, tw: 0.34, rim: [0.1, 0.1, 0.11], rimStyle: 'steel', tire: 'knobby', custom: 'overland' } }
 ];
 const CAR_BY_ID = {}; for (const d of CARS) { CAR_BY_ID[d.id] = d; const b = d.body; d.top = (b.y0 != null ? b.y0 : 0.36) + b.H + 0.1 + b.C; d.hl = b.L / 2; }
 const BASE_N = CARS.length;   /* CARS[0..BASE_N) are the dealership cars; stolen cars are appended at runtime (see 07_jack.js) */
