@@ -282,6 +282,19 @@ function wheelsInit() {
 function wheelsAdd(grp, S) { wheelsInit(); const b = S.b, rec = { obj: grp, S, roll: 0, tire: TIRE_RHO[b.tire] ? b.tire : 'std', rimKey: b.rimStyle || 'multi', col: new THREE.Color(...(b.rim || [0.6, 0.6, 0.64])), player: false }; Wheels.recs.push(rec); grp.userData.wrec = rec; return rec; }
 function wheelsRemove(grp) { const r = grp.userData && grp.userData.wrec; if (!r) return; const i = Wheels.recs.indexOf(r); if (i >= 0) Wheels.recs.splice(i, 1); grp.userData.wrec = null; }
 const _wm = new THREE.Matrix4(), _wl = new THREE.Matrix4(), _wq = new THREE.Quaternion(), _we = new THREE.Euler(), _wp = new THREE.Vector3(), _ws = new THREE.Vector3();
+/* suspension travel: each wheel reaches for the ground under it. The body is a plane fitted to the four contact points (and it lags, rolls, dives and
+   heaves on its springs), so the wheel's offset is the gap between the ground under that wheel and where the body's own floor plane puts it, limited to
+   the car's travel (body.susp metres each way: a few cm on a racer, half a metre on a monster truck). Off the ground the wheels hang at full droop.
+   Wheels push up fast (the tyre hits a bump) and fall more slowly (a wheel dropping under its own weight). */
+const SUSP_DEF = 0.1;
+function wheelTravel(rec, cs, o, sus, dt) {
+  const e = o.matrixWorld.elements, tr = rec.S.b.susp != null ? rec.S.b.susp : SUSP_DEF, up = 1 - Math.exp(-dt * 38), dn = 1 - Math.exp(-dt * 16);
+  for (const w of rec.S.wheels) {
+    const k = (w.front ? 0 : 2) + (w.x > 0 ? 1 : 0), floor = e[1] * w.x + e[9] * w.z + e[13], ny = Math.max(0.3, e[5]);   /* the body floor's world height at this wheel, and how upright the body is */
+    const want = cs.air ? -tr : clamp((cs.wh[k] - floor) / ny, -tr, tr * 0.9);
+    sus[k] += (want - sus[k]) * (want > sus[k] ? up : dn);
+  }
+}
 function updateWheels(dt) {
   if (!Wheels.ready) return;
   for (const k in Wheels.sets) Wheels.sets[k].n = 0;
@@ -291,9 +304,10 @@ function updateWheels(dt) {
     rec.roll = (rec.roll + v * dt / rec.S.wr) % TAU;
     const tail = o.userData.tail; if (tail) tail.material = brake ? MAT.carBrake : MAT.carTail;
     const ts = Wheels.sets['t:' + rec.tire], rs = Wheels.sets['r:' + rec.rimKey], rho = TIRE_RHO[rec.tire];
+    const cs = rec.player ? car : o.userData.cs, sus = rec.sus || (rec.sus = [0, 0, 0, 0]); if (cs && cs.wh) wheelTravel(rec, cs, o, sus, dt); else sus[0] = sus[1] = sus[2] = sus[3] = 0;
     for (const w of rec.S.wheels) {
-      const left = w.side < 0; _we.set(left ? -rec.roll : rec.roll, (w.front ? steer : 0) + (left ? Math.PI : 0), 0, 'YXZ'); _wq.setFromEuler(_we);
-      _wl.compose(_wp.set(w.x, w.r, w.z), _wq, _ws.set(w.w, w.r, w.r)); _wm.multiplyMatrices(o.matrixWorld, _wl); ts.m.setMatrixAt(ts.n++, _wm);
+      const left = w.side < 0, wy = w.r + sus[(w.front ? 0 : 2) + (w.x > 0 ? 1 : 0)]; _we.set(left ? -rec.roll : rec.roll, (w.front ? steer : 0) + (left ? Math.PI : 0), 0, 'YXZ'); _wq.setFromEuler(_we);
+      _wl.compose(_wp.set(w.x, wy, w.z), _wq, _ws.set(w.w, w.r, w.r)); _wm.multiplyMatrices(o.matrixWorld, _wl); ts.m.setMatrixAt(ts.n++, _wm);
       _wl.compose(_wp, _wq, _ws.set(w.w, w.r * rho * 1.0, w.r * rho * 1.0)); _wm.multiplyMatrices(o.matrixWorld, _wl); rs.m.setColorAt(rs.n, rec.col); rs.m.setMatrixAt(rs.n++, _wm);
     }
   }

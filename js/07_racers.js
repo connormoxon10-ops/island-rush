@@ -250,7 +250,7 @@ Bots.step = function (h) { const bs = Bots.list; for (let i = 0; i < bs.length; 
 Bots.visual = function (dt) {
   if (!Bots.on) return;
   for (const b of Bots.list) {
-    const c = b.c, m = b.mesh; m.position.set(c.x, c.y + c.sY * 0.4, c.z); m.rotation.set(-c.pitch, c.yaw, c.roll, 'YXZ'); m.userData.v = c.speed; m.userData.brake = c.brk > 0.25 && !c.rev; m.userData.steer = clamp(c.delta || 0, -0.6, 0.6);
+    const c = b.c, m = b.mesh; m.position.set(c.x, c.y + c.sY * 0.4, c.z); m.rotation.set(-c.pitch, c.yaw, c.roll, 'YXZ'); m.userData.cs = c; m.userData.v = c.speed; m.userData.brake = c.brk > 0.25 && !c.rev; m.userData.steer = clamp(c.delta || 0, -0.6, 0.6);
     b.smokeT -= dt; const dd = Math.hypot(c.x - Pl.x, c.z - Pl.z);
     if (dd < 90 && b.smokeT <= 0 && (c.drifting || c.spin || (c.braking && Math.abs(c.speed) > 25)) && !c.air) {
       b.smokeT = 0.03; const s = Math.sin(c.yaw), co = Math.cos(c.yaw);

@@ -280,7 +280,7 @@ Derby.finish = function () {
 Derby.visual = function (dt) {
   for (const b of Derby.list) {
     if (b.me) continue; const c = b.c, m = b.mesh;
-    m.position.set(c.x, c.y + c.sY * 0.4, c.z); m.rotation.set(-c.pitch, c.yaw, c.roll, 'YXZ'); m.userData.v = b.out ? 0 : c.speed; m.userData.brake = c.brk > 0.25 && !c.rev; m.userData.steer = clamp(c.delta || 0, -0.6, 0.6);
+    m.position.set(c.x, c.y + c.sY * 0.4, c.z); m.rotation.set(-c.pitch, c.yaw, c.roll, 'YXZ'); m.userData.cs = c; m.userData.v = b.out ? 0 : c.speed; m.userData.brake = c.brk > 0.25 && !c.rev; m.userData.steer = clamp(c.delta || 0, -0.6, 0.6);
     const hp = b.out ? 0 : b.hp, fx = Math.sin(c.yaw), fz = Math.cos(c.yaw), hx = c.x + fx * (b.P.a + 0.3), hz = c.z + fz * (b.P.a + 0.3);
     b.smokeT -= dt; if (hp < 55 && b.smokeT <= 0) { b.smokeT = hp < 25 ? 0.05 : 0.14; const dk = hp < 25 ? 0.2 : 0.55; emit(Part.smoke, hx + (Math.random() - 0.5) * 0.6, c.y + 1.0, hz + (Math.random() - 0.5) * 0.6, (Math.random() - 0.5) * 0.8, 1.6 + Math.random(), (Math.random() - 0.5) * 0.8, 1.6 + Math.random() * 1.2, 0.9, 2.6, dk, dk, dk, 0.55, -0.4); }
     if (hp < 20 && Math.random() < 0.6) emit(Part.spark, hx + (Math.random() - 0.5) * 0.7, c.y + 0.9, hz + (Math.random() - 0.5) * 0.7, (Math.random() - 0.5) * 0.6, 1.4 + Math.random() * 1.4, (Math.random() - 0.5) * 0.6, 0.35 + Math.random() * 0.3, 0.35, 1.2, 1, 0.45 + Math.random() * 0.25, 0.08, 1, -0.6);

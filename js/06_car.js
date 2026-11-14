@@ -21,7 +21,7 @@ function wheelGround(c, P) {
   for (let k = 0; k < 4; k++) {
     const lx = PT[k][0], lz = PT[k][1];
     _gs.loose = 0; groundAt(c.x + s * lz + co * lx, c.z + co * lz - s * lx, _gs);
-    WH[k] = _gs.h; loose += _gs.loose; mu += _gs.mu; rr += _gs.rr; rough += _gs.rough; road += _gs.road ? 1 : 0; water += _gs.water ? 1 : 0;
+    WH[k] = _gs.h; (c.wh || (c.wh = [0, 0, 0, 0]))[k] = _gs.h; loose += _gs.loose; mu += _gs.mu; rr += _gs.rr; rough += _gs.rough; road += _gs.road ? 1 : 0; water += _gs.water ? 1 : 0;
   }
   const sf = c.surf; sf.mu = mu / 4; sf.rr = rr / 4; sf.rough = rough / 4; sf.road = road >= 2; sf.water = water >= 3; sf.loose = loose / 4;
 }
@@ -291,7 +291,7 @@ function updateCamera(dt, speedFx) {
     c.leanRv += (SW * SW * (tR - c.leanR) - 2 * SZ * SW * c.leanRv) * sh_; c.leanR += c.leanRv * sh_;
   }
   const leanP = c.leanP, leanR = c.leanR;
-  b.position.set(c.x, c.y, c.z);
+  b.position.set(c.x, c.y + c.sY * 0.4, c.z);   /* heave: the wheels stay on the ground and the suspension takes it (updateWheels) */
   b.rotation.set(-(c.pitch + leanP), c.yaw, c.roll + leanR, 'YXZ'); b.updateMatrixWorld(true);
   const spd = Math.abs(c.speed);
   const sh = save.set.shake ? Cam.shake : 0;
@@ -302,13 +302,13 @@ function updateCamera(dt, speedFx) {
     Dev.fx += (fx * mf + rx * mr) * k; Dev.fy += (fy * mf + mv) * k; Dev.fz += (fz * mf + rz * mr) * k;
     camera.position.set(Dev.fx, Dev.fy, Dev.fz); camera.rotation.set(Dev.fpitch, Dev.fyaw, 0, 'YXZ');
   } else if (Cam.view === 0) {
-    _eye.copy(EYE); b.localToWorld(_eye); _eye.y += c.sY;
+    _eye.copy(EYE); b.localToWorld(_eye); _eye.y += c.sY * 0.6;
     camera.position.set(_eye.x + (Math.random() - 0.5) * sh * 0.05, _eye.y + (Math.random() - 0.5) * sh * 0.05, _eye.z + (Math.random() - 0.5) * sh * 0.05);
     let ly = Cam.back ? Math.PI : Cam.lookYaw;
     camera.rotation.set(c.pitch * 0.75 + leanP * 0.8 + Cam.lookPitch + (Math.random() - 0.5) * sh * 0.004, c.yaw + Math.PI + ly, (c.roll + leanR) * 0.5 + (Math.random() - 0.5) * sh * 0.004, 'YXZ');
     if (Cam.back) camera.position.y += 0;
   } else if (Cam.view === 1) {
-    _eye.set(0, CUR.bumpY, CUR.bumpZ); b.localToWorld(_eye); camera.position.copy(_eye); camera.position.y += c.sY * 0.6;
+    _eye.set(0, CUR.bumpY, CUR.bumpZ); b.localToWorld(_eye); camera.position.copy(_eye); camera.position.y += c.sY * 0.2;
     camera.rotation.set(c.pitch * 0.8 + Cam.lookPitch, c.yaw + Math.PI + Cam.lookYaw + (Cam.back ? Math.PI : 0), (c.roll + leanR) * 0.4, 'YXZ');
   } else {
     /* third-person chase: lags into drifts, rides smoothly over bumps, never dips below terrain */
