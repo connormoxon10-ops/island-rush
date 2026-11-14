@@ -19,7 +19,7 @@ const CARS = [
 
   { id: 'hauler', name: 'Hauler 4x4', cls: 'Pickup', price: 2400, paint: 3, dy: 0.2, snd: { f: 0.6, lp: 0.7 }, dial: 280,
     blurb: 'Heavy diesel pickup. Slow off the line, tough, and shrugs off dirt and bumps.',
-    p: { m: 2250, a: 1.55, b: 1.75, Iz: 5200, rw: 0.4, fd: 3.3, gears: [3.4, 2.0, 1.35, 1.0, 0.76], idle: 750, red: 4800, track: 1.7, cgh: 0.78, rd: 0.7, awd: true, rsf: 0.5, cf: 9.6, cr: 12.6 },
+    p: { crawl: 0.45, m: 2250, a: 1.55, b: 1.75, Iz: 5200, rw: 0.4, fd: 3.3, gears: [3.4, 2.0, 1.35, 1.0, 0.76], idle: 750, red: 4800, track: 1.7, cgh: 0.78, rd: 0.7, awd: true, rsf: 0.5, cf: 9.6, cr: 12.6 },
     t: { Tmax: 440, mu: 1.1, cd: 1.2, brk: 0.9, off: 1.3 },
     stats: { spd: 3, acc: 2, hdl: 3, off: 8 },
     body: { susp: 0.15, L: 5.3, W: 1.96, H: 0.62, C: 0.66, wr: 0.42, y0: 0.52, tw: 0.34, rim: [0.28, 0.28, 0.3],
@@ -27,7 +27,7 @@ const CARS = [
 
   { id: 'dune', name: 'Dune Runner', cls: 'Rally 4x4', price: 3800, paint: 6, dy: 0.14, snd: { f: 0.92, lp: 1.25 }, dial: 280,
     blurb: 'Lifted all-wheel-drive rally truck. Glued to gravel, grass and sand.',
-    p: { m: 1550, a: 1.3, b: 1.4, Iz: 2600, rw: 0.4, fd: 3.7, gears: [3.4, 2.05, 1.45, 1.1, 0.88, 0.72], idle: 900, red: 7000, track: 1.64, cgh: 0.66, rd: 0.55, awd: true, rsf: 0.5, cf: 10.0, cr: 12.2 },
+    p: { crawl: 0.55, m: 1550, a: 1.3, b: 1.4, Iz: 2600, rw: 0.4, fd: 3.7, gears: [3.4, 2.05, 1.45, 1.1, 0.88, 0.72], idle: 900, red: 7000, track: 1.64, cgh: 0.66, rd: 0.55, awd: true, rsf: 0.5, cf: 10.0, cr: 12.2 },
     t: { Tmax: 335, mu: 1.14, cd: 0.7, brk: 1, off: 1.4 },
     stats: { spd: 5, acc: 4, hdl: 5, off: 10 },
     body: { susp: 0.2, L: 4.45, W: 1.92, H: 0.56, C: 0.72, wr: 0.4, y0: 0.5, tw: 0.32, rim: [0.95, 0.5, 0.12],
@@ -78,7 +78,7 @@ const CARS = [
   /* an original design: a lifted long-travel sand buggy. A light rear-engined space frame on knobby tyres; high and soft, so it rolls and floats over everything and lands jumps that break other cars */
   { id: 'buggy', name: 'Sandviper', cls: 'Dune buggy', price: 9500, paint: 6, dy: 0.27, snd: { f: 1.22, lp: 0.85 }, dial: 240,
     blurb: 'A lifted long-travel dune buggy: an open tube frame, a flat-four out back with upswept pipes, knobby tyres on beadlocks and half a metre of suspension travel. Light, loud and happiest in the air. It can be your car on any rally stage.',
-    p: { m: 940, a: 1.3, b: 1.25, Iz: 1250, rw: 0.46, fd: 4.9, gears: [3.4, 2.3, 1.68, 1.28, 1.02], idle: 950, red: 6900, track: 1.58, cgh: 0.68, rd: 0.4, rsf: 0.42, ab: 0.55, cf: 8.4, cr: 10.6 },
+    p: { crawl: 0.85, m: 940, a: 1.3, b: 1.25, Iz: 1250, rw: 0.46, fd: 4.9, gears: [3.4, 2.3, 1.68, 1.28, 1.02], idle: 950, red: 6900, track: 1.58, cgh: 0.68, rd: 0.4, rsf: 0.42, ab: 0.55, cf: 8.4, cr: 10.6 },
     t: { Tmax: 410, mu: 1.0, cd: 0.92, brk: 1.0, off: 1.4, cl: 0 },
     stats: { spd: 6, acc: 8, hdl: 7, off: 10 },
     body: { susp: 0.32, L: 3.5, W: 2.04, H: 0.3, C: 0.82, wr: 0.46, y0: 0.7, tw: 0.44, rim: [0.85, 0.86, 0.88], rimStyle: 'bead', tire: 'knobby', buggy: true } },
@@ -86,7 +86,7 @@ const CARS = [
   /* original designs, each hand-built (06_carmodel.js) rather than a body shell: a monster truck, a hot rod and an open-wheel single seater */
   { id: 'monster', name: 'Goliath', cls: 'Monster truck', price: 24000, paint: 3, dy: 1.45, snd: { f: 0.62, lp: 0.55 }, dial: 200,
     blurb: 'A pickup shell two metres up on a tube chassis, four-link solid axles with two shocks a corner, a blown big-block and 1.7 m knobby tyres. It climbs anything, crushes the rest, and rolls over if you ask it to corner.',
-    p: { m: 3700, a: 1.6, b: 1.6, Iz: 9800, rw: 0.84, fd: 4.6, gears: [3.4, 2.2, 1.5, 1.1, 0.88], idle: 750, red: 6200, track: 2.3, cgh: 1.25, rd: 0.4, awd: true, rsf: 0.5, ab: 0.5, cf: 6.4, cr: 7.4 },
+    p: { crawl: 1.5, m: 3700, a: 1.6, b: 1.6, Iz: 9800, rw: 0.84, fd: 4.6, gears: [3.4, 2.2, 1.5, 1.1, 0.88], idle: 750, red: 6200, track: 2.3, cgh: 1.25, rd: 0.4, awd: true, rsf: 0.5, ab: 0.5, cf: 6.4, cr: 7.4 },
     t: { Tmax: 1500, mu: 1.0, cd: 2.4, brk: 1.1, off: 1.45, cl: 0 },
     stats: { spd: 4, acc: 6, hdl: 2, off: 10 },
     body: { susp: 0.5, L: 5.0, W: 3.1, H: 0.7, C: 0.55, wr: 0.84, y0: 1.85, tw: 0.74, rim: [0.8, 0.8, 0.82], rimStyle: 'bead', tire: 'knobby', custom: 'monster' } },
@@ -143,7 +143,7 @@ const CARS = [
 
   { id: 'overland', name: 'Nomad', cls: 'Expedition 4x4', price: 11000, paint: 6, dy: 0.5, snd: { f: 0.58, lp: 0.62 }, dial: 200,
     blurb: 'An expedition truck kitted to cross a continent: a square body on knobby tyres, a winch bumper and bull bar, a snorkel, a roof rack with a tent, jerry cans and a light bar, rock sliders and a spare on the back. Slow on the road and unstoppable off it.',
-    p: { m: 2250, a: 1.4, b: 1.35, Iz: 5000, rw: 0.44, fd: 4.1, gears: [3.8, 2.2, 1.45, 1.0, 0.8], idle: 750, red: 4600, track: 1.62, cgh: 0.85, rd: 0.6, awd: true, rsf: 0.5, ab: 0.5, cf: 8.6, cr: 10.2 },
+    p: { crawl: 0.85, m: 2250, a: 1.4, b: 1.35, Iz: 5000, rw: 0.44, fd: 4.1, gears: [3.8, 2.2, 1.45, 1.0, 0.8], idle: 750, red: 4600, track: 1.62, cgh: 0.85, rd: 0.6, awd: true, rsf: 0.5, ab: 0.5, cf: 8.6, cr: 10.2 },
     t: { Tmax: 600, mu: 1.02, cd: 1.4, brk: 0.95, off: 1.45, cl: 0 },
     stats: { spd: 4, acc: 3, hdl: 3, off: 10 },
     body: { susp: 0.24, L: 4.64, W: 2.02, H: 0.6, C: 0.78, wr: 0.44, y0: 0.62, tw: 0.34, rim: [0.1, 0.1, 0.11], rimStyle: 'steel', tire: 'knobby', custom: 'overland' } }
@@ -157,7 +157,7 @@ const curPaint = (id) => { const i = save.cc[id || save.car]; return i != null ?
 /* ---------- make a car the active one (physics + body + cameras) ---------- */
 function applyCar(id, rebuildMesh) {
   const d = CAR_BY_ID[id] || CARS[0]; CUR = d; save.car = d.id;
-  Object.assign(CARP, { awd: false, rsf: 0.5, ab: 0.5, cf: 10.2, cr: 12.2, lat: 1 }, d.p, { gears: d.p.gears.slice() }); CARP.L = d.p.a + d.p.b;   /* optional keys go back to their defaults first, so one car's all-wheel drive or drag tyres never carry over to the next */
+  Object.assign(CARP, { awd: false, rsf: 0.5, ab: 0.5, cf: 10.2, cr: 12.2, lat: 1, crawl: 0 }, d.p, { gears: d.p.gears.slice() }); CARP.L = d.p.a + d.p.b;   /* optional keys go back to their defaults first, so one car's all-wheel drive or drag tyres never carry over to the next */
   refreshTune();
   const hl = d.hl, hw = d.body.W / 2;
   CIRC[0][0] = hl - 0.45; CIRC[1][0] = 0; CIRC[2][0] = -(hl - 0.45); for (const k of CIRC) k[1] = hw + 0.09;
