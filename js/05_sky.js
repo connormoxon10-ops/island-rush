@@ -150,7 +150,7 @@ const _deepDay = lc(0x06233f), _deepNight = lc(0x010610), _shDay = lc(0x2fa5a0),
 /* ---------------- renderer + post ---------------- */
 const Post = { on: false, dyn: 1 };
 const FS_V = 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.0,1.0); }';
-const FS_BRIGHT = 'uniform sampler2D tSrc; uniform float uThr; varying vec2 vUv; void main(){ vec3 c=texture2D(tSrc,vUv).rgb; float l=max(max(c.r,c.g),c.b); float k=max(l-uThr,0.0)/max(l,1e-4); gl_FragColor=vec4(c*k,1.0); }';
+const FS_BRIGHT = 'uniform sampler2D tSrc; uniform float uThr; varying vec2 vUv; void main(){ vec3 c=texture2D(tSrc,vUv).rgb; bool ok_=c.r<1e4&&c.g<1e4&&c.b<1e4&&c.r>-1e4&&c.g>-1e4&&c.b>-1e4; c=ok_?clamp(c,0.0,64.0):vec3(0.0); float l=max(max(c.r,c.g),c.b); float k=max(l-uThr,0.0)/max(l,1e-4); gl_FragColor=vec4(c*k,1.0); }';
 const FS_BLUR = 'uniform sampler2D tSrc; uniform vec2 uDir; varying vec2 vUv; void main(){ vec3 c=texture2D(tSrc,vUv).rgb*0.227027; c+=texture2D(tSrc,vUv+uDir*1.3846).rgb*0.316216; c+=texture2D(tSrc,vUv-uDir*1.3846).rgb*0.316216; c+=texture2D(tSrc,vUv+uDir*3.2308).rgb*0.070270; c+=texture2D(tSrc,vUv-uDir*3.2308).rgb*0.070270; gl_FragColor=vec4(c,1.0); }';
 const FS_COMP = `uniform sampler2D tScene,tB1,tB2; uniform float uBloom,uSpeed,uExposure,uTime,uVig,uDamage,uChroma; uniform vec2 uRes; varying vec2 vUv;
 vec3 aces(vec3 x){ const float a=2.51,b=0.03,c=2.43,d=0.59,e=0.14; return clamp((x*(a*x+b))/(x*(c*x+d)+e),0.0,1.0); }
@@ -168,7 +168,7 @@ void main(){
   col=mix(col*vec3(0.95,1.0,1.06),col*vec3(1.05,1.0,0.94),smoothstep(0.2,0.8,l));
   col*=1.0-uVig*smoothstep(0.35,1.0,r*1.3);
   col=mix(col,vec3(0.75,0.03,0.03),uDamage*smoothstep(0.15,0.9,r*1.4));
-  col=pow(col,vec3(1.0/2.2));
+  col=pow(max(col,vec3(0.0)),vec3(1.0/2.2));
   col+=(hash(vUv*uRes+fract(uTime))-0.5)*0.022;
   gl_FragColor=vec4(col,1.0);
 }`;

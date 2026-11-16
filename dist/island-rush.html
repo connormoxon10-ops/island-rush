@@ -2435,7 +2435,7 @@ const _deepDay = lc(0x06233f), _deepNight = lc(0x010610), _shDay = lc(0x2fa5a0),
 /* ---------------- renderer + post ---------------- */
 const Post = { on: false, dyn: 1 };
 const FS_V = 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.0,1.0); }';
-const FS_BRIGHT = 'uniform sampler2D tSrc; uniform float uThr; varying vec2 vUv; void main(){ vec3 c=texture2D(tSrc,vUv).rgb; float l=max(max(c.r,c.g),c.b); float k=max(l-uThr,0.0)/max(l,1e-4); gl_FragColor=vec4(c*k,1.0); }';
+const FS_BRIGHT = 'uniform sampler2D tSrc; uniform float uThr; varying vec2 vUv; void main(){ vec3 c=texture2D(tSrc,vUv).rgb; bool ok_=c.r<1e4&&c.g<1e4&&c.b<1e4&&c.r>-1e4&&c.g>-1e4&&c.b>-1e4; c=ok_?clamp(c,0.0,64.0):vec3(0.0); float l=max(max(c.r,c.g),c.b); float k=max(l-uThr,0.0)/max(l,1e-4); gl_FragColor=vec4(c*k,1.0); }';
 const FS_BLUR = 'uniform sampler2D tSrc; uniform vec2 uDir; varying vec2 vUv; void main(){ vec3 c=texture2D(tSrc,vUv).rgb*0.227027; c+=texture2D(tSrc,vUv+uDir*1.3846).rgb*0.316216; c+=texture2D(tSrc,vUv-uDir*1.3846).rgb*0.316216; c+=texture2D(tSrc,vUv+uDir*3.2308).rgb*0.070270; c+=texture2D(tSrc,vUv-uDir*3.2308).rgb*0.070270; gl_FragColor=vec4(c,1.0); }';
 const FS_COMP = `uniform sampler2D tScene,tB1,tB2; uniform float uBloom,uSpeed,uExposure,uTime,uVig,uDamage,uChroma; uniform vec2 uRes; varying vec2 vUv;
 vec3 aces(vec3 x){ const float a=2.51,b=0.03,c=2.43,d=0.59,e=0.14; return clamp((x*(a*x+b))/(x*(c*x+d)+e),0.0,1.0); }
@@ -2453,7 +2453,7 @@ void main(){
   col=mix(col*vec3(0.95,1.0,1.06),col*vec3(1.05,1.0,0.94),smoothstep(0.2,0.8,l));
   col*=1.0-uVig*smoothstep(0.35,1.0,r*1.3);
   col=mix(col,vec3(0.75,0.03,0.03),uDamage*smoothstep(0.15,0.9,r*1.4));
-  col=pow(col,vec3(1.0/2.2));
+  col=pow(max(col,vec3(0.0)),vec3(1.0/2.2));
   col+=(hash(vUv*uRes+fract(uTime))-0.5)*0.022;
   gl_FragColor=vec4(col,1.0);
 }`;
@@ -23228,7 +23228,7 @@ float rf_(vec2 p){ float v = 0.0, a = 0.5; for (int i = 0; i < 4; i++) { v += a 
 vec3 perturbN_(vec3 surf_pos, vec3 surf_norm, vec2 dHdxy, float faceDirection){
   vec3 vSigmaX = vec3(dFdx(surf_pos.x), dFdx(surf_pos.y), dFdx(surf_pos.z)); vec3 vSigmaY = vec3(dFdy(surf_pos.x), dFdy(surf_pos.y), dFdy(surf_pos.z));
   vec3 vN = surf_norm; vec3 R1 = cross(vSigmaY, vN); vec3 R2 = cross(vN, vSigmaX); float fDet = dot(vSigmaX, R1) * faceDirection;
-  vec3 vGrad = sign(fDet) * (dHdxy.x * R1 + dHdxy.y * R2); return normalize(abs(fDet) * surf_norm - vGrad);
+  vec3 vGrad = sign(fDet) * (dHdxy.x * R1 + dHdxy.y * R2), n_ = abs(fDet) * surf_norm - vGrad; float l_ = length(n_); return l_ > 1e-8 ? n_ / l_ : surf_norm;   /* a zero vector at a degenerate pixel would normalise to NaN */
 }`;
 
 /* the dirt road, the gravel berms and the forest floor, all procedural from three vertex attributes (aRD = distance from the centre line and from the road edge, aSec = surface type weights) */
@@ -23268,7 +23268,7 @@ function _rygGroundMat() {
       vec3 alb = mix(road, flo, t_) * (1.0 - 0.3 * smoothstep(8.0, 46.0, e_));
       alb = mix(alb, u_far, smoothstep(34.0, 96.0, e_) * u_pk.x);   /* the far hillside under the haze reads as dark conifer forest, not a pale cut-off slab */
       alb = mix(alb, alb * vec3(0.55, 0.5, 0.47), uWet * (1.0 - t_) * 0.6);
-      diffuseColor.rgb *= pow(alb, vec3(2.2));
+      diffuseColor.rgb *= pow(max(alb, vec3(0.0)), vec3(2.2));   /* never a negative base: the noise can push a dark channel below zero, and pow() of that is NaN on most GPUs (the dark/red/yellow squares) */
       float hg_ = (n2 - 0.5) * 0.55 + (n4 - 0.5) * 0.35 + (n5 - 0.5) * 0.2 - rut_ * 0.9 + berm_ * 0.5 * n3;
       hg_ = mix(hg_, (n3 - 0.5) * 1.1 + (n2 - 0.5) * 0.8, t_);`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
