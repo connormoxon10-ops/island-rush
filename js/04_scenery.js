@@ -278,6 +278,7 @@ const _tcol = new THREE.Color(), Y_AXIS = new THREE.Vector3(0, 1, 0);
 /* place one tree / bush / grass tuft: trunk + core into the prop mesh, leaf cards into the foliage mesh */
 function addTree(gbW, gbF, kind, vi, x, y, z, sc, rot, tint, sy, hue, ch) {
   if (Rail.hash && Rail.dist(x, z) < 9 + 3 * sc) return;   /* nothing grows up through the railway viaduct */
+  if (y < 3.2 && y > -0.5 && kind !== 'palm') return;   /* the beaches stay open sand (palms may lean over them) */
   const v = TREE[kind][vi % TREE[kind].length];
   _q.setFromAxisAngle(Y_AXIS, rot); _p3.set(x, y, z); _s3.set(sc, sc * (sy || 1), sc); _m4.compose(_p3, _q, _s3);
   const k = 0.82 + tint * 0.36, h = hue == null ? 0.5 : hue;

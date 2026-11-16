@@ -84,6 +84,7 @@ node tests/car_buggy.js   # the Sandviper: model, performance, and as the rally 
 node tests/cars_custom.js   # the hand-built cars: models, front/rear tyres, performance, stability (browser)
 node tests/cutscenes.js   # every court venue, the arrest and the booking room: their people animate on screen (browser)
 node tests/rally_stages.js   # every rally stage as a model: builds, never crosses itself, drivable grades, gates on straights, surfaces
+node tests/beach.js         # beaches all round the island: sand, umbrellas, loungers, lifeguard towers, people in beachwear lying, sitting, wading; cars knock them over
 node tests/rally_hazards.js  # mud pits, loose hay-bale slaloms and fallen logs on every stage: grip, drag, bump height, bale lanes
 node tests/train.js         # the island railway: a closed loop round the island on a viaduct, a full-size train running round it, solid piers
 ```
