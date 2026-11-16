@@ -3056,7 +3056,11 @@ function stepCar(dt, c0, P0, T0, circ0) {
   c.drifting = spd > 9 && Math.abs(vr) > 2.6; c.braking = Fb > 3000 && spd > 8;
   c.nitroUse = nOn;
   /* vertical + orientation */
-  const hF = (WH[0] + WH[1]) / 2, hR = (WH[2] + WH[3]) / 2, hL = (WH[0] + WH[2]) / 2, hRt = (WH[1] + WH[3]) / 2, gy = (hF + hR) / 2;
+  let hF = (WH[0] + WH[1]) / 2, hR = (WH[2] + WH[3]) / 2;
+  /* straddling a sheer edge on a rally stage (one axle over a ravine, the other on its lip or the far deck): the car rides on the axle that has ground under it.
+     Averaging the two used to sink a car whose front wheels had reached the landing deck into the gap behind them */
+  if (Rally.on && Math.abs(hF - hR) > 1.2) { if (hF < hR) hF = hR - 0.3; else hR = hF - 0.3; }
+  const hL = (WH[0] + WH[2]) / 2, hRt = (WH[1] + WH[3]) / 2, gy = (hF + hR) / 2;
   const tp = Math.atan2(hF - hR, P.a + P.b), tr = Math.atan2(hRt - hL, P.track);
   const ayPrev = c.vy;
   if (c.air) {
@@ -3067,7 +3071,11 @@ function stepCar(dt, c0, P0, T0, circ0) {
     /* on the rally stage: no re-launch for a moment after touchdown (landing zeroes vy, which on any downhill reads as the ground falling away and used to chain into endless air),
        and a take-off margin that grows with speed so the 2 m ground grid's slope kinks are not mistaken for a lip */
     const cd = (c.airCd || 0) > 0; if (cd) c.airCd -= dt;
-    if (!cd && need < c.vyPrev - G * dt - (Rally.on ? 0.2 + 0.03 * spd : 0.2) && spd > 8) { c.air = true; c.vy = c.vyPrev; c.y += c.vy * dt; }
+    /* ...but a real edge (the ground falling away faster than 12 m/s more than a moment ago: a ravine's lip, a drop-off), or the crest of a ramp the car is still
+       climbing, always lets the car fly. A landing on the kicker just before the lip used to hold the car to the ground through the cooldown, and it followed the
+       wall down into the ravine */
+    const edge = need < c.vyPrev - 12, climbing = c.vyPrev > 1.5;   /* still going up a kicker: its crest is a real take-off, never a downhill landing */
+    if ((!cd || edge || climbing) && need < c.vyPrev - G * dt - (Rally.on ? 0.2 + 0.03 * spd : 0.2) && spd > 8) { c.air = true; c.vy = c.vyPrev; c.y += c.vy * dt; c.airCd = 0; }
     else { c.vy = clamp(need, -30, 30); c.y = gy; }
     c.pitch += (tp - c.pitch) * Math.min(1, dt * 14); c.roll += (tr - c.roll) * Math.min(1, dt * 14);
   }
