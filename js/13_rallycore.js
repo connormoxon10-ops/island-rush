@@ -59,7 +59,7 @@ const RY0_RAILS = [
      ravine  a timber kicker ramp, a gap across the whole valley you have to clear, and a landing deck; fall short and you are fished out before the ramp (+5 s)
      ford    a stream across the road: the bed dips under water that drags the car and throws spray
    and, laid out from the corners: crash nets (catch fences) on the outside of fast bends, tyre walls at the apex of hairpins */
-const RY_OBS = { ravine: { rise: 1.8, up: 18, span: 14, depth: 7, land: 26, drop: 1.2 }, ford: { len: 30, depth: 1.25, water: 0.5 } };
+const RY_OBS = { ravine: { rise: 1.8, up: 18, span: 14, depth: 7, land: 26, drop: 1.2 }, ford: { len: 30, depth: 1.25, water: 0.5 }, mud: { len: 28 }, bales: { len: 66 }, log: { len: 2.6, amp: 0.3 } };
 const RY_ELEMS = [], RY_FEATS = [], RY_WALLS = [], RY_SECS = [], RY_RAILS = [], RY_CAMB = {};
 const RY_THEMES = {
   forest: { surf: [0, 1, 2, 3], M: null },
@@ -110,7 +110,7 @@ const RY_STAGES = [
     rails: [{ e: 6, at: 0, len: 80, side: -1, k: 'rock', h: 4.2, gap: 1.5 }, { e: 10, at: 0, len: 124, side: 1, k: 'stone', h: 1.3, gap: 0.9 }],
     info: 'A 2.7 km stage through a snowbound pine forest. Packed snow with little grip, sheet ice where there is almost none, and deep powder that grabs the wheels. Brake early.' }
 ];
-const RY = { ready: false, GS: 2, DS: 2, seed: 7, MAXD: 108, name: 'Hollow Pines', stage: -1 };
+const RY = { ready: false, GS: 2, DS: 2, seed: 7, MAXD: 108, name: 'Hollow Pines', stage: -1, logs: [] };
 /* choose a stage: fill the tables the rest of the rally reads. A bend with no camber of its own gets one from its angle (tight bends are banked with a berm, and every
    fifth gentle bend falls away off-camber). */
 RY.use = function (i) {
@@ -157,6 +157,15 @@ function ryPlanObstacles(st) {
       f.name = name(k); if (k === 'ford' && theme === 'snow') f.ice = 1;
       out.push(f); taken.push([a, b]); kind = k === 'ravine' ? 'ford' : 'ravine'; break;
     }
+  }
+  /* 3. smaller hazards in the gaps that are left: mud pits (on any clear stretch, bends too), hay-bale slaloms and fallen logs (on straights and gentle sweepers), up to two of each */
+  const KINDS = ['bales', 'log', 'mud'], cnt = { mud: 0, bales: 0, log: 0 }, FR = [0.5, 0.3, 0.7, 0.15, 0.85];
+  for (let pass = 0; pass < FR.length; pass++) for (const k of KINDS) for (let j = 0; j < E.length; j++) {
+    const e = (j + 5 * pass + 3 * KINDS.indexOf(k)) % E.length, el = E[e], len = RY_OBS[k].len; if (cnt[k] >= 2 || el[1] < len + 30) continue;
+    if (k !== 'mud' && el[0] !== 'S' && !(el[0] === 'C' && el[1] / (Math.abs(el[2]) * Math.PI / 180) > 160)) continue;   /* bales and logs on straights and sweeping bends */ if (k === 'bales' && st.rails.some((r) => r.e === e)) continue;
+    const at = Math.round((el[1] - len) * FR[pass]), a = starts[e] + at, b = a + len;
+    if (a < RY_START_S + 80 || b > L - 140 || taken.some(([p, q]) => p < b + 40 && q > a - 40) || !wallsClear(a, b)) continue;
+    out.push({ k, e, at }); taken.push([a, b]); cnt[k]++;
   }
   return feats.concat(out.map((o) => Object.assign({}, RY_OBS[o.k], o)));
 }
@@ -207,6 +216,7 @@ RY.featureH = function (f, u) {
     else if (u < f.span + f.land) v = _ryHerm((u - f.span) / f.land, f.rise * 0.45, -f.drop, -0.12, 0, f.land); else v = -f.drop;
     return [v - P, P];
   }
+  if (f.k === 'log') return [0, 0];   /* a fallen log is too sharp for the 2 m height grid: RY.ground adds it exactly (RY.logs) */
   if (f.k === 'dip') { if (u < 0 || u > f.len) return [0, 0]; const s = Math.sin(Math.PI * u / f.len); return [-f.depth * s * s, 0]; }
   if (f.k === 'whoops') { const w = f.n * f.lam; if (u < 0 || u > w) return [0, 0]; const s = Math.sin(Math.PI * u / f.lam); return [f.amp * s * s * _rySm(0, f.lam, u) * (1 - _rySm(w - f.lam, w, u) * 0.6), 0]; }
   return [0, 0];
@@ -249,8 +259,11 @@ RY.profile = function () {
     let lo = 1e9; for (let i = Math.max(0, Math.floor(a / ds)); i <= Math.min(N - 1, Math.ceil(b / ds)); i++) { const c = RY.cutH(f, i * ds - f.s0); cut[i] += c; base[i] += c; hy[i] += c; mask[i] = 1; if (f.k === 'ford' && c < 0) lo = Math.min(lo, hy[i]); }
     if (f.k === 'ford') { f.wl = lo + f.water; for (let i = Math.floor(f.s0 / ds); i <= Math.ceil((f.s0 + f.len) / ds) && i < N; i++) wl[i] = f.wl; } }
   RY.cut = cut; RY.wl = wl; RY.cutMask = mask;
+  const mud = new Float32Array(N); for (const f of feats) if (f.k === 'mud') for (let i = Math.max(0, Math.floor(f.s0 / ds) - 2); i <= Math.min(N - 1, Math.ceil((f.s0 + f.len) / ds) + 2); i++) { const u = i * ds - f.s0; mud[i] = Math.max(mud[i], _rySm(-3, 2, u) * (1 - _rySm(f.len - 2, f.len + 3, u))); }
+  RY.mud = mud; RY.logs = [];   /* how much mud lies on the road at each station (0..1) */
   RY.base = base; RY.py = hy; RY.feats = feats.filter((f) => !f.skip);
-  let mx = 0, ma = 0; for (let i = 1; i < N - 1; i++) { if (RY.cutMask[i - 1] || RY.cutMask[i] || RY.cutMask[i + 1]) continue; mx = Math.max(mx, Math.abs(hy[i + 1] - hy[i]) / ds); ma = Math.max(ma, Math.abs(hy[i + 1] - 2 * hy[i] + hy[i - 1]) / (ds * ds)); }
+  const logAt = (i) => feats.some((f) => f.k === 'log' && i * ds > f.s0 - 2 * ds && i * ds < f.s0 + f.len + 2 * ds);   /* a fallen log is a deliberate sharp bump, not a kink in the road */
+  let mx = 0, ma = 0; for (let i = 1; i < N - 1; i++) { if (RY.cutMask[i - 1] || RY.cutMask[i] || RY.cutMask[i + 1] || logAt(i)) continue; mx = Math.max(mx, Math.abs(hy[i + 1] - hy[i]) / ds); ma = Math.max(ma, Math.abs(hy[i + 1] - 2 * hy[i] + hy[i - 1]) / (ds * ds)); }
   RY.maxSlope = mx; RY.maxCurv = ma;
 };
 
@@ -430,7 +443,8 @@ RY.ground = function (x, z, o) {
   const h = (H[k] * (1 - fx) + H[k + 1] * fx) * (1 - fz) + (H[k + gw] * (1 - fx) + H[k + gw + 1] * fx) * fz;
   const d = (D[k] * (1 - fx) + D[k + 1] * fx) * (1 - fz) + (D[k + gw] * (1 - fx) + D[k + gw + 1] * fx) * fz;
   const idx = RY.I[k + (fx > 0.5 ? 1 : 0) + (fz > 0.5 ? gw : 0)];
-  o.h = h; o.water = false; o.road = false; o.wade = 0;
+  let hl = 0; for (const g of RY.logs) { const ax = x - g.x, az = z - g.z, u = ax * g.tx + az * g.tz; if (u > -g.len / 2 && u < g.len / 2 && Math.abs(ax * g.tz - az * g.tx) < g.hw) { const c = Math.cos(Math.PI * u / g.len); hl = Math.max(hl, g.amp * c * c); } }
+  o.h = h + hl; o.water = false; o.road = false; o.wade = 0; o.mud = 0;
   if (idx < 0) { o.mu = 0.5; o.rr = 0.12; o.rough = 0.5; o.loose = 0.6; o.sec = 0; return; }
   const hw = RY.hw[idx], e = d - hw, S = RY_SURF[RY.T.surf[RY.sec[idx]]], OF = RY.T.off; o.sec = RY.sec[idx];
   if (RY.wl[idx] > h) {   /* wading through a stream: the water drags, and the bed is slick */
@@ -445,8 +459,17 @@ RY.ground = function (x, z, o) {
     if (OF) { o.mu = lerp(S.mu * 0.85, OF.mu, t); o.rr = lerp(S.rr * 1.4, OF.rr, t); o.rough = lerp(0.45, OF.rough, t); o.loose = lerp(0.6, OF.loose, t); if (RY.sea != null && h < RY.sea - 0.25) { o.rr = 0.34; o.mu = 0.5; } }
     else { o.mu = lerp(S.mu * 0.78, 0.5, t); o.rr = lerp(0.07, 0.15, t); o.rough = lerp(0.55, 0.9, t); o.loose = lerp(0.6, 0.45, t); }
   }
+  const md = RY.mud ? RY.mud[idx] : 0;
+  if (md > 0 && e < 2.5) { const m = md * (1 - _rySm(0.5, 2.5, e)); o.mu *= 1 - 0.4 * m; o.rr += 0.1 * m; o.rough = Math.max(o.rough, 0.35 * m); o.loose = Math.max(o.loose, 0.9 * m); o.mud = m; }   /* a mud pit: slippery and draggy */
 };
 RY.heightAt = function (x, z) { RY.ground(x, z, _ryG); return _ryG.h; };
+/* loose hay bales: put back where they started, and roll on after a knock (rolling friction on the road, a little faster to stop on the verge) */
+RY.resetBales = function () { for (const b of RY.bales || []) { b.x = b.x0; b.z = b.z0; b.vx = b.vz = 0; b.roll = 0; b.spin = 0; b.moved = true; } };
+RY.stepBales = function (dt) {
+  for (const b of RY.bales || []) { const v = Math.hypot(b.vx, b.vz); if (v < 0.02) { b.vx = b.vz = 0; continue; }
+    const dec = Math.min(v, (2.2 + 0.35 * v) * dt) / v; b.vx -= b.vx * dec; b.vz -= b.vz * dec; b.x += b.vx * dt; b.z += b.vz * dt;
+    b.roll += (b.vx * Math.sin(b.yaw) + b.vz * Math.cos(b.yaw)) / 0.74 * dt; b.spin += (b.vx * Math.cos(b.yaw) - b.vz * Math.sin(b.yaw)) * 0.15 * dt; b.moved = true; }
+};
 const _ryG = { h: 0, mu: 0, rr: 0, rough: 0, road: false, water: false, loose: 0 };
 /* distance from the path (cheap, from the bake) */
 RY.distAt = function (x, z) {
@@ -517,6 +540,11 @@ RY.forest = function (density) {
   for (let i = 0; i < tr.length; i++) { const t = tr[i]; if (t.e > 40) continue; add(Math.floor((t.x - x0) / TH), Math.floor((t.z - z0) / TH), i); }
   /* rocks that are big enough to matter are solid too (circle) */
   RY.solidRocks = rocks.filter((r) => r.sc > 1.1);
+  /* fallen logs: a sharp round bump right across the road (and a little past both edges), added to the ground height exactly */
+  RY.logs = RY.feats.filter((f) => f.k === 'log').map((f) => { const q = RY.at(f.s0 + f.len / 2, 0, {}); return { x: q.x, z: q.z, tx: q.tx, tz: q.tz, len: f.len, amp: f.amp, hw: q.hw + 1.5, s: f.s0 + f.len / 2 }; });
+  /* hay-bale slaloms: three round bales, staggered left and right of the middle, twenty-four metres apart. They are loose: a car that hits one knocks it
+     rolling (RY.stepBales) and loses some speed, so a bale can never pin a car in place */
+  const bl = RY.bales = []; for (const f of RY.feats) if (f.k === 'bales') for (let k = 0; k < 3; k++) { const s = f.s0 + 9 + k * 24, q = RY.at(s, 0, {}), sd = (k + f.e) % 2 ? 1 : -1, lat = sd * q.hw * 0.36, p = RY.at(s, lat, {}); bl.push({ x: p.x, z: p.z, x0: p.x, z0: p.z, vx: 0, vz: 0, roll: 0, spin: 0, yaw: q.yaw, s, lat, wrap: (k + f.e) % 3 === 0 }); }
   /* tyre walls: a row of tyre stacks round the inside of every hairpin's apex, just off the road */
   const ty = RY.tyres = [];
   for (let e = 0; e < RY_ELEMS.length; e++) {
@@ -531,6 +559,7 @@ RY.hits = function (px, pz, R, out) {
     const a = RY.thash.get((cx + dx) * 8192 + cz + dz); if (!a) continue;
     for (let k = 0; k < a.length; k++) { const t = tr[a[k]], ax = px - t.x, az = pz - t.z, rr = t.rad + R, d2 = ax * ax + az * az; if (d2 < rr * rr) { const d = Math.sqrt(d2) || 0.01; out.push({ nx: ax / d, nz: az / d, pen: rr - d }); } }
   }
+  for (const b of RY.bales || []) { const ax = px - b.x, az = pz - b.z, rr = 0.78 + R, d2 = ax * ax + az * az; if (d2 < rr * rr) { const d = Math.sqrt(d2) || 0.01; out.push({ nx: ax / d, nz: az / d, pen: rr - d, bale: b }); } }   /* a bale gives like a crash net */
   for (const t of RY.tyres) { const ax = px - t.x, az = pz - t.z, rr = 0.5 + R, d2 = ax * ax + az * az; if (d2 < rr * rr) { const d = Math.sqrt(d2) || 0.01; out.push({ nx: ax / d, nz: az / d, pen: rr - d, tyre: true }); } }
   for (const r of RY.solidRocks) { const ax = px - r.x, az = pz - r.z, rr = r.sc * 0.78 + R; if (Math.abs(ax) < rr && Math.abs(az) < rr) { const d2 = ax * ax + az * az; if (d2 < rr * rr) { const d = Math.sqrt(d2) || 0.01; out.push({ nx: ax / d, nz: az / d, pen: rr - d }); } } }
   const d = RY.distAt(px, pz);
@@ -573,6 +602,9 @@ RY.layout = function () {
     else if (f.k === 'ford') notes.push({ s: f.s0 - 30, t: (f.name || 'Stream').toUpperCase() + ' · WATER SPLASH', sev: 6, dir: 0, k: 'dip' });
     else if (f.k === 'jump') notes.push({ s: f.s0 - f.up - 2, t: (f.name || 'JUMP').toUpperCase() + ' · KEEP IT STRAIGHT', sev: 6, dir: 0, k: 'jump' });
     else if (f.k === 'dip') notes.push({ s: f.s0 - 6, t: 'DIP', sev: 6, dir: 0, k: 'dip' });
+    else if (f.k === 'mud') notes.push({ s: f.s0 - 30, t: 'MUD · SLIPPERY', sev: 5, dir: 0, k: 'dip' });
+    else if (f.k === 'bales') notes.push({ s: f.s0 - 30, t: 'HAY BALES · SLALOM', sev: 5, dir: 0, k: 'wall' });
+    else if (f.k === 'log') notes.push({ s: f.s0 - 25, t: 'LOG ACROSS · BUMP', sev: 6, dir: 0, k: 'dip' });
     else if (f.k === 'whoops') notes.push({ s: f.s0 - 8, t: 'WHOOPS', sev: 6, dir: 0, k: 'dip' });
   }
   for (const w of RY.walls) notes.push({ s: w.s - 24, t: 'WALL · GO THROUGH', sev: 6, dir: 0, k: 'wall' });

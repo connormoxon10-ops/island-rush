@@ -478,7 +478,38 @@ RYG.buildObstacles = function (group) {
   }
   /* tyre walls: stacks of three or four tyres, plain or painted red and white */
   for (const t of RY.tyres) { const y = RY.heightAt(t.x, t.z); for (let k = 0; k < t.n; k++) put(cyl, t.x, y + 0.13 + k * 0.25, t.z, 0, 0, 0.42, 0.24, 0.42, t.red ? (k % 2 ? RED : WHT) : RUB, 0.2); }
+  /* hay bales: round straw bales lying across the road (some wrapped in white plastic), their ends darker where the straw is rolled */
+  const STRAW = C(0.5, 0.36, 0.13), STRAW2 = C(0.32, 0.22, 0.07), WRAP = C(0.78, 0.78, 0.76), WRAP2 = C(0.6, 0.6, 0.58);
+  /* each bale is its own little mesh (the car can knock it rolling, RYG.syncBales moves it) */
+  RYG.baleM = []; if ((RY.bales || []).length) {
+    const body = new THREE.CylinderGeometry(0.74, 0.74, 1.2, 20, 1, true), end = new THREE.CircleGeometry(0.72, 20), core = new THREE.CircleGeometry(0.3, 14);
+    const mk = (col, r) => new THREE.MeshStandardMaterial({ color: new THREE.Color(col[0], col[1], col[2]), roughness: r, side: THREE.DoubleSide });
+    const MS = { straw: mk([0.5, 0.36, 0.13], 0.95), straw2: mk([0.32, 0.22, 0.07], 0.95), wrap: mk([0.78, 0.78, 0.76], 0.45), wrap2: mk([0.6, 0.6, 0.58], 0.5) };
+    for (const b of RY.bales) { const g = new THREE.Group(), inner = new THREE.Group(), w = b.wrap, cyl = new THREE.Mesh(body, w ? MS.wrap : MS.straw); cyl.castShadow = cyl.receiveShadow = true;
+      inner.add(cyl); for (const sd of [-1, 1]) { const e1 = new THREE.Mesh(end, w ? MS.wrap2 : MS.straw2), e2 = new THREE.Mesh(core, w ? MS.wrap : MS.straw); e1.position.y = sd * 0.6; e2.position.y = sd * 0.605; e1.rotation.x = e2.rotation.x = sd * Math.PI / 2; inner.add(e1, e2); }
+      inner.rotation.z = Math.PI / 2; const spin = new THREE.Group(); spin.add(inner); g.add(spin); g.userData = { b, spin, inner }; group.add(g); RYG.baleM.push(g); b.moved = true; }
+    RYG.syncBales();
+  }
+  /* fallen logs: a trunk across the whole road on the bump, pale cut ends, a few snapped branches */
+  const BARK = C(0.09, 0.055, 0.03), CUT = C(0.42, 0.3, 0.16);
+  for (const f of RY.feats) if (f.k === 'log') { const q = RY.at(f.s0 + f.len / 2, 0, tmp), y = RY.heightAt(q.x, q.z) - f.amp + 0.15, a = q.yaw + Math.PI / 2, L = 2 * q.hw + 3.4, ex = Math.sin(a), ez = Math.cos(a);
+    put(cyl, q.x, y, q.z, a, Math.PI / 2, 0.16, L, 0.16, BARK, 0.3);   /* 32 cm thick: its top is the 30 cm bump the wheels ride over */
+    for (const sd of [-1, 1]) put(cyl, q.x + ex * sd * L / 2, y, q.z + ez * sd * L / 2, a, Math.PI / 2, 0.145, 0.02, 0.145, CUT, 0.2);
+    for (const [t, ang] of [[-0.3, 0.9], [0.15, 2.4], [0.38, 1.4]]) put(cyl, q.x + ex * t * L, y + 0.14, q.z + ez * t * L, q.yaw + ang, 0.7, 0.04, 0.5, 0.04, BARK, 0.2); }
   if (gb.count) { const mesh = gb.mesh(RYG.mats.wood, true, true); group.add(mesh); RYG.obsMesh = mesh; }
+  /* mud pits: a wet, glossy sheet over the road with ragged edges, darker in the ruts, with standing puddles */
+  { const P = [], C4 = [], I = [], q = {}, r = mulberry32((RY.seed || 1) * 31 + 5);
+    for (const f of RY.feats) { if (f.k !== 'mud') continue; const n = Math.ceil(f.len + 4), cols = 10, base = P.length / 3;
+      for (let j = 0; j <= n; j++) { const s = f.s0 - 2 + j, w0 = RY.at(s, 0, q).hw, fade = Math.min(1, j / 3, (n - j) / 3);
+        for (let i = 0; i <= cols; i++) { const t = i / cols * 2 - 1, wv = (w0 + 0.9) * (0.82 + 0.18 * Math.sin(s * 0.7 + i) * r()), lat = t * wv, p = RY.at(s, lat, {}), y = RY.heightAt(p.x, p.z) + 0.025, rut = Math.abs(Math.abs(lat) - 1.1) < 0.45 ? 0.6 : 1, edge = 1 - Math.abs(t);
+          P.push(p.x, y, p.z); C4.push(0.075 * rut, 0.045 * rut, 0.02 * rut, Math.min(0.97, edge * 4) * fade); } }
+      for (let j = 0; j < n; j++) for (let i = 0; i < cols; i++) { const a0 = base + j * (cols + 1) + i, b0 = a0 + cols + 1; I.push(a0, b0, a0 + 1, a0 + 1, b0, b0 + 1); } }
+    if (I.length) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(C4, 4)); g.setIndex(I); g.computeVertexNormals();
+      const mat = new THREE.MeshStandardMaterial({ vertexColors: true, transparent: true, roughness: 0.32, metalness: 0, envMapIntensity: 0.35, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+      const mm = new THREE.Mesh(g, mat); mm.renderOrder = 1; mm.receiveShadow = true; group.add(mm); RYG.mudMesh = mm; }
+    /* puddles on the mud: still water, almost a mirror */
+    const pm = new THREE.MeshStandardMaterial({ color: new THREE.Color(0.04, 0.035, 0.03), roughness: 0.04, metalness: 0.2, transparent: true, opacity: 0.85, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 });
+    for (const f of RY.feats) { if (f.k !== 'mud') continue; for (let k = 0; k < 4; k++) { const p = RY.at(f.s0 + 4 + k * f.len / 4.5, (r() - 0.5) * 3, {}), d = new THREE.Mesh(new THREE.CircleGeometry(1, 16), pm); d.rotation.set(-Math.PI / 2, 0, p.yaw + r()); d.scale.set(1.2 + r() * 1.4, 0.7 + r() * 0.6, 1); d.position.set(p.x, RY.heightAt(p.x, p.z) + 0.04, p.z); d.renderOrder = 2; group.add(d); } } }
   /* crash nets: posts every 3 m and a net hung between them */
   const NP = [], NU = [], NI = [], pg = new GB(0, 0, false);
   for (const rl of RY_RAILS) {
@@ -629,8 +660,12 @@ RYG.dispose = function () {
 
 /* ---------------- per-frame ---------------- */
 const _rygFr = new THREE.Frustum(), _rygM = new THREE.Matrix4(), _rygS = new THREE.Sphere();
+RYG.syncBales = function () {   /* follow the loose bales: position on the ground, rolled about their axle and turned by any sideways knock */
+  for (const g of RYG.baleM || []) { const u = g.userData, b = u.b; if (!b.moved) continue; b.moved = false;
+    g.position.set(b.x, RY.heightAt(b.x, b.z) + 0.74, b.z); g.rotation.y = b.yaw + b.spin; u.inner.rotation.x = 0; u.spin.rotation.x = b.roll; }
+};
 RYG.update = function (dt, cam, car, sun, tod) {
-  if (!RYG.built) return;
+  if (!RYG.built) return; RYG.syncBales();
   const cx = cam.position.x, cz = cam.position.z, px = car.x, pz = car.z, FAR = RYG.far, NEAR = RYG.near;
   cam.updateMatrixWorld(); _rygM.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse.copy(cam.matrixWorld).invert()); _rygFr.setFromProjectionMatrix(_rygM);
   RYG.U.time.value = App.time;
