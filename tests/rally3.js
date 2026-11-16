@@ -43,7 +43,9 @@ const OUT = process.env.OUT || __dirname, NOISE = +(process.env.NOISE || 0), LAG
     let prevPhase = R.phase, prevJump = 0, prevBroken = 0;
     while (R.phase === 'run' && t < maxT) {
       const spd = Math.abs(car.speed), Ld = Math.max(8, Math.min(34, spd * 0.5 + 6));
-      const q = RY.at(Math.min(R.s + Ld, RY.finishS + 30), 0, tmp);
+      const sT = Math.min(R.s + Ld, RY.finishS + 30); let lat = 0;   /* weave round hay bales as a driver would: to the side away from each bale */
+      for (const b of RY.bales || []) { const dd = Math.abs(sT - b.s); if (dd < 16) { const w = dd < 9 ? 1 : 1 - (dd - 9) / 7, o = b.lat > 0 ? b.lat - 2.6 : b.lat + 2.6; lat = lat * (1 - w) + o * w; } }
+      const q = RY.at(sT, lat, tmp);
       const want = Math.atan2(q.x - car.x, q.z - car.z); let al = want - car.yaw; al = Math.atan2(Math.sin(al), Math.cos(al));
       const kd = 2 * Math.sin(al) / Ld, dd = Math.atan(WB * kd), mu = car.surf.mu || 0.8;
       const maxS = Math.max(0.07, Math.min(0.56, 1.5 * mu * 9.81 * WB / Math.max(spd * spd, 1) + 0.05));

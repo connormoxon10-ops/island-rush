@@ -43,6 +43,11 @@ Rally.assist = function (c, h, force) {
 Rally.collide = function (c, px, pz, R, P) {
   RY.hits(px, pz, R, _ryH);
   for (let i = 0; i < _ryH.length; i++) { const h = _ryH[i];
+    if (h.bale) {   /* a loose hay bale: the car shoves it out of the way, rolling, and gives up part of its speed into it (a bale is a third of a car's weight) */
+      const b = h.bale, rvn = (c.vx - b.vx) * h.nx + (c.vz - b.vz) * h.nz; b.x -= h.nx * h.pen * 0.8; b.z -= h.nz * h.pen * 0.8; c.x += h.nx * h.pen * 0.2; c.z += h.nz * h.pen * 0.2;
+      if (rvn < 0) { const j = -rvn; b.vx -= h.nx * j * 1.45; b.vz -= h.nz * j * 1.45; c.vx += h.nx * j * 0.45; c.vz += h.nz * j * 0.45; c.w *= 0.97; if (j > 4 && c === car) { Cam.shake = Math.max(Cam.shake || 0, Math.min(0.5, j * 0.03)); Rally.baleHit = (Rally.baleHit || 0) + 1; } }
+      b.moved = true; continue;
+    }
     if (h.net) {   /* a crash net gives: it takes the car in, soaks up the speed going into it and lets go without a bounce or a dent */
       if (h.pen > 0) {   /* it gives 30 cm, never more; the speed it takes off comes from the impact (friction against the net in proportion to how hard the car hits it), so a hard hit is caught and a car sliding along it is not glued there */
         const push = h.pen > 0.3 ? h.pen - 0.3 + 0.1 : h.pen * 0.35; c.x += h.nx * push; c.z += h.nz * push; const vn = c.vx * h.nx + c.vz * h.nz;
@@ -98,6 +103,7 @@ function ryInitFx() {
   scene.add(RYP.dust.pts, RYP.grit.pts); RYP.ok = true;
 }
 Rally.dustTint = [0.7, 0.62, 0.52];
+const _ryMudG = {};
 Rally.puff = function (x, y, z, vx, vy, vz, life, size, grow, a) {
   const d = (RY.T.dust || RY_DUST)[Rally.sec] || RY_DUST[0], t = Rally.dustTint, k = 0.88 + Math.random() * 0.24;
   emit(RYP.dust, x, y, z, vx, vy, vz, life, size, grow, d[0] * t[0] * k, d[1] * t[1] * k, d[2] * t[2] * k, a, -0.25);
@@ -130,6 +136,10 @@ Rally.fx = function (dt) {
     /* gravel thrown out behind the driven wheels */
     let g = (sp * 0.7 * loose * slide * thr * q) * dt * 40; g = Math.floor(g) + (Math.random() < g - Math.floor(g) ? 1 : 0);
     for (let i = 0; i < g; i++) { const side = Math.random() < 0.5 ? -1 : 1, x = c.x - s * P.b + co * side * P.track / 2, z = c.z - co * P.b - s * side * P.track / 2; Rally.chip(x, c.y + 0.1, z, -c.vx * 0.5 + (Math.random() - 0.5) * 4, 2 + Math.random() * 4, -c.vz * 0.5 + (Math.random() - 0.5) * 4, false); }
+    /* mud pits: wet clods flung off all four wheels */
+    RY.ground(c.x, c.z, _ryMudG); if (_ryMudG.mud > 0.2) { let n2 = sp * 1.6 * _ryMudG.mud * dt * 40; n2 = Math.floor(n2) + (Math.random() < n2 - Math.floor(n2) ? 1 : 0);
+      for (let i = 0; i < n2; i++) { const side = Math.random() < 0.5 ? -1 : 1, zz = Math.random() < 0.5 ? P.a : -P.b, x = c.x + s * zz + co * side * P.track / 2, z = c.z + co * zz - s * side * P.track / 2, k = 0.6 + Math.random() * 0.4;
+        emit(RYP.grit, x, c.y + 0.15, z, -c.vx * 0.35 + (Math.random() - 0.5) * 3, 1.5 + Math.random() * 3.5, -c.vz * 0.35 + (Math.random() - 0.5) * 3, 0.6 + Math.random() * 0.6, 0.08 + Math.random() * 0.06, 0, 0.09 * k, 0.055 * k, 0.025 * k, 1, 11); } }
   }
   /* scraping a rock face or stone wall: grey dust and stone chips from the contact point, in proportion to the speed */
   if (c.railFx > 0) {
@@ -342,7 +352,7 @@ Rally.start = async function () {
 Rally.reset0 = function () {
   const sim = Rally.sim; RW.reset(sim); for (const k of [0, 1, 2, 3, 4]) sim.dirty[k] = true;
   Rally.phase = 'grid'; Rally.t = 0; Rally.clock = 0; Rally.penalty = 0; Rally.cp = 0; Rally.splits = []; Rally.resets = 0; Rally.jumpBest = 0; Rally.air = null; Rally.combo = 0; Rally.stuck = 0; Rally.wrong = 0; Rally.noteI = 0; Rally.done = false;
-  Rally.hint = 0; RR.setup(); { const gs = Rally.gridSlot(); Rally.placeAt(RY.startS - gs[0], gs[1]); }
+  Rally.hint = 0; RY.resetBales(); RR.setup(); { const gs = Rally.gridSlot(); Rally.placeAt(RY.startS - gs[0], gs[1]); }
   Rally.best = Rally.rec().best > 0 ? Rally.rec().best : 0; if (Rally.el) { Rally.el.split.textContent = ''; Rally.el.split.className = ''; }
   E.rres.hidden = true; for (const k of ['rcount']) E[k].hidden = true;
 };
@@ -376,7 +386,7 @@ Rally.reset = function () {
 
 /* ---------------- per-frame update ---------------- */
 Rally.update = function (dt) {
-  const c = car, sim = Rally.sim; Rally.t += dt;
+  const c = car, sim = Rally.sim; Rally.t += dt; RY.stepBales(dt);
   if (Rally.phase === 'grid') {
     c.vx = c.vz = c.w = 0; c.speed = 0; c.brk = 1; c.hand = 1;
     Rally.count -= dt; const n = Math.ceil(Rally.count - 0.6);

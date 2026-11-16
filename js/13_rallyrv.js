@@ -41,6 +41,7 @@ RR.line = function () {
     const mx = (cx[i - 1] + nx[i - 1] * off[i - 1] + cx[i + 1] + nx[i + 1] * off[i + 1]) * 0.34 + (cx[i - 2] + nx[i - 2] * off[i - 2] + cx[i + 2] + nx[i + 2] * off[i + 2]) * 0.16;
     const mz = (cz[i - 1] + nz[i - 1] * off[i - 1] + cz[i + 1] + nz[i + 1] * off[i + 1]) * 0.34 + (cz[i - 2] + nz[i - 2] * off[i - 2] + cz[i + 2] + nz[i + 2] * off[i + 2]) * 0.16;
     const want = (mx - cx[i]) * nx[i] + (mz - cz[i]) * nz[i]; off[i] = clamp(off[i] + (want - off[i]) * 0.9, -room[i], room[i]);
+    for (const b of RY.bales || []) { const sb = S0 + i * DS - b.s; if (Math.abs(sb) > 14) continue; const g = 2.7 * (1 - _rySm(9, 14, Math.abs(sb))); if (b.lat > 0) off[i] = Math.max(-room[i] - 1, Math.min(off[i], b.lat - g)); else off[i] = Math.min(room[i] + 1, Math.max(off[i], b.lat + g)); }   /* round the hay bales, on the side away from each one */
   }
   const px = new Float32Array(N), pz = new Float32Array(N), k = new Float32Array(N), mu = new Float32Array(N), help = new Float32Array(N);
   for (let i = 0; i < N; i++) { px[i] = cx[i] + nx[i] * off[i]; pz[i] = cz[i] + nz[i] * off[i]; }
