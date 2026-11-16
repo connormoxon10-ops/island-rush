@@ -85,6 +85,7 @@ node tests/cars_custom.js   # the hand-built cars: models, front/rear tyres, per
 node tests/cutscenes.js   # every court venue, the arrest and the booking room: their people animate on screen (browser)
 node tests/rally_stages.js   # every rally stage as a model: builds, never crosses itself, drivable grades, gates on straights, surfaces
 node tests/rally_hazards.js  # mud pits, loose hay-bale slaloms and fallen logs on every stage: grip, drag, bump height, bale lanes
+node tests/train.js         # the island railway: a closed loop round the island on a viaduct, a full-size train running round it, solid piers
 ```
 
 The browser tests drive the built game in headless Chromium with software GL (slow, 1-7 fps), using step lists of `{js}`, `{wait}` and `{shot}`:

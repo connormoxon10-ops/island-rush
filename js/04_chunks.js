@@ -212,6 +212,7 @@ function buildChunk(cx, cz) {
     if (i >= 1 && i <= GRID + 1 && j >= 1 && j <= GRID + 1) minH = Math.min(minH, H[k]);
   }
   const ch = { cx, cz, key, x0, z0, group: new THREE.Group(), cols: { c: [], b: [], t: [] }, minH };
+  Rail.solids(ch, x0, z0, x0 + CHUNK, z0 + CHUNK);   /* the railway's piers */
   ch.group.position.set(x0, 0, z0);
   /* terrain mesh */
   const GV = GRID + 1, nv = GV * GV;
