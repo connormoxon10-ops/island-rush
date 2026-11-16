@@ -22,7 +22,7 @@ float rf_(vec2 p){ float v = 0.0, a = 0.5; for (int i = 0; i < 4; i++) { v += a 
 vec3 perturbN_(vec3 surf_pos, vec3 surf_norm, vec2 dHdxy, float faceDirection){
   vec3 vSigmaX = vec3(dFdx(surf_pos.x), dFdx(surf_pos.y), dFdx(surf_pos.z)); vec3 vSigmaY = vec3(dFdy(surf_pos.x), dFdy(surf_pos.y), dFdy(surf_pos.z));
   vec3 vN = surf_norm; vec3 R1 = cross(vSigmaY, vN); vec3 R2 = cross(vN, vSigmaX); float fDet = dot(vSigmaX, R1) * faceDirection;
-  vec3 vGrad = sign(fDet) * (dHdxy.x * R1 + dHdxy.y * R2); return normalize(abs(fDet) * surf_norm - vGrad);
+  vec3 vGrad = sign(fDet) * (dHdxy.x * R1 + dHdxy.y * R2), n_ = abs(fDet) * surf_norm - vGrad; float l_ = length(n_); return l_ > 1e-8 ? n_ / l_ : surf_norm;   /* a zero vector at a degenerate pixel would normalise to NaN */
 }`;
 
 /* the dirt road, the gravel berms and the forest floor, all procedural from three vertex attributes (aRD = distance from the centre line and from the road edge, aSec = surface type weights) */
@@ -62,7 +62,7 @@ function _rygGroundMat() {
       vec3 alb = mix(road, flo, t_) * (1.0 - 0.3 * smoothstep(8.0, 46.0, e_));
       alb = mix(alb, u_far, smoothstep(34.0, 96.0, e_) * u_pk.x);   /* the far hillside under the haze reads as dark conifer forest, not a pale cut-off slab */
       alb = mix(alb, alb * vec3(0.55, 0.5, 0.47), uWet * (1.0 - t_) * 0.6);
-      diffuseColor.rgb *= pow(alb, vec3(2.2));
+      diffuseColor.rgb *= pow(max(alb, vec3(0.0)), vec3(2.2));   /* never a negative base: the noise can push a dark channel below zero, and pow() of that is NaN on most GPUs (the dark/red/yellow squares) */
       float hg_ = (n2 - 0.5) * 0.55 + (n4 - 0.5) * 0.35 + (n5 - 0.5) * 0.2 - rut_ * 0.9 + berm_ * 0.5 * n3;
       hg_ = mix(hg_, (n3 - 0.5) * 1.1 + (n2 - 0.5) * 0.8, t_);`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
