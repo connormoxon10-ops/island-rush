@@ -272,7 +272,7 @@ function updatePeds(dt) {
   const L = Peds.list;
   for (let i = 0; i < L.length; i++) { const a = L[i]; if (a.state !== 'walk' && a.state !== 'stand') continue; for (let j = i + 1; j < L.length; j++) { const b = L[j]; const dx = b.x - a.x, dz = b.z - a.z; if (dx * dx + dz * dz < 0.3 && (b.state === 'walk' || b.state === 'stand')) { const d = Math.sqrt(dx * dx + dz * dz) || 0.05, k = (0.55 - d) * 0.5; a.x -= dx / d * k; a.z -= dz / d * k; b.x += dx / d * k; b.z += dz / d * k; } } }
   if (Foot.on) for (const p of L) { if (p.state === 'down' || p.state === 'rise' || p.state === 'talk' || p.state === 'gone') continue; const dx = p.x - Foot.x, dz = p.z - Foot.z, d2 = dx * dx + dz * dz; if (d2 < 0.5 && d2 > 1e-6) { const d = Math.sqrt(d2), k = (0.72 - d) * 0.6; p.x += dx / d * k; p.z += dz / d * k; } }
-  writePeds(App.time);
+  Beach.update(dt); writePeds(App.time);
 }
 
 /* ---------- pose ---------- */
@@ -292,6 +292,7 @@ function writePeds(time) {
   const L = Peds.list, n = L.length, av = Foot.on && Foot.ped && !Bust.on ? 1 : 0, cx = camera.position.x, cz = camera.position.z, dt = Math.min(Peds.dt || 0.016, 0.05); HU.frame = (HU.frame || 0) + 1;
   for (let i = 0; i < n; i++) { const p = L[i]; if (Bust.on && p.cop) continue; const dx = p.x - cx, dz = p.z - cz; pedPose(p, time, dt, false, dx * dx + dz * dz > 780); }
   if (av) pedPose(Foot.ped, time, dt, !Foot.tp, false);
+  Beach.pose(time, dt);   /* the people on the beaches */
   for (const h of HU.live) if (h.seen !== HU.frame) { Human.dispose(h); h.dead = true; HU.live.delete(h); }   /* whoever was not drawn this frame has left */
 }
 /* one leg of the walk at phase f (0 = heel strike): the ankle is carried back along the ground through stance (so the foot is planted, not sliding), peels off heel first,
