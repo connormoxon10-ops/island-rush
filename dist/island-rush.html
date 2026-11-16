@@ -7051,13 +7051,13 @@ Beach.update = function (dt) {
 /* the people: walkers walk, everyone near enough is posed (called from writePeds, before people who were not drawn are let go) */
 Beach.pose = function (time, dt) {
   if (!Beach.ready || !Beach.live.length || Rally.on || Derby.on || Drag.on || save.set.peds === 'off') return;
-  const cx = camera.position.x, cz = camera.position.z, c = car, sp2 = Math.abs(c.speed), near = [];
+  const cx = camera.position.x, cz = camera.position.z, c = car, sp2 = Math.hypot(c.vx, c.vz), fs = Math.sin(c.yaw), fc = Math.cos(c.yaw), near = [];
   for (const sp of Beach.live) if (sp.d < BCH.RP + 20) for (const p of sp.ppl) { const dx = p.x - cx, dz = p.z - cz, d2 = dx * dx + dz * dz; if (d2 < BCH.RP * BCH.RP) near.push([d2, p]); }
   near.sort((a, b) => a[0] - b[0]); Beach.ppl = 0;
   for (let n = 0; n < near.length && n < BCH.CAP; n++) {
     const p = near[n][1], d2 = near[n][0]; Beach.ppl++;
     /* knocked over by a car (they get up and stand about for a while before going back to what they were doing) */
-    if (p.state !== 'down' && !Foot.on && sp2 > 3) { const dx = p.x - c.x, dz = p.z - c.z; if (dx * dx + dz * dz < 1.6 && Math.abs(p.y + (p.pose === 'swim' ? 0.9 : 0) - c.y) < 1.6) { p.state = 'down'; p.t = 0; p.vx = c.vx * 0.7; p.vz = c.vz * 0.7; p.vy = 2.4 + Math.min(4, sp2 * 0.2); p.pose = 'stand'; Snd.beep(180, 0.08); } }
+    if (p.state !== 'down' && !Foot.on && sp2 > 3) { const dx = p.x - c.x, dz = p.z - c.z, fw = dx * fs + dz * fc, sd = dx * fc - dz * fs; if (Math.abs(fw) < 2.5 && Math.abs(sd) < 1.2 && Math.abs(p.y + (p.pose === 'swim' ? 0.9 : 0) - c.y) < 1.6) { p.state = 'down'; p.t = 0; p.vx = c.vx * 0.7; p.vz = c.vz * 0.7; p.vy = 2.4 + Math.min(4, sp2 * 0.2); p.pose = 'stand'; Snd.beep(180, 0.08); } }
     if (p.state === 'down') { p.t += dt; if (p.t > 4.5) { p.state = 'stand'; p.t = 0; const h = p.hu; if (h && h.rag) { const R = h.rag; p.x = (R.p[0].x + R.p[1].x) / 2; p.z = (R.p[0].z + R.p[1].z) / 2; } p.y = terrainHeight(p.x, p.z); p.back = 8; } }
     else if (p.back > 0) { p.back -= dt; if (p.back <= 0) { p.pose = p.pose0; p.state = p.pose0 === 'walk' ? 'walk' : 'stand'; if (p.pose0 !== 'walk') { const sp = Beach.live.find((s) => s.ppl.indexOf(p) >= 0); if (sp) bchHome(p); } } }
     else if (p.pose === 'walk') {

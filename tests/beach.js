@@ -55,9 +55,9 @@ const OUT = process.env.OUT || __dirname;
     for (const sp of B.live) for (const p of sp.ppl) if (p.hu && !p.hu.dead && p.pose !== 'swim' && p.pose !== 'walk' && p.y > 0.3) { tgt = p; break; }
     if (!tgt) return { none: true };
     const a = 0.7; g.spawnAt(tgt.x - Math.sin(a) * 9, tgt.z - Math.cos(a) * 9, a); c.y = tgt.y;
-    for (let i = 0; i < 40 && tgt.state !== 'down'; i++) { c.vx = Math.sin(a) * 9; c.vz = Math.cos(a) * 9; c.speed = 9; window.__now += 1000 / 30; g.frame(window.__now); }
+    let dmin = 1e9; for (let i = 0; i < 40 && tgt.state !== 'down'; i++) { c.vx = Math.sin(a) * 9; c.vz = Math.cos(a) * 9; c.speed = 9; window.__now += 1000 / 30; g.frame(window.__now); dmin = Math.min(dmin, Math.hypot(c.x - tgt.x, c.z - tgt.z)); }
     const down = tgt.state === 'down'; for (let i = 0; i < 200; i++) { c.vx = c.vz = 0; c.speed = 0; window.__now += 1000 / 30; g.frame(window.__now); }
-    return { down, after: tgt.state, back: tgt.back, pose: tgt.pose0 };
+    return { down, after: tgt.state, back: tgt.back, pose: tgt.pose0, dmin, dy: c.y - tgt.y };
   }, [shores[0].x, shores[0].z, shores[0].a]);
   console.log(JSON.stringify(hit));
   ok(!hit.none && (hit.down && hit.after !== 'down'), 'a car knocks a beachgoer over, and they get up again');
