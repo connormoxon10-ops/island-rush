@@ -10,7 +10,7 @@
    The people are the game's Humans in beachwear (trunks or a swimsuit, bare feet, sun hats and sunglasses). They are made only near the camera (the nearest
    BCH.CAP), posed every frame through the pedestrians' own pose code and then laid down, sat or stood in the water. A car that hits one knocks them over. */
 const Beach = { cells: new Map(), group: null, live: [], scanT: 0, ready: false, geo: null, ppl: 0 };
-const BCH = { CELL: 34, R: 260, RP: 110, CAP: 22, SEA: 0 };
+const BCH = { CELL: 34, R: 260, RP: 130, CAP: 34, SEA: 0 };
 const BCH_SWIM = [0x1f6fd1, 0xe0342a, 0xf2c81e, 0x18a89a, 0xff6fa8, 0x23252b, 0xf27a1a, 0x7a3fd1, 0xf4f4f0, 0x2a9d4a].map(lc);
 const BCH_TOWEL = [0xe0342a, 0x1f6fd1, 0xf2c81e, 0x18a89a, 0xff6fa8, 0xf27a1a, 0x7a3fd1, 0xf4f4f0].map(lc);
 const BCH_UMB = [[0xe0342a, 0xf4f4f0], [0x1f6fd1, 0xf4f4f0], [0xf2c81e, 0x18a89a], [0xff6fa8, 0xf4f4f0], [0x2a9d4a, 0xf2c81e], [0xf27a1a, 0x1f6fd1]];
@@ -58,9 +58,9 @@ Beach.cell = function (i, j) {
   if (site) {
     const h = terrainHeight(x, z), gx = terrainHeight(x + 2, z) - terrainHeight(x - 2, z), gz = terrainHeight(x, z + 2) - terrainHeight(x, z - 2), g = Math.hypot(gx, gz) / 4;
     const yaw = g > 0.004 ? Math.atan2(-gx, -gz) : r() * TAU;   /* facing down the beach, to the water */
-    if (site === 1 && g < 0.14 && r() < 0.62) {
-      const u = r(); sp = { x, z, y: h, yaw, kind: u < 0.3 ? 'family' : u < 0.55 ? 'sun' : u < 0.7 ? 'chairs' : u < 0.9 ? 'walk' : 'tower', seed: r() * 1000, ppl: [], mesh: null, i, j };
-    } else if (site === 2 && r() < 0.4) sp = { x, z, y: h, yaw, kind: 'swim', seed: r() * 1000, ppl: [], mesh: null, i, j };
+    if (site === 1 && g < 0.14 && r() < 0.85) {
+      const u = r(); sp = { x, z, y: h, yaw, kind: u < 0.22 ? 'family' : u < 0.42 ? 'sun' : u < 0.54 ? 'chairs' : u < 0.68 ? 'walk' : u < 0.8 ? 'group' : u < 0.9 ? 'volley' : 'tower', seed: r() * 1000, ppl: [], mesh: null, i, j };
+    } else if (site === 2 && r() < 0.75) sp = { x, z, y: h, yaw, kind: 'swim', seed: r() * 1000, ppl: [], mesh: null, i, j };
     if (sp) bchPlan(sp, mulberry32((sp.seed * 1000) | 0));
   }
   Beach.cells.set(key, sp); return sp;
@@ -71,15 +71,14 @@ function bchW(sp, lx, lz, o) { const s = Math.sin(sp.yaw), c = Math.cos(sp.yaw);
 function bchLook(rnd, opt) {
   const R0 = Math.random; let a; Math.random = rnd; try { a = pedRandomLook(); } finally { Math.random = R0; }
   const pk = (arr) => arr[(rnd() * arr.length) | 0];
-  a.coat = false; a.skirt = 0; a.tights = false; a.bag = false; a.sleeve = false; a.shorts = true; a.hat = null; a.glasses = false; a.glassC = null; a.shoe = a.skin; a.sun = rnd() < 0.7;
+  a.coat = false; a.skirt = 0; a.tights = false; a.bag = false; a.sleeve = false; a.shorts = true; a.swim = true; a.hat = null; a.glasses = false; a.glassC = null; a.shoe = a.skin; a.sun = rnd() < 0.7;
   if (opt && opt.lie && (a.hst === 'long' || a.hst === 'pony')) a.hst = a.fem ? 'bun' : 'short';   /* (hair lying flat on a towel would hang the wrong way) */
   if (a.fem) { a.shirt = pk(BCH_SWIM); a.pants = rnd() < 0.55 ? a.shirt : pk(BCH_SWIM); }   /* a swimsuit, or a two-colour bikini */
-  else { a.pants = pk(BCH_SWIM); a.shirt = !a.kid && rnd() < 0.18 ? pk(BCH_SWIM) : a.skin; }   /* trunks, bare-chested (a few in a vest) */
-  if (a.old && !a.fem && rnd() < 0.5) a.shirt = pk(BCH_SWIM);
+  else { a.pants = pk(BCH_SWIM); a.shirt = a.skin; }   /* swim trunks, bare-chested */
   if (!a.kid && rnd() < 0.28) a.hat = { k: 'straw', c: pk(BCH_STRAW), bc: null };
   else if (rnd() < 0.12) a.hat = { k: 'cap', c: pk(BCH_SWIM), bc: null };
   if (!a.kid && rnd() < 0.45) { a.glasses = true; a.glassC = lc(0x101014); }
-  if (opt && opt.guard) { a.kid = false; a.pants = lc(0xd8262a); a.shirt = a.fem ? lc(0xd8262a) : rnd() < 0.5 ? lc(0xf2c81e) : a.skin; a.hat = { k: 'cap', c: lc(0xd8262a), bc: null }; a.glasses = true; a.glassC = lc(0x101014); }
+  if (opt && opt.guard) { a.kid = false; a.pants = lc(0xd8262a); a.shirt = a.fem ? lc(0xd8262a) : a.skin; a.hat = { k: 'cap', c: lc(0xd8262a), bc: null }; a.glasses = true; a.glassC = lc(0x101014); }
   return a;
 }
 function bchPerson(sp, rnd, pose, lx, lz, yawOff, opt) {
@@ -98,7 +97,7 @@ function bchPlan(sp, r) {
     P.push({ t: 'cool', lx: 1.9, lz: -0.9, yo: r() }); P.push({ t: 'bball', lx: 2.5 + r(), lz: 2.6 + r() }); if (r() < 0.7) P.push({ t: 'castle', lx: -2.2, lz: 2.8 });
     bchPerson(sp, r, r() < 0.7 ? 'lie' : 'prone', -0.8, 1.05, 0); bchPerson(sp, r, 'sit', 0.8, -0.35, (r() - 0.5) * 0.4); bchPerson(sp, r, 'play', -1.6, 3.4, (r() - 0.5) * 2, { kid: true });
   } else if (k === 'sun') {
-    const n = r() < 0.5 ? 2 : 1; for (let q = 0; q < n; q++) { const lx = (q - (n - 1) / 2) * 1.5, yo = (r() - 0.5) * 0.3; towel(lx, 0, yo); const ps = r() < 0.6 ? 'lie' : r() < 0.6 ? 'prone' : 'sit'; bchPerson(sp, r, ps, lx, ps === 'sit' ? -0.35 : 0.85, yo); }
+    const n = 1 + ((r() * 3) | 0); for (let q = 0; q < n; q++) { const lx = (q - (n - 1) / 2) * 1.5, yo = (r() - 0.5) * 0.3; towel(lx, 0, yo); const ps = r() < 0.6 ? 'lie' : r() < 0.6 ? 'prone' : 'sit'; bchPerson(sp, r, ps, lx, ps === 'sit' ? -0.35 : 0.85, yo); }
     if (r() < 0.5) P.push({ t: 'cool', lx: 1.6, lz: -1.2, yo: r() });
   } else if (k === 'chairs') {
     P.push({ t: 'umb', lx: 0, lz: -1.1, c: (r() * BCH_UMB.length) | 0, tilt: 0 }); P.push({ t: 'lounger', lx: -0.85, lz: 0, c: r() < 0.5 }); P.push({ t: 'lounger', lx: 0.85, lz: 0, c: r() < 0.5 });
@@ -111,8 +110,16 @@ function bchPlan(sp, r) {
   } else if (k === 'tower') {
     P.push({ t: 'tower', lx: 0, lz: 0 }); P.push({ t: 'board', lx: 2.4, lz: -0.6, c: (r() * BCH_SWIM.length) | 0, rz: 0.12 }); P.push({ t: 'board', lx: 2.9, lz: -0.4, c: (r() * BCH_SWIM.length) | 0, rz: -0.1 });
     bchPerson(sp, r, 'stand', -1.6, 1.4, 0, { guard: true });
+  } else if (k === 'group') {
+    /* friends standing about chatting in a ring, a cool box and a towel down */
+    const n = 3 + ((r() * 2) | 0), a0 = r() * TAU; for (let q = 0; q < n; q++) { const a = a0 + q * TAU / n, lx = Math.sin(a) * 1.3, lz = Math.cos(a) * 1.3; bchPerson(sp, r, 'stand', lx, lz, Math.atan2(-lx, -lz)); }
+    P.push({ t: 'cool', lx: 0.2, lz: 0.1, yo: r() }); towel(2.4, 0.4, r());
+  } else if (k === 'volley') {
+    /* beach volleyball: a net across, two a side, the ball in the air */
+    P.push({ t: 'net', lx: 0, lz: 0 }); P.push({ t: 'ball', lx: 0.6, lz: 0.4, y: 3.2 });
+    for (const [lx, lz] of [[-2.2, -3.0], [2.4, -4.2], [-2.6, 3.4], [2.0, 4.0]]) bchPerson(sp, r, 'play', lx, lz, lz < 0 ? 0 : Math.PI);
   } else if (k === 'swim') {
-    const n = 1 + ((r() * 3) | 0); for (let q = 0; q < n; q++) bchPerson(sp, r, 'swim', (r() - 0.5) * 7, (r() - 0.5) * 5, Math.PI + (r() - 0.5) * 2.4, { kid: r() < 0.2 });
+    const n = 2 + ((r() * 3) | 0); for (let q = 0; q < n; q++) bchPerson(sp, r, 'swim', (r() - 0.5) * 7, (r() - 0.5) * 5, Math.PI + (r() - 0.5) * 2.4, { kid: r() < 0.2 });
   }
 }
 /* the props of a spot as one merged mesh, built when it first comes near */
@@ -137,6 +144,13 @@ function bchBuild(sp) {
       for (const [dx, dz] of [[-0.27, 0.9], [0.27, 0.9], [-0.27, -0.2], [0.27, -0.2]]) put(G.cyl, q.lx + dx, q.lz + dz, y0 + 0.15, 0, 0, 0, 0.02, 0.32, 0.02, METAL);
       put(G.box, q.lx, q.lz - 0.95, y + 0.62, 0, -0.95, 0, 0.5, 0.06, 0.18, W);   /* the pillow */
     } else if (q.t === 'board') put(G.board, q.lx, q.lz, y0 + 0.95, 0, 0, q.rz, 0.27, 1.05, 0.045, BCH_SWIM[q.c]);
+    else if (q.t === 'net') {
+      for (const sd of [-1, 1]) put(G.cyl, q.lx + sd * 4.6, q.lz, y0 + 1.3, 0, 0, 0, 0.05, 2.6, 0.05, W);
+      for (let k = 0; k < 6; k++) put(G.box, q.lx, q.lz, y0 + 1.78 + k * 0.16, 0, 0, 0, 9.2, 0.012, 0.012, lc(0x30343a));   /* the net: strands you can see through */
+      for (let k = -14; k <= 14; k++) put(G.box, q.lx + k * 0.32, q.lz, y0 + 2.18, 0, 0, 0, 0.012, 0.82, 0.012, lc(0x30343a));
+      put(G.box, q.lx, q.lz, y0 + 2.62, 0, 0, 0, 9.2, 0.07, 0.04, W);
+      for (const [x0, z0, x1, z1] of [[-4, -8, 4, -8], [-4, 8, 4, 8], [-4, -8, -4, 8], [4, -8, 4, 8]]) put(G.box, q.lx + (x0 + x1) / 2, q.lz + (z0 + z1) / 2, y0 + 0.02, 0, 0, 0, Math.max(0.05, Math.abs(x1 - x0)), 0.02, Math.max(0.05, Math.abs(z1 - z0)), lc(0x1f6fd1));   /* the court lines */
+    } else if (q.t === 'ball') put(G.bball, q.lx, q.lz, y0 + q.y, 0.3, 0.2, 0, 0.11, 0.11, 0.11, _bchC.setRGB(1, 1, 1));
     else if (q.t === 'tower') {
       const H = 2.3; for (const [dx, dz] of [[-0.85, -0.85], [0.85, -0.85], [-0.85, 0.85], [0.85, 0.85]]) put(G.box, q.lx + dx, q.lz + dz, y0 + H / 2, 0, 0, 0, 0.12, H + 0.3, 0.12, W, 0.25);
       put(G.box, q.lx, q.lz, y0 + H + 0.05, 0, 0, 0, 2.0, 0.12, 2.0, WOOD); put(G.box, q.lx, q.lz, y0 + H + 0.25, 0, 0, 0, 1.6, 0.9, 1.4, W, 0.2);

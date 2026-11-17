@@ -33,7 +33,7 @@ const OUT = process.env.OUT || __dirname;
       for (let i = 0; i < 90; i++) { window.__now += 1000 / 30; g.frame(window.__now); c.vx = c.vz = 0; c.speed = 0; }
       const B = g.Beach, live = B.live, kinds = {}, poses = {}; let ppl = 0, bare = 0, dressed = 0, lying = 0, wading = 0;
       for (const sp of live) { kinds[sp.kind] = (kinds[sp.kind] || 0) + 1; for (const p of sp.ppl) { poses[p.pose] = (poses[p.pose] || 0) + 1; if (!p.hu || p.hu.dead) continue; ppl++;
-        const a = p.app; if (a.shoe === a.skin) bare++; if (a.shorts && !a.coat && !a.sleeve) dressed++;
+        const a = p.app; if (a.shoe === a.skin) bare++; if (a.swim && a.shorts && !a.coat && !a.sleeve && (a.fem || a.shirt === a.skin)) dressed++;
         const R = p.hu.root; if ((p.pose === 'lie' || p.pose === 'prone') && Math.abs(Math.abs(R.rotation.x) - Math.PI / 2) < 0.01) lying++; if (p.pose === 'swim' && p.y < -0.3) wading++; } }
       const shot = g.renderer.domElement.toDataURL('image/jpeg', 0.85);
       return { spots: live.length, meshes: live.filter((s) => s.mesh).length, kinds, poses, ppl, bare, dressed, lying, wading, posed: B.ppl, shot };
@@ -43,9 +43,9 @@ const OUT = process.env.OUT || __dirname;
     for (const k in r.kinds) kinds[k] = (kinds[k] || 0) + r.kinds[k]; for (const k in r.poses) poses[k] = (poses[k] || 0) + r.poses[k];
     people += r.ppl; barefoot += r.bare; dressed += r.dressed; lying += r.lying; wading += r.wading;
   }
-  ok(Object.keys(kinds).length >= 5, 'the beaches have umbrellas and towels, loungers, strollers, lifeguard towers and swimmers (' + JSON.stringify(kinds) + ')');
-  ok(people > 40, people + ' beachgoers drawn near the camera across the stops');
-  ok(barefoot === people && dressed === people, 'all of them in beachwear: ' + barefoot + ' barefoot, ' + dressed + ' in trunks or a swimsuit');
+  ok(Object.keys(kinds).length >= 7, 'the beaches have umbrellas and towels, loungers, strollers, groups of friends, volleyball, lifeguard towers and swimmers (' + JSON.stringify(kinds) + ')');
+  ok(people > 70, people + ' beachgoers drawn near the camera across the stops');
+  ok(barefoot === people && dressed === people, 'all of them in swimwear (bare legs and feet): ' + barefoot + ' barefoot, ' + dressed + ' in swim trunks or a swimsuit');
   ok(lying > 3, lying + ' people lying flat on their towels');
   ok((poses.swim || 0) === 0 || wading > 0, wading + ' people standing in the sea');
   /* knock one over: drive the car through someone standing or sitting */
