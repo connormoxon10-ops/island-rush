@@ -29,7 +29,7 @@ const lc = (hex) => new THREE.Color(hex).convertSRGBToLinear();
 const SAVE_KEY = 'island-rush-v1';
 const save = { money: 600, rep: 0, law: { won: 0, part: 0, lost: 0, settled: 0, paid: 0 }, done: {}, up: { eng: 0, tire: 0, nit: 0, arm: 0 }, color: 0, car: 'rook', owned: { rook: true }, cc: {}, cos: { own: {}, car: {}, out: {} }, rel: {}, gar: { wall: 0, ext: 1, trim: 0, floor: 0, light: 0, neon: 3, sign: 'HOME GARAGE', bays: 4, decor: { posters: 1, tools: 1, tyres: 1, rug: 1, trophies: 1, plants: 1 }, slots: {} },
   air: { own: { sparrow: true }, hrs: 0, ldg: 0, best: 0, view: 1 }, boat: { own: {}, hrs: 0, view: 1 }, vm: { done: {}, kills: 0, rings: 0 }, ven: { rec: {}, souv: {} }, col: { got: {}, n: 0, fish: {}, prize: {} }, race: { races: 0, wins: 0, podiums: 0, bestLap: 0, earned: 0, best: {} }, rally: { runs: 0, best: 0, splits: [], gates: 0, jump: 0, tod: 2, earned: 0 }, drag: { runs: 0, wins: 0, earned: 0, bestRt: 0, tier: 1, best: {} }, setup: {},
-  tokens: 0, stolen: {}, jack: null, jn: 0, heist: { prev: null, done: 0 }, mech: { jobs: 0, sum: 0, rush: 0, best: 0, saved: 0 }, wk: { slots: [null, null, null], cur: null, flights: 0, done: {}, best: { alt: 0, spd: 0 } },
+  tokens: 0, stolen: {}, jack: null, jn: 0, heist: { prev: null, done: 0 }, surf: { best: 0, sessions: 0 }, mech: { jobs: 0, sum: 0, rush: 0, best: 0, saved: 0 }, wk: { slots: [null, null, null], cur: null, flights: 0, done: {}, best: { alt: 0, spd: 0 } },
   set: { quality: 'high', traffic: 'high', music: true, vol: 0.8, units: 'kmh', fov: 76, cycle: 1, shake: true, hud: true, dev: false, suits: 'on', finv: false, fassist: true } };
 /* developer mode: session-only cheat/debug state (only active while save.set.dev is on) */
 const Dev = { god: false, nit: false, power: 1, grip: 1, ts: 1, hud: false, hbox: false, free: false, fx: 0, fy: 0, fz: 0, fyaw: 0, fpitch: 0, ema: 0.016, t: 0 };
@@ -63,6 +63,7 @@ function loadSave() {
       if (s.jack && s.jack.id && save.stolen[s.jack.id] && !save.owned[s.jack.id]) save.jack = { id: s.jack.id, prev: save.owned[s.jack.prev] ? s.jack.prev : 'rook' };
       for (const id in save.stolen) if (!save.owned[id] && !(save.jack && save.jack.id === id)) delete save.stolen[id];
       if (s.heist && typeof s.heist === 'object') save.heist = { prev: typeof s.heist.prev === 'string' ? s.heist.prev : null, done: s.heist.done | 0 };
+      if (s.surf && typeof s.surf === 'object') save.surf = { best: +s.surf.best || 0, sessions: s.surf.sessions | 0 };
       save.car = (s.car && (save.owned[s.car] || (save.jack && save.jack.id === s.car))) ? s.car : save.heist.prev && save.owned[save.heist.prev] ? save.heist.prev : 'rook'; }
   } catch (e) { /* storage unavailable */ }
 }

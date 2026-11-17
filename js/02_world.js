@@ -238,7 +238,7 @@ function genWorld() {
   genLinks();
   links.forEach((l, i) => { const r = makeHighway(l.a, l.b, i); l.road = r.id; l.len = r.len; });
   towns.forEach(makeTownStreets);
-  Air.pick(); Air.spur(); Dock.pick(); Dock.spur(); Track.pick(); Track.spur();
+  Air.pick(); Air.spur(); Dock.pick(); Dock.spur(); Track.pick(); Track.spur(); Surf.plan();   /* the named beaches and their roads */
   buildHash();
 }
 
