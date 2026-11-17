@@ -35,7 +35,7 @@ function wheelGround(c, P) {
   const PT = [[-hw, P.a], [hw, P.a], [-hw, -P.b], [hw, -P.b]];
   for (let k = 0; k < 4; k++) {
     const lx = PT[k][0], lz = PT[k][1];
-    _gs.loose = 0; const wx = c.x + s * lz + co * lx, wz = c.z + co * lz - s * lx; groundAt(wx, wz, _gs); if (P.crawl) rockGround(wx, wz, P, _gs);
+    _gs.loose = 0; const wx = c.x + s * lz + co * lx, wz = c.z + co * lz - s * lx; groundAt(wx, wz, _gs); if (P.crawl) rockGround(wx, wz, P, _gs); if (c === car && Heist.site && !Rally.on && !Derby.on && !Drag.on) Heist.ground(wx, wz, c, _gs);
     WH[k] = _gs.h; (c.wh || (c.wh = [0, 0, 0, 0]))[k] = _gs.h; loose += _gs.loose; mu += _gs.mu; rr += _gs.rr; rough += _gs.rough; road += _gs.road ? 1 : 0; water += _gs.water ? 1 : 0;
   }
   const sf = c.surf; sf.mu = mu / 4; sf.rr = rr / 4; sf.rough = rough / 4; sf.road = road >= 2; sf.water = water >= 3; sf.loose = loose / 4;
@@ -196,7 +196,7 @@ function stepCar(dt, c0, P0, T0, circ0) {
        climbing, always lets the car fly. A landing on the kicker just before the lip used to hold the car to the ground through the cooldown, and it followed the
        wall down into the ravine */
     const edge = need < c.vyPrev - 12, climbing = c.vyPrev > 1.5;   /* still going up a kicker: its crest is a real take-off, never a downhill landing */
-    if ((!cd || edge || climbing) && need < c.vyPrev - G * dt - (Rally.on ? 0.2 + 0.03 * spd : 0.2) && spd > 8) { c.air = true; c.vy = c.vyPrev; c.y += c.vy * dt; c.airCd = 0; }
+    if ((!cd || edge || climbing) && need < c.vyPrev - G * dt - (Rally.on ? 0.2 + 0.03 * spd : 0.2) && (spd > 8 || need < c.vyPrev - 60)) { c.air = true; c.vy = c.vyPrev; c.y += c.vy * dt; c.airCd = 0; }
     else { c.vy = clamp(need, -30, 30); c.y = gy; }
     c.pitch += (tp - c.pitch) * Math.min(1, dt * 14); c.roll += (tr - c.roll) * Math.min(1, dt * 14);
   }
