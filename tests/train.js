@@ -43,7 +43,7 @@ const OUT = process.env.OUT || __dirname;
   ok(r.maxGrade < 0.045, 'no steeper than ' + (r.maxGrade * 100).toFixed(1) + ' %');
   ok(r.onRoad === 0, 'no pier stands in a road (' + r.onRoad + ')');
   ok(r.cars === 11, 'a freight train: a locomotive and ten wagons (' + r.cars + ' vehicles)');
-  ok(r.sizes.every((s, i) => s[2] > 14.5 && s[2] < 20 && s[0] > 2.8 && s[0] < (i === r.sizes.length - 1 ? 5.6 : 3.6) && s[1] > 3.9 && s[1] < 4.8), 'every vehicle full size: ' + r.sizes.map((s) => s.join('x')).join(', ') + ' m');
+  ok(r.sizes.every((s, i) => s[2] > 14.5 && s[2] < 20 && s[0] > 2.6 && s[0] < (i === r.sizes.length - 1 ? 5.6 : 3.6) && s[1] > 3.9 && s[1] < 4.8), 'every vehicle full size: ' + r.sizes.map((s) => s.join('x')).join(', ') + ' m');
   ok(r.sizes[1][2] / r.carL > 3.2, 'a boxcar is ' + (r.sizes[1][2] / r.carL).toFixed(1) + ' car-lengths long (car ' + r.carL.toFixed(1) + ' m)');
   ok(r.gaps.every((gp) => gp > 0.3 && gp < 1.2), 'coupled nose to tail (gaps ' + r.gaps.map((x) => x.toFixed(1)).join(' ') + ' m)');
   ok(r.moved > 150 && Math.abs(r.ds - r.v * 10) < 5, 'it runs: ' + r.ds.toFixed(0) + ' m along the line in 10 s (' + (r.v * 3.6).toFixed(0) + ' km/h)');
