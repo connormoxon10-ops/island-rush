@@ -124,7 +124,7 @@ Heist.update = function (dt) {
   const S = Heist.site; if (!S || !Heist.built || Rally.on || Derby.on || Drag.on) return;
   const c = car, ph = Heist.phase, near = Math.hypot(Pl.x - S.sx, Pl.z - S.sz), t = Rail.heist;
   Heist.marker.visible = ph === 'idle' && !save.owned[HEIST.ID]; Heist.msgT -= dt;
-  if (ph === 'idle') { if (!save.owned[HEIST.ID] && !Foot.on && !Fly.on && !Boat.on && !Mi && !Race.on && near < 9 && c.wrecked <= 0 && App.mode === 'play') Heist.start(); return; }
+  if (ph === 'idle') { if (!save.owned[HEIST.ID] && !Foot.on && !Fly.on && !Boat.on && !Mi && !Race.on && !Dunes.on && near < 9 && c.wrecked <= 0 && App.mode === 'play') Heist.start(); return; }
   if (ph === 'armed') {
     const dl = Math.hypot(Pl.x - S.cx, Pl.z - S.cz); if (dl > 420 || Foot.on || c.wrecked > 0) { Heist.stop(); UI.toast('Gold Rush called off', 'info'); return; }
     Heist.eta = Heist.doorEta(); if (Heist.eta < -1.5 || Heist.eta > Rail.L / Rail.v - 30) Heist.cue(22);   /* it went by: bring it round again */

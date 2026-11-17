@@ -277,7 +277,8 @@ function initTreeSources() {
 const _tcol = new THREE.Color(), Y_AXIS = new THREE.Vector3(0, 1, 0);
 /* place one tree / bush / grass tuft: trunk + core into the prop mesh, leaf cards into the foliage mesh */
 function addTree(gbW, gbF, kind, vi, x, y, z, sc, rot, tint, sy, hue, ch) {
-  if (Rail.hash && Rail.dist(x, z) < 9 + 3 * sc) return;   /* nothing grows up through the railway viaduct */
+  if (Rail.hash && Rail.dist(x, z) < 9 + 3 * sc) return;
+  if (Dunes.s && Dunes.clearTree(x, z)) return;   /* open sand on the Dune Dash */   /* nothing grows up through the railway viaduct */
   if (y < 3.2 && y > -0.5 && kind !== 'palm') return;   /* the beaches stay open sand (palms may lean over them) */
   if (Heist.site && Heist.clearTree(x, z)) return;   /* the Gold Rush run-up and ramp stay clear */
   const v = TREE[kind][vi % TREE[kind].length];

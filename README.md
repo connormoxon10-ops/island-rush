@@ -90,6 +90,7 @@ node tests/train.js         # the island railway: a closed loop round the island
 node tests/heist.js         # Gold Rush: jump off the ramp into the freight train's open wagon, steal the golden car, drive it out the back and home
 node tests/surf.js          # named beaches with roads, signs and map labels; the Surf Club: three waves, airs, the curl, wipeouts, prize money
 node tests/nitro.js         # nitro: flame out of the exhaust (blue core, orange plume), glow behind the car, stops with the nitro
+node tests/dunes.js         # Dune Dash: the beach dune track (on the map), a race against five dune buggies, prize money
 ```
 
 The browser tests drive the built game in headless Chromium with software GL (slow, 1-7 fps), using step lists of `{js}`, `{wait}` and `{shot}`:

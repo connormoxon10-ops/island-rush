@@ -28,6 +28,7 @@ function terrainColor(x, z, h, slope, dRoad, halfW, out, k) {
   _tc.lerp(cSn, sstep(sl, sl + 20, h + n1 * 12) * (1 - sstep(0.2, 0.4, slope) * 0.6));
   _tc.lerp(cSa, (1 - sstep(2.6, 4.4, h + n2 * 0.7)) * (1 - sstep(0.32, 0.55, slope)));   /* the beach: a wide band of sand all round the shore */
   { const wet = (1 - sstep(0.15, 1.0, h)) * sstep(-0.6, 0.0, h); if (wet > 0) _tc.multiplyScalar(1 - 0.3 * wet); }   /* darker wet sand at the waterline */
+  if (Dunes.s) { const ds = Dunes.sand(x, z); if (ds > 0) { _tc.lerp(cSa, ds * 0.96); const ck = Dunes.course(x, z); if (ck > 0) _tc.multiplyScalar(1 - 0.2 * ck * ds); } }   /* the Dune Dash: all sand, the course darker where it is packed */
   if (h < 0) _tc.lerp(PAL.seabed, sstep(0, 6, -h) * 0.8);
   const vv = 1 + n3 * 0.09; _tc.r *= vv; _tc.g *= vv * (1 + n2 * 0.03); _tc.b *= vv;
   if (Air.s) { const aw = Air.grassW(x, z); if (aw > 0) { _tc.lerp(AIRGRASS, aw * 0.6); } }

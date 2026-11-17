@@ -56,7 +56,8 @@ function terrainNoRoad(x, z) {
   }
   if (Air.s) h = Air.flat(x, z, h);
   if (Track.s) h = Track.flat(x, z, h);
-  return Dock.s ? Dock.flat(x, z, h) : h;
+  if (Dock.s) h = Dock.flat(x, z, h);
+  return Dunes.s ? Dunes.shape(x, z, h) : h;   /* the Dune Dash dunes */
 }
 
 function nearestRoad(x, z) {
@@ -113,6 +114,7 @@ function groundAt(x, z, o) {
   }
   if (towns.length) { mu *= road ? Biome.mod(x, z, 'grip') : Biome.mod(x, z, 'gripOff'); if (!road && Biome.w0 < 0.9) rr *= 1 + (1 - Biome.mod(x, z, 'gripOff')) * 0.8; }
   o.h = h; o.mu = mu; o.rr = rr; o.rough = rough; o.road = road; o.water = h < -0.4;
+  if (Dunes.s) Dunes.ground(x, z, o);
 }
 
 /* ---------------- roads ---------------- */
