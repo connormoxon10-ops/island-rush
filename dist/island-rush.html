@@ -763,7 +763,7 @@ const lc = (hex) => new THREE.Color(hex).convertSRGBToLinear();
 const SAVE_KEY = 'island-rush-v1';
 const save = { money: 600, rep: 0, law: { won: 0, part: 0, lost: 0, settled: 0, paid: 0 }, done: {}, up: { eng: 0, tire: 0, nit: 0, arm: 0 }, color: 0, car: 'rook', owned: { rook: true }, cc: {}, cos: { own: {}, car: {}, out: {} }, rel: {}, gar: { wall: 0, ext: 1, trim: 0, floor: 0, light: 0, neon: 3, sign: 'HOME GARAGE', bays: 4, decor: { posters: 1, tools: 1, tyres: 1, rug: 1, trophies: 1, plants: 1 }, slots: {} },
   air: { own: { sparrow: true }, hrs: 0, ldg: 0, best: 0, view: 1 }, boat: { own: {}, hrs: 0, view: 1 }, vm: { done: {}, kills: 0, rings: 0 }, ven: { rec: {}, souv: {} }, col: { got: {}, n: 0, fish: {}, prize: {} }, race: { races: 0, wins: 0, podiums: 0, bestLap: 0, earned: 0, best: {} }, rally: { runs: 0, best: 0, splits: [], gates: 0, jump: 0, tod: 2, earned: 0 }, drag: { runs: 0, wins: 0, earned: 0, bestRt: 0, tier: 1, best: {} }, setup: {},
-  tokens: 0, stolen: {}, jack: null, jn: 0, mech: { jobs: 0, sum: 0, rush: 0, best: 0, saved: 0 }, wk: { slots: [null, null, null], cur: null, flights: 0, done: {}, best: { alt: 0, spd: 0 } },
+  tokens: 0, stolen: {}, jack: null, jn: 0, heist: { prev: null, done: 0 }, mech: { jobs: 0, sum: 0, rush: 0, best: 0, saved: 0 }, wk: { slots: [null, null, null], cur: null, flights: 0, done: {}, best: { alt: 0, spd: 0 } },
   set: { quality: 'high', traffic: 'high', music: true, vol: 0.8, units: 'kmh', fov: 76, cycle: 1, shake: true, hud: true, dev: false, suits: 'on', finv: false, fassist: true } };
 /* developer mode: session-only cheat/debug state (only active while save.set.dev is on) */
 const Dev = { god: false, nit: false, power: 1, grip: 1, ts: 1, hud: false, hbox: false, free: false, fx: 0, fy: 0, fz: 0, fyaw: 0, fpitch: 0, ema: 0.016, t: 0 };
@@ -796,7 +796,8 @@ function loadSave() {
       for (const id of Object.keys(save.owned)) if (/^j\d+$/.test(id) && !save.stolen[id]) delete save.owned[id];
       if (s.jack && s.jack.id && save.stolen[s.jack.id] && !save.owned[s.jack.id]) save.jack = { id: s.jack.id, prev: save.owned[s.jack.prev] ? s.jack.prev : 'rook' };
       for (const id in save.stolen) if (!save.owned[id] && !(save.jack && save.jack.id === id)) delete save.stolen[id];
-      save.car = (s.car && (save.owned[s.car] || (save.jack && save.jack.id === s.car))) ? s.car : 'rook'; }
+      if (s.heist && typeof s.heist === 'object') save.heist = { prev: typeof s.heist.prev === 'string' ? s.heist.prev : null, done: s.heist.done | 0 };
+      save.car = (s.car && (save.owned[s.car] || (save.jack && save.jack.id === s.car))) ? s.car : save.heist.prev && save.owned[save.heist.prev] ? save.heist.prev : 'rook'; }
   } catch (e) { /* storage unavailable */ }
 }
 function writeSave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* ignore */ } }
@@ -2202,6 +2203,7 @@ const _tcol = new THREE.Color(), Y_AXIS = new THREE.Vector3(0, 1, 0);
 function addTree(gbW, gbF, kind, vi, x, y, z, sc, rot, tint, sy, hue, ch) {
   if (Rail.hash && Rail.dist(x, z) < 9 + 3 * sc) return;   /* nothing grows up through the railway viaduct */
   if (y < 3.2 && y > -0.5 && kind !== 'palm') return;   /* the beaches stay open sand (palms may lean over them) */
+  if (Heist.site && Heist.clearTree(x, z)) return;   /* the Gold Rush run-up and ramp stay clear */
   const v = TREE[kind][vi % TREE[kind].length];
   _q.setFromAxisAngle(Y_AXIS, rot); _p3.set(x, y, z); _s3.set(sc, sc * (sy || 1), sc); _m4.compose(_p3, _q, _s3);
   const k = 0.82 + tint * 0.36, h = hue == null ? 0.5 : hue;
@@ -2918,7 +2920,7 @@ function wheelGround(c, P) {
   const PT = [[-hw, P.a], [hw, P.a], [-hw, -P.b], [hw, -P.b]];
   for (let k = 0; k < 4; k++) {
     const lx = PT[k][0], lz = PT[k][1];
-    _gs.loose = 0; const wx = c.x + s * lz + co * lx, wz = c.z + co * lz - s * lx; groundAt(wx, wz, _gs); if (P.crawl) rockGround(wx, wz, P, _gs);
+    _gs.loose = 0; const wx = c.x + s * lz + co * lx, wz = c.z + co * lz - s * lx; groundAt(wx, wz, _gs); if (P.crawl) rockGround(wx, wz, P, _gs); if (c === car && Heist.site && !Rally.on && !Derby.on && !Drag.on) Heist.ground(wx, wz, c, _gs);
     WH[k] = _gs.h; (c.wh || (c.wh = [0, 0, 0, 0]))[k] = _gs.h; loose += _gs.loose; mu += _gs.mu; rr += _gs.rr; rough += _gs.rough; road += _gs.road ? 1 : 0; water += _gs.water ? 1 : 0;
   }
   const sf = c.surf; sf.mu = mu / 4; sf.rr = rr / 4; sf.rough = rough / 4; sf.road = road >= 2; sf.water = water >= 3; sf.loose = loose / 4;
@@ -3079,7 +3081,7 @@ function stepCar(dt, c0, P0, T0, circ0) {
        climbing, always lets the car fly. A landing on the kicker just before the lip used to hold the car to the ground through the cooldown, and it followed the
        wall down into the ravine */
     const edge = need < c.vyPrev - 12, climbing = c.vyPrev > 1.5;   /* still going up a kicker: its crest is a real take-off, never a downhill landing */
-    if ((!cd || edge || climbing) && need < c.vyPrev - G * dt - (Rally.on ? 0.2 + 0.03 * spd : 0.2) && spd > 8) { c.air = true; c.vy = c.vyPrev; c.y += c.vy * dt; c.airCd = 0; }
+    if ((!cd || edge || climbing) && need < c.vyPrev - G * dt - (Rally.on ? 0.2 + 0.03 * spd : 0.2) && (spd > 8 || need < c.vyPrev - 60)) { c.air = true; c.vy = c.vyPrev; c.y += c.vy * dt; c.airCd = 0; }
     else { c.vy = clamp(need, -30, 30); c.y = gy; }
     c.pitch += (tp - c.pitch) * Math.min(1, dt * 14); c.roll += (tr - c.roll) * Math.min(1, dt * 14);
   }
@@ -4758,7 +4760,7 @@ function cosView(rec, preview) {
   if (rec && rec.kit) for (const sl in rec.kit) { const it = ok(rec.kit[sl]); if (it) V.kits.push(it); }
   return V;
 }
-function curColor(id) { id = id || save.car; const V = cosView(cosSave().car[id]); return V.paint ? V.paint.val.hex : PAINTS[curPaint(id)]; }
+function curColor(id) { id = id || save.car; if (CAR_BY_ID[id] && CAR_BY_ID[id].gold) return HEIST.GOLD; const V = cosView(cosSave().car[id]); return V.paint ? V.paint.val.hex : PAINTS[curPaint(id)]; }
 function cosSig(id) { id = id || save.car; const r = cosSave().car[id]; if (!r) return ''; const V = cosView(r), a = []; for (const k of COS.CAR) if (k !== 'kit' && V[k]) a.push(V[k].id); for (const it of V.kits) a.push(it.id); return a.join(','); }
 /* body flags for the car builder */
 function cosDef(d, V) {
@@ -4841,6 +4843,7 @@ const Cosm = {
     const m = MAT.paintPlayer; if (!m) return; const V = cosView(cosSave().car[save.car]);
     m.color.copy(lc(curColor())); m.roughness = 0.45; m.metalness = 0.25; m.clearcoat = 0.9; m.clearcoatRoughness = 0.16; m.envMapIntensity = 0.45;
     if (V.fin && V.fin.val.fin !== 'gloss') applyFinish(m, V.fin.val.fin);
+    if (CUR && CUR.gold) heistGild(m);   /* the Aurum Spectre is gold all over */
   },
   tick() {
     const g = car.ext; if (!g || !L.head) return;
@@ -6930,6 +6933,7 @@ function bchSite(x, z) {
   if (Air.s && x > Air.s.x0 - 60 && x < Air.s.x1 + 60 && z > Air.s.z0 - 60 && z < Air.s.z1 + 60) return 0;
   if (Track.s && x > Track.s.x0 - 60 && x < Track.s.x1 + 60 && z > Track.s.z0 - 60 && z < Track.s.z1 + 60) return 0;
   if (Dock.s && Math.hypot(x - Dock.s.ox, z - Dock.s.oz) < 170) return 0;
+  if (Heist.site && Heist.clearTree(x, z)) return 0;   /* not on the Gold Rush run-up */
   return h >= 0.35 ? 1 : h < -0.5 ? 2 : 0;
 }
 /* a cell of shore: what (if anything) is on it. Looked at once and kept. */
@@ -10894,40 +10898,74 @@ Rail.buildViaduct = function () {
 const _railM = new THREE.Matrix4(), _railV = new THREE.Vector3(), _railQ = new THREE.Quaternion(), _railE = new THREE.Euler(0, 0, 0, 'YXZ'), _railS = new THREE.Vector3();
 const RailG = {};
 
-/* ---------- the train ---------- */
-/* one vehicle, built along +z with its middle at the origin and the top of the rail at y = 0. loco: the nose with the cab is at +z */
-function railVehicle(loco, L) {
+/* ---------- the train: a freight train ----------
+   A red-and-yellow diesel and ten wagons: boxcars, tank cars and flat cars with shipping containers, and at the very back the heist wagon (08_heist.js):
+   a boxcar with its right-hand side door slid open over most of its length and its rear end doors open, with the golden car parked inside. */
+const RAIL_WAGON = { W: 3.0, Y0: 1.2, H: 3.0, DOOR: [-1.0, 7.5], DOORH: 2.7 };   /* the heist wagon's open side door spans local z -1..7.5, up to 2.7 m over its floor */
+const RAIL_CONS = [0x1f5fa8, 0xc8302a, 0x2a8a4a, 0xe08a1a, 0x6a6e74, 0x1a7f8a, 0x8a2a5a, 0xd8c040].map(lc);
+/* one vehicle, built along +z with its middle at the origin and the top of the rail at y = 0. kind: loco (nose at +z), box, tank, flat, heist */
+function railVehicle(kind, L, seed) {
   const gb = new GB(0, 0, false), B = RailG.box, C = RailG.cyl, put = (g, x, y, z, sx, sy, sz, col, sh, rx, ry, rz) => { _railM.compose(_railV.set(x, y, z), _railQ.setFromEuler(_railE.set(rx || 0, ry || 0, rz || 0)), _railS.set(sx, sy, sz)); gb.geo(g, _railM, col, sh || 0); };
-  const BODY = loco ? lc(0xc8302a) : lc(0xe9e6df), BAND = loco ? lc(0xf2c81e) : lc(0x1f5fa8), ROOF = lc(0x8c9096), WIN = lc(0x1b2430), DARK = lc(0x26282c), WHL = lc(0x3a3c40), GLASS = lc(0x30485e), LAMP = lc(0xfff2c0);
-  const W = 3.0, y0 = 1.1, H = 3.0, half = L / 2;
-  put(B, 0, y0 + H / 2, loco ? -0.5 : 0, W, H, loco ? L - 1 : L, BODY, 0.15);                        /* the body */
-  put(B, 0, y0 + 0.55, 0, W + 0.02, 0.32, L - 0.2, BAND, 0);                                          /* the livery band */
-  put(C, 0, y0 + H, loco ? -0.5 : 0, W / 2, (loco ? L - 1 : L) - 0.1, 0.34, ROOF, 0.1, Math.PI / 2, 0, 0);   /* the curved roof */
-  put(B, 0, y0 - 0.25, 0, W - 0.3, 0.5, L - 1.6, DARK, 0);                                            /* the underframe and tanks */
-  if (!loco) {
-    for (let k = 0; k < 7; k++) { const z = -half + 2.6 + k * ((L - 5.2) / 6); put(B, W / 2 + 0.005, y0 + 1.75, z, 0.02, 0.85, 1.6, WIN, 0); put(B, -W / 2 - 0.005, y0 + 1.75, z, 0.02, 0.85, 1.6, WIN, 0); }   /* windows */
-    for (const z of [-half + 1.1, half - 1.1]) for (const sd of [-1, 1]) put(B, sd * (W / 2 + 0.01), y0 + 1.25, z, 0.02, 2.1, 0.95, lc(0x9aa0a6), 0);   /* doors */
-    for (const z of [-half - 0.15, half + 0.15]) put(B, 0, y0 + 1.5, z, 1.2, 2.3, 0.3, DARK, 0);       /* gangways */
-  } else {
-    put(B, 0, y0 + H / 2 - 0.2, half - 0.75, W - 0.1, H - 0.4, 1.5, BODY, 0.1);                     /* the cab */
-    put(B, 0, y0 + H - 0.55, half - 0.02, W - 0.5, 0.75, 0.04, GLASS, 0, -0.35, 0, 0);                /* the windscreen */
-    for (const sd of [-1, 1]) { put(B, sd * (W / 2 + 0.005), y0 + H - 0.6, half - 1.0, 0.02, 0.7, 1.0, GLASS, 0); put(B, sd * 0.85, y0 + 0.6, half + 0.01, 0.3, 0.2, 0.04, LAMP, 0); }
-    put(B, 0, y0 + 0.2, half + 0.1, W - 0.2, 0.5, 0.25, DARK, 0);                                      /* the buffer beam */
-    for (let k = 0; k < 6; k++) for (const sd of [-1, 1]) put(B, sd * (W / 2 + 0.005), y0 + 2.1, -half + 2.5 + k * 1.6, 0.02, 0.5, 1.2, DARK, 0);   /* engine-room grilles */
-    put(B, 0, y0 + H + 0.32, -1.5, 1.0, 0.25, 3.0, DARK, 0);                                           /* the exhaust and fans */
+  const r = mulberry32(seed * 7919 + 13), DARK = lc(0x26282c), WHL = lc(0x3a3c40), RUST = lc(0x7a3a24), RUST2 = lc(0x5e2c1c), STEEL = lc(0x8c9096), half = L / 2, W = RAIL_WAGON.W, y0 = RAIL_WAGON.Y0, H = RAIL_WAGON.H;
+  put(B, 0, y0 - 0.3, 0, W - 0.2, 0.36, L - 0.6, DARK, 0);                                            /* the underframe */
+  for (const z of [-half + 0.1, half - 0.1]) put(B, 0, y0 - 0.25, z, 0.5, 0.3, 0.5, DARK, 0);       /* couplers */
+  if (kind === 'loco') {
+    const BODY = lc(0xc8302a), BAND = lc(0xf2c81e), GLASS = lc(0x30485e), LAMP = lc(0xfff2c0);
+    put(B, 0, y0 + 1.25, -1.2, W - 0.6, 2.5, L - 4.6, BODY, 0.15);                                  /* the long hood */
+    put(B, 0, y0 + H / 2, half - 2.0, W, H, 3.0, BODY, 0.12);                                         /* the cab */
+    put(B, 0, y0 + H + 0.08, half - 2.0, W + 0.1, 0.16, 3.2, DARK, 0);
+    put(B, 0, y0 + 0.75, half - 0.4, W - 0.4, 1.5, 1.0, BODY, 0.1);                                   /* the short nose */
+    put(B, 0, y0 + 0.45, 0, W + 0.02, 0.3, L - 0.3, BAND, 0);                                         /* yellow stripes */
+    for (const sd of [-1, 1]) { put(B, sd * (W / 2 + 0.005), y0 + H - 0.75, half - 2.0, 0.02, 0.8, 1.6, GLASS, 0); put(B, sd * 0.8, y0 + 1.3, half + 0.11, 0.3, 0.22, 0.04, LAMP, 0); }
+    put(B, 0, y0 + H - 0.7, half - 0.48, W - 0.5, 0.8, 0.04, GLASS, 0);                               /* the windscreen */
+    for (let k = 0; k < 7; k++) for (const sd of [-1, 1]) put(B, sd * (W / 2 - 0.29), y0 + 1.7, -half + 2.6 + k * 1.55, 0.02, 0.8, 1.1, DARK, 0);   /* grilles */
+    put(B, 0, y0 + 2.62, -half + 4.0, 0.7, 0.3, 0.9, DARK, 0); put(C, 0, y0 + 2.7, -2.5, 0.8, 0.16, 0.8, STEEL, 0); put(C, 0, y0 + 2.7, 0.2, 0.8, 0.16, 0.8, STEEL, 0);   /* exhaust, fans */
+    for (const sd of [-1, 1]) put(B, sd * (W / 2 - 0.15), y0 + 0.1, 0, 0.06, 0.06, L - 2, BAND, 0);    /* handrails */
+  } else if (kind === 'box' || kind === 'heist') {
+    const BODY = kind === 'heist' ? lc(0x2e3a4a) : (r() < 0.5 ? RUST : lc(0x3a4a5a)), RIB = kind === 'heist' ? lc(0x243040) : RUST2, open = kind === 'heist', D = RAIL_WAGON.DOOR;
+    put(B, 0, y0 + 0.06, 0, W, 0.12, L, DARK, 0);                                                      /* the floor */
+    put(B, 0, y0 + H + 0.05, 0, W + 0.1, 0.12, L + 0.05, BODY, 0.1);                                   /* the roof */
+    put(C, 0, y0 + H + 0.1, 0, W / 2, L, 0.18, BODY, 0.1, Math.PI / 2, 0, 0);
+    put(B, -W / 2 + 0.04, y0 + H / 2, 0, 0.08, H, L, BODY, 0.15);                                     /* the left side */
+    if (!open) put(B, W / 2 - 0.04, y0 + H / 2, 0, 0.08, H, L, BODY, 0.15);                            /* the right side, or the right side either side of its open door */
+    else { const zA = -half, zB = D[0], zC = D[1], zD = half; put(B, W / 2 - 0.04, y0 + H / 2, (zA + zB) / 2, 0.08, H, zB - zA, BODY, 0.15); put(B, W / 2 - 0.04, y0 + H / 2, (zC + zD) / 2, 0.08, H, zD - zC, BODY, 0.15);
+      put(B, W / 2 - 0.04, y0 + RAIL_WAGON.DOORH + (H - RAIL_WAGON.DOORH) / 2 + 0.06, (zB + zC) / 2, 0.08, H - RAIL_WAGON.DOORH, zC - zB, BODY, 0.15);
+      put(B, W / 2 + 0.12, y0 + H - 0.1, (zB + zD) / 2, 0.1, 0.12, zD - zB - 0.2, STEEL, 0);          /* the door rail, the door slid right back */
+      put(B, W / 2 + 0.1, y0 + 1.45, (zC + zD) / 2, 0.06, 2.8, zD - zC - 0.2, lc(0x3a4a5a), 0.1);
+      for (const z of [zB, zC]) put(B, W / 2 + 0.02, y0 + 1.4, z, 0.14, 2.8, 0.16, lc(0xf2c81e), 0);  /* yellow door posts */
+      put(B, 0, y0 + 0.13, 0, W - 0.2, 0.02, L - 0.4, lc(0x4a3a2a), 0); }                              /* a plank floor */
+    put(B, 0, y0 + H / 2, half - 0.04, W, H, 0.08, BODY, 0.1);                                         /* the front end */
+    if (!open) put(B, 0, y0 + H / 2, -half + 0.04, W, H, 0.08, BODY, 0.1);
+    else { for (const sd of [-1, 1]) put(B, sd * (W / 2 - 0.25), y0 + H / 2, -half + 0.04, 0.5, H, 0.08, BODY, 0.1); put(B, 0, y0 + H - 0.2, -half + 0.04, W, 0.4, 0.08, BODY, 0.1);   /* the open rear end */
+      for (const sd of [-1, 1]) put(B, sd * (W / 2 + 0.55), y0 + 1.35, -half - 0.02, 1.1, 2.6, 0.06, BODY, 0.15, 0, sd * 0.25, 0); }   /* its doors swung open */
+    for (let k = 0; k <= 8; k++) { const z = -half + 0.5 + k * (L - 1) / 8; put(B, -W / 2 - 0.03, y0 + H / 2, z, 0.06, H - 0.1, 0.12, RIB, 0);
+      if (!open || z < D[0] - 0.2 || z > D[1] + 0.2) put(B, W / 2 + 0.03, y0 + H / 2, z, 0.06, H - 0.1, 0.12, RIB, 0); }   /* ribs */
+    if (!open) put(B, W / 2 + 0.07, y0 + 1.4, 1.0, 0.06, 2.7, 3.2, RIB, 0.1);                        /* a closed sliding door */
+    if (open) { put(B, -W / 2 + 0.1, y0 + 2.2, 4, 0.02, 0.5, 2.4, lc(0xf2c81e), 0); }                 /* a warning plate inside */
+  } else if (kind === 'tank') {
+    const T = r() < 0.5 ? lc(0x1e2226) : lc(0xd8d8d0); put(C, 0, y0 + 1.45, 0, 1.4, L - 1.6, 1.4, T, 0.2, Math.PI / 2, 0, 0);
+    for (const z of [-(L - 1.6) / 2, (L - 1.6) / 2]) put(RailG.ball, 0, y0 + 1.45, z, 1.4, 1.4, 0.5, T, 0.2);
+    put(C, 0, y0 + 2.95, 0, 0.45, 0.3, 0.45, T, 0.1); put(B, 0, y0 + 0.2, 0, W - 0.2, 0.2, L - 1, DARK, 0);
+    put(B, 0, y0 + 1.45, 0, 2.86, 0.3, 0.04, lc(0xe0342a), 0, 0, Math.PI / 2, 0);                   /* a hazard band */
+  } else if (kind === 'flat') {
+    put(B, 0, y0 + 0.1, 0, W, 0.2, L, DARK, 0);
+    for (const z of [-half / 2, half / 2]) { const c = RAIL_CONS[(r() * RAIL_CONS.length) | 0], hgt = r() < 0.3 ? 2.9 : 2.6; put(B, 0, y0 + 0.2 + hgt / 2, z, 2.44, hgt, half - 0.4, c, 0.2);
+      for (let k = 0; k < 9; k++) for (const sd of [-1, 1]) put(B, sd * 1.23, y0 + 0.2 + hgt / 2, z - (half - 0.4) / 2 + 0.5 + k * (half - 1.4) / 8, 0.03, hgt - 0.1, 0.08, c, 0.4);   /* corrugations */
+      put(B, 0, y0 + 0.2 + hgt / 2, z + (half - 0.4) / 2 + 0.01, 2.3, hgt - 0.15, 0.02, c, 0.45); }
   }
   for (const zb of [-RAIL.BOG, RAIL.BOG]) {                                                             /* the bogies: a frame and four wheels */
     put(B, 0, 0.55, zb, 2.3, 0.35, 2.8, DARK, 0);
     for (const dz of [-0.95, 0.95]) for (const sd of [-1, 1]) put(C, sd * RAIL.GAUGE / 2, 0.46, zb + dz, 0.46, 0.14, 0.46, WHL, 0, 0, 0, Math.PI / 2);
   }
-  const m = gb.mesh(MAT.prop, true, false); m.matrixAutoUpdate = true; return m;
+  const m = gb.mesh(MAT.prop, true, false); m.matrixAutoUpdate = true; m.rotation.order = 'YXZ'; return m;
 }
 Rail.build = function () {
   if (Rail.built) return; Rail.built = true;
-  RailG.box = ni(new THREE.BoxGeometry(1, 1, 1)); RailG.cyl = ni(new THREE.CylinderGeometry(1, 1, 1, 14, 1));
+  RailG.box = ni(new THREE.BoxGeometry(1, 1, 1)); RailG.cyl = ni(new THREE.CylinderGeometry(1, 1, 1, 14, 1)); RailG.ball = ni(new THREE.SphereGeometry(1, 14, 8, 0, TAU, 0, Math.PI));
   Rail.plan(); Rail.group = new THREE.Group(); Rail.group.name = 'railway'; scene.add(Rail.group); Rail.buildViaduct();
-  const cars = [[true, 19]]; for (let k = 0; k < 7; k++) cars.push([false, 18]);
-  let off = 0; Rail.train = cars.map(([loco, L]) => { const m = railVehicle(loco, L); Rail.group.add(m); const o = { m, L, off: off + L / 2 }; off += L + 0.6; return o; });
+  const cars = [['loco', 19], ['box', 17], ['tank', 15], ['flat', 18], ['box', 17], ['flat', 18], ['tank', 15], ['box', 17], ['flat', 18], ['box', 17], ['heist', 18]];
+  let off = 0; Rail.train = cars.map(([kind, L], k) => { const m = railVehicle(kind, L, k); Rail.group.add(m); const o = { m, L, kind, off: off + L / 2 }; off += L + 0.8; return o; });
+  Rail.heist = Rail.train[Rail.train.length - 1];
   Rail.s = Rail.L * 0.37; Rail.update(0);
 };
 const _rlA = {}, _rlB = {};
@@ -10938,7 +10976,43 @@ Rail.update = function (dt) {
     const sc = Rail.s - t.off; Rail.at(sc + RAIL.BOG, _rlA); Rail.at(sc - RAIL.BOG, _rlB);
     const dx = _rlA.x - _rlB.x, dz = _rlA.z - _rlB.z, dy = _rlA.y - _rlB.y, d = Math.hypot(dx, dz);
     t.m.position.set((_rlA.x + _rlB.x) / 2, (_rlA.y + _rlB.y) / 2, (_rlA.z + _rlB.z) / 2); t.m.rotation.set(-Math.atan2(dy, d), Math.atan2(dx, dz), 0, 'YXZ');
+    t.yaw = Math.atan2(dx, dz); t.pitch = Math.atan2(dy, d); t.m.updateMatrixWorld();
   }
+};
+/* a point in a vehicle's own frame (x right, y up from the rail, z forward) from world, and back */
+const _rlM = new THREE.Matrix4(), _rlP = new THREE.Vector3();
+Rail.toLocal = function (t, x, y, z, o) { _rlM.copy(t.m.matrixWorld).invert(); _rlP.set(x, y, z).applyMatrix4(_rlM); o.x = _rlP.x; o.y = _rlP.y; o.z = _rlP.z; return o; };
+Rail.toWorld = function (t, x, y, z, o) { _rlP.set(x, y, z).applyMatrix4(t.m.matrixWorld); o.x = _rlP.x; o.y = _rlP.y; o.z = _rlP.z; return o; };
+/* the nearest point of the line (index, distance, which side) */
+Rail.near = function (x, z, o) {
+  o.d = 1e9; o.i = -1; if (!Rail.hash) return o; const P = Rail.pts, cx = Math.floor(x / 50), cz = Math.floor(z / 50); let best = 1e18, bi = -1;
+  for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) { const L = Rail.hash.get((cx + a) * 4096 + cz + b); if (!L) continue; for (const i of L) { const d = (P.x[i] - x) ** 2 + (P.z[i] - z) ** 2; if (d < best) { best = d; bi = i; } } }
+  if (bi < 0) return o; const j = (bi + 1) % P.n, tx = P.x[j] - P.x[bi], tz = P.z[j] - P.z[bi], l = Math.hypot(tx, tz) || 1;
+  o.i = bi; o.d = Math.sqrt(best); o.lat = ((x - P.x[bi]) * tz - (z - P.z[bi]) * tx) / l; o.y = P.y[bi]; o.tx = tx / l; o.tz = tz / l; return o;
+};
+/* the viaduct deck as ground for a car up on it: the top of the deck (and the ballast) within the parapets, for anything already at deck height */
+const _rlN = {};
+Rail.deck = function (x, z, cy, o) {
+  if (!Rail.hash || cy == null) return false; Rail.near(x, z, _rlN); if (_rlN.i < 0 || Math.abs(_rlN.lat) > RAIL.W / 2 - 0.15) return false;
+  const y = _rlN.y + 0.05; if (cy < y - 2.2 || y < o.h) return false; o.h = y; o.mu = 0.9; o.rr = 0.03; o.rough = 0.15; o.road = true; o.water = false; return true;
+};
+/* the train is solid to the player's car: anything that meets a wagon's side is pushed back out and bounces off it (08_heist.js lets one in through the heist wagon's door) */
+const _rlL = {};
+Rail.collide = function (c) {
+  if (!Rail.built) return null;
+  for (const t of Rail.train) {
+    const dx = c.x - t.m.position.x, dz = c.z - t.m.position.z; if (dx * dx + dz * dz > (t.L / 2 + 6) ** 2) continue;
+    Rail.toLocal(t, c.x, c.y + 0.6, c.z, _rlL); const hw = RAIL_WAGON.W / 2 + 1.0, hl = t.L / 2 + 1.2;
+    if (Math.abs(_rlL.x) > hw || Math.abs(_rlL.z) > hl || _rlL.y < -1.0 || _rlL.y > RAIL_WAGON.Y0 + RAIL_WAGON.H + 0.4) continue;
+    if (Heist.inside(t, _rlL)) continue;
+    /* push out of the nearer long side (or the end), and bounce */
+    const ox = hw - Math.abs(_rlL.x), oz = hl - Math.abs(_rlL.z), s = Math.sin(t.yaw), co = Math.cos(t.yaw);
+    let nx, nz, pen; if (ox < oz) { const sd = Math.sign(_rlL.x) || 1; nx = co * sd; nz = -s * sd; pen = ox; } else { const sd = Math.sign(_rlL.z) || 1; nx = s * sd; nz = co * sd; pen = oz; }
+    c.x += nx * pen; c.z += nz * pen; const tvx = s * Rail.v, tvz = co * Rail.v, rv = (c.vx - tvx) * nx + (c.vz - tvz) * nz;
+    if (rv < 0) { c.vx -= nx * rv * 1.35; c.vz -= nz * rv * 1.35; c.crashFlag = Math.max(c.crashFlag || 0, -rv * 0.7); }
+    return t;
+  }
+  return null;
 };
 
 /* ---- js/07_rel.js ---- */
@@ -13828,6 +13902,231 @@ CR.builders.hosp = function () {
       ec.stroke(); et.needsUpdate = true;
     }
   };
+};
+
+/* ---- js/08_heist.js ---- */
+/* ================= GOLD RUSH: steal the golden car off the freight train =================
+   The last wagon of the freight train (07_rail.js) is a boxcar with its side door slid open and its rear doors swung wide, and inside it rides the Aurum
+   Spectre, a one-off gold hypercar. Out in the country, beside the viaduct where it runs lowest, somebody has built a big wooden kicker ramp aimed
+   square at the line.
+     idle      a gold beam marks the start of the run-up (and the map shows it). Drive into it to begin.
+     armed     the train slows for the grade and the HUD counts down to the open door reaching the ramp, next to how long you will take to reach the lip
+               at your speed. Floor it up the ramp at the right moment and fly in through the door. Miss (or bounce off a wagon) and line up again;
+               the train comes round again a few seconds later.
+     aboard    you are in, your car sliding to a stop beside the gold one. F: get out, and take it (that is grand theft auto: three stars).
+     ride      the Aurum faces the open rear doors. Throttle: drive it out of the back onto the viaduct, then get off the line and home.
+     escape    get it into your garage. Do that and it is yours, with a $250,000 payday. Wreck it or get busted and it is gone (you can try again).
+   Your own car stays behind in the wagon and is valet-parked back at your garage, as when you jack a car. */
+const Heist = { phase: 'idle', site: null, ride: null, built: false, group: null, marker: null, eta: 0, you: 0, tries: 0, msgT: 0, wasAir: false, prev: null, left: null, gold: null };
+const HEIST = { LAT: 13, RL: 24, RW: 6.2, RUN: 70, V: 16, VN: 22, REWARD: 250000, ID: 'aurum', GOLD: 0xd8aa30 };
+
+/* the golden car: an Aether X chassis made faster and lighter, all in gold. It only shows in the garage once it is yours */
+(function heistReg() {
+  const B = CAR_BY_ID.hyper; if (!B || CAR_BY_ID[HEIST.ID]) return;
+  const d = { id: HEIST.ID, name: 'Aurum Spectre', cls: 'Gold hypercar', price: 0, paint: 2, dy: B.dy, snd: { f: 1.5, lp: 1.8 }, dial: 440, gold: true, stolen: true, rank: 0,
+    blurb: 'A one-off: the Aether X chassis, lightened, retuned and finished all over in real gold leaf. Taken off a moving freight train. Nobody else on the island has one.',
+    p: Object.assign({}, B.p, { m: 1280, gears: B.p.gears.slice() }), t: Object.assign({}, B.t, { Tmax: 1080, mu: 1.55 }), stats: { spd: 10, acc: 10, hdl: 10, off: 1 },
+    body: Object.assign({}, B.body, { rim: [0.86, 0.66, 0.22], rimStyle: 'five' }) };
+  CARS.push(d); CAR_BY_ID[d.id] = d; const b = d.body; d.top = (b.y0 != null ? b.y0 : 0.36) + b.H + 0.1 + b.C; d.hl = b.L / 2;
+})();
+/* real gold on a car's paint material */
+function heistGild(m) { m.color.copy(lc(HEIST.GOLD)); m.metalness = 0.95; m.roughness = 0.2; if (m.clearcoat != null) { m.clearcoat = 1; m.clearcoatRoughness = 0.08; } m.envMapIntensity = 1.1; }
+
+/* ---------- the site: where the deck runs lowest over flat, open, dry ground with nothing in the way of a run-up ---------- */
+Heist.plan = function () {
+  const P = Rail.pts, n = P.n; let best = null, bc = 1e9;
+  for (let i = 0; i < n; i += 5) {
+    const j = (i + 1) % n, tx = P.x[j] - P.x[i], tz = P.z[j] - P.z[i], l = Math.hypot(tx, tz), rx = tz / l, rz = -tx / l;   /* the right-hand side, where the door is */
+    let ok = true, gmin = 1e9, gmax = -1e9;
+    for (let u = HEIST.LAT - 2; u <= HEIST.LAT + HEIST.RL + HEIST.RUN; u += 6) for (const w of [-6, 0, 6]) {
+      const x = P.x[i] + rx * u + tx / l * w, z = P.z[i] + rz * u + tz / l * w, h = terrainHeight(x, z);
+      if (h < 1.5 || (NR.seg >= 0 && NR.d < NR.halfW + 6) || townAt(x, z, 60) || Rail.dist(x, z) < u - 4) { ok = false; break; }
+      gmin = Math.min(gmin, h); gmax = Math.max(gmax, h);
+    }
+    if (!ok) continue;
+    const g0 = terrainHeight(P.x[i] + rx * HEIST.LAT, P.z[i] + rz * HEIST.LAT), floor = P.y[i] + 0.21 + RAIL_WAGON.Y0 + 0.12, c = (floor - g0 - 10) ** 2 + (gmax - gmin) * 0.8 + Math.max(0, floor - g0 - 12) * 4;
+    if (c < bc) { bc = c; best = { i, tx: tx / l, tz: tz / l, rx, rz, floor, g0 }; }
+  }
+  if (!best) return;
+  const S = Heist.site = best, i = S.i;
+  S.s = i * Rail.dsR; S.cx = P.x[i]; S.cz = P.z[i];
+  /* the ramp: RL long, rising as a curve to a lip about three metres under the wagon floor, its lip HEIST.LAT from the middle of the line */
+  S.lipX = S.cx + S.rx * HEIST.LAT; S.lipZ = S.cz + S.rz * HEIST.LAT; S.bx = S.lipX + S.rx * HEIST.RL; S.bz = S.lipZ + S.rz * HEIST.RL;
+  S.g = terrainHeight(S.bx, S.bz); S.RH = clamp(S.floor - S.g - 3.2, 4.5, 8.5);
+  S.sx = S.bx + S.rx * HEIST.RUN; S.sz = S.bz + S.rz * HEIST.RUN;   /* the start of the run-up */
+  S.yaw = Math.atan2(-S.rx, -S.rz);                                   /* facing the line */
+};
+/* the ramp's surface under (x, z), or -1e9 off it */
+Heist.rampH = function (x, z) {
+  const S = Heist.site; if (!S) return -1e9; const dx = x - S.bx, dz = z - S.bz, u = -(dx * S.rx + dz * S.rz), w = dx * S.rz - dz * S.rx;   /* u: 0 at the foot .. RL at the lip */
+  if (u < 0 || u > HEIST.RL || Math.abs(w) > HEIST.RW / 2) return -1e9; const k = u / HEIST.RL; return S.g + S.RH * k * k;
+};
+/* ground for the player's car: the ramp, and the viaduct deck once up on it */
+Heist.ground = function (x, z, c, o) {
+  if (!Heist.site) return; const h = Heist.rampH(x, z); if (h > o.h) { o.h = h; o.mu = 1.0; o.rr = 0.02; o.rough = 0.05; o.road = true; o.water = false; }
+  Rail.deck(x, z, c.y, o);
+};
+/* no trees on the run-up and the ramp */
+Heist.clearTree = function (x, z) { const S = Heist.site; if (!S) return false; const dx = x - S.cx, dz = z - S.cz, u = dx * S.rx + dz * S.rz, w = dx * S.rz - dz * S.rx; return u > 4 && u < HEIST.LAT + HEIST.RL + HEIST.RUN + 14 && Math.abs(w) < 9; };
+
+/* ---------- the things in the world: the ramp, the gold beam, the gold car in the wagon ---------- */
+Heist.build = function () {
+  const S = Heist.site; if (!S || Heist.built) return; Heist.built = true;
+  const gb = new GB(S.bx, S.bz, false), WOOD = lc(0xa9784a), WOOD2 = lc(0x7a5434), YEL = lc(0xf2c81e), BLK = lc(0x15171c), N = 16, hw = HEIST.RW / 2;
+  const at = (u, w, y) => [S.bx - S.rx * u + S.rz * w, y, S.bz - S.rz * u - S.rx * w, 0, 0];
+  for (let k = 0; k < N; k++) {
+    const u0 = HEIST.RL * k / N, u1 = HEIST.RL * (k + 1) / N, h0 = S.g + S.RH * (u0 / HEIST.RL) ** 2, h1 = S.g + S.RH * (u1 / HEIST.RL) ** 2, c = k % 2 ? WOOD : WOOD2;
+    gb.quadA(at(u0, -hw, h0), at(u1, -hw, h1), at(u1, hw, h1), at(u0, hw, h0), 0, 1, 0, c.r, c.g, c.b);                              /* the deck */
+    for (const sd of [-1, 1]) gb.quadA(at(u0, sd * hw, S.g - 0.5), at(u1, sd * hw, S.g - 0.5), at(u1, sd * hw, h1), at(u0, sd * hw, h0), sd * S.rz, 0, -sd * S.rx, WOOD2.r, WOOD2.g, WOOD2.b);   /* the sides */
+    if (k === N - 1) { gb.quadA(at(u1, -hw, S.g - 0.5), at(u1, hw, S.g - 0.5), at(u1, hw, h1), at(u1, -hw, h1), -S.rx, 0, -S.rz, WOOD2.r, WOOD2.g, WOOD2.b);   /* the back of the lip */
+      for (let q = 0; q < 6; q++) { const w0 = -hw + q * HEIST.RW / 6, w1 = w0 + HEIST.RW / 6, c2 = q % 2 ? YEL : BLK; gb.quadA(at(u1 - 0.6, w0, h1 - 0.24 + 0.01), at(u1, w0, h1 + 0.01), at(u1, w1, h1 + 0.01), at(u1 - 0.6, w1, h1 - 0.24 + 0.01), 0, 1, 0, c2.r, c2.g, c2.b); } }   /* the striped lip */
+  }
+  const m = gb.mesh(MAT.prop, true, true); m.position.set(S.bx, 0, S.bz);
+  Heist.group = new THREE.Group(); Heist.group.name = 'heist'; Heist.group.add(m); scene.add(Heist.group);
+  /* trestles under the lip, so it reads as built, and two lamps that light green when the timing is right */
+  const tg = new GB(S.bx, S.bz, false), box = RailG.box, M4 = new THREE.Matrix4(), Q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, S.yaw, 0)), V = new THREE.Vector3(), Sc = new THREE.Vector3();
+  for (let k = 3; k <= N; k += 3) { const u = HEIST.RL * k / N, h = S.RH * (u / HEIST.RL) ** 2; for (const sd of [-1, 1]) { const p = at(u, sd * (hw - 0.3), 0); M4.compose(V.set(p[0], S.g + h / 2 - 0.2, p[2]), Q, Sc.set(0.25, h + 0.4, 0.25)); tg.geo(box, M4, WOOD2, 0.2); } }
+  const tm = tg.mesh(MAT.prop, true, true); tm.position.set(S.bx, 0, S.bz); Heist.group.add(tm);
+  Heist.lamps = []; for (const sd of [-1, 1]) { const p = at(HEIST.RL - 0.3, sd * (hw + 0.4), 0), l = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 8), new THREE.MeshBasicMaterial({ color: 0xff3020 })); l.position.set(p[0], S.g + S.RH + 0.9, p[2]);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, S.RH + 0.9, 6), new THREE.MeshStandardMaterial({ color: 0x333333 })); pole.position.set(p[0], S.g + (S.RH + 0.9) / 2, p[2]); Heist.group.add(l, pole); Heist.lamps.push(l); }
+  /* the gold beam at the start of the run-up */
+  const b = Heist.marker = makeBeam('#ffd23a', 6, 60); b.position.set(S.sx, terrainHeight(S.sx, S.sz) + 30, S.sz); Heist.group.add(b);
+  /* the Aurum in the heist wagon, facing its open rear doors */
+  Heist.placeGold();
+};
+Heist.placeGold = function () {
+  const t = Rail.heist; if (!t) return; if (Heist.gold) { t.m.remove(Heist.gold); disposeCar(Heist.gold); Heist.gold = null; }
+  if (save.owned[HEIST.ID] || (save.car === HEIST.ID && Heist.phase !== 'idle')) return;
+  const g = Heist.gold = buildCarModel(CAR_BY_ID[HEIST.ID], HEIST.GOLD, { static: true });
+  g.traverse((o) => { if (o.isMesh && o.material && o.material.isMeshPhysicalMaterial) heistGild(o.material); });
+  g.position.set(0, RAIL_WAGON.Y0 + 0.12, -4.0); g.rotation.y = Math.PI; t.m.add(g);
+};
+
+/* ---------- the run ---------- */
+/* seconds until the middle of the open door passes the ramp's line (forward along the line, wrapping round the loop) */
+Heist.doorEta = function () {
+  const S = Heist.site, t = Rail.heist; let d = S.s - (Rail.s - t.off + (RAIL_WAGON.DOOR[0] + RAIL_WAGON.DOOR[1]) / 2); d = ((d % Rail.L) + Rail.L) % Rail.L; if (d > Rail.L - 60) d -= Rail.L; return d / Math.max(1, Rail.v);
+};
+/* bring the train round: the open door arrives in `sec` seconds (only while every vehicle is well out of sight of the player) */
+Heist.cue = function (sec) {
+  const S = Heist.site, t = Rail.heist, want = S.s - (RAIL_WAGON.DOOR[0] + RAIL_WAGON.DOOR[1]) / 2 + t.off - sec * Rail.v, far = (s) => { const q = {}; for (const v of Rail.train) { Rail.at(s - v.off, q); if (Math.hypot(q.x - Pl.x, q.z - Pl.z) < 380) return false; } return true; };
+  if (far(Rail.s) && far(want)) { Rail.s = ((want % Rail.L) + Rail.L) % Rail.L; Rail.update(0); return true; } return false;
+};
+Heist.start = function () {
+  Heist.phase = 'armed'; Heist.tries = 0; Rail.v = HEIST.V; Heist.cue(32); Snd.beep(700, 0.2);
+  UI.banner('GOLD RUSH', 'The freight is coming · hit the ramp and fly in through the open door');
+  UI.toast('Watch the timer: when DOOR and YOU match, you will meet it', 'info');
+};
+Heist.stop = function () { Heist.phase = 'idle'; Rail.v = HEIST.VN; Heist.ride = null; if (Target.label === 'Your garage') Target.on = false; };
+Heist.miss = function (why) {
+  if (Heist.phase !== 'armed') return; Heist.tries++; Heist.msgT = 3; Snd.fail(); UI.toast(why + ' · line up for another go', 'bad');
+};
+/* is the car (its middle, in the wagon's own frame) in through the open door, or inside? */
+Heist.inside = function (t, L) {
+  if (t !== Rail.heist || Heist.phase !== 'armed') return false; const D = RAIL_WAGON.DOOR, W = RAIL_WAGON.W, y = L.y - 0.6 - RAIL_WAGON.Y0;
+  return L.z > D[0] - 0.6 && L.z < D[1] + 0.6 && L.x < W / 2 + 1.0 && L.x > -W / 2 && y > -0.6 && y < RAIL_WAGON.DOORH;
+};
+const _hsL = {}, _hsW = {};
+Heist.update = function (dt) {
+  const S = Heist.site; if (!S || !Heist.built || Rally.on || Derby.on || Drag.on) return;
+  const c = car, ph = Heist.phase, near = Math.hypot(Pl.x - S.sx, Pl.z - S.sz), t = Rail.heist;
+  Heist.marker.visible = ph === 'idle' && !save.owned[HEIST.ID]; Heist.msgT -= dt;
+  if (ph === 'idle') { if (!save.owned[HEIST.ID] && !Foot.on && !Fly.on && !Boat.on && !Mi && !Race.on && near < 9 && c.wrecked <= 0 && App.mode === 'play') Heist.start(); return; }
+  if (ph === 'armed') {
+    const dl = Math.hypot(Pl.x - S.cx, Pl.z - S.cz); if (dl > 420 || Foot.on || c.wrecked > 0) { Heist.stop(); UI.toast('Gold Rush called off', 'info'); return; }
+    Heist.eta = Heist.doorEta(); if (Heist.eta < -1.5 || Heist.eta > Rail.L / Rail.v - 30) Heist.cue(22);   /* it went by: bring it round again */
+    /* how long you will take to the lip at this speed, plus the flight to the door */
+    const dx = S.lipX - c.x, dz = S.lipZ - c.z, along = -(dx * S.rx + dz * S.rz) <= 0 ? Math.hypot(dx, dz) : 0, sp = Math.max(2, Math.hypot(c.vx, c.vz)); Heist.you = along / sp + HEIST.LAT / sp * 0.9;
+    const good = Math.abs(Heist.you - Heist.eta) < 0.3 && Heist.eta < 8; for (const l of Heist.lamps) l.material.color.setHex(good ? 0x30ff50 : Heist.eta < 10 ? 0xffb020 : 0xff3020);
+    /* in through the door? */
+    Rail.toLocal(t, c.x, c.y + 0.6, c.z, _hsL);
+    if (Heist.inside(t, _hsL) && _hsL.x < RAIL_WAGON.W / 2 - 0.4) { Heist.catch(_hsL); return; }
+    /* a miss: past the line, or down on the ground after the jump */
+    if (Heist.rampH(c.x, c.z) > -1e8) Heist.rampT = App.time;
+    if (c.air) Heist.wasAir = App.time - (Heist.rampT || -9) < 3; else if (Heist.wasAir) { Heist.wasAir = false; if (Heist.rampH(c.x, c.z) < -1e8) Heist.miss(Rail.deck(c.x, c.z, c.y, { h: -1e9 }) ? 'Landed on the tracks' : 'Missed the door'); }
+    return;
+  }
+  if (ph === 'escape') {
+    if (c.wrecked > 0 || save.car !== HEIST.ID) { Heist.fail('The Aurum was wrecked'); return; }
+    if (Police.phase === 'busted') { Heist.fail('Busted with the Aurum'); return; }
+    Target.on = true; Target.x = GAR.ox; Target.z = GAR.oz - 6; Target.label = 'Your garage';
+    if (GAR.inside) Heist.win();
+  }
+};
+/* in through the door: from here the wagon carries the car (no physics until it drives out) */
+Heist.catch = function (L) {
+  const c = car, t = Rail.heist; Heist.phase = 'aboard'; Heist.prev = save.car;
+  const ly = c.yaw - t.yaw; Heist.ride = { t: 0, x0: L.x, z0: clamp(L.z, 0.6, 6.4), y0: L.y - 0.6, a0: Math.atan2(Math.sin(ly), Math.cos(ly)), x: 0, z: clamp(L.z, 1.2, 5.8), a: 0, v: 0 };
+  c.vx = c.vz = 0; Cam.shake = 1.6; Snd.crash(9); App.dmg = Math.min(1, App.dmg + 0.25); c.health = Math.max(20, c.health - 6);
+  UI.banner('YOU’RE IN!', 'Get out and take the Aurum Spectre · F'); Snd.win();
+};
+/* every step while the wagon has the car: ease to a stop where it landed, then sit there; once the Aurum is yours, roll it out of the back on the throttle */
+Heist.rideStep = function (dt) {
+  const R = Heist.ride, c = car, t = Rail.heist; R.t += dt; const k = Math.min(1, R.t / 0.7), e = k * k * (3 - 2 * k);
+  let lx = R.x0 + (R.x - R.x0) * e, lz = R.z0 + (R.z - R.z0) * e, ly = R.y0 * (1 - e) + RAIL_WAGON.Y0 + 0.12 * e, la = R.a0 + angDiff(R.a0, R.a) * e;
+  if (Heist.phase === 'ride') {
+    R.v = Math.max(0, Math.min(9, R.v + (c.thr > 0.1 ? 6 * c.thr : -4) * dt)); R.z -= R.v * dt; lz = R.z; lx = 0; la = Math.PI; ly = RAIL_WAGON.Y0 + 0.12;
+    if (R.z < -t.L / 2 - 2.6) {   /* out of the back: the car is its own again, carried along at the train's speed less what it drove out at */
+      Rail.toWorld(t, 0, RAIL_WAGON.Y0 + 0.12, R.z, _hsW); const s = Math.sin(t.yaw), co = Math.cos(t.yaw), vf = Rail.v - R.v;
+      c.x = _hsW.x; c.z = _hsW.z; c.y = _hsW.y; c.yaw = t.yaw + Math.PI; c.vx = s * vf; c.vz = co * vf; c.vy = -0.5; c.w = 0; c.speed = -vf; c.air = true;
+      Heist.ride = null; Heist.phase = 'escape'; UI.banner('GET IT HOME', 'Lose the police and drive the Aurum into your garage'); return;
+    }
+  }
+  Rail.toWorld(t, lx, ly, lz, _hsW); const s = Math.sin(t.yaw), co = Math.cos(t.yaw);
+  c.x = _hsW.x; c.y = _hsW.y; c.z = _hsW.z; c.yaw = t.yaw + la; c.vx = s * Rail.v; c.vz = co * Rail.v; c.vy = 0; c.w = 0; c.speed = 0; c.air = false; c.airCd = 0.3;
+  if (c.wh) for (let i = 0; i < 4; i++) c.wh[i] = c.y;
+  if (c.surf) { c.surf.water = false; c.surf.road = true; }
+};
+/* F in the wagon: out of your car and into the gold one */
+Heist.key = function (code) {
+  if (Heist.phase === 'aboard' || Heist.phase === 'ride') { if (code === 'KeyF' && Heist.phase === 'aboard' && Heist.ride.t > 0.7) Heist.take(); return /^(KeyF|KeyR|KeyE|Enter)$/.test(code); }
+  return false;
+};
+Heist.take = function () {
+  const t = Rail.heist, prev = save.car, R = Heist.ride;
+  /* your own car stays parked in the wagon (it is valet-parked back at the garage) */
+  const left = Heist.left = buildCarModel(CAR_BY_ID[prev], curColor(prev), { static: true }); left.position.set(R.x, RAIL_WAGON.Y0 + 0.12, R.z); left.rotation.y = R.a; t.m.add(left);
+  if (Heist.gold) { t.m.remove(Heist.gold); disposeCar(Heist.gold); Heist.gold = null; }
+  save.heist = { prev }; applyCar(HEIST.ID, true); car.health = 100; car.nitro = tune.nitroMax;
+  R.x0 = R.x = 0; R.z0 = R.z = -4.0; R.a0 = R.a = Math.PI; R.y0 = RAIL_WAGON.Y0 + 0.12; R.t = 1; R.v = 0;
+  Heist.phase = 'ride'; Snd.door(); Wanted.crime('Grand theft auto', 3); writeSave();
+  UI.banner('GRAND THEFT AURUM', 'Throttle to drive it out of the back of the wagon');
+};
+Heist.win = function () {
+  const prev = (save.heist && save.heist.prev) || 'rook'; save.owned[HEIST.ID] = true; save.money += HEIST.REWARD; save.heist = { done: 1, prev }; GAR.dirty = true; Home.refresh(); writeSave();
+  Heist.clearLeft(); Heist.stop(); Target.on = false; Snd.win(); Cam.shake = 0.6;
+  UI.banner('THE AURUM IS YOURS', money(HEIST.REWARD) + ' · the Aurum Spectre is in your garage'); UI.toast('Gold Rush complete · +' + money(HEIST.REWARD), 'good');
+};
+Heist.fail = function (why) {
+  const prev = (save.heist && save.heist.prev) || 'rook'; Heist.clearLeft(); Heist.stop(); Target.on = false; save.heist = { prev: null };
+  if (save.car === HEIST.ID) { applyCar(save.owned[prev] ? prev : 'rook', true); if (car.wrecked <= 0) { const slot = save.gar.slots[save.car]; if (slot != null) { const p = Home.bayWorld(slot, CUR); spawnAt(p.x, p.z, p.yaw); } } }
+  writeSave(); Heist.placeGold(); UI.toast(why + ' · the gold car is gone · Gold Rush can be tried again', 'bad');
+};
+Heist.clearLeft = function () { if (Heist.left && Rail.heist) { Rail.heist.m.remove(Heist.left); disposeCar(Heist.left); } Heist.left = null; };
+/* loading a save that stopped in the middle of the escape: back to your own car */
+Heist.setup = function () {
+  Heist.plan(); if (!Heist.site) return; Heist.build();
+  if (save.car === HEIST.ID && !save.owned[HEIST.ID]) { const prev = (save.heist && save.heist.prev) || 'rook'; save.car = save.owned[prev] ? prev : 'rook'; save.heist = { prev: null }; }
+};
+/* the HUD line while it runs */
+Heist.prompt = function (pr) {
+  const ph = Heist.phase; if (ph === 'idle') return false; let h;
+  if (ph === 'armed') { const d = Heist.eta, y = Heist.you, good = Math.abs(y - d) < 0.3 && d < 8; h = '<em>GOLD RUSH</em> door in ' + (d > 0 ? d.toFixed(1) + ' s' : 'now') + ' · you ' + (y < 60 ? y.toFixed(1) + ' s' : '—') + (good ? ' · <b style="color:#4f6">GO!</b>' : '') + (Heist.msgT > 0 ? ' · missed, again' : ''); }
+  else if (ph === 'aboard') h = TouchIn.on ? '<em>CAR</em> take the Aurum Spectre' : '<em>F</em> Get out and take the Aurum Spectre';
+  else if (ph === 'ride') h = '<em>THROTTLE</em> drive the Aurum out of the back of the wagon';
+  else h = '<em>GOLD RUSH</em> get the Aurum into your garage · ' + Math.round(Math.hypot(GAR.ox - Pl.x, GAR.oz - Pl.z)) + ' m';
+  if (pr._h !== h) { pr._h = h; pr.innerHTML = h; } pr.hidden = false; return true;
+};
+/* the map: the railway, and the gold marker */
+Heist.drawMini = function (g) {
+  if (Rail.pts) { const P = Rail.pts, p = new Path2D(); p.moveTo(P.x[0], P.z[0]); for (let i = 8; i < P.n; i += 8) p.lineTo(P.x[i], P.z[i]); p.closePath(); g.strokeStyle = 'rgba(40,30,24,0.9)'; g.lineWidth = 9; g.stroke(p); g.setLineDash([14, 10]); g.strokeStyle = '#d8c8a8'; g.lineWidth = 4; g.stroke(p); g.setLineDash([]); }
+  const S = Heist.site; if (!S || save.owned[HEIST.ID]) return; g.fillStyle = '#ffd23a'; g.beginPath(); g.arc(S.sx, S.sz, 26, 0, TAU); g.fill();
+};
+Heist.drawFull = function (g, k) {
+  if (Rail.pts) { const P = Rail.pts; g.save(); g.beginPath(); for (let i = 0; i <= P.n; i += 8) { const s = FM.toScreen(P.x[i % P.n], P.z[i % P.n]); if (i) g.lineTo(s[0], s[1]); else g.moveTo(s[0], s[1]); } g.closePath(); g.strokeStyle = 'rgba(30,22,18,0.85)'; g.lineWidth = 4 * k; g.stroke(); g.setLineDash([6 * k, 5 * k]); g.strokeStyle = '#e0d2b4'; g.lineWidth = 2 * k; g.stroke(); g.setLineDash([]); g.restore(); }
+  const S = Heist.site; if (!S || save.owned[HEIST.ID]) return; const s = FM.toScreen(S.sx, S.sz), r = 7 * k;
+  g.save(); g.fillStyle = '#ffd23a'; g.strokeStyle = '#06090e'; g.lineWidth = 2.5 * k; g.beginPath(); g.arc(s[0], s[1], r, 0, TAU); g.fill(); g.stroke();
+  g.font = '700 ' + Math.round(13 * k) + 'px Rajdhani, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.strokeStyle = 'rgba(0,0,0,0.85)'; g.lineWidth = 3.5 * k; g.strokeText('GOLD RUSH', s[0], s[1] - 16 * k); g.fillStyle = '#ffd23a'; g.fillText('GOLD RUSH', s[0], s[1] - 16 * k); g.restore();
 };
 
 /* ---- js/08_mech.js ---- */
@@ -20151,7 +20450,7 @@ WorldMap.drawMini = function (cv) {
   g.strokeStyle = 'rgba(8,12,18,0.9)'; g.lineWidth = 17; g.stroke(hw); g.lineWidth = 12; g.stroke(sr);
   g.strokeStyle = '#d9dee6'; g.lineWidth = 11; g.stroke(hw); g.strokeStyle = '#a9b2bf'; g.lineWidth = 7.5; g.stroke(sr);
   if (GAR.ok) { g.fillStyle = 'rgba(255,176,46,0.9)'; g.fillRect(GAR.ox - 21, GAR.oz - 31, 42, 32); g.fillStyle = '#06090e'; g.fillRect(GAR.ox - 4, GAR.oz - 3, 8, 3); }
-  Shop.drawMini(g); Ven.drawMini(g); Air.drawMini(g); Wk.drawMini(g); Dock.drawMini(g); Track.drawMini(g); Col.drawMini(g);
+  Heist.drawMini(g); Shop.drawMini(g); Ven.drawMini(g); Air.drawMini(g); Wk.drawMini(g); Dock.drawMini(g); Track.drawMini(g); Col.drawMini(g);
   /* route */
   if (Target.on) {
     g.strokeStyle = '#33d4ff'; g.lineWidth = 8; g.setLineDash([]); g.beginPath();
@@ -20219,7 +20518,7 @@ WorldMap.drawFull = function (cv) {
     const s = FM.toScreen(T.cx, T.cz), hs = T.half * FM.ppm; g.fillStyle = 'rgba(255,176,46,0.28)'; g.strokeStyle = '#ffb02e'; g.lineWidth = 1.5 * k; g.fillRect(s[0] - hs, s[1] - hs, hs * 2, hs * 2); g.strokeRect(s[0] - hs, s[1] - hs, hs * 2, hs * 2);
     g.fillStyle = '#fff'; g.strokeStyle = 'rgba(0,0,0,0.85)'; g.lineWidth = 3.5 * k; g.strokeText(T.name.toUpperCase(), s[0], s[1] - hs - 10 * k); g.fillText(T.name.toUpperCase(), s[0], s[1] - hs - 10 * k);
   }
-  Air.drawFull(g, k); Track.drawFull(g, k); Ven.drawFull(g, k); Col.drawFull(g, k); Dock.drawFull(g, k); Boat.drawFullIcons(g, k); VM.full(g, k);
+  Heist.drawFull(g, k); Air.drawFull(g, k); Track.drawFull(g, k); Ven.drawFull(g, k); Col.drawFull(g, k); Dock.drawFull(g, k); Boat.drawFullIcons(g, k); VM.full(g, k);
   if (GAR.ok) { const s = FM.toScreen(GAR.ox, GAR.oz - 15), u = k * 1.1; g.fillStyle = '#ffb02e'; g.strokeStyle = '#06090e'; g.lineWidth = 2.5 * k; g.beginPath(); g.moveTo(s[0] - 9 * u, s[1] + 7 * u); g.lineTo(s[0] - 9 * u, s[1] - 2 * u); g.lineTo(s[0], s[1] - 10 * u); g.lineTo(s[0] + 9 * u, s[1] - 2 * u); g.lineTo(s[0] + 9 * u, s[1] + 7 * u); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#06090e'; g.fillRect(s[0] - 4 * u, s[1] + 0.5 * u, 8 * u, 6.5 * u); if (FM.zoom > 1.8) { g.fillStyle = '#fff'; g.strokeStyle = 'rgba(0,0,0,0.85)'; g.lineWidth = 3 * k; g.strokeText('HOME', s[0], s[1] + 19 * u); g.fillText('HOME', s[0], s[1] + 19 * u); } } Shop.drawMap(g, k);
   if (GPS.pts && Target.on) { g.strokeStyle = '#33d4ff'; g.lineWidth = 3 * k; g.beginPath(); GPS.pts.forEach((p, i) => { const s = FM.toScreen(p.x, p.z); if (i) g.lineTo(s[0], s[1]); else g.moveTo(s[0], s[1]); }); g.stroke(); }
   for (const mk of MView.markers) {
@@ -22046,6 +22345,7 @@ UI.update = function (dt) {
   const near = !Mi && !Foot.on && !Fly.on && !Boat.on && App.mode === 'play' ? Mission.nearby : null;
   const pr = E.prompt;
   if (Rally.on || Drag.on || Derby.on) { if (!pr.hidden) pr.hidden = true; }
+  else if (!Foot.on && !Fly.on && !Boat.on && Heist.prompt(pr)) { /* Gold Rush */ }
   else if (Fly.on) { Fly.prompt(pr); Fly.hud(dt); }
   else if (Boat.on) { Boat.prompt(pr); Boat.hud(dt); }
   else if (Foot.on) UI.footPrompt();
@@ -22309,6 +22609,7 @@ function onKey(code) {
   if (Derby.on && /^(KeyE|Enter|KeyF|KeyG|KeyM|KeyQ|KeyH|KeyR)$/.test(code)) return;
   if (Drag.on) { if (code === 'KeyR') { Drag.again(); return; } if (/^(KeyE|Enter|KeyF|KeyG|KeyM|KeyQ|KeyH)$/.test(code)) return; }
   if (Rally.on) { if (code === 'KeyR') { Rally.reset(); return; } if (/^(KeyE|Enter|KeyF|KeyG|KeyM|KeyQ|KeyH)$/.test(code)) return; }
+  if (Heist.key(code)) return;
   switch (code) {
     case 'Escape': case 'KeyP': UI.openMenu('missions'); break;
     case 'KeyM': UI.openMenu('map'); break;
@@ -25466,7 +25767,8 @@ function step(dt) {
   const n = Math.min(10, Math.ceil(dt / (1 / 120))), h = dt / n;
   c.crashFlag = 0; c.landImpact = 0; Police.ram = false;
   if (Bots.on) Bots.update(dt, Race.refProg());
-  for (let i = 0; i < n; i++) { stepCar(h); if (Rally.on) { Rally.sub(c, h); continue; } if (Drag.on) { Drag.sub(c, h); continue; } if (Derby.on) { Derby.sub(c, h); continue; } if (Bots.on) Bots.step(h); Crash.run(c); collideDyn(c); }
+  if (Heist.ride) Heist.rideStep(dt);   /* in the heist wagon: the train carries the car */
+  else for (let i = 0; i < n; i++) { stepCar(h); if (Rally.on) { Rally.sub(c, h); continue; } if (Drag.on) { Drag.sub(c, h); continue; } if (Derby.on) { Derby.sub(c, h); continue; } if (Bots.on) Bots.step(h); Crash.run(c); collideDyn(c); if (Rail.built && !Rally.on && !Drag.on && !Derby.on) Rail.collide(c); }
   c.kmh = Math.abs(c.speed) * 3.6;
   /* impacts */
   const v = c.crashFlag;
@@ -25507,7 +25809,7 @@ function step(dt) {
   if (Drag.on) { Drag.update(dt); carFx(dt); return; }
   if (Derby.on) { Derby.update(dt); carFx(dt); return; }   /* and the derby bowl */   /* so is the drag strip */   /* the stage is its own little world: no traffic, people, police or missions */
   /* world */
-  if (!(Fly.on && Fly.agl > 25)) { updateTraffic(dt); updatePeds(dt); } Police.update(dt); if (Foot.on) Foot.scan(); Fly.scan(); Boat.scan(dt); if (!Rally.on && !Derby.on && !Drag.on) Rail.update(dt); Talk.tick(dt); Rel.tick(dt); Home.tick(dt); Shop.tick(); Wk.tick(); Ven.tick(); Race.tick(); Race.update(dt); Jack.tick(dt); Fare.tick(dt); Court.tick(dt); updateMission(dt); VM.update(dt); updateGPS(dt);
+  if (!(Fly.on && Fly.agl > 25)) { updateTraffic(dt); updatePeds(dt); } Police.update(dt); if (Foot.on) Foot.scan(); Fly.scan(); Boat.scan(dt); if (!Rally.on && !Derby.on && !Drag.on) { Rail.update(dt); Heist.update(dt); } Talk.tick(dt); Rel.tick(dt); Home.tick(dt); Shop.tick(); Wk.tick(); Ven.tick(); Race.tick(); Race.update(dt); Jack.tick(dt); Fare.tick(dt); Court.tick(dt); updateMission(dt); VM.update(dt); updateGPS(dt);
   if (Waypoint.on && !Mi && Math.hypot(Waypoint.x - Pl.x, Waypoint.z - Pl.z) < 28) { Waypoint.on = false; GPS.t = 0; UI.toast('Destination reached', 'good'); }
   carFx(dt);
 }
@@ -25585,7 +25887,7 @@ async function boot() {
     UI.progress(0.15, 'Starting graphics'); await tick();
     Q = QUAL[save.set.quality] || QUAL.high;
     initRenderer(E.gl); initMaterials(); makeCarMats(); initTreeSources(); initSky(); initLights(); initEnv(); initCarMats(); Env.reg(MAT.paintPlayer); Env.refresh(); initMirror(); initParticles();
-    scene.add(Chunks.group); buildFarWorld(); scene.add(Far.group); initMarkers(); Shop.initMarkers(); Ven.initMarkers(); Air.build(); Wk.initMarkers(); Dock.build(); Track.build(); Rail.build(); Fly.init(); Boat.init(); VM.init(); buildPlayer(); Home.build(); Home.apply(); Home.refresh();
+    scene.add(Chunks.group); buildFarWorld(); scene.add(Far.group); initMarkers(); Shop.initMarkers(); Ven.initMarkers(); Air.build(); Wk.initMarkers(); Dock.build(); Track.build(); Rail.build(); Heist.setup(); Fly.init(); Boat.init(); VM.init(); buildPlayer(); Home.build(); Home.apply(); Home.refresh();
     applyQuality(); window.addEventListener('resize', () => { resizeRenderer(); });
     UI.progress(0.25, 'Finding the start line'); await tick();
     const T = towns[0]; findNearestRoadPoint(T.cx, T.cz, _np2);
@@ -25607,7 +25909,7 @@ async function boot() {
     console.error(err); E.loadmsg.textContent = 'Could not start the 3D view: ' + (err && err.message ? err.message : err); window.__bootError = String(err && err.stack || err);
   }
 }
-window.__game = { get scene() { return scene; }, Rail, Beach, terrainHeight, NR, Derby, DD, applyCar, buildCarModel, CAR_BY_ID, Env, get renderer() { return renderer; }, writePeds, Cam, Human, HU, Peds, Foot, Setup, TU, TU_PRESETS, CARS, CARP, tune, Drag, DG, DG_TIERS, Rally, RR, RY, RY_STAGES, RYG, RW, RY_FEATS, WK, Wk, WkF, WKSim, WKG, WKS, WkE, qfromAxes3, Dmg, Mech, RACE_DIFF, Wreck, Jack, JACK_MODELS, Race, Bots, Crash, newCarState, Track, TRK, Col, COLK, Ven, VDEF, CDEF, venSave, VM, VMD, VMK, towns, roads, Dock, MARINA, Boat, Boats, BSPEC, HB, solidHit, TREE, Air, AIR, Fly, Planes, PSPEC, Rel, REL_ROSTER, Shop, COS, Cosm, Biome, Weather, REG, Bust, CR, Fight, Police, Wanted, WANT, footBlockedAt, findNearestRoadPoint, Tow, GAR, Home, GP, Foot, Talk, Fare, Pl, pedHit, getMoney: () => save.money, get save() { return save; }, getLaw: () => save.law, Court, CR, Peds, pedSpawn, Dyn, abortMission, stepSim: step, frame, Env, Wheels, updateWheels, updateCamera, groundAt, buildCarModel, carSpec, TRAFFIC_DEFS, secAt, disposeCar, THREE_: THREE, TREE, GB, addTree, addGrass, terrainHeight, fbm, noise2, sstep, Dev, devReset, CARS, CAR_BY_ID, applyCar, stepCar, CARP, roads, loadAround, carThumb, car, App, UI, Chunks, Post, Cam, Keys, missions, towns, spawnAt, get Mi() { return Mi; }, startMission, applyQuality, get renderer() { return renderer; }, get scene() { return scene; }, get camera() { return camera; }, Snd, WorldMap, MView, Mirror, MAT, Cockpit, Q: () => Q, hasPost: () => hasPost, key(code, down) { Keys[code] = down; if (down) onKey(code); }, tune };
+window.__game = { get scene() { return scene; }, Rail, Beach, Heist, Wanted, GAR, terrainHeight, NR, Derby, DD, applyCar, buildCarModel, CAR_BY_ID, Env, get renderer() { return renderer; }, writePeds, Cam, Human, HU, Peds, Foot, Setup, TU, TU_PRESETS, CARS, CARP, tune, Drag, DG, DG_TIERS, Rally, RR, RY, RY_STAGES, RYG, RW, RY_FEATS, WK, Wk, WkF, WKSim, WKG, WKS, WkE, qfromAxes3, Dmg, Mech, RACE_DIFF, Wreck, Jack, JACK_MODELS, Race, Bots, Crash, newCarState, Track, TRK, Col, COLK, Ven, VDEF, CDEF, venSave, VM, VMD, VMK, towns, roads, Dock, MARINA, Boat, Boats, BSPEC, HB, solidHit, TREE, Air, AIR, Fly, Planes, PSPEC, Rel, REL_ROSTER, Shop, COS, Cosm, Biome, Weather, REG, Bust, CR, Fight, Police, Wanted, WANT, footBlockedAt, findNearestRoadPoint, Tow, GAR, Home, GP, Foot, Talk, Fare, Pl, pedHit, getMoney: () => save.money, get save() { return save; }, getLaw: () => save.law, Court, CR, Peds, pedSpawn, Dyn, abortMission, stepSim: step, frame, Env, Wheels, updateWheels, updateCamera, groundAt, buildCarModel, carSpec, TRAFFIC_DEFS, secAt, disposeCar, THREE_: THREE, TREE, GB, addTree, addGrass, terrainHeight, fbm, noise2, sstep, Dev, devReset, CARS, CAR_BY_ID, applyCar, stepCar, CARP, roads, loadAround, carThumb, car, App, UI, Chunks, Post, Cam, Keys, missions, towns, spawnAt, get Mi() { return Mi; }, startMission, applyQuality, get renderer() { return renderer; }, get scene() { return scene; }, get camera() { return camera; }, Snd, WorldMap, MView, Mirror, MAT, Cockpit, Q: () => Q, hasPost: () => hasPost, key(code, down) { Keys[code] = down; if (down) onKey(code); }, tune };
 boot();
 
 })();

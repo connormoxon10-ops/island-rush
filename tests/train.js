@@ -1,6 +1,6 @@
-/* The island railway: one closed loop round the island on a viaduct, and a full-size train running round it.
+/* The island railway: one closed loop round the island on a viaduct, and a full-size freight train running round it.
    Checks the line (a closed loop of sensible length that goes all the way round, clear of the towns, high enough over the ground and every road for traffic
-   to pass under, never steeper than its grade, piers never standing in a road), the train (a locomotive and seven coaches, each several car-lengths
+   to pass under, never steeper than its grade, piers never standing in a road), the train (a locomotive and ten wagons, each several car-lengths
    long, coupled nose to tail, every vehicle sitting on the rails), that it really runs round, and that a car driven at a pier is stopped by it.
    Saves screenshots of the train passing.   usage: node tests/train.js   (needs dist/test.html: bash build.sh) ; env OUT=dir */
 const { chromium } = require('playwright'); const path = require('path'); const fs = require('fs');
@@ -42,9 +42,9 @@ const OUT = process.env.OUT || __dirname;
   ok(r.minClr > 5, 'the underside of the deck is at least ' + r.minClr.toFixed(1) + ' m over the ground or the sea everywhere, so traffic passes under');
   ok(r.maxGrade < 0.045, 'no steeper than ' + (r.maxGrade * 100).toFixed(1) + ' %');
   ok(r.onRoad === 0, 'no pier stands in a road (' + r.onRoad + ')');
-  ok(r.cars === 8, 'a locomotive and seven coaches (' + r.cars + ' vehicles)');
-  ok(r.sizes.every((s) => s[2] > 17 && s[2] < 21 && s[0] > 2.8 && s[0] < 3.6 && s[1] > 4 && s[1] < 5), 'every vehicle full size: ' + r.sizes.map((s) => s.join('x')).join(', ') + ' m');
-  ok(r.sizes[1][2] / r.carL > 3.5, 'a coach is ' + (r.sizes[1][2] / r.carL).toFixed(1) + ' car-lengths long (car ' + r.carL.toFixed(1) + ' m)');
+  ok(r.cars === 11, 'a freight train: a locomotive and ten wagons (' + r.cars + ' vehicles)');
+  ok(r.sizes.every((s, i) => s[2] > 14.5 && s[2] < 20 && s[0] > 2.6 && s[0] < (i === r.sizes.length - 1 ? 5.6 : 3.6) && s[1] > 3.9 && s[1] < 4.8), 'every vehicle full size: ' + r.sizes.map((s) => s.join('x')).join(', ') + ' m');
+  ok(r.sizes[1][2] / r.carL > 3.2, 'a boxcar is ' + (r.sizes[1][2] / r.carL).toFixed(1) + ' car-lengths long (car ' + r.carL.toFixed(1) + ' m)');
   ok(r.gaps.every((gp) => gp > 0.3 && gp < 1.2), 'coupled nose to tail (gaps ' + r.gaps.map((x) => x.toFixed(1)).join(' ') + ' m)');
   ok(r.moved > 150 && Math.abs(r.ds - r.v * 10) < 5, 'it runs: ' + r.ds.toFixed(0) + ' m along the line in 10 s (' + (r.v * 3.6).toFixed(0) + ' km/h)');
   ok(r.off < 0.3, 'every vehicle sits on the rails (worst ' + r.off.toFixed(2) + ' m off)');

@@ -104,40 +104,74 @@ Rail.buildViaduct = function () {
 const _railM = new THREE.Matrix4(), _railV = new THREE.Vector3(), _railQ = new THREE.Quaternion(), _railE = new THREE.Euler(0, 0, 0, 'YXZ'), _railS = new THREE.Vector3();
 const RailG = {};
 
-/* ---------- the train ---------- */
-/* one vehicle, built along +z with its middle at the origin and the top of the rail at y = 0. loco: the nose with the cab is at +z */
-function railVehicle(loco, L) {
+/* ---------- the train: a freight train ----------
+   A red-and-yellow diesel and ten wagons: boxcars, tank cars and flat cars with shipping containers, and at the very back the heist wagon (08_heist.js):
+   a boxcar with its right-hand side door slid open over most of its length and its rear end doors open, with the golden car parked inside. */
+const RAIL_WAGON = { W: 3.0, Y0: 1.2, H: 3.0, DOOR: [-1.0, 7.5], DOORH: 2.7 };   /* the heist wagon's open side door spans local z -1..7.5, up to 2.7 m over its floor */
+const RAIL_CONS = [0x1f5fa8, 0xc8302a, 0x2a8a4a, 0xe08a1a, 0x6a6e74, 0x1a7f8a, 0x8a2a5a, 0xd8c040].map(lc);
+/* one vehicle, built along +z with its middle at the origin and the top of the rail at y = 0. kind: loco (nose at +z), box, tank, flat, heist */
+function railVehicle(kind, L, seed) {
   const gb = new GB(0, 0, false), B = RailG.box, C = RailG.cyl, put = (g, x, y, z, sx, sy, sz, col, sh, rx, ry, rz) => { _railM.compose(_railV.set(x, y, z), _railQ.setFromEuler(_railE.set(rx || 0, ry || 0, rz || 0)), _railS.set(sx, sy, sz)); gb.geo(g, _railM, col, sh || 0); };
-  const BODY = loco ? lc(0xc8302a) : lc(0xe9e6df), BAND = loco ? lc(0xf2c81e) : lc(0x1f5fa8), ROOF = lc(0x8c9096), WIN = lc(0x1b2430), DARK = lc(0x26282c), WHL = lc(0x3a3c40), GLASS = lc(0x30485e), LAMP = lc(0xfff2c0);
-  const W = 3.0, y0 = 1.1, H = 3.0, half = L / 2;
-  put(B, 0, y0 + H / 2, loco ? -0.5 : 0, W, H, loco ? L - 1 : L, BODY, 0.15);                        /* the body */
-  put(B, 0, y0 + 0.55, 0, W + 0.02, 0.32, L - 0.2, BAND, 0);                                          /* the livery band */
-  put(C, 0, y0 + H, loco ? -0.5 : 0, W / 2, (loco ? L - 1 : L) - 0.1, 0.34, ROOF, 0.1, Math.PI / 2, 0, 0);   /* the curved roof */
-  put(B, 0, y0 - 0.25, 0, W - 0.3, 0.5, L - 1.6, DARK, 0);                                            /* the underframe and tanks */
-  if (!loco) {
-    for (let k = 0; k < 7; k++) { const z = -half + 2.6 + k * ((L - 5.2) / 6); put(B, W / 2 + 0.005, y0 + 1.75, z, 0.02, 0.85, 1.6, WIN, 0); put(B, -W / 2 - 0.005, y0 + 1.75, z, 0.02, 0.85, 1.6, WIN, 0); }   /* windows */
-    for (const z of [-half + 1.1, half - 1.1]) for (const sd of [-1, 1]) put(B, sd * (W / 2 + 0.01), y0 + 1.25, z, 0.02, 2.1, 0.95, lc(0x9aa0a6), 0);   /* doors */
-    for (const z of [-half - 0.15, half + 0.15]) put(B, 0, y0 + 1.5, z, 1.2, 2.3, 0.3, DARK, 0);       /* gangways */
-  } else {
-    put(B, 0, y0 + H / 2 - 0.2, half - 0.75, W - 0.1, H - 0.4, 1.5, BODY, 0.1);                     /* the cab */
-    put(B, 0, y0 + H - 0.55, half - 0.02, W - 0.5, 0.75, 0.04, GLASS, 0, -0.35, 0, 0);                /* the windscreen */
-    for (const sd of [-1, 1]) { put(B, sd * (W / 2 + 0.005), y0 + H - 0.6, half - 1.0, 0.02, 0.7, 1.0, GLASS, 0); put(B, sd * 0.85, y0 + 0.6, half + 0.01, 0.3, 0.2, 0.04, LAMP, 0); }
-    put(B, 0, y0 + 0.2, half + 0.1, W - 0.2, 0.5, 0.25, DARK, 0);                                      /* the buffer beam */
-    for (let k = 0; k < 6; k++) for (const sd of [-1, 1]) put(B, sd * (W / 2 + 0.005), y0 + 2.1, -half + 2.5 + k * 1.6, 0.02, 0.5, 1.2, DARK, 0);   /* engine-room grilles */
-    put(B, 0, y0 + H + 0.32, -1.5, 1.0, 0.25, 3.0, DARK, 0);                                           /* the exhaust and fans */
+  const r = mulberry32(seed * 7919 + 13), DARK = lc(0x26282c), WHL = lc(0x3a3c40), RUST = lc(0x7a3a24), RUST2 = lc(0x5e2c1c), STEEL = lc(0x8c9096), half = L / 2, W = RAIL_WAGON.W, y0 = RAIL_WAGON.Y0, H = RAIL_WAGON.H;
+  put(B, 0, y0 - 0.3, 0, W - 0.2, 0.36, L - 0.6, DARK, 0);                                            /* the underframe */
+  for (const z of [-half + 0.1, half - 0.1]) put(B, 0, y0 - 0.25, z, 0.5, 0.3, 0.5, DARK, 0);       /* couplers */
+  if (kind === 'loco') {
+    const BODY = lc(0xc8302a), BAND = lc(0xf2c81e), GLASS = lc(0x30485e), LAMP = lc(0xfff2c0);
+    put(B, 0, y0 + 1.25, -1.2, W - 0.6, 2.5, L - 4.6, BODY, 0.15);                                  /* the long hood */
+    put(B, 0, y0 + H / 2, half - 2.0, W, H, 3.0, BODY, 0.12);                                         /* the cab */
+    put(B, 0, y0 + H + 0.08, half - 2.0, W + 0.1, 0.16, 3.2, DARK, 0);
+    put(B, 0, y0 + 0.75, half - 0.4, W - 0.4, 1.5, 1.0, BODY, 0.1);                                   /* the short nose */
+    put(B, 0, y0 + 0.45, 0, W + 0.02, 0.3, L - 0.3, BAND, 0);                                         /* yellow stripes */
+    for (const sd of [-1, 1]) { put(B, sd * (W / 2 + 0.005), y0 + H - 0.75, half - 2.0, 0.02, 0.8, 1.6, GLASS, 0); put(B, sd * 0.8, y0 + 1.3, half + 0.11, 0.3, 0.22, 0.04, LAMP, 0); }
+    put(B, 0, y0 + H - 0.7, half - 0.48, W - 0.5, 0.8, 0.04, GLASS, 0);                               /* the windscreen */
+    for (let k = 0; k < 7; k++) for (const sd of [-1, 1]) put(B, sd * (W / 2 - 0.29), y0 + 1.7, -half + 2.6 + k * 1.55, 0.02, 0.8, 1.1, DARK, 0);   /* grilles */
+    put(B, 0, y0 + 2.62, -half + 4.0, 0.7, 0.3, 0.9, DARK, 0); put(C, 0, y0 + 2.7, -2.5, 0.8, 0.16, 0.8, STEEL, 0); put(C, 0, y0 + 2.7, 0.2, 0.8, 0.16, 0.8, STEEL, 0);   /* exhaust, fans */
+    for (const sd of [-1, 1]) put(B, sd * (W / 2 - 0.15), y0 + 0.1, 0, 0.06, 0.06, L - 2, BAND, 0);    /* handrails */
+  } else if (kind === 'box' || kind === 'heist') {
+    const BODY = kind === 'heist' ? lc(0x2e3a4a) : (r() < 0.5 ? RUST : lc(0x3a4a5a)), RIB = kind === 'heist' ? lc(0x243040) : RUST2, open = kind === 'heist', D = RAIL_WAGON.DOOR;
+    put(B, 0, y0 + 0.06, 0, W, 0.12, L, DARK, 0);                                                      /* the floor */
+    put(B, 0, y0 + H + 0.05, 0, W + 0.1, 0.12, L + 0.05, BODY, 0.1);                                   /* the roof */
+    put(C, 0, y0 + H + 0.1, 0, W / 2, L, 0.18, BODY, 0.1, Math.PI / 2, 0, 0);
+    put(B, -W / 2 + 0.04, y0 + H / 2, 0, 0.08, H, L, BODY, 0.15);                                     /* the left side */
+    if (!open) put(B, W / 2 - 0.04, y0 + H / 2, 0, 0.08, H, L, BODY, 0.15);                            /* the right side, or the right side either side of its open door */
+    else { const zA = -half, zB = D[0], zC = D[1], zD = half; put(B, W / 2 - 0.04, y0 + H / 2, (zA + zB) / 2, 0.08, H, zB - zA, BODY, 0.15); put(B, W / 2 - 0.04, y0 + H / 2, (zC + zD) / 2, 0.08, H, zD - zC, BODY, 0.15);
+      put(B, W / 2 - 0.04, y0 + RAIL_WAGON.DOORH + (H - RAIL_WAGON.DOORH) / 2 + 0.06, (zB + zC) / 2, 0.08, H - RAIL_WAGON.DOORH, zC - zB, BODY, 0.15);
+      put(B, W / 2 + 0.12, y0 + H - 0.1, (zB + zD) / 2, 0.1, 0.12, zD - zB - 0.2, STEEL, 0);          /* the door rail, the door slid right back */
+      put(B, W / 2 + 0.1, y0 + 1.45, (zC + zD) / 2, 0.06, 2.8, zD - zC - 0.2, lc(0x3a4a5a), 0.1);
+      for (const z of [zB, zC]) put(B, W / 2 + 0.02, y0 + 1.4, z, 0.14, 2.8, 0.16, lc(0xf2c81e), 0);  /* yellow door posts */
+      put(B, 0, y0 + 0.13, 0, W - 0.2, 0.02, L - 0.4, lc(0x4a3a2a), 0); }                              /* a plank floor */
+    put(B, 0, y0 + H / 2, half - 0.04, W, H, 0.08, BODY, 0.1);                                         /* the front end */
+    if (!open) put(B, 0, y0 + H / 2, -half + 0.04, W, H, 0.08, BODY, 0.1);
+    else { for (const sd of [-1, 1]) put(B, sd * (W / 2 - 0.25), y0 + H / 2, -half + 0.04, 0.5, H, 0.08, BODY, 0.1); put(B, 0, y0 + H - 0.2, -half + 0.04, W, 0.4, 0.08, BODY, 0.1);   /* the open rear end */
+      for (const sd of [-1, 1]) put(B, sd * (W / 2 + 0.55), y0 + 1.35, -half - 0.02, 1.1, 2.6, 0.06, BODY, 0.15, 0, sd * 0.25, 0); }   /* its doors swung open */
+    for (let k = 0; k <= 8; k++) { const z = -half + 0.5 + k * (L - 1) / 8; put(B, -W / 2 - 0.03, y0 + H / 2, z, 0.06, H - 0.1, 0.12, RIB, 0);
+      if (!open || z < D[0] - 0.2 || z > D[1] + 0.2) put(B, W / 2 + 0.03, y0 + H / 2, z, 0.06, H - 0.1, 0.12, RIB, 0); }   /* ribs */
+    if (!open) put(B, W / 2 + 0.07, y0 + 1.4, 1.0, 0.06, 2.7, 3.2, RIB, 0.1);                        /* a closed sliding door */
+    if (open) { put(B, -W / 2 + 0.1, y0 + 2.2, 4, 0.02, 0.5, 2.4, lc(0xf2c81e), 0); }                 /* a warning plate inside */
+  } else if (kind === 'tank') {
+    const T = r() < 0.5 ? lc(0x1e2226) : lc(0xd8d8d0); put(C, 0, y0 + 1.45, 0, 1.4, L - 1.6, 1.4, T, 0.2, Math.PI / 2, 0, 0);
+    for (const z of [-(L - 1.6) / 2, (L - 1.6) / 2]) put(RailG.ball, 0, y0 + 1.45, z, 1.4, 1.4, 0.5, T, 0.2);
+    put(C, 0, y0 + 2.95, 0, 0.45, 0.3, 0.45, T, 0.1); put(B, 0, y0 + 0.2, 0, W - 0.2, 0.2, L - 1, DARK, 0);
+    put(B, 0, y0 + 1.45, 0, 2.86, 0.3, 0.04, lc(0xe0342a), 0, 0, Math.PI / 2, 0);                   /* a hazard band */
+  } else if (kind === 'flat') {
+    put(B, 0, y0 + 0.1, 0, W, 0.2, L, DARK, 0);
+    for (const z of [-half / 2, half / 2]) { const c = RAIL_CONS[(r() * RAIL_CONS.length) | 0], hgt = r() < 0.3 ? 2.9 : 2.6; put(B, 0, y0 + 0.2 + hgt / 2, z, 2.44, hgt, half - 0.4, c, 0.2);
+      for (let k = 0; k < 9; k++) for (const sd of [-1, 1]) put(B, sd * 1.23, y0 + 0.2 + hgt / 2, z - (half - 0.4) / 2 + 0.5 + k * (half - 1.4) / 8, 0.03, hgt - 0.1, 0.08, c, 0.4);   /* corrugations */
+      put(B, 0, y0 + 0.2 + hgt / 2, z + (half - 0.4) / 2 + 0.01, 2.3, hgt - 0.15, 0.02, c, 0.45); }
   }
   for (const zb of [-RAIL.BOG, RAIL.BOG]) {                                                             /* the bogies: a frame and four wheels */
     put(B, 0, 0.55, zb, 2.3, 0.35, 2.8, DARK, 0);
     for (const dz of [-0.95, 0.95]) for (const sd of [-1, 1]) put(C, sd * RAIL.GAUGE / 2, 0.46, zb + dz, 0.46, 0.14, 0.46, WHL, 0, 0, 0, Math.PI / 2);
   }
-  const m = gb.mesh(MAT.prop, true, false); m.matrixAutoUpdate = true; return m;
+  const m = gb.mesh(MAT.prop, true, false); m.matrixAutoUpdate = true; m.rotation.order = 'YXZ'; return m;
 }
 Rail.build = function () {
   if (Rail.built) return; Rail.built = true;
-  RailG.box = ni(new THREE.BoxGeometry(1, 1, 1)); RailG.cyl = ni(new THREE.CylinderGeometry(1, 1, 1, 14, 1));
+  RailG.box = ni(new THREE.BoxGeometry(1, 1, 1)); RailG.cyl = ni(new THREE.CylinderGeometry(1, 1, 1, 14, 1)); RailG.ball = ni(new THREE.SphereGeometry(1, 14, 8, 0, TAU, 0, Math.PI));
   Rail.plan(); Rail.group = new THREE.Group(); Rail.group.name = 'railway'; scene.add(Rail.group); Rail.buildViaduct();
-  const cars = [[true, 19]]; for (let k = 0; k < 7; k++) cars.push([false, 18]);
-  let off = 0; Rail.train = cars.map(([loco, L]) => { const m = railVehicle(loco, L); Rail.group.add(m); const o = { m, L, off: off + L / 2 }; off += L + 0.6; return o; });
+  const cars = [['loco', 19], ['box', 17], ['tank', 15], ['flat', 18], ['box', 17], ['flat', 18], ['tank', 15], ['box', 17], ['flat', 18], ['box', 17], ['heist', 18]];
+  let off = 0; Rail.train = cars.map(([kind, L], k) => { const m = railVehicle(kind, L, k); Rail.group.add(m); const o = { m, L, kind, off: off + L / 2 }; off += L + 0.8; return o; });
+  Rail.heist = Rail.train[Rail.train.length - 1];
   Rail.s = Rail.L * 0.37; Rail.update(0);
 };
 const _rlA = {}, _rlB = {};
@@ -148,5 +182,41 @@ Rail.update = function (dt) {
     const sc = Rail.s - t.off; Rail.at(sc + RAIL.BOG, _rlA); Rail.at(sc - RAIL.BOG, _rlB);
     const dx = _rlA.x - _rlB.x, dz = _rlA.z - _rlB.z, dy = _rlA.y - _rlB.y, d = Math.hypot(dx, dz);
     t.m.position.set((_rlA.x + _rlB.x) / 2, (_rlA.y + _rlB.y) / 2, (_rlA.z + _rlB.z) / 2); t.m.rotation.set(-Math.atan2(dy, d), Math.atan2(dx, dz), 0, 'YXZ');
+    t.yaw = Math.atan2(dx, dz); t.pitch = Math.atan2(dy, d); t.m.updateMatrixWorld();
   }
+};
+/* a point in a vehicle's own frame (x right, y up from the rail, z forward) from world, and back */
+const _rlM = new THREE.Matrix4(), _rlP = new THREE.Vector3();
+Rail.toLocal = function (t, x, y, z, o) { _rlM.copy(t.m.matrixWorld).invert(); _rlP.set(x, y, z).applyMatrix4(_rlM); o.x = _rlP.x; o.y = _rlP.y; o.z = _rlP.z; return o; };
+Rail.toWorld = function (t, x, y, z, o) { _rlP.set(x, y, z).applyMatrix4(t.m.matrixWorld); o.x = _rlP.x; o.y = _rlP.y; o.z = _rlP.z; return o; };
+/* the nearest point of the line (index, distance, which side) */
+Rail.near = function (x, z, o) {
+  o.d = 1e9; o.i = -1; if (!Rail.hash) return o; const P = Rail.pts, cx = Math.floor(x / 50), cz = Math.floor(z / 50); let best = 1e18, bi = -1;
+  for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) { const L = Rail.hash.get((cx + a) * 4096 + cz + b); if (!L) continue; for (const i of L) { const d = (P.x[i] - x) ** 2 + (P.z[i] - z) ** 2; if (d < best) { best = d; bi = i; } } }
+  if (bi < 0) return o; const j = (bi + 1) % P.n, tx = P.x[j] - P.x[bi], tz = P.z[j] - P.z[bi], l = Math.hypot(tx, tz) || 1;
+  o.i = bi; o.d = Math.sqrt(best); o.lat = ((x - P.x[bi]) * tz - (z - P.z[bi]) * tx) / l; o.y = P.y[bi]; o.tx = tx / l; o.tz = tz / l; return o;
+};
+/* the viaduct deck as ground for a car up on it: the top of the deck (and the ballast) within the parapets, for anything already at deck height */
+const _rlN = {};
+Rail.deck = function (x, z, cy, o) {
+  if (!Rail.hash || cy == null) return false; Rail.near(x, z, _rlN); if (_rlN.i < 0 || Math.abs(_rlN.lat) > RAIL.W / 2 - 0.15) return false;
+  const y = _rlN.y + 0.05; if (cy < y - 2.2 || y < o.h) return false; o.h = y; o.mu = 0.9; o.rr = 0.03; o.rough = 0.15; o.road = true; o.water = false; return true;
+};
+/* the train is solid to the player's car: anything that meets a wagon's side is pushed back out and bounces off it (08_heist.js lets one in through the heist wagon's door) */
+const _rlL = {};
+Rail.collide = function (c) {
+  if (!Rail.built) return null;
+  for (const t of Rail.train) {
+    const dx = c.x - t.m.position.x, dz = c.z - t.m.position.z; if (dx * dx + dz * dz > (t.L / 2 + 6) ** 2) continue;
+    Rail.toLocal(t, c.x, c.y + 0.6, c.z, _rlL); const hw = RAIL_WAGON.W / 2 + 1.0, hl = t.L / 2 + 1.2;
+    if (Math.abs(_rlL.x) > hw || Math.abs(_rlL.z) > hl || _rlL.y < -1.0 || _rlL.y > RAIL_WAGON.Y0 + RAIL_WAGON.H + 0.4) continue;
+    if (Heist.inside(t, _rlL)) continue;
+    /* push out of the nearer long side (or the end), and bounce */
+    const ox = hw - Math.abs(_rlL.x), oz = hl - Math.abs(_rlL.z), s = Math.sin(t.yaw), co = Math.cos(t.yaw);
+    let nx, nz, pen; if (ox < oz) { const sd = Math.sign(_rlL.x) || 1; nx = co * sd; nz = -s * sd; pen = ox; } else { const sd = Math.sign(_rlL.z) || 1; nx = s * sd; nz = co * sd; pen = oz; }
+    c.x += nx * pen; c.z += nz * pen; const tvx = s * Rail.v, tvz = co * Rail.v, rv = (c.vx - tvx) * nx + (c.vz - tvz) * nz;
+    if (rv < 0) { c.vx -= nx * rv * 1.35; c.vz -= nz * rv * 1.35; c.crashFlag = Math.max(c.crashFlag || 0, -rv * 0.7); }
+    return t;
+  }
+  return null;
 };

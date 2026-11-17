@@ -48,7 +48,7 @@ WorldMap.drawMini = function (cv) {
   g.strokeStyle = 'rgba(8,12,18,0.9)'; g.lineWidth = 17; g.stroke(hw); g.lineWidth = 12; g.stroke(sr);
   g.strokeStyle = '#d9dee6'; g.lineWidth = 11; g.stroke(hw); g.strokeStyle = '#a9b2bf'; g.lineWidth = 7.5; g.stroke(sr);
   if (GAR.ok) { g.fillStyle = 'rgba(255,176,46,0.9)'; g.fillRect(GAR.ox - 21, GAR.oz - 31, 42, 32); g.fillStyle = '#06090e'; g.fillRect(GAR.ox - 4, GAR.oz - 3, 8, 3); }
-  Shop.drawMini(g); Ven.drawMini(g); Air.drawMini(g); Wk.drawMini(g); Dock.drawMini(g); Track.drawMini(g); Col.drawMini(g);
+  Heist.drawMini(g); Shop.drawMini(g); Ven.drawMini(g); Air.drawMini(g); Wk.drawMini(g); Dock.drawMini(g); Track.drawMini(g); Col.drawMini(g);
   /* route */
   if (Target.on) {
     g.strokeStyle = '#33d4ff'; g.lineWidth = 8; g.setLineDash([]); g.beginPath();
@@ -116,7 +116,7 @@ WorldMap.drawFull = function (cv) {
     const s = FM.toScreen(T.cx, T.cz), hs = T.half * FM.ppm; g.fillStyle = 'rgba(255,176,46,0.28)'; g.strokeStyle = '#ffb02e'; g.lineWidth = 1.5 * k; g.fillRect(s[0] - hs, s[1] - hs, hs * 2, hs * 2); g.strokeRect(s[0] - hs, s[1] - hs, hs * 2, hs * 2);
     g.fillStyle = '#fff'; g.strokeStyle = 'rgba(0,0,0,0.85)'; g.lineWidth = 3.5 * k; g.strokeText(T.name.toUpperCase(), s[0], s[1] - hs - 10 * k); g.fillText(T.name.toUpperCase(), s[0], s[1] - hs - 10 * k);
   }
-  Air.drawFull(g, k); Track.drawFull(g, k); Ven.drawFull(g, k); Col.drawFull(g, k); Dock.drawFull(g, k); Boat.drawFullIcons(g, k); VM.full(g, k);
+  Heist.drawFull(g, k); Air.drawFull(g, k); Track.drawFull(g, k); Ven.drawFull(g, k); Col.drawFull(g, k); Dock.drawFull(g, k); Boat.drawFullIcons(g, k); VM.full(g, k);
   if (GAR.ok) { const s = FM.toScreen(GAR.ox, GAR.oz - 15), u = k * 1.1; g.fillStyle = '#ffb02e'; g.strokeStyle = '#06090e'; g.lineWidth = 2.5 * k; g.beginPath(); g.moveTo(s[0] - 9 * u, s[1] + 7 * u); g.lineTo(s[0] - 9 * u, s[1] - 2 * u); g.lineTo(s[0], s[1] - 10 * u); g.lineTo(s[0] + 9 * u, s[1] - 2 * u); g.lineTo(s[0] + 9 * u, s[1] + 7 * u); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#06090e'; g.fillRect(s[0] - 4 * u, s[1] + 0.5 * u, 8 * u, 6.5 * u); if (FM.zoom > 1.8) { g.fillStyle = '#fff'; g.strokeStyle = 'rgba(0,0,0,0.85)'; g.lineWidth = 3 * k; g.strokeText('HOME', s[0], s[1] + 19 * u); g.fillText('HOME', s[0], s[1] + 19 * u); } } Shop.drawMap(g, k);
   if (GPS.pts && Target.on) { g.strokeStyle = '#33d4ff'; g.lineWidth = 3 * k; g.beginPath(); GPS.pts.forEach((p, i) => { const s = FM.toScreen(p.x, p.z); if (i) g.lineTo(s[0], s[1]); else g.moveTo(s[0], s[1]); }); g.stroke(); }
   for (const mk of MView.markers) {
