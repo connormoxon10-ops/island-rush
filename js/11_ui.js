@@ -143,6 +143,7 @@ UI.update = function (dt) {
   const pr = E.prompt;
   if (Rally.on || Drag.on || Derby.on) { if (!pr.hidden) pr.hidden = true; }
   else if (!Foot.on && !Fly.on && !Boat.on && Heist.prompt(pr)) { /* Gold Rush */ }
+  else if (!Fly.on && !Boat.on && Surf.prompt(pr)) { /* Surf Club */ }
   else if (Fly.on) { Fly.prompt(pr); Fly.hud(dt); }
   else if (Boat.on) { Boat.prompt(pr); Boat.hud(dt); }
   else if (Foot.on) UI.footPrompt();
@@ -407,6 +408,7 @@ function onKey(code) {
   if (Drag.on) { if (code === 'KeyR') { Drag.again(); return; } if (/^(KeyE|Enter|KeyF|KeyG|KeyM|KeyQ|KeyH)$/.test(code)) return; }
   if (Rally.on) { if (code === 'KeyR') { Rally.reset(); return; } if (/^(KeyE|Enter|KeyF|KeyG|KeyM|KeyQ|KeyH)$/.test(code)) return; }
   if (Heist.key(code)) return;
+  if (Surf.key(code)) return;
   switch (code) {
     case 'Escape': case 'KeyP': UI.openMenu('missions'); break;
     case 'KeyM': UI.openMenu('map'); break;
