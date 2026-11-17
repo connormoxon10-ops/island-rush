@@ -78,7 +78,7 @@ function muscleCar(S, gP, gG, gT, gD, gLt, tl, lod) {
   /* tail: a dark full-width panel with three lamps a side, a chrome bumper, the filler cap, quad tailpipes */
   K.blk(gD, 0, 0.82, -2.412, 1.6, 0.26, 0.02, BLK); for (const sx of [-1, 1]) for (let k = 0; k < 3; k++) K.blk(tl, sx * (0.26 + k * 0.2), 0.82, -2.425, 0.17, 0.18, 0.01, GL);
   K.drum(gT, 0, 0.82, -2.43, 0.07, 0.02, CHR, 'z'); K.blk(gT, 0, 0.52, -2.46, 1.62, 0.09, 0.08, CHR); for (const sx of [-1, 1]) K.blk(gT, sx * 0.84, 0.52, -2.38, 0.2, 0.09, 0.08, CHR, 0, -sx * 0.6);
-  for (const sx of [-1, 1]) for (const dx of [0.42, 0.56]) K.drum(gT, sx * dx, 0.33, -2.4, 0.045, 0.16, CHR, 'z');
+  for (const sx of [-1, 1]) for (const dx of [0.42, 0.56]) { K.drum(gT, sx * dx, 0.33, -2.4, 0.045, 0.16, CHR, 'z'); carExh(sx * dx, 0.33, -2.49); }
   /* sides: scoops ahead of the rear wheels, a rocker strip, door shut lines and handles, mirrors */
   for (const sx of [-1, 1]) {
     const zs0 = wr.z + wr.r + pad + 0.06, xs = sx * (tabZ(B.wid, zs0 + 0.15) + 0.004);

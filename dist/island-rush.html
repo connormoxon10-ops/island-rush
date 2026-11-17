@@ -3269,7 +3269,7 @@ function mkPoints(n, blend, vsz, near) {
   const pts = new THREE.Points(g, m); pts.frustumCulled = false; pts.renderOrder = 5;
   return { pts, n, pos, col, size, g, life: new Float32Array(n), max: new Float32Array(n), vel: new Float32Array(n * 3), a0: new Float32Array(n), s0: new Float32Array(n), grow: new Float32Array(n), grav: new Float32Array(n), cr: new Float32Array(n * 3), next: 0 };
 }
-function initParticles() { Part.smoke = mkPoints(300, THREE.NormalBlending); Part.spark = mkPoints(200, THREE.AdditiveBlending); Part.fire = mkPoints(360, THREE.AdditiveBlending, 0, [0.3, 1.5]); scene.add(Part.smoke.pts, Part.spark.pts, Part.fire.pts); }
+function initParticles() { Part.smoke = mkPoints(300, THREE.NormalBlending); Part.spark = mkPoints(200, THREE.AdditiveBlending); Part.fire = mkPoints(240, THREE.AdditiveBlending, 0, [0.3, 1.5]); scene.add(Part.smoke.pts, Part.spark.pts, Part.fire.pts); }
 function emit(S, x, y, z, vx, vy, vz, life, size, grow, r, g, b, a, grav) {
   if (S === Part.smoke && Cam.view === 2) { size *= 0.5; grow *= 0.55; a *= 0.6; }
   const i = S.next; S.next = (S.next + 1) % S.n;
@@ -3291,7 +3291,7 @@ function updateParticles(dt) {
 }
 function carFx(dt) {
   const c = car, s = Math.sin(c.yaw), co = Math.cos(c.yaw);
-  nitroFlame(c, CUR, CARP, dt, L.nitro);
+  nitroFlame(c, CUR, CARP, dt, L.nitro, c.ext);
   const rearW = [[-CARP.track / 2, -CARP.b], [CARP.track / 2, -CARP.b]];
   if ((c.drifting || c.spin || (c.braking && Math.abs(c.speed) > 15)) && !c.air && Math.random() < dt * 70) {
     for (const w of rearW) { const x = c.x + s * w[1] + co * w[0], z = c.z + co * w[1] - s * w[0]; emit(Part.smoke, x, c.y + 0.15, z, c.vx * 0.2 + (Math.random() - 0.5), 0.8 + Math.random() * 0.6, c.vz * 0.2 + (Math.random() - 0.5), 1.4 + Math.random() * 0.8, 0.9, 3.2, 0.85, 0.85, 0.85, 0.42, -0.2); }
@@ -3302,22 +3302,26 @@ function carFx(dt) {
   }
   if (c.health < 40 && Math.random() < dt * 25) { const x = c.x + s * 2 , z = c.z + co * 2; emit(Part.smoke, x, c.y + 1.0, z, c.vx * 0.5 + (Math.random() - 0.5), 1.2, c.vz * 0.5 + (Math.random() - 0.5), 1.6, 0.7, 2.2, 0.1, 0.1, 0.1, 0.5, -0.3); }
 }
-/* nitro: flame out of the exhaust tips while it burns (a blue-white core inside an orange plume, blown back by the speed), a pop and a lick of fire
-   when it lights, a flickering orange glow on the road behind. Any car: the player's (carFx) and the rivals' (07_racers.js) */
-function nitroFlame(c, d, P, dt, light) {
-  const b = d.body, hw = b.W / 2, ex = b.exhaust != null ? b.exhaust : 2, n = ex === 0 ? 1 : Math.min(ex, 2), s = Math.sin(c.yaw), co = Math.cos(c.yaw), z = -(d.hl || b.L / 2) - 0.05, y = c.y + (b.y0 != null ? b.y0 : 0.36) + (ex === 0 ? 0.55 : 0.12);
+/* nitro: a small flame at each exhaust tip while it burns (a short blue core with a little orange at its end), coming out of the pipe the way it points
+   and carried along with the car, plus a faint warm glow. The tips come from the car's own model (buildCarModel records them: userData.exh); a model
+   that has none gets two at the middle of its tail. Any car: the player's (carFx) and the rivals' (07_racers.js) */
+const _nfV = new THREE.Vector3(), _nfD = new THREE.Vector3(), _nfQ = new THREE.Quaternion();
+function nitroFlame(c, d, P, dt, light, model) {
   const on = !!c.nitroUse, lit = on && !c._nitWas; c._nitWas = on;
-  if (light) { const L2 = light; L2.intensity += ((on ? 2.2 + Math.random() * 1.6 : 0) - L2.intensity) * Math.min(1, dt * 18); }
-  if (!on) return; const k = lit ? 3 : 1, back = 9 + Math.random() * 6;
-  for (let q = 0; q < n; q++) {
-    const xx = n === 1 ? (ex === 1 ? 0.5 * hw : 0) : (q ? 1 : -1) * 0.52 * hw, x = c.x + s * z + co * xx, zz = c.z + co * z - s * xx;
-    for (let r = 0; r < 3 * k; r++) {
-      const j = 0.6 + Math.random() * 0.8, vx = c.vx - s * back * j + (Math.random() - 0.5) * 1.2, vz = c.vz - co * back * j + (Math.random() - 0.5) * 1.2;
-      emit(Part.fire, x, y, zz, vx, (Math.random() - 0.3) * 0.8, vz, 0.07 + Math.random() * 0.06, 0.26 + Math.random() * 0.12, 0.1, 0.6, 0.8, 2.2, 1, 0);           /* core */
-      emit(Part.fire, x - s * 0.2, y + 0.02, zz - co * 0.2, vx, 0.3 + Math.random() * 0.8, vz, 0.12 + Math.random() * 0.1, 0.45 + Math.random() * 0.25, 0.8, 2.6, 1.1, 0.22, 0.9, -1);   /* plume */
+  if (light) light.intensity += ((on ? 0.45 + Math.random() * 0.35 : 0) - light.intensity) * Math.min(1, dt * 18);
+  if (!on || !model) return;
+  const b = d.body, hl = d.hl || b.L / 2, tips = model.userData.exh && model.userData.exh.length ? model.userData.exh : [[-0.26 * b.W, (b.y0 != null ? b.y0 : 0.36) + 0.12, -hl - 0.07, 0, 0, -1], [0.26 * b.W, (b.y0 != null ? b.y0 : 0.36) + 0.12, -hl - 0.07, 0, 0, -1]];
+  model.updateMatrixWorld(); model.getWorldQuaternion(_nfQ);
+  for (const t of tips) {
+    _nfV.set(t[0], t[1], t[2]); model.localToWorld(_nfV); _nfD.set(t[3], t[4], t[5]).normalize().applyQuaternion(_nfQ);
+    const n = lit ? 3 : 1;
+    for (let r = 0; r < n; r++) {
+      const sp = 2.2 + Math.random() * 1.6, x = _nfV.x + _nfD.x * 0.04, y = _nfV.y + _nfD.y * 0.04, z = _nfV.z + _nfD.z * 0.04;
+      emit(Part.fire, x, y, z, c.vx + _nfD.x * sp, _nfD.y * sp, c.vz + _nfD.z * sp, 0.035 + Math.random() * 0.025, 0.07 + Math.random() * 0.03, 0.02, 0.45, 0.6, 1.5, 0.8, 0);   /* core */
+      if (Math.random() < 0.6) emit(Part.fire, x + _nfD.x * 0.06, y + _nfD.y * 0.06, z + _nfD.z * 0.06, c.vx + _nfD.x * sp * 1.2, _nfD.y * sp * 1.2 + 0.2, c.vz + _nfD.z * sp * 1.2, 0.05 + Math.random() * 0.03, 0.09 + Math.random() * 0.04, 0.08, 1.6, 0.7, 0.18, 0.55, 0);   /* the orange tip */
     }
-    if (lit) { Snd.whoosh(); for (let r = 0; r < 6; r++) emit(Part.fire, x, y, zz, c.vx - s * 4 + (Math.random() - 0.5) * 3, Math.random() * 2, c.vz - co * 4 + (Math.random() - 0.5) * 3, 0.18, 0.55, 0.7, 2.6, 1.2, 0.3, 0.9, -0.5); }
   }
+  if (lit) Snd.whoosh();
 }
 function sparks(x, y, z, n, power) {
   for (let i = 0; i < n; i++) emit(Part.spark, x, y, z, (Math.random() - 0.5) * power, Math.random() * power * 0.6, (Math.random() - 0.5) * power, 0.35 + Math.random() * 0.5, 0.2, -0.1, 3.0, 1.6, 0.5, 1, 9);
@@ -3680,7 +3684,7 @@ function buggyFrame(S, gP, gG, gT, gD, gLt, tl, lod) {
   /* the engine out back: a flat-four block, heads, a pod air filter and two upswept pipes with megaphone tips */
   blk(gT, 0, 0.9, -1.22, 0.62, 0.32, 0.5, MET); both((sx) => blk(gT, sx * 0.36, 0.86, -1.22, 0.12, 0.2, 0.42, [0.32, 0.33, 0.35])); blk(gT, 0, 1.08, -1.18, 0.42, 0.06, 0.3, [0.05, 0.05, 0.055]);
   tube(gT, [0, 1.12, -1.15], [0, 1.28, -1.12], 0.1, [0.75, 0.08, 0.06]); tube(gT, [0, 1.12, -0.98], [0, 1.18, -0.92], 0.03, MET);
-  both((sx) => { path(gT, [[sx * 0.2, 0.82, -1.45], [sx * 0.22, 0.95, -1.62], [sx * 0.24, 1.32, -1.72]], 0.032, [0.55, 0.52, 0.48]); tube(gT, [sx * 0.24, 1.3, -1.72], [sx * 0.25, 1.46, -1.76], 0.055, [0.65, 0.62, 0.58]); });
+  both((sx) => { path(gT, [[sx * 0.2, 0.82, -1.45], [sx * 0.22, 0.95, -1.62], [sx * 0.24, 1.32, -1.72]], 0.032, [0.55, 0.52, 0.48]); tube(gT, [sx * 0.24, 1.3, -1.72], [sx * 0.25, 1.46, -1.76], 0.055, [0.65, 0.62, 0.58]); carExh(sx * 0.25, 1.48, -1.765, 0, 0.97, -0.24); });
   /* suspension: double wishbones to the front hubs, trailing arms at the back, a coilover to every corner */
   both((sx) => {
     for (const [y0, yH2] of [[0.66, yH - 0.08], [0.88, yH + 0.12]]) { tube(gD, [sx * 0.3, y0, zF - 0.2], [sx * (xW - 0.12), yH2, zF], 0.02, DK); tube(gD, [sx * 0.3, y0, zF + 0.12], [sx * (xW - 0.12), yH2, zF], 0.02, DK); }
@@ -3858,7 +3862,7 @@ function goKart(S, gP, gG, gT, gD, gLt, tl, lod) {
   K.blk(gT, 0, 0.27, wf.z + 0.33, 0.2, 0.14, 0.01, [0.9, 0.9, 0.86], -0.5);                                              /* number plate */
   /* engine beside the seat, exhaust, chain to the axle, rear axle and bumper */
   K.blk(gT, 0.34, 0.22, -0.42, 0.14, 0.16, 0.18, [0.35, 0.36, 0.38]); for (let k = 0; k < 4; k++) K.blk(gT, 0.34, 0.31 + k * 0.025, -0.42, 0.16, 0.008, 0.2, CHR);   /* finned cylinder */
-  K.drum(gT, 0.22, 0.2, -0.36, 0.06, 0.06, [0.15, 0.15, 0.16], 'x'); K.path(gT, [[0.42, 0.24, -0.45], [0.48, 0.2, -0.6], [0.45, 0.16, -0.78]], 0.02, CHR); K.drum(gD, 0.45, 0.16, -0.82, 0.04, 0.12, BLK, 'z');
+  K.drum(gT, 0.22, 0.2, -0.36, 0.06, 0.06, [0.15, 0.15, 0.16], 'x'); K.path(gT, [[0.42, 0.24, -0.45], [0.48, 0.2, -0.6], [0.45, 0.16, -0.78]], 0.02, CHR); K.drum(gD, 0.45, 0.16, -0.82, 0.04, 0.12, BLK, 'z'); carExh(0.45, 0.16, -0.89);
   K.blk(gD, 0.2, y + 0.02, (wr.z - 0.36) / 2, 0.02, 0.05, -wr.z - 0.36, BLK);                                            /* chain */
   K.drum(gT, 0, wr.r, wr.z, 0.018, 2 * xR - 0.1, CHR, 'x'); K.drum(gT, 0.2, wr.r, wr.z, 0.09, 0.012, CHR, 'x');
   K.path(gP, [[-0.55, 0.14, wr.z - 0.32], [0.55, 0.14, wr.z - 0.32]], 0.03, K.WH); for (const sx of [-1, 1]) K.tube(gT, [sx * 0.22, y, wr.z - 0.2], [sx * 0.5, 0.14, wr.z - 0.32], 0.014, CHR);
@@ -3895,14 +3899,17 @@ function retroCompact(S, gP, gG, gT, gD, gLt, tl, lod) {
   /* bumpers with overriders, a bonnet strip, louvres over the engine, twin tailpipes */
   for (const [z, sgn] of [[2.04, 1], [-2.04, -1]]) { K.blk(gT, 0, 0.42, z, 1.5, 0.08, 0.05, CHR); for (const sx of [-1, 1]) { K.blk(gT, sx * 0.72, 0.42, z - sgn * 0.12, 0.06, 0.08, 0.26, CHR); K.blk(gT, sx * 0.38, 0.48, z + sgn * 0.01, 0.05, 0.2, 0.06, CHR); } }
   K.blk(gT, 0, 0.93, 1.3, 0.04, 0.012, 1.0, CHR, 0.18); for (let k = 0; k < 5; k++) K.blk(gD, 0, 0.99 - k * 0.045, -1.42 - k * 0.07, 0.4, 0.012, 0.03, DK, 0.62);   /* bonnet strip; engine-lid louvres */
-  for (const sx of [-1, 1]) K.drum(gT, sx * 0.3, 0.33, -2.0, 0.035, 0.18, CHR, 'z');
+  for (const sx of [-1, 1]) { K.drum(gT, sx * 0.3, 0.33, -2.0, 0.035, 0.18, CHR, 'z'); carExh(sx * 0.3, 0.33, -2.1); };
   K.done();
 }
 const CUSTOM_CARS = { buggy: buggyFrame, monster: monsterTruck, rod: hotRod, formula: formulaCar, kart: goKart, retro: retroCompact };
 
 /* ---------- the car ---------- */
+/* exhaust tips of the model being built (position and the way the pipe points), kept on the model for the nitro flame (06_car.js nitroFlame) */
+const _CEX = [];
+function carExh(x, y, z, dx, dy, dz) { _CEX.push([x, y, z, dx || 0, dy || 0, dz == null ? -1 : dz]); }
 function buildCarModel(def, hex, opts) {
-  opts = opts || {};
+  opts = opts || {}; _CEX.length = 0;
   const cs = opts.cos || null;
   const S = carSpec(def), b = S.b, hl = S.hl, hw = S.hw, y0 = S.y0, y1 = S.y1, wr = S.wr, C = S.C, lod = opts.lod ? 1 : 0, tww = S.tww;
   const gP = new GB(0, 0, false), gG = new GB(0, 0, false), gT = new GB(0, 0, false), gD = new GB(0, 0, false), gLt = new GB(0, 0, false), tl = new GB(0, 0, false);
@@ -3944,7 +3951,7 @@ function buildCarModel(def, hex, opts) {
   }
   /* exhaust tips */
   const ex = b.exhaust != null ? b.exhaust : 2;
-  if (ex > 0) { const eg = ni(new THREE.CylinderGeometry(0.048, 0.052, 0.14, 12)); eg.rotateX(Math.PI / 2); for (let k = 0; k < ex; k++) { const xx = ex === 1 ? 0.5 * hw : (ex === 2 ? (k ? 1 : -1) * 0.52 * hw : (k - 1.5) * 0.28 * hw); _m4.compose(_p3.set(xx, S.ySill + 0.12, -hl + 0.0), _q.identity(), _s3.set(1, 1, 1)); gD.geo(eg, _m4, _tcol.setRGB(0.32, 0.33, 0.36), 0); } eg.dispose(); }
+  if (ex > 0) { const eg = ni(new THREE.CylinderGeometry(0.048, 0.052, 0.14, 12)); eg.rotateX(Math.PI / 2); for (let k = 0; k < ex; k++) { const xx = ex === 1 ? 0.5 * hw : (ex === 2 ? (k ? 1 : -1) * 0.52 * hw : (k - 1.5) * 0.28 * hw); _m4.compose(_p3.set(xx, S.ySill + 0.12, -hl + 0.0), _q.identity(), _s3.set(1, 1, 1)); gD.geo(eg, _m4, _tcol.setRGB(0.32, 0.33, 0.36), 0); carExh(xx, S.ySill + 0.12, -hl - 0.07); } eg.dispose(); }
   /* ---- optional body kit (as the old recipe, placed on the new surface) ---- */
   const dk = (x0, ya, z0, x1, yb, z1, k) => tbx(x0, ya, z0, x1, yb, z1, k), sy0 = Math.max(0.05, y0 - 0.2), topAt = (z) => samp(S.sil, z) - 0.02;
   if (b.stripes) { const s = b.stripes; for (const sx of [-1, 1]) { const xa = sx * 0.05, xb2 = sx * 0.2; pTop(S, gD, xa, xb2, S.zFB + 0.04, hl - 0.06, 0.006, s, 1, 8); pTop(S, gD, xa, xb2, -hl + 0.06, S.zRB - 0.04, 0.006, s, 1, 8); pTop(S, gD, xa, xb2, S.zRT + 0.02, S.zFT - 0.02, 0.006, s, 1, 8); } }
@@ -4043,6 +4050,7 @@ function buildCarModel(def, hex, opts) {
     }
   } else wheelsAdd(grp, S);
   grp.userData.S = S;
+  grp.userData.exh = _CEX.map((e) => e.slice());
   return grp;
 }
 function disposeCar(g) {
@@ -4142,7 +4150,7 @@ function muscleCar(S, gP, gG, gT, gD, gLt, tl, lod) {
   /* tail: a dark full-width panel with three lamps a side, a chrome bumper, the filler cap, quad tailpipes */
   K.blk(gD, 0, 0.82, -2.412, 1.6, 0.26, 0.02, BLK); for (const sx of [-1, 1]) for (let k = 0; k < 3; k++) K.blk(tl, sx * (0.26 + k * 0.2), 0.82, -2.425, 0.17, 0.18, 0.01, GL);
   K.drum(gT, 0, 0.82, -2.43, 0.07, 0.02, CHR, 'z'); K.blk(gT, 0, 0.52, -2.46, 1.62, 0.09, 0.08, CHR); for (const sx of [-1, 1]) K.blk(gT, sx * 0.84, 0.52, -2.38, 0.2, 0.09, 0.08, CHR, 0, -sx * 0.6);
-  for (const sx of [-1, 1]) for (const dx of [0.42, 0.56]) K.drum(gT, sx * dx, 0.33, -2.4, 0.045, 0.16, CHR, 'z');
+  for (const sx of [-1, 1]) for (const dx of [0.42, 0.56]) { K.drum(gT, sx * dx, 0.33, -2.4, 0.045, 0.16, CHR, 'z'); carExh(sx * dx, 0.33, -2.49); }
   /* sides: scoops ahead of the rear wheels, a rocker strip, door shut lines and handles, mirrors */
   for (const sx of [-1, 1]) {
     const zs0 = wr.z + wr.r + pad + 0.06, xs = sx * (tabZ(B.wid, zs0 + 0.15) + 0.004);
@@ -4596,7 +4604,7 @@ function rallyHatch(S, gP, gG, gT, gD, gLt, tl, lod) {
   /* the hatch wing, tail lamps, twin pipes, a rear bumper */
   for (const sx of [-1, 1]) K.blk(gD, sx * 0.62, 1.36, -1.62, 0.02, 0.16, 0.3, BLK);
   K.blk(gD, 0, 1.46, -1.68, 1.34, 0.025, 0.32, BLK, -0.12); K.blk(gP, 0, 1.49, -1.84, 1.34, 0.012, 0.06, K.WH, -0.55);
-  for (const sx of [-1, 1]) { K.blk(tl, sx * 0.6, 0.78, -2.0, 0.3, 0.12, 0.02, GL); K.drum(gT, sx * 0.3, 0.3, -2.02, 0.04, 0.12, CHR, 'z'); }
+  for (const sx of [-1, 1]) { K.blk(tl, sx * 0.6, 0.78, -2.0, 0.3, 0.12, 0.02, GL); K.drum(gT, sx * 0.3, 0.3, -2.02, 0.04, 0.12, CHR, 'z'); carExh(sx * 0.3, 0.3, -2.09); }
   K.blk(gD, 0, 0.42, -2.0, 1.56, 0.12, 0.1, DK);
   const flaps = []; for (const sx of [-1, 1]) for (const [w, y] of [[wf, 0.6], [wr, 0.6]]) { const z = w.z - w.r - 0.12, id = 'mf' + sx + (w.front ? 'f' : 'r'), f = S.part(id, [sx * Math.abs(w.x), y, z]); K.blk(f.D, sx * Math.abs(w.x), y - 0.2, z, 0.3, 0.4, 0.015, RED); K.blk(f.D, sx * Math.abs(w.x), y - 0.32, z - 0.01, 0.24, 0.05, 0.005, WHT); flaps.push({ id, k: (w.front ? 0 : 2) + (sx > 0 ? 1 : 0) }); }
   K.done();
@@ -10829,7 +10837,7 @@ Bots.visual = function (dt) {
   if (!Bots.on) return;
   for (const b of Bots.list) {
     const c = b.c, m = b.mesh; m.position.set(c.x, c.y + c.sY * 0.4, c.z); m.rotation.set(-c.pitch, c.yaw, c.roll, 'YXZ'); m.userData.cs = c; m.userData.v = c.speed; m.userData.brake = c.brk > 0.25 && !c.rev; m.userData.steer = clamp(c.delta || 0, -0.6, 0.6);
-    b.smokeT -= dt; const dd = Math.hypot(c.x - Pl.x, c.z - Pl.z); if (dd < 160) nitroFlame(c, b.def, b.P, dt, null);
+    b.smokeT -= dt; const dd = Math.hypot(c.x - Pl.x, c.z - Pl.z); if (dd < 160) nitroFlame(c, b.def, b.P, dt, null, b.mesh);
     if (dd < 90 && b.smokeT <= 0 && (c.drifting || c.spin || (c.braking && Math.abs(c.speed) > 25)) && !c.air) {
       b.smokeT = 0.03; const s = Math.sin(c.yaw), co = Math.cos(c.yaw);
       for (const sx of [-1, 1]) { const x = c.x - s * b.P.b + co * sx * b.P.track / 2, z = c.z - co * b.P.b - s * sx * b.P.track / 2; emit(Part.smoke, x, c.y + 0.15, z, c.vx * 0.2 + (Math.random() - 0.5), 0.8 + Math.random() * 0.6, c.vz * 0.2 + (Math.random() - 0.5), 1.4 + Math.random() * 0.6, 0.6, 2.4, 0.8, 0.8, 0.8, 0.4, -0.4); }
@@ -26158,7 +26166,7 @@ function buildPlayer() {
   car.body.add(buildCockpit());
   L.head = new THREE.SpotLight(0xfff0d8, 0, 170, 0.75, 0.8, 1.0); L.head.position.set(0, 0.85, 2.1); car.body.add(L.head);
   L.headT = new THREE.Object3D(); L.headT.position.set(0, -0.3, 40); car.body.add(L.headT); L.head.target = L.headT;
-  L.nitro = new THREE.PointLight(0xff7a2a, 0, 7, 2); L.nitro.position.set(0, 0.5, -(CUR.hl || 2.3) - 0.6); car.body.add(L.nitro);   /* the glow of the nitro flame */
+  L.nitro = new THREE.PointLight(0xff8a3a, 0, 3.5, 2); L.nitro.position.set(0, 0.5, -(CUR.hl || 2.3) - 0.6); car.body.add(L.nitro);   /* the glow of the nitro flame */
   scene.add(car.body);
   applyCar(save.car, false);
 }
