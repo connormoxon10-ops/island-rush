@@ -14,7 +14,7 @@ function buildPlayer() {
   car.body.add(buildCockpit());
   L.head = new THREE.SpotLight(0xfff0d8, 0, 170, 0.75, 0.8, 1.0); L.head.position.set(0, 0.85, 2.1); car.body.add(L.head);
   L.headT = new THREE.Object3D(); L.headT.position.set(0, -0.3, 40); car.body.add(L.headT); L.head.target = L.headT;
-  L.nitro = new THREE.PointLight(0xff7a2a, 0, 7, 2); L.nitro.position.set(0, 0.5, -(CUR.hl || 2.3) - 0.6); car.body.add(L.nitro);   /* the glow of the nitro flame */
+  L.nitro = new THREE.PointLight(0xff8a3a, 0, 3.5, 2); L.nitro.position.set(0, 0.5, -(CUR.hl || 2.3) - 0.6); car.body.add(L.nitro);   /* the glow of the nitro flame */
   scene.add(car.body);
   applyCar(save.car, false);
 }

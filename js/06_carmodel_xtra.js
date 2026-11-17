@@ -117,7 +117,7 @@ function rallyHatch(S, gP, gG, gT, gD, gLt, tl, lod) {
   /* the hatch wing, tail lamps, twin pipes, a rear bumper */
   for (const sx of [-1, 1]) K.blk(gD, sx * 0.62, 1.36, -1.62, 0.02, 0.16, 0.3, BLK);
   K.blk(gD, 0, 1.46, -1.68, 1.34, 0.025, 0.32, BLK, -0.12); K.blk(gP, 0, 1.49, -1.84, 1.34, 0.012, 0.06, K.WH, -0.55);
-  for (const sx of [-1, 1]) { K.blk(tl, sx * 0.6, 0.78, -2.0, 0.3, 0.12, 0.02, GL); K.drum(gT, sx * 0.3, 0.3, -2.02, 0.04, 0.12, CHR, 'z'); }
+  for (const sx of [-1, 1]) { K.blk(tl, sx * 0.6, 0.78, -2.0, 0.3, 0.12, 0.02, GL); K.drum(gT, sx * 0.3, 0.3, -2.02, 0.04, 0.12, CHR, 'z'); carExh(sx * 0.3, 0.3, -2.09); }
   K.blk(gD, 0, 0.42, -2.0, 1.56, 0.12, 0.1, DK);
   const flaps = []; for (const sx of [-1, 1]) for (const [w, y] of [[wf, 0.6], [wr, 0.6]]) { const z = w.z - w.r - 0.12, id = 'mf' + sx + (w.front ? 'f' : 'r'), f = S.part(id, [sx * Math.abs(w.x), y, z]); K.blk(f.D, sx * Math.abs(w.x), y - 0.2, z, 0.3, 0.4, 0.015, RED); K.blk(f.D, sx * Math.abs(w.x), y - 0.32, z - 0.01, 0.24, 0.05, 0.005, WHT); flaps.push({ id, k: (w.front ? 0 : 2) + (sx > 0 ? 1 : 0) }); }
   K.done();

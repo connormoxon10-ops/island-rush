@@ -354,7 +354,7 @@ function buggyFrame(S, gP, gG, gT, gD, gLt, tl, lod) {
   /* the engine out back: a flat-four block, heads, a pod air filter and two upswept pipes with megaphone tips */
   blk(gT, 0, 0.9, -1.22, 0.62, 0.32, 0.5, MET); both((sx) => blk(gT, sx * 0.36, 0.86, -1.22, 0.12, 0.2, 0.42, [0.32, 0.33, 0.35])); blk(gT, 0, 1.08, -1.18, 0.42, 0.06, 0.3, [0.05, 0.05, 0.055]);
   tube(gT, [0, 1.12, -1.15], [0, 1.28, -1.12], 0.1, [0.75, 0.08, 0.06]); tube(gT, [0, 1.12, -0.98], [0, 1.18, -0.92], 0.03, MET);
-  both((sx) => { path(gT, [[sx * 0.2, 0.82, -1.45], [sx * 0.22, 0.95, -1.62], [sx * 0.24, 1.32, -1.72]], 0.032, [0.55, 0.52, 0.48]); tube(gT, [sx * 0.24, 1.3, -1.72], [sx * 0.25, 1.46, -1.76], 0.055, [0.65, 0.62, 0.58]); });
+  both((sx) => { path(gT, [[sx * 0.2, 0.82, -1.45], [sx * 0.22, 0.95, -1.62], [sx * 0.24, 1.32, -1.72]], 0.032, [0.55, 0.52, 0.48]); tube(gT, [sx * 0.24, 1.3, -1.72], [sx * 0.25, 1.46, -1.76], 0.055, [0.65, 0.62, 0.58]); carExh(sx * 0.25, 1.48, -1.765, 0, 0.97, -0.24); });
   /* suspension: double wishbones to the front hubs, trailing arms at the back, a coilover to every corner */
   both((sx) => {
     for (const [y0, yH2] of [[0.66, yH - 0.08], [0.88, yH + 0.12]]) { tube(gD, [sx * 0.3, y0, zF - 0.2], [sx * (xW - 0.12), yH2, zF], 0.02, DK); tube(gD, [sx * 0.3, y0, zF + 0.12], [sx * (xW - 0.12), yH2, zF], 0.02, DK); }
@@ -532,7 +532,7 @@ function goKart(S, gP, gG, gT, gD, gLt, tl, lod) {
   K.blk(gT, 0, 0.27, wf.z + 0.33, 0.2, 0.14, 0.01, [0.9, 0.9, 0.86], -0.5);                                              /* number plate */
   /* engine beside the seat, exhaust, chain to the axle, rear axle and bumper */
   K.blk(gT, 0.34, 0.22, -0.42, 0.14, 0.16, 0.18, [0.35, 0.36, 0.38]); for (let k = 0; k < 4; k++) K.blk(gT, 0.34, 0.31 + k * 0.025, -0.42, 0.16, 0.008, 0.2, CHR);   /* finned cylinder */
-  K.drum(gT, 0.22, 0.2, -0.36, 0.06, 0.06, [0.15, 0.15, 0.16], 'x'); K.path(gT, [[0.42, 0.24, -0.45], [0.48, 0.2, -0.6], [0.45, 0.16, -0.78]], 0.02, CHR); K.drum(gD, 0.45, 0.16, -0.82, 0.04, 0.12, BLK, 'z');
+  K.drum(gT, 0.22, 0.2, -0.36, 0.06, 0.06, [0.15, 0.15, 0.16], 'x'); K.path(gT, [[0.42, 0.24, -0.45], [0.48, 0.2, -0.6], [0.45, 0.16, -0.78]], 0.02, CHR); K.drum(gD, 0.45, 0.16, -0.82, 0.04, 0.12, BLK, 'z'); carExh(0.45, 0.16, -0.89);
   K.blk(gD, 0.2, y + 0.02, (wr.z - 0.36) / 2, 0.02, 0.05, -wr.z - 0.36, BLK);                                            /* chain */
   K.drum(gT, 0, wr.r, wr.z, 0.018, 2 * xR - 0.1, CHR, 'x'); K.drum(gT, 0.2, wr.r, wr.z, 0.09, 0.012, CHR, 'x');
   K.path(gP, [[-0.55, 0.14, wr.z - 0.32], [0.55, 0.14, wr.z - 0.32]], 0.03, K.WH); for (const sx of [-1, 1]) K.tube(gT, [sx * 0.22, y, wr.z - 0.2], [sx * 0.5, 0.14, wr.z - 0.32], 0.014, CHR);
@@ -569,14 +569,17 @@ function retroCompact(S, gP, gG, gT, gD, gLt, tl, lod) {
   /* bumpers with overriders, a bonnet strip, louvres over the engine, twin tailpipes */
   for (const [z, sgn] of [[2.04, 1], [-2.04, -1]]) { K.blk(gT, 0, 0.42, z, 1.5, 0.08, 0.05, CHR); for (const sx of [-1, 1]) { K.blk(gT, sx * 0.72, 0.42, z - sgn * 0.12, 0.06, 0.08, 0.26, CHR); K.blk(gT, sx * 0.38, 0.48, z + sgn * 0.01, 0.05, 0.2, 0.06, CHR); } }
   K.blk(gT, 0, 0.93, 1.3, 0.04, 0.012, 1.0, CHR, 0.18); for (let k = 0; k < 5; k++) K.blk(gD, 0, 0.99 - k * 0.045, -1.42 - k * 0.07, 0.4, 0.012, 0.03, DK, 0.62);   /* bonnet strip; engine-lid louvres */
-  for (const sx of [-1, 1]) K.drum(gT, sx * 0.3, 0.33, -2.0, 0.035, 0.18, CHR, 'z');
+  for (const sx of [-1, 1]) { K.drum(gT, sx * 0.3, 0.33, -2.0, 0.035, 0.18, CHR, 'z'); carExh(sx * 0.3, 0.33, -2.1); };
   K.done();
 }
 const CUSTOM_CARS = { buggy: buggyFrame, monster: monsterTruck, rod: hotRod, formula: formulaCar, kart: goKart, retro: retroCompact };
 
 /* ---------- the car ---------- */
+/* exhaust tips of the model being built (position and the way the pipe points), kept on the model for the nitro flame (06_car.js nitroFlame) */
+const _CEX = [];
+function carExh(x, y, z, dx, dy, dz) { _CEX.push([x, y, z, dx || 0, dy || 0, dz == null ? -1 : dz]); }
 function buildCarModel(def, hex, opts) {
-  opts = opts || {};
+  opts = opts || {}; _CEX.length = 0;
   const cs = opts.cos || null;
   const S = carSpec(def), b = S.b, hl = S.hl, hw = S.hw, y0 = S.y0, y1 = S.y1, wr = S.wr, C = S.C, lod = opts.lod ? 1 : 0, tww = S.tww;
   const gP = new GB(0, 0, false), gG = new GB(0, 0, false), gT = new GB(0, 0, false), gD = new GB(0, 0, false), gLt = new GB(0, 0, false), tl = new GB(0, 0, false);
@@ -618,7 +621,7 @@ function buildCarModel(def, hex, opts) {
   }
   /* exhaust tips */
   const ex = b.exhaust != null ? b.exhaust : 2;
-  if (ex > 0) { const eg = ni(new THREE.CylinderGeometry(0.048, 0.052, 0.14, 12)); eg.rotateX(Math.PI / 2); for (let k = 0; k < ex; k++) { const xx = ex === 1 ? 0.5 * hw : (ex === 2 ? (k ? 1 : -1) * 0.52 * hw : (k - 1.5) * 0.28 * hw); _m4.compose(_p3.set(xx, S.ySill + 0.12, -hl + 0.0), _q.identity(), _s3.set(1, 1, 1)); gD.geo(eg, _m4, _tcol.setRGB(0.32, 0.33, 0.36), 0); } eg.dispose(); }
+  if (ex > 0) { const eg = ni(new THREE.CylinderGeometry(0.048, 0.052, 0.14, 12)); eg.rotateX(Math.PI / 2); for (let k = 0; k < ex; k++) { const xx = ex === 1 ? 0.5 * hw : (ex === 2 ? (k ? 1 : -1) * 0.52 * hw : (k - 1.5) * 0.28 * hw); _m4.compose(_p3.set(xx, S.ySill + 0.12, -hl + 0.0), _q.identity(), _s3.set(1, 1, 1)); gD.geo(eg, _m4, _tcol.setRGB(0.32, 0.33, 0.36), 0); carExh(xx, S.ySill + 0.12, -hl - 0.07); } eg.dispose(); }
   /* ---- optional body kit (as the old recipe, placed on the new surface) ---- */
   const dk = (x0, ya, z0, x1, yb, z1, k) => tbx(x0, ya, z0, x1, yb, z1, k), sy0 = Math.max(0.05, y0 - 0.2), topAt = (z) => samp(S.sil, z) - 0.02;
   if (b.stripes) { const s = b.stripes; for (const sx of [-1, 1]) { const xa = sx * 0.05, xb2 = sx * 0.2; pTop(S, gD, xa, xb2, S.zFB + 0.04, hl - 0.06, 0.006, s, 1, 8); pTop(S, gD, xa, xb2, -hl + 0.06, S.zRB - 0.04, 0.006, s, 1, 8); pTop(S, gD, xa, xb2, S.zRT + 0.02, S.zFT - 0.02, 0.006, s, 1, 8); } }
@@ -717,6 +720,7 @@ function buildCarModel(def, hex, opts) {
     }
   } else wheelsAdd(grp, S);
   grp.userData.S = S;
+  grp.userData.exh = _CEX.map((e) => e.slice());
   return grp;
 }
 function disposeCar(g) {

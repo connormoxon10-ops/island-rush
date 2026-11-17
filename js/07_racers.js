@@ -253,7 +253,7 @@ Bots.visual = function (dt) {
   if (!Bots.on) return;
   for (const b of Bots.list) {
     const c = b.c, m = b.mesh; m.position.set(c.x, c.y + c.sY * 0.4, c.z); m.rotation.set(-c.pitch, c.yaw, c.roll, 'YXZ'); m.userData.cs = c; m.userData.v = c.speed; m.userData.brake = c.brk > 0.25 && !c.rev; m.userData.steer = clamp(c.delta || 0, -0.6, 0.6);
-    b.smokeT -= dt; const dd = Math.hypot(c.x - Pl.x, c.z - Pl.z); if (dd < 160) nitroFlame(c, b.def, b.P, dt, null);
+    b.smokeT -= dt; const dd = Math.hypot(c.x - Pl.x, c.z - Pl.z); if (dd < 160) nitroFlame(c, b.def, b.P, dt, null, b.mesh);
     if (dd < 90 && b.smokeT <= 0 && (c.drifting || c.spin || (c.braking && Math.abs(c.speed) > 25)) && !c.air) {
       b.smokeT = 0.03; const s = Math.sin(c.yaw), co = Math.cos(c.yaw);
       for (const sx of [-1, 1]) { const x = c.x - s * b.P.b + co * sx * b.P.track / 2, z = c.z - co * b.P.b - s * sx * b.P.track / 2; emit(Part.smoke, x, c.y + 0.15, z, c.vx * 0.2 + (Math.random() - 0.5), 0.8 + Math.random() * 0.6, c.vz * 0.2 + (Math.random() - 0.5), 1.4 + Math.random() * 0.6, 0.6, 2.4, 0.8, 0.8, 0.8, 0.4, -0.4); }

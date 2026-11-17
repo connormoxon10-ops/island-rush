@@ -89,7 +89,7 @@ node tests/rally_hazards.js  # mud pits, loose hay-bale slaloms and fallen logs 
 node tests/train.js         # the island railway: a closed loop round the island on a viaduct, a full-size train running round it, solid piers
 node tests/heist.js         # Gold Rush: jump off the ramp into the freight train's open wagon, steal the golden car, drive it out the back and home
 node tests/surf.js          # named beaches with roads, signs and map labels; the Surf Club: three waves, airs, the curl, wipeouts, prize money
-node tests/nitro.js         # nitro: flame out of the exhaust (blue core, orange plume), glow behind the car, stops with the nitro
+node tests/nitro.js         # nitro: a small flame on each of the model's exhaust tips, a faint glow, stops with the nitro
 node tests/dunes.js         # Dune Dash: the beach dune track (on the map), a race against five dune buggies, prize money
 ```
 
