@@ -214,6 +214,7 @@ function applyCar(id, rebuildMesh) {
     car.ext = buildPlayerCar(d, d.id); car.ext.userData.wrec.player = true; car.body.add(car.ext); Dmg.attach(car.ext);
     car.ext.visible = Cam.view !== 0;
   }
+  if (L.nitro) L.nitro.position.set(0, 0.5, -hl - 0.6);
   if (L.head) L.head.position.set(0, (d.body.y0 != null ? d.body.y0 : 0.36) + d.body.H * 0.7 + 0.1, hl - 0.2);
   Cosm.paintPlayer();
 }
