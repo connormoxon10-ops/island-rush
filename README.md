@@ -28,7 +28,7 @@ An open-world racing, flying and boating game that runs in a single HTML file, p
 
 ## Play it
 
-Run `bash build.sh`, then open `dist/island-rush.html` in a desktop browser. three.js is inlined into the file, so it plays offline from `file://`. The in-game **Controls** tab lists every key; turn on **Settings → Developer mode** for cheats, a free camera and teleports.
+Run `bash build.sh`, then open `dist/island-rush.html` in a desktop browser. three.js is inlined into the file, so it plays offline from `file://`. The in-game **Controls** tab lists every key; turn on **Settings → Developer mode** for cheats, a free camera and teleports. The Dev tab teleports you to every town, place (garage, raceway, workshop, airport, marina, Gold Rush ramp, Dune Dash, Surf Club), named beach and onto the viaduct behind the train, and has Gold Rush controls: start at the ramp, bring the open wagon round, skip the jump, take the prize, skip to the garage, reset, give the car, and set the train's speed.
 
 ## What's in it
 
