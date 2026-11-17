@@ -363,16 +363,16 @@ function updateCamera(dt, speedFx) {
 
 /* ---------------- particles ---------------- */
 const Part = {};
-function mkPoints(n, blend, vsz) {
+function mkPoints(n, blend, vsz, near) {
   const g = new THREE.BufferGeometry(), pos = new Float32Array(n * 3), col = new Float32Array(n * 4), size = new Float32Array(n);
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aCol', new THREE.BufferAttribute(col, 4)); g.setAttribute('aSize', new THREE.BufferAttribute(size, 1));
   const m = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: blend, uniforms: { uScale: { value: 600 } },
-    vertexShader: 'attribute vec4 aCol; attribute float aSize; varying vec4 vC; uniform float uScale; void main(){ vC=aCol; vec4 mv=modelViewMatrix*vec4(position,1.0); vC.a*=smoothstep(2.0,9.0,-mv.z); gl_Position=projectionMatrix*mv; gl_PointSize=aSize*uScale/max(0.5,-mv.z); }',
+    vertexShader: 'attribute vec4 aCol; attribute float aSize; varying vec4 vC; uniform float uScale; void main(){ vC=aCol; vec4 mv=modelViewMatrix*vec4(position,1.0); vC.a*=smoothstep(' + (near ? near[0].toFixed(1) : '2.0') + ',' + (near ? near[1].toFixed(1) : '9.0') + ',-mv.z); gl_Position=projectionMatrix*mv; gl_PointSize=aSize*uScale/max(0.5,-mv.z); }',
     fragmentShader: 'varying vec4 vC; void main(){ vec2 p=gl_PointCoord-0.5; float d=length(p)*2.0; float a=1.0-smoothstep(0.0,1.0,d); gl_FragColor=vec4(vC.rgb,vC.a*a*a); }' });
   const pts = new THREE.Points(g, m); pts.frustumCulled = false; pts.renderOrder = 5;
   return { pts, n, pos, col, size, g, life: new Float32Array(n), max: new Float32Array(n), vel: new Float32Array(n * 3), a0: new Float32Array(n), s0: new Float32Array(n), grow: new Float32Array(n), grav: new Float32Array(n), cr: new Float32Array(n * 3), next: 0 };
 }
-function initParticles() { Part.smoke = mkPoints(300, THREE.NormalBlending); Part.spark = mkPoints(200, THREE.AdditiveBlending); scene.add(Part.smoke.pts, Part.spark.pts); }
+function initParticles() { Part.smoke = mkPoints(300, THREE.NormalBlending); Part.spark = mkPoints(200, THREE.AdditiveBlending); Part.fire = mkPoints(360, THREE.AdditiveBlending, 0, [0.3, 1.5]); scene.add(Part.smoke.pts, Part.spark.pts, Part.fire.pts); }
 function emit(S, x, y, z, vx, vy, vz, life, size, grow, r, g, b, a, grav) {
   if (S === Part.smoke && Cam.view === 2) { size *= 0.5; grow *= 0.55; a *= 0.6; }
   const i = S.next; S.next = (S.next + 1) % S.n;
@@ -380,7 +380,7 @@ function emit(S, x, y, z, vx, vy, vz, life, size, grow, r, g, b, a, grav) {
   S.life[i] = life; S.max[i] = life; S.s0[i] = size; S.grow[i] = grow; S.a0[i] = a; S.cr[i * 3] = r; S.cr[i * 3 + 1] = g; S.cr[i * 3 + 2] = b; S.grav[i] = grav;
 }
 function updateParticles(dt) {
-  for (const S of [Part.smoke, Part.spark]) {
+  for (const S of [Part.smoke, Part.spark, Part.fire]) {
     for (let i = 0; i < S.n; i++) {
       if (S.life[i] <= 0) { S.col[i * 4 + 3] = 0; S.size[i] = 0; continue; }
       S.life[i] -= dt; const f = Math.max(0, S.life[i] / S.max[i]);
@@ -390,10 +390,11 @@ function updateParticles(dt) {
     S.g.attributes.position.needsUpdate = true; S.g.attributes.aCol.needsUpdate = true; S.g.attributes.aSize.needsUpdate = true;
   }
   const u = 0.5 * (renderer.domElement.height || 720) / Math.tan(camera.fov * DEG / 2);
-  Part.smoke.pts.material.uniforms.uScale.value = u; Part.spark.pts.material.uniforms.uScale.value = u;
+  Part.smoke.pts.material.uniforms.uScale.value = u; Part.spark.pts.material.uniforms.uScale.value = u; Part.fire.pts.material.uniforms.uScale.value = u;
 }
 function carFx(dt) {
   const c = car, s = Math.sin(c.yaw), co = Math.cos(c.yaw);
+  nitroFlame(c, CUR, CARP, dt, L.nitro);
   const rearW = [[-CARP.track / 2, -CARP.b], [CARP.track / 2, -CARP.b]];
   if ((c.drifting || c.spin || (c.braking && Math.abs(c.speed) > 15)) && !c.air && Math.random() < dt * 70) {
     for (const w of rearW) { const x = c.x + s * w[1] + co * w[0], z = c.z + co * w[1] - s * w[0]; emit(Part.smoke, x, c.y + 0.15, z, c.vx * 0.2 + (Math.random() - 0.5), 0.8 + Math.random() * 0.6, c.vz * 0.2 + (Math.random() - 0.5), 1.4 + Math.random() * 0.8, 0.9, 3.2, 0.85, 0.85, 0.85, 0.42, -0.2); }
@@ -403,6 +404,23 @@ function carFx(dt) {
     for (const w of rearW) { const x = c.x + s * w[1] + co * w[0], z = c.z + co * w[1] - s * w[0]; emit(Part.smoke, x, c.y + 0.1, z, (Math.random() - 0.5) * 1.5, 0.8 + Math.random(), (Math.random() - 0.5) * 1.5, 1.2 + Math.random(), 0.7, 2.6, tone[0], tone[1], tone[2], 0.32, -0.1); }
   }
   if (c.health < 40 && Math.random() < dt * 25) { const x = c.x + s * 2 , z = c.z + co * 2; emit(Part.smoke, x, c.y + 1.0, z, c.vx * 0.5 + (Math.random() - 0.5), 1.2, c.vz * 0.5 + (Math.random() - 0.5), 1.6, 0.7, 2.2, 0.1, 0.1, 0.1, 0.5, -0.3); }
+}
+/* nitro: flame out of the exhaust tips while it burns (a blue-white core inside an orange plume, blown back by the speed), a pop and a lick of fire
+   when it lights, a flickering orange glow on the road behind. Any car: the player's (carFx) and the rivals' (07_racers.js) */
+function nitroFlame(c, d, P, dt, light) {
+  const b = d.body, hw = b.W / 2, ex = b.exhaust != null ? b.exhaust : 2, n = ex === 0 ? 1 : Math.min(ex, 2), s = Math.sin(c.yaw), co = Math.cos(c.yaw), z = -(d.hl || b.L / 2) - 0.05, y = c.y + (b.y0 != null ? b.y0 : 0.36) + (ex === 0 ? 0.55 : 0.12);
+  const on = !!c.nitroUse, lit = on && !c._nitWas; c._nitWas = on;
+  if (light) { const L2 = light; L2.intensity += ((on ? 2.2 + Math.random() * 1.6 : 0) - L2.intensity) * Math.min(1, dt * 18); }
+  if (!on) return; const k = lit ? 3 : 1, back = 9 + Math.random() * 6;
+  for (let q = 0; q < n; q++) {
+    const xx = n === 1 ? (ex === 1 ? 0.5 * hw : 0) : (q ? 1 : -1) * 0.52 * hw, x = c.x + s * z + co * xx, zz = c.z + co * z - s * xx;
+    for (let r = 0; r < 3 * k; r++) {
+      const j = 0.6 + Math.random() * 0.8, vx = c.vx - s * back * j + (Math.random() - 0.5) * 1.2, vz = c.vz - co * back * j + (Math.random() - 0.5) * 1.2;
+      emit(Part.fire, x, y, zz, vx, (Math.random() - 0.3) * 0.8, vz, 0.07 + Math.random() * 0.06, 0.26 + Math.random() * 0.12, 0.1, 0.6, 0.8, 2.2, 1, 0);           /* core */
+      emit(Part.fire, x - s * 0.2, y + 0.02, zz - co * 0.2, vx, 0.3 + Math.random() * 0.8, vz, 0.12 + Math.random() * 0.1, 0.45 + Math.random() * 0.25, 0.8, 2.6, 1.1, 0.22, 0.9, -1);   /* plume */
+    }
+    if (lit) { Snd.whoosh(); for (let r = 0; r < 6; r++) emit(Part.fire, x, y, zz, c.vx - s * 4 + (Math.random() - 0.5) * 3, Math.random() * 2, c.vz - co * 4 + (Math.random() - 0.5) * 3, 0.18, 0.55, 0.7, 2.6, 1.2, 0.3, 0.9, -0.5); }
+  }
 }
 function sparks(x, y, z, n, power) {
   for (let i = 0; i < n; i++) emit(Part.spark, x, y, z, (Math.random() - 0.5) * power, Math.random() * power * 0.6, (Math.random() - 0.5) * power, 0.35 + Math.random() * 0.5, 0.2, -0.1, 3.0, 1.6, 0.5, 1, 9);
