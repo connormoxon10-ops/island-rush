@@ -46,6 +46,7 @@ const OUT = process.env.OUT || __dirname;
     pad.buttons[7].value = 0; return { caught, maxY: +maxY.toFixed(1), tries: H.tries, phase: H.phase, cross: window.__cross };
   }, [off, k]);
   for (const [k, P] of (await page.evaluate(() => window.__game.HEIST_PRIZES.map((p) => ({ id: p.id, name: p.name, title: p.title, reward: p.reward })))).entries()) {
+  if (process.env.ONLY && !process.env.ONLY.split(',').includes(String(k))) continue;
   await page.evaluate(() => { window.__now += 1; const g = window.__game; g.Heist.phase = 'idle'; g.Heist.ride = null; g.Wanted.set && g.Wanted.set(0); if (g.Police && g.Police.reset) g.Police.reset(); });
   const res = [], ins = [];
   for (const off of [-0.75, -0.6, -0.45, -0.3, -0.15, 0, 0.15, 0.3]) {
@@ -68,7 +69,8 @@ const OUT = process.env.OUT || __dirname;
       for (let i = 0; i < 120 && g.Heist.phase === 'ride'; i++) { pad.buttons[7].value = 1; window.__now += 1000 / 30; g.frame(window.__now); t++; }
       pad.buttons[7].value = 0; const ph = g.Heist.phase;
       for (let i = 0; i < 60; i++) { pad.buttons[6].value = 1; window.__now += 1000 / 30; g.frame(window.__now); } pad.buttons[6].value = 0;
-      const n = {}; R.near(c.x, c.z, n); return { ph, frames: t, y: c.y, deck: n.y + 0.05, lat: n.lat, health: c.health };
+      for (let i = 0; i < 60 && c.air; i++) { window.__now += 1000 / 30; g.frame(window.__now); }   /* let it settle */
+      const n = {}; R.near(c.x, c.z, n); return { ph, frames: t, y: c.y, deck: n.y + 0.05, lat: n.lat, health: c.health, air: c.air, vy: +c.vy.toFixed(2), spd: +c.speed.toFixed(1) };
     });
     console.log(JSON.stringify(out));
     ok(out.ph === 'escape', 'throttle: the ' + P.id + ' drives out of the back of the wagon (' + out.frames + ' frames)');

@@ -83,8 +83,8 @@ Heist.ground = function (x, z, c, o) {
   Rail.deck(x, z, c.y, o);
 };
 /* no trees on the run-up and the ramp */
-Heist.clearTree = function (x, z) { for (const S of Heist.sites) if (Heist.clearTree1(x, z, S)) return true; return false; };
-Heist.clearTree1 = function (x, z, S) { const dx = x - S.cx, dz = z - S.cz, u = dx * S.rx + dz * S.rz, w = dx * S.rz - dz * S.rx; return u > 4 && u < HEIST.LAT + HEIST.RL + HEIST.RUN + 14 && Math.abs(w) < 9; };
+Heist.clearTree = function (x, z, m) { for (const S of Heist.sites) if (Heist.clearTree1(x, z, S, m || 0)) return true; return false; };
+Heist.clearTree1 = function (x, z, S, m) { const dx = x - S.cx, dz = z - S.cz, u = dx * S.rx + dz * S.rz, w = dx * S.rz - dz * S.rx; return u > 4 - m && u < HEIST.LAT + HEIST.RL + HEIST.RUN + 14 + m && Math.abs(w) < 9 + m; };
 
 /* ---------- the things in the world: the ramp, the gold beam, the gold car in the wagon ---------- */
 Heist.build = function () {

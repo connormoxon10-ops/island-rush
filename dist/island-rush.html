@@ -1783,6 +1783,7 @@ function buildChunk(cx, cz) {
       if (h < 1.6 || h > 190 || count > maxT) continue;
       if (townAt(x, z, 34) || Air.clear(x, z, 34) || Dock.clear(x, z, 12) || Track.clear(x, z, 30)) continue;
       if (dRoadAt(x, z) < 17) continue;
+      if (Heist.sites.length && Heist.clearTree(x, z, 8)) continue;   /* no rocks, trees or hay on a heist run-up (with room for a big boulder's width) */
       const hx = hAt(x + 2, z) - hAt(x - 2, z), hz = hAt(x, z + 2) - hAt(x, z - 2), slope = Math.hypot(hx, hz) / 4;
       if (slope > 0.8) continue;
       Biome.at(x, z); const R = Biome.pick(rp), tr = R ? R.tree : null, tl = Biome.num('tl', 'tree', 112), dm = Biome.num('dens', 'tree', 1), rk = Biome.num('rockK', 'tree', 1);
@@ -14274,8 +14275,8 @@ Heist.ground = function (x, z, c, o) {
   Rail.deck(x, z, c.y, o);
 };
 /* no trees on the run-up and the ramp */
-Heist.clearTree = function (x, z) { for (const S of Heist.sites) if (Heist.clearTree1(x, z, S)) return true; return false; };
-Heist.clearTree1 = function (x, z, S) { const dx = x - S.cx, dz = z - S.cz, u = dx * S.rx + dz * S.rz, w = dx * S.rz - dz * S.rx; return u > 4 && u < HEIST.LAT + HEIST.RL + HEIST.RUN + 14 && Math.abs(w) < 9; };
+Heist.clearTree = function (x, z, m) { for (const S of Heist.sites) if (Heist.clearTree1(x, z, S, m || 0)) return true; return false; };
+Heist.clearTree1 = function (x, z, S, m) { const dx = x - S.cx, dz = z - S.cz, u = dx * S.rx + dz * S.rz, w = dx * S.rz - dz * S.rx; return u > 4 - m && u < HEIST.LAT + HEIST.RL + HEIST.RUN + 14 + m && Math.abs(w) < 9 + m; };
 
 /* ---------- the things in the world: the ramp, the gold beam, the gold car in the wagon ---------- */
 Heist.build = function () {
