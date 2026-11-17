@@ -88,7 +88,6 @@ node tests/beach.js         # beaches all round the island: sand, umbrellas, lou
 node tests/rally_hazards.js  # mud pits, loose hay-bale slaloms and fallen logs on every stage: grip, drag, bump height, bale lanes
 node tests/train.js         # the island railway: a closed loop round the island on a viaduct, a full-size train running round it, solid piers
 node tests/heist.js         # Gold Rush: jump off the ramp into the freight train's open wagon, steal the golden car, drive it out the back and home
-node tests/beach.js         # (also) swimwear on every beachgoer, groups, volleyball, swimmers; breaking waves in the water shader
 ```
 
 The browser tests drive the built game in headless Chromium with software GL (slow, 1-7 fps), using step lists of `{js}`, `{wait}` and `{shot}`:
