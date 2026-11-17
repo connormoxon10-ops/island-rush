@@ -30,6 +30,36 @@ UI.hideResult = function () { E.result.hidden = true; App.resultT = 0; };
 /* ---------- HUD ---------- */
 let _mpT = 0, _miniT = 0, _tgtH = 0, _tgtHT = 0;
 function devTeleport(x, z, label) { car.x = x; car.z = z; App.respawn(true); UI.toast('Teleported · ' + label, 'info'); }
+/* teleport to an exact spot (off-road too), facing yaw: the world round it is built first so the car lands on the ground, not in a hole */
+function devPlace(x, z, yaw, label) { if (Foot.on) Foot.board(true); if (Fly.on) Fly.end(); if (Boat.on) Boat.end(); loadAround(x, z, 12); spawnAt(x, z, yaw || 0); car.health = 100; UI.toast('Teleported · ' + label, 'info'); }
+/* the places worth jumping to, beyond the towns: [id, label, () => [x, z, yaw] or null when the place does not exist in this world] */
+const DEV_PLACES = [
+  ['home', 'Your garage', () => (GAR.ok ? [GAR.ox, GAR.oz - 14, Math.PI] : null)],
+  ['race', 'Raceway office', () => (Track.s ? [Track.officeX, Track.officeZ + 8, Math.PI] : null)],
+  ['wk', 'Workshop', () => (Wk.site ? [Wk.site.x, Wk.site.z + 14, Math.PI] : null)],
+  ['gold', 'Gold Rush ramp', () => { const S = Heist.site; return S ? [S.sx + S.rx * 10, S.sz + S.rz * 10, S.yaw] : null; }],
+  ['dune', 'Dune Dash', () => { const S = Dunes.s; return S ? [S.ox, S.oz, Math.atan2(S.tx[S.start], S.tz[S.start])] : null; }],
+  ['surf', 'Surf Club', () => { const B = Surf.beaches.find((b) => b.surf); return B && B.ox != null ? [B.ox - B.ix * 6, B.oz - B.iz * 6, Math.atan2(-B.ix, -B.iz)] : null; }]
+];
+/* Gold Rush and the train, for testing: put the open wagon at the ramp, skip the jump, skip to the escape, reset the heist, change the train's speed */
+UI.devHeist = function (k) {
+  const S = Heist.site, t = Rail.heist; if (!S || !t) { UI.toast('No Gold Rush site in this world', 'bad'); return; }
+  const want = (sec) => { Rail.s = ((S.s - (RAIL_WAGON.DOOR[0] + RAIL_WAGON.DOOR[1]) / 2 + t.off - sec * Rail.v) % Rail.L + Rail.L) % Rail.L; Rail.update(0); };
+  if (k === 'start') { if (save.owned[HEIST.ID]) { UI.toast('The Aurum is already yours · reset Gold Rush first', 'info'); return; } const p = DEV_PLACES.find((q) => q[0] === 'gold')[2](); devPlace(p[0], p[1], p[2], 'Gold Rush'); Heist.stop(); Heist.start(); want(14); }
+  else if (k === 'cue') { if (Heist.phase !== 'armed') { UI.toast('Start Gold Rush first', 'info'); return; } want(8); UI.toast('The open wagon reaches the ramp in 8 s', 'info'); }
+  else if (k === 'board') {   /* straight into the wagon, as if the jump had worked */
+    if (save.owned[HEIST.ID]) { UI.toast('The Aurum is already yours · reset Gold Rush first', 'info'); return; }
+    if (Foot.on) Foot.board(true); Heist.phase = 'armed'; Rail.v = HEIST.V; const q = {}; Rail.toWorld(t, 0, RAIL_WAGON.Y0 + 0.7, 3.2, q); loadAround(q.x, q.z, 8); spawnAt(q.x, q.z, t.yaw); car.y = q.y - 0.6;
+    Heist.catch({ x: 0, y: RAIL_WAGON.Y0 + 0.72, z: 3.2 }); UI.toast('In the wagon · F to take the Aurum', 'info');
+  } else if (k === 'take') { if (Heist.phase !== 'aboard') UI.devHeist('board'); if (Heist.phase === 'aboard') { Heist.ride.t = 1; Heist.take(); } }
+  else if (k === 'home') { if (Heist.phase === 'escape' || Heist.phase === 'ride') { if (Heist.phase === 'ride') { Heist.ride = null; Heist.phase = 'escape'; } devPlace(GAR.ox, GAR.oz + 25, Math.PI, 'outside the garage with the Aurum'); } else UI.toast('Not carrying the Aurum', 'info'); }
+  else if (k === 'reset') { if (Heist.phase !== 'idle') Heist.fail('Reset from the dev tab'); delete save.owned[HEIST.ID]; if (save.car === HEIST.ID) { applyCar('rook', true); } save.heist = { prev: null, done: 0 }; Heist.placeGold(); GAR.dirty = true; Home.refresh(); UI.toast('Gold Rush reset · the Aurum is back on the train', 'info'); }
+  else if (k === 'give') { save.owned[HEIST.ID] = true; save.heist.done = 1; Heist.placeGold(); GAR.dirty = true; Home.refresh(); UI.toast('The Aurum Spectre is in your garage', 'good'); }
+  else if (k === 'train') {   /* onto the viaduct deck, 40 m behind the train, facing along the line */
+    if (Foot.on) Foot.board(true); const q = {}, q2 = {}, back = Rail.s - t.off - t.L / 2 - 40; Rail.at(back, q); Rail.at(back + 4, q2); loadAround(q.x, q.z, 8); spawnAt(q.x, q.z, Math.atan2(q2.x - q.x, q2.z - q.z)); car.y = q.y - 0.16; UI.toast('On the viaduct behind the train', 'info');
+  } else if (k.startsWith('v')) { Rail.v = +k.slice(1); UI.toast(Rail.v ? 'Train at ' + Math.round(Rail.v * 3.6) + ' km/h' : 'Train stopped', 'info'); }
+  writeSave();
+};
 UI.devFree = function (on) {
   if (on && Foot.on) Foot.board(true);
   if (on && Fly.on) Fly.end();
@@ -55,6 +85,9 @@ UI.devAct = function (id) {
   else if (id === 'tpdock') { if (Dock.s) { close(); Dock.toWorld(0, -22, _bsp); devTeleport(_bsp.x, _bsp.z, Dock.name); } }
   else if (id === 'unboats') { for (const k of BIDS) save.boat.own[k] = true; Boat.tags(); UI.toast('All boats unlocked', 'good'); }
   else if (id === 'unplanes') { for (const k in PSPEC) save.air.own[k] = true; Fly.tags(); UI.toast('All planes unlocked', 'good'); }
+  else if (id.startsWith('pl:')) { const P = DEV_PLACES.find((q) => q[0] === id.slice(3)), p = P && P[2](); if (p) { close(); devPlace(p[0], p[1], p[2], P[1]); } }
+  else if (id.startsWith('bch')) { const b = Surf.beaches[+id.slice(3)]; if (b) { close(); devPlace(b.px, b.pz, Math.atan2(-b.ix, -b.iz), b.name); } }
+  else if (id.startsWith('hz:')) { close(); UI.devHeist(id.slice(3)); }
   else if (id.startsWith('tp')) { const t = towns[+id.slice(2)]; if (t) { close(); devTeleport(t.cx, t.cz, t.name); } }
   else if (id.startsWith('tod')) App.tod = +id.slice(3);
   else if (id === 'lawsuit') { close(); if (App.mode === 'play') { Court.test(); } }
@@ -290,7 +323,9 @@ UI.renderPane = function () {
     h += '<div class="sect">Cheats</div>' + row('God mode', dseg('god', Dev.god)) + row('Infinite nitro', dseg('nit', Dev.nit)) +
       row('Cash', grp(btn('cash1', '+$1k'), btn('cash10', '+$10k'), btn('cash100', '+$100k'))) + row('Garage', grp(btn('unlock', 'Unlock all cars'), btn('maxup', 'Max upgrades'), btn('repair', 'Repair'), btn('unplanes', 'Unlock planes'), btn('unboats', 'Unlock boats')));
     h += '<div class="sect">Vehicle &amp; time</div>' + row('Engine power', sl('dPow', 'dpower', 0.25, 4, 0.05, Dev.power), 'dpower') + row('Tyre grip', sl('dGrip', 'dgrip', 0.4, 2.5, 0.05, Dev.grip), 'dgrip') + row('Time scale', sl('dTs', 'dts', 0.1, 2, 0.05, Dev.ts), 'dts');
-    h += '<div class="sect">World</div>' + row('Teleport', grp(...towns.map((t, i) => btn('tp' + i, t.name)), btn('tpair', 'Airport'), btn('tpdock', 'Marina'), btn('tpwp', 'Waypoint', !Waypoint.on))) + row('Planets: orbit', grp(...WK.BODIES.map((B) => btn('wk:orbit:' + B.id, B.name)))) + row('Planets: surface', grp(...WK.BODIES.filter((B) => B !== WK.SUN && !B.crush && B !== WK.HOME).map((B) => btn('wk:land:' + B.id, B.name)))) + row('Time of day', grp(btn('tod6', 'Dawn'), btn('tod12', 'Noon'), btn('tod18.5', 'Dusk'), btn('tod23', 'Night'))) + row('Traffic', grp(btn('traf', 'Spawn 10 cars'))) + row('Lawsuit', grp(btn('lawsuit', 'Get sued now'))) + row('Mishaps', grp(btn('tow', 'Wreck car (tow truck)'), btn('cops', 'Call the police'))) + row('Wanted level', grp(btn('wl1', '1★'), btn('wl2', '2★'), btn('wl3', '3★'), btn('wl4', '4★'), btn('wl5', '5★'), btn('wl0', 'Clear'), btn('bustme', 'Get busted')));
+    h += '<div class="sect">World</div>' + row('Teleport: towns', grp(...towns.map((t, i) => btn('tp' + i, t.name)), btn('tpwp', 'Waypoint', !Waypoint.on))) + row('Teleport: places', grp(btn('tpair', 'Airport'), btn('tpdock', 'Marina'), ...DEV_PLACES.map((p) => btn('pl:' + p[0], p[1], !p[2]())))) + row('Teleport: beaches', grp(...Surf.beaches.map((b, i) => btn('bch' + i, b.name)))) + row('Teleport: train', grp(btn('hz:train', 'Behind the train (on the viaduct)'))) + row('Planets: orbit', grp(...WK.BODIES.map((B) => btn('wk:orbit:' + B.id, B.name)))) + row('Planets: surface', grp(...WK.BODIES.filter((B) => B !== WK.SUN && !B.crush && B !== WK.HOME).map((B) => btn('wk:land:' + B.id, B.name)))) + row('Time of day', grp(btn('tod6', 'Dawn'), btn('tod12', 'Noon'), btn('tod18.5', 'Dusk'), btn('tod23', 'Night'))) + row('Traffic', grp(btn('traf', 'Spawn 10 cars'))) + row('Lawsuit', grp(btn('lawsuit', 'Get sued now'))) + row('Mishaps', grp(btn('tow', 'Wreck car (tow truck)'), btn('cops', 'Call the police'))) + row('Wanted level', grp(btn('wl1', '1★'), btn('wl2', '2★'), btn('wl3', '3★'), btn('wl4', '4★'), btn('wl5', '5★'), btn('wl0', 'Clear'), btn('bustme', 'Get busted')));
+    h += '<div class="sect">Gold Rush &amp; the train</div>' + row('Heist: ' + (save.owned[HEIST.ID] ? 'done · Aurum owned' : Heist.phase), grp(btn('hz:start', 'Start at the ramp'), btn('hz:cue', 'Bring the wagon round', Heist.phase !== 'armed'), btn('hz:board', 'Skip the jump (into the wagon)'), btn('hz:take', 'Take the Aurum'), btn('hz:home', 'Skip to the garage', Heist.phase !== 'escape' && Heist.phase !== 'ride'))) +
+      row('Heist progress', grp(btn('hz:reset', 'Reset Gold Rush'), btn('hz:give', 'Give me the Aurum'))) + row('Train speed', grp(btn('hz:v0', 'Stop'), btn('hz:v8', 'Slow'), btn('hz:v16', 'Heist'), btn('hz:v22', 'Normal'), btn('hz:v40', 'Fast')));
     h += '<div class="sect">Missions</div>' + row('Current run', grp(btn('done', 'Complete run', !Mi && !VM.m))) + row('Progress', grp(btn('all3', 'All missions 3★'), btn('clrdone', 'Reset missions'))) + row('Friendships', grp(btn('relmax', 'Max all friends'), btn('relreset', 'Reset friends')));
     h += '<div class="sect">Debug</div>' + row('Stats overlay ( ` )', dseg('hud', Dev.hud)) + row('Show hitboxes ( Y )', dseg('hbox', Dev.hbox)) + (Dev.hbox ? '<div class="note">Green trunks · cyan tree crowns (planes only) · magenta rocks · yellow poles and tanks · red buildings and roofs · blue cars · white you · orange plane and boat test points. Drawn see-through around you.</div>' : '') + row('Free camera ( V )', dseg('free', Dev.free)) + row('Free camera tools', grp(btn('drop', 'Drop car at camera', !Dev.free))) +
       '<div class="note">Free camera: WASD fly · Space / Z up / down · Shift fast · drag to look. Resume to use it.</div>' + row('Developer mode', grp(btn('off', 'Turn off')));
