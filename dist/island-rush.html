@@ -2338,9 +2338,10 @@ void main(){
   #include <encodings_fragment>
 }`;
 
-const WATER_V = `attribute float aDepth; varying vec3 vW; varying float vDepth;
+const WATER_V = `attribute float aDepth; uniform float uTime; varying vec3 vW; varying float vDepth;
 #include <fog_pars_vertex>
-void main(){ vec4 wp=modelMatrix*vec4(position,1.0); vW=wp.xyz; vDepth=aDepth; vec4 mvPosition=viewMatrix*wp; gl_Position=projectionMatrix*mvPosition;
+void main(){ vec4 wp=modelMatrix*vec4(position,1.0); vW=wp.xyz; vDepth=aDepth;
+  float sh=(1.0-smoothstep(0.6,4.5,aDepth))*smoothstep(0.05,0.7,aDepth); wp.y+=0.32*sh*pow(0.5+0.5*sin(aDepth*1.15+uTime*1.25),3.0);   /* the swell steepening as it runs into the shallows */ vec4 mvPosition=viewMatrix*wp; gl_Position=projectionMatrix*mvPosition;
 #include <fog_vertex>
 }`;
 const WATER_F = `uniform float uTime,uNight,uDay; uniform vec3 uSunDir,uSunCol,uSky,uZen,uDeep,uShallow; varying vec3 vW; varying float vDepth;
@@ -2366,6 +2367,11 @@ void main(){
   vec3 r=reflect(-uSunDir,n); float spec=pow(max(dot(r,v),0.0),260.0);
   col+=uSunCol*spec*5.0*uDay;
   float fo=(1.0-smoothstep(0.0,1.2,dep+0.25*sin(t*1.4+dep*6.0+vn(p*0.35)*4.0)))*(0.5+0.5*vn(p*1.1+t*0.35));
+  /* breaking waves: lines of surf roll in over the shallows, break white along the crest, leave foam behind and wash up the sand */
+  float sh=(1.0-smoothstep(0.6,4.5,dep))*smoothstep(0.12,0.8,dep), ph=dep*1.15+t*1.25, along=0.55+0.45*vn(p*0.06+vec2(t*0.08,0.0));
+  float crest=pow(0.5+0.5*sin(ph),14.0)*sh*along, trail=pow(0.5+0.5*sin(ph-0.7),5.0)*sh*along*0.55*vn(p*0.9+t*0.5);
+  float swash=(1.0-smoothstep(0.0,0.35+0.25*sin(t*1.25+0.3),dep))*(0.6+0.4*vn(p*1.6-t*0.4));
+  fo=max(fo,clamp(crest*1.3+trail+swash*0.7,0.0,1.0));
   col=mix(col,vec3(0.92,0.96,1.0)*(0.25+0.75*uDay),clamp(fo*0.8,0.0,1.0));
   float alpha=clamp(smoothstep(-0.05,1.0,dep)*0.88+0.1+fo*0.4,0.0,0.97);
   gl_FragColor=vec4(col,alpha);
@@ -5591,8 +5597,8 @@ const HU_IRIS = [[0.07, 0.035, 0.015], [0.1, 0.05, 0.02], [0.05, 0.028, 0.012], 
 Human.palette = function (o) {
   const P = [], S = HU_SL, skin = huC(o.skin, [0.8, 0.6, 0.45]), top = huC(o.shirt, [0.5, 0.5, 0.5]), bot = o.skirt === 2 || o.robe ? top : huC(o.pants, [0.1, 0.1, 0.12]), sd = Math.floor((o.seed || 0) * 97) % 6;
   const tights = [0.03 + 0.25 * skin[0], 0.03 + 0.25 * skin[1], 0.035 + 0.25 * skin[2]], bare = o.skirt && !o.tights, lum = skin[0] + skin[1] + skin[2];
-  P[S.skin] = skin; P[S.hair] = huC(o.hair, [0.05, 0.035, 0.025]); P[S.top] = top; P[S.arm] = o.sleeve || o.coat || o.robe || o.suit ? top : skin; P[S.bot] = bot;
-  P[S.thigh] = o.skirt ? (bare ? skin : tights) : bot; P[S.leg] = o.skirt ? (bare ? skin : tights) : o.shorts ? skin : bot; P[S.shoe] = huC(o.shoe, [0.02, 0.02, 0.025]);
+  P[S.skin] = skin; P[S.hair] = huC(o.hair, [0.05, 0.035, 0.025]); P[S.top] = top; P[S.arm] = !o.swim && (o.sleeve || o.coat || o.robe || o.suit) ? top : skin; P[S.bot] = bot;
+  P[S.thigh] = o.swim ? skin : o.skirt ? (bare ? skin : tights) : bot; P[S.leg] = o.swim ? skin : o.skirt ? (bare ? skin : tights) : o.shorts ? skin : bot; P[S.shoe] = o.swim ? skin : huC(o.shoe, [0.02, 0.02, 0.025]);   /* swimwear: bare legs and feet */
   P[S.iris] = o.iris ? huC(o.iris) : HU_IRIS[lum > 1.25 ? sd : sd % 3]; P[S.lip] = [skin[0] * 0.9, skin[1] * (o.fem ? 0.5 : 0.62), skin[2] * (o.fem ? 0.52 : 0.62)];
   P[S.hat] = o.hat ? huC(o.hat.c, [0.2, 0.2, 0.2]) : [0.2, 0.2, 0.2]; P[S.hat2] = o.hat ? huC(o.hat.bc || o.hat.c, [0.2, 0.2, 0.2]) : [0.2, 0.2, 0.2];
   P[S.glass] = huC(o.glassC, [0.004, 0.004, 0.006]); P[S.bag] = huC(o.bagc, [0.2, 0.2, 0.25]); P[S.white] = [0.9, 0.9, 0.88]; P[S.inner] = huC(o.inner, [0.9, 0.9, 0.9]); P[S.tie] = huC(o.tie, [0.4, 0.05, 0.06]);
@@ -5661,7 +5667,7 @@ Human.lod = function (h, far) { if (h.far !== far) { h.far = far; h.mesh.geometr
 /* a short string that changes whenever a person's look does */
 Human.sig = function (o) {
   const c = (x) => (x ? ((x.r * 255) | 0) + ',' + ((x.g * 255) | 0) + ',' + ((x.b * 255) | 0) : '-');
-  return [o.kid ? 1 : 0, o.fem ? 1 : 0, o.old ? 1 : 0, o.s, o.hs, o.stout, c(o.skin), c(o.hair), c(o.shirt), c(o.pants), c(o.shoe), o.sleeve ? 1 : 0, o.shorts ? 1 : 0, o.skirt | 0, o.tights ? 1 : 0, o.coat ? 1 : 0, o.hst, o.beard ? 1 : 0, o.glasses ? 1 : 0, c(o.glassC), o.sun ? 1 : 0, o.hat ? o.hat.k + c(o.hat.c) + c(o.hat.bc) : 0, o.bag ? c(o.bagc) : 0].join('|');
+  return [o.swim ? 1 : 0, o.kid ? 1 : 0, o.fem ? 1 : 0, o.old ? 1 : 0, o.s, o.hs, o.stout, c(o.skin), c(o.hair), c(o.shirt), c(o.pants), c(o.shoe), o.sleeve ? 1 : 0, o.shorts ? 1 : 0, o.skirt | 0, o.tights ? 1 : 0, o.coat ? 1 : 0, o.hst, o.beard ? 1 : 0, o.glasses ? 1 : 0, c(o.glassC), o.sun ? 1 : 0, o.hat ? o.hat.k + c(o.hat.c) + c(o.hat.bc) : 0, o.bag ? c(o.bagc) : 0].join('|');
 };
 
 /* ---------------- secondary motion ---------------- */
@@ -6896,7 +6902,7 @@ Air.tick = function (dt, force) {
    The people are the game's Humans in beachwear (trunks or a swimsuit, bare feet, sun hats and sunglasses). They are made only near the camera (the nearest
    BCH.CAP), posed every frame through the pedestrians' own pose code and then laid down, sat or stood in the water. A car that hits one knocks them over. */
 const Beach = { cells: new Map(), group: null, live: [], scanT: 0, ready: false, geo: null, ppl: 0 };
-const BCH = { CELL: 34, R: 260, RP: 110, CAP: 22, SEA: 0 };
+const BCH = { CELL: 34, R: 260, RP: 130, CAP: 34, SEA: 0 };
 const BCH_SWIM = [0x1f6fd1, 0xe0342a, 0xf2c81e, 0x18a89a, 0xff6fa8, 0x23252b, 0xf27a1a, 0x7a3fd1, 0xf4f4f0, 0x2a9d4a].map(lc);
 const BCH_TOWEL = [0xe0342a, 0x1f6fd1, 0xf2c81e, 0x18a89a, 0xff6fa8, 0xf27a1a, 0x7a3fd1, 0xf4f4f0].map(lc);
 const BCH_UMB = [[0xe0342a, 0xf4f4f0], [0x1f6fd1, 0xf4f4f0], [0xf2c81e, 0x18a89a], [0xff6fa8, 0xf4f4f0], [0x2a9d4a, 0xf2c81e], [0xf27a1a, 0x1f6fd1]];
@@ -6944,9 +6950,9 @@ Beach.cell = function (i, j) {
   if (site) {
     const h = terrainHeight(x, z), gx = terrainHeight(x + 2, z) - terrainHeight(x - 2, z), gz = terrainHeight(x, z + 2) - terrainHeight(x, z - 2), g = Math.hypot(gx, gz) / 4;
     const yaw = g > 0.004 ? Math.atan2(-gx, -gz) : r() * TAU;   /* facing down the beach, to the water */
-    if (site === 1 && g < 0.14 && r() < 0.62) {
-      const u = r(); sp = { x, z, y: h, yaw, kind: u < 0.3 ? 'family' : u < 0.55 ? 'sun' : u < 0.7 ? 'chairs' : u < 0.9 ? 'walk' : 'tower', seed: r() * 1000, ppl: [], mesh: null, i, j };
-    } else if (site === 2 && r() < 0.4) sp = { x, z, y: h, yaw, kind: 'swim', seed: r() * 1000, ppl: [], mesh: null, i, j };
+    if (site === 1 && g < 0.14 && r() < 0.85) {
+      const u = r(); sp = { x, z, y: h, yaw, kind: u < 0.22 ? 'family' : u < 0.42 ? 'sun' : u < 0.54 ? 'chairs' : u < 0.68 ? 'walk' : u < 0.8 ? 'group' : u < 0.9 ? 'volley' : 'tower', seed: r() * 1000, ppl: [], mesh: null, i, j };
+    } else if (site === 2 && r() < 0.75) sp = { x, z, y: h, yaw, kind: 'swim', seed: r() * 1000, ppl: [], mesh: null, i, j };
     if (sp) bchPlan(sp, mulberry32((sp.seed * 1000) | 0));
   }
   Beach.cells.set(key, sp); return sp;
@@ -6957,15 +6963,14 @@ function bchW(sp, lx, lz, o) { const s = Math.sin(sp.yaw), c = Math.cos(sp.yaw);
 function bchLook(rnd, opt) {
   const R0 = Math.random; let a; Math.random = rnd; try { a = pedRandomLook(); } finally { Math.random = R0; }
   const pk = (arr) => arr[(rnd() * arr.length) | 0];
-  a.coat = false; a.skirt = 0; a.tights = false; a.bag = false; a.sleeve = false; a.shorts = true; a.hat = null; a.glasses = false; a.glassC = null; a.shoe = a.skin; a.sun = rnd() < 0.7;
+  a.coat = false; a.skirt = 0; a.tights = false; a.bag = false; a.sleeve = false; a.shorts = true; a.swim = true; a.hat = null; a.glasses = false; a.glassC = null; a.shoe = a.skin; a.sun = rnd() < 0.7;
   if (opt && opt.lie && (a.hst === 'long' || a.hst === 'pony')) a.hst = a.fem ? 'bun' : 'short';   /* (hair lying flat on a towel would hang the wrong way) */
   if (a.fem) { a.shirt = pk(BCH_SWIM); a.pants = rnd() < 0.55 ? a.shirt : pk(BCH_SWIM); }   /* a swimsuit, or a two-colour bikini */
-  else { a.pants = pk(BCH_SWIM); a.shirt = !a.kid && rnd() < 0.18 ? pk(BCH_SWIM) : a.skin; }   /* trunks, bare-chested (a few in a vest) */
-  if (a.old && !a.fem && rnd() < 0.5) a.shirt = pk(BCH_SWIM);
+  else { a.pants = pk(BCH_SWIM); a.shirt = a.skin; }   /* swim trunks, bare-chested */
   if (!a.kid && rnd() < 0.28) a.hat = { k: 'straw', c: pk(BCH_STRAW), bc: null };
   else if (rnd() < 0.12) a.hat = { k: 'cap', c: pk(BCH_SWIM), bc: null };
   if (!a.kid && rnd() < 0.45) { a.glasses = true; a.glassC = lc(0x101014); }
-  if (opt && opt.guard) { a.kid = false; a.pants = lc(0xd8262a); a.shirt = a.fem ? lc(0xd8262a) : rnd() < 0.5 ? lc(0xf2c81e) : a.skin; a.hat = { k: 'cap', c: lc(0xd8262a), bc: null }; a.glasses = true; a.glassC = lc(0x101014); }
+  if (opt && opt.guard) { a.kid = false; a.pants = lc(0xd8262a); a.shirt = a.fem ? lc(0xd8262a) : a.skin; a.hat = { k: 'cap', c: lc(0xd8262a), bc: null }; a.glasses = true; a.glassC = lc(0x101014); }
   return a;
 }
 function bchPerson(sp, rnd, pose, lx, lz, yawOff, opt) {
@@ -6984,7 +6989,7 @@ function bchPlan(sp, r) {
     P.push({ t: 'cool', lx: 1.9, lz: -0.9, yo: r() }); P.push({ t: 'bball', lx: 2.5 + r(), lz: 2.6 + r() }); if (r() < 0.7) P.push({ t: 'castle', lx: -2.2, lz: 2.8 });
     bchPerson(sp, r, r() < 0.7 ? 'lie' : 'prone', -0.8, 1.05, 0); bchPerson(sp, r, 'sit', 0.8, -0.35, (r() - 0.5) * 0.4); bchPerson(sp, r, 'play', -1.6, 3.4, (r() - 0.5) * 2, { kid: true });
   } else if (k === 'sun') {
-    const n = r() < 0.5 ? 2 : 1; for (let q = 0; q < n; q++) { const lx = (q - (n - 1) / 2) * 1.5, yo = (r() - 0.5) * 0.3; towel(lx, 0, yo); const ps = r() < 0.6 ? 'lie' : r() < 0.6 ? 'prone' : 'sit'; bchPerson(sp, r, ps, lx, ps === 'sit' ? -0.35 : 0.85, yo); }
+    const n = 1 + ((r() * 3) | 0); for (let q = 0; q < n; q++) { const lx = (q - (n - 1) / 2) * 1.5, yo = (r() - 0.5) * 0.3; towel(lx, 0, yo); const ps = r() < 0.6 ? 'lie' : r() < 0.6 ? 'prone' : 'sit'; bchPerson(sp, r, ps, lx, ps === 'sit' ? -0.35 : 0.85, yo); }
     if (r() < 0.5) P.push({ t: 'cool', lx: 1.6, lz: -1.2, yo: r() });
   } else if (k === 'chairs') {
     P.push({ t: 'umb', lx: 0, lz: -1.1, c: (r() * BCH_UMB.length) | 0, tilt: 0 }); P.push({ t: 'lounger', lx: -0.85, lz: 0, c: r() < 0.5 }); P.push({ t: 'lounger', lx: 0.85, lz: 0, c: r() < 0.5 });
@@ -6997,8 +7002,16 @@ function bchPlan(sp, r) {
   } else if (k === 'tower') {
     P.push({ t: 'tower', lx: 0, lz: 0 }); P.push({ t: 'board', lx: 2.4, lz: -0.6, c: (r() * BCH_SWIM.length) | 0, rz: 0.12 }); P.push({ t: 'board', lx: 2.9, lz: -0.4, c: (r() * BCH_SWIM.length) | 0, rz: -0.1 });
     bchPerson(sp, r, 'stand', -1.6, 1.4, 0, { guard: true });
+  } else if (k === 'group') {
+    /* friends standing about chatting in a ring, a cool box and a towel down */
+    const n = 3 + ((r() * 2) | 0), a0 = r() * TAU; for (let q = 0; q < n; q++) { const a = a0 + q * TAU / n, lx = Math.sin(a) * 1.3, lz = Math.cos(a) * 1.3; bchPerson(sp, r, 'stand', lx, lz, Math.atan2(-lx, -lz)); }
+    P.push({ t: 'cool', lx: 0.2, lz: 0.1, yo: r() }); towel(2.4, 0.4, r());
+  } else if (k === 'volley') {
+    /* beach volleyball: a net across, two a side, the ball in the air */
+    P.push({ t: 'net', lx: 0, lz: 0 }); P.push({ t: 'ball', lx: 0.6, lz: 0.4, y: 3.2 });
+    for (const [lx, lz] of [[-2.2, -3.0], [2.4, -4.2], [-2.6, 3.4], [2.0, 4.0]]) bchPerson(sp, r, 'play', lx, lz, lz < 0 ? 0 : Math.PI);
   } else if (k === 'swim') {
-    const n = 1 + ((r() * 3) | 0); for (let q = 0; q < n; q++) bchPerson(sp, r, 'swim', (r() - 0.5) * 7, (r() - 0.5) * 5, Math.PI + (r() - 0.5) * 2.4, { kid: r() < 0.2 });
+    const n = 2 + ((r() * 3) | 0); for (let q = 0; q < n; q++) bchPerson(sp, r, 'swim', (r() - 0.5) * 7, (r() - 0.5) * 5, Math.PI + (r() - 0.5) * 2.4, { kid: r() < 0.2 });
   }
 }
 /* the props of a spot as one merged mesh, built when it first comes near */
@@ -7023,6 +7036,13 @@ function bchBuild(sp) {
       for (const [dx, dz] of [[-0.27, 0.9], [0.27, 0.9], [-0.27, -0.2], [0.27, -0.2]]) put(G.cyl, q.lx + dx, q.lz + dz, y0 + 0.15, 0, 0, 0, 0.02, 0.32, 0.02, METAL);
       put(G.box, q.lx, q.lz - 0.95, y + 0.62, 0, -0.95, 0, 0.5, 0.06, 0.18, W);   /* the pillow */
     } else if (q.t === 'board') put(G.board, q.lx, q.lz, y0 + 0.95, 0, 0, q.rz, 0.27, 1.05, 0.045, BCH_SWIM[q.c]);
+    else if (q.t === 'net') {
+      for (const sd of [-1, 1]) put(G.cyl, q.lx + sd * 4.6, q.lz, y0 + 1.3, 0, 0, 0, 0.05, 2.6, 0.05, W);
+      for (let k = 0; k < 6; k++) put(G.box, q.lx, q.lz, y0 + 1.78 + k * 0.16, 0, 0, 0, 9.2, 0.012, 0.012, lc(0x30343a));   /* the net: strands you can see through */
+      for (let k = -14; k <= 14; k++) put(G.box, q.lx + k * 0.32, q.lz, y0 + 2.18, 0, 0, 0, 0.012, 0.82, 0.012, lc(0x30343a));
+      put(G.box, q.lx, q.lz, y0 + 2.62, 0, 0, 0, 9.2, 0.07, 0.04, W);
+      for (const [x0, z0, x1, z1] of [[-4, -8, 4, -8], [-4, 8, 4, 8], [-4, -8, -4, 8], [4, -8, 4, 8]]) put(G.box, q.lx + (x0 + x1) / 2, q.lz + (z0 + z1) / 2, y0 + 0.02, 0, 0, 0, Math.max(0.05, Math.abs(x1 - x0)), 0.02, Math.max(0.05, Math.abs(z1 - z0)), lc(0x1f6fd1));   /* the court lines */
+    } else if (q.t === 'ball') put(G.bball, q.lx, q.lz, y0 + q.y, 0.3, 0.2, 0, 0.11, 0.11, 0.11, _bchC.setRGB(1, 1, 1));
     else if (q.t === 'tower') {
       const H = 2.3; for (const [dx, dz] of [[-0.85, -0.85], [0.85, -0.85], [-0.85, 0.85], [0.85, 0.85]]) put(G.box, q.lx + dx, q.lz + dz, y0 + H / 2, 0, 0, 0, 0.12, H + 0.3, 0.12, W, 0.25);
       put(G.box, q.lx, q.lz, y0 + H + 0.05, 0, 0, 0, 2.0, 0.12, 2.0, WOOD); put(G.box, q.lx, q.lz, y0 + H + 0.25, 0, 0, 0, 1.6, 0.9, 1.4, W, 0.2);
@@ -9839,7 +9859,7 @@ function updatePeds(dt) {
 const pfr = (x) => x - Math.floor(x);
 function pedSpec(a, seed) {
   return { kid: a.kid, fem: a.fem, old: a.old, s: a.s, hs: a.hs, stout: a.stout, skin: a.skin, hair: a.hair, shirt: a.shirt, pants: a.pants, shoe: a.shoe, sleeve: a.sleeve, shorts: a.shorts, skirt: a.skirt, tights: a.tights, coat: a.coat,
-    hst: a.hst, beard: a.beard, glasses: a.glasses, glassC: a.glassC, sun: a.sun, hat: a.hat && HU_HAT[a.hat.k] ? a.hat : null, bag: a.bag, bagc: a.bagc, seed };
+    hst: a.hst, beard: a.beard, glasses: a.glasses, glassC: a.glassC, sun: a.sun, hat: a.hat && HU_HAT[a.hat.k] ? a.hat : null, bag: a.bag, bagc: a.bagc, swim: !!a.swim, seed };
 }
 /* the Human for a pedestrian: made on first sight, remade when their look changes */
 function pedHuman(p) {

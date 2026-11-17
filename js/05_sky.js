@@ -47,9 +47,10 @@ void main(){
   #include <encodings_fragment>
 }`;
 
-const WATER_V = `attribute float aDepth; varying vec3 vW; varying float vDepth;
+const WATER_V = `attribute float aDepth; uniform float uTime; varying vec3 vW; varying float vDepth;
 #include <fog_pars_vertex>
-void main(){ vec4 wp=modelMatrix*vec4(position,1.0); vW=wp.xyz; vDepth=aDepth; vec4 mvPosition=viewMatrix*wp; gl_Position=projectionMatrix*mvPosition;
+void main(){ vec4 wp=modelMatrix*vec4(position,1.0); vW=wp.xyz; vDepth=aDepth;
+  float sh=(1.0-smoothstep(0.6,4.5,aDepth))*smoothstep(0.05,0.7,aDepth); wp.y+=0.32*sh*pow(0.5+0.5*sin(aDepth*1.15+uTime*1.25),3.0);   /* the swell steepening as it runs into the shallows */ vec4 mvPosition=viewMatrix*wp; gl_Position=projectionMatrix*mvPosition;
 #include <fog_vertex>
 }`;
 const WATER_F = `uniform float uTime,uNight,uDay; uniform vec3 uSunDir,uSunCol,uSky,uZen,uDeep,uShallow; varying vec3 vW; varying float vDepth;
@@ -75,6 +76,11 @@ void main(){
   vec3 r=reflect(-uSunDir,n); float spec=pow(max(dot(r,v),0.0),260.0);
   col+=uSunCol*spec*5.0*uDay;
   float fo=(1.0-smoothstep(0.0,1.2,dep+0.25*sin(t*1.4+dep*6.0+vn(p*0.35)*4.0)))*(0.5+0.5*vn(p*1.1+t*0.35));
+  /* breaking waves: lines of surf roll in over the shallows, break white along the crest, leave foam behind and wash up the sand */
+  float sh=(1.0-smoothstep(0.6,4.5,dep))*smoothstep(0.12,0.8,dep), ph=dep*1.15+t*1.25, along=0.55+0.45*vn(p*0.06+vec2(t*0.08,0.0));
+  float crest=pow(0.5+0.5*sin(ph),14.0)*sh*along, trail=pow(0.5+0.5*sin(ph-0.7),5.0)*sh*along*0.55*vn(p*0.9+t*0.5);
+  float swash=(1.0-smoothstep(0.0,0.35+0.25*sin(t*1.25+0.3),dep))*(0.6+0.4*vn(p*1.6-t*0.4));
+  fo=max(fo,clamp(crest*1.3+trail+swash*0.7,0.0,1.0));
   col=mix(col,vec3(0.92,0.96,1.0)*(0.25+0.75*uDay),clamp(fo*0.8,0.0,1.0));
   float alpha=clamp(smoothstep(-0.05,1.0,dep)*0.88+0.1+fo*0.4,0.0,0.97);
   gl_FragColor=vec4(col,alpha);

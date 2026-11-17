@@ -475,8 +475,8 @@ const HU_IRIS = [[0.07, 0.035, 0.015], [0.1, 0.05, 0.02], [0.05, 0.028, 0.012], 
 Human.palette = function (o) {
   const P = [], S = HU_SL, skin = huC(o.skin, [0.8, 0.6, 0.45]), top = huC(o.shirt, [0.5, 0.5, 0.5]), bot = o.skirt === 2 || o.robe ? top : huC(o.pants, [0.1, 0.1, 0.12]), sd = Math.floor((o.seed || 0) * 97) % 6;
   const tights = [0.03 + 0.25 * skin[0], 0.03 + 0.25 * skin[1], 0.035 + 0.25 * skin[2]], bare = o.skirt && !o.tights, lum = skin[0] + skin[1] + skin[2];
-  P[S.skin] = skin; P[S.hair] = huC(o.hair, [0.05, 0.035, 0.025]); P[S.top] = top; P[S.arm] = o.sleeve || o.coat || o.robe || o.suit ? top : skin; P[S.bot] = bot;
-  P[S.thigh] = o.skirt ? (bare ? skin : tights) : bot; P[S.leg] = o.skirt ? (bare ? skin : tights) : o.shorts ? skin : bot; P[S.shoe] = huC(o.shoe, [0.02, 0.02, 0.025]);
+  P[S.skin] = skin; P[S.hair] = huC(o.hair, [0.05, 0.035, 0.025]); P[S.top] = top; P[S.arm] = !o.swim && (o.sleeve || o.coat || o.robe || o.suit) ? top : skin; P[S.bot] = bot;
+  P[S.thigh] = o.swim ? skin : o.skirt ? (bare ? skin : tights) : bot; P[S.leg] = o.swim ? skin : o.skirt ? (bare ? skin : tights) : o.shorts ? skin : bot; P[S.shoe] = o.swim ? skin : huC(o.shoe, [0.02, 0.02, 0.025]);   /* swimwear: bare legs and feet */
   P[S.iris] = o.iris ? huC(o.iris) : HU_IRIS[lum > 1.25 ? sd : sd % 3]; P[S.lip] = [skin[0] * 0.9, skin[1] * (o.fem ? 0.5 : 0.62), skin[2] * (o.fem ? 0.52 : 0.62)];
   P[S.hat] = o.hat ? huC(o.hat.c, [0.2, 0.2, 0.2]) : [0.2, 0.2, 0.2]; P[S.hat2] = o.hat ? huC(o.hat.bc || o.hat.c, [0.2, 0.2, 0.2]) : [0.2, 0.2, 0.2];
   P[S.glass] = huC(o.glassC, [0.004, 0.004, 0.006]); P[S.bag] = huC(o.bagc, [0.2, 0.2, 0.25]); P[S.white] = [0.9, 0.9, 0.88]; P[S.inner] = huC(o.inner, [0.9, 0.9, 0.9]); P[S.tie] = huC(o.tie, [0.4, 0.05, 0.06]);
@@ -545,7 +545,7 @@ Human.lod = function (h, far) { if (h.far !== far) { h.far = far; h.mesh.geometr
 /* a short string that changes whenever a person's look does */
 Human.sig = function (o) {
   const c = (x) => (x ? ((x.r * 255) | 0) + ',' + ((x.g * 255) | 0) + ',' + ((x.b * 255) | 0) : '-');
-  return [o.kid ? 1 : 0, o.fem ? 1 : 0, o.old ? 1 : 0, o.s, o.hs, o.stout, c(o.skin), c(o.hair), c(o.shirt), c(o.pants), c(o.shoe), o.sleeve ? 1 : 0, o.shorts ? 1 : 0, o.skirt | 0, o.tights ? 1 : 0, o.coat ? 1 : 0, o.hst, o.beard ? 1 : 0, o.glasses ? 1 : 0, c(o.glassC), o.sun ? 1 : 0, o.hat ? o.hat.k + c(o.hat.c) + c(o.hat.bc) : 0, o.bag ? c(o.bagc) : 0].join('|');
+  return [o.swim ? 1 : 0, o.kid ? 1 : 0, o.fem ? 1 : 0, o.old ? 1 : 0, o.s, o.hs, o.stout, c(o.skin), c(o.hair), c(o.shirt), c(o.pants), c(o.shoe), o.sleeve ? 1 : 0, o.shorts ? 1 : 0, o.skirt | 0, o.tights ? 1 : 0, o.coat ? 1 : 0, o.hst, o.beard ? 1 : 0, o.glasses ? 1 : 0, c(o.glassC), o.sun ? 1 : 0, o.hat ? o.hat.k + c(o.hat.c) + c(o.hat.bc) : 0, o.bag ? c(o.bagc) : 0].join('|');
 };
 
 /* ---------------- secondary motion ---------------- */

@@ -279,7 +279,7 @@ function updatePeds(dt) {
 const pfr = (x) => x - Math.floor(x);
 function pedSpec(a, seed) {
   return { kid: a.kid, fem: a.fem, old: a.old, s: a.s, hs: a.hs, stout: a.stout, skin: a.skin, hair: a.hair, shirt: a.shirt, pants: a.pants, shoe: a.shoe, sleeve: a.sleeve, shorts: a.shorts, skirt: a.skirt, tights: a.tights, coat: a.coat,
-    hst: a.hst, beard: a.beard, glasses: a.glasses, glassC: a.glassC, sun: a.sun, hat: a.hat && HU_HAT[a.hat.k] ? a.hat : null, bag: a.bag, bagc: a.bagc, seed };
+    hst: a.hst, beard: a.beard, glasses: a.glasses, glassC: a.glassC, sun: a.sun, hat: a.hat && HU_HAT[a.hat.k] ? a.hat : null, bag: a.bag, bagc: a.bagc, swim: !!a.swim, seed };
 }
 /* the Human for a pedestrian: made on first sight, remade when their look changes */
 function pedHuman(p) {
