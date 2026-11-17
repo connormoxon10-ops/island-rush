@@ -90,7 +90,7 @@ function cosView(rec, preview) {
   if (rec && rec.kit) for (const sl in rec.kit) { const it = ok(rec.kit[sl]); if (it) V.kits.push(it); }
   return V;
 }
-function curColor(id) { id = id || save.car; if (CAR_BY_ID[id] && CAR_BY_ID[id].gold) return HEIST.GOLD; const V = cosView(cosSave().car[id]); return V.paint ? V.paint.val.hex : PAINTS[curPaint(id)]; }
+function curColor(id) { id = id || save.car; if (CAR_BY_ID[id] && CAR_BY_ID[id].prize != null) return HEIST_PRIZES[CAR_BY_ID[id].prize].col; const V = cosView(cosSave().car[id]); return V.paint ? V.paint.val.hex : PAINTS[curPaint(id)]; }
 function cosSig(id) { id = id || save.car; const r = cosSave().car[id]; if (!r) return ''; const V = cosView(r), a = []; for (const k of COS.CAR) if (k !== 'kit' && V[k]) a.push(V[k].id); for (const it of V.kits) a.push(it.id); return a.join(','); }
 /* body flags for the car builder */
 function cosDef(d, V) {
@@ -173,7 +173,7 @@ const Cosm = {
     const m = MAT.paintPlayer; if (!m) return; const V = cosView(cosSave().car[save.car]);
     m.color.copy(lc(curColor())); m.roughness = 0.45; m.metalness = 0.25; m.clearcoat = 0.9; m.clearcoatRoughness = 0.16; m.envMapIntensity = 0.45;
     if (V.fin && V.fin.val.fin !== 'gloss') applyFinish(m, V.fin.val.fin);
-    if (CUR && CUR.gold) heistGild(m);   /* the Aurum Spectre is gold all over */
+    if (CUR && CUR.prize != null) heistGild(m, CUR.prize);   /* the train prize cars wear their own finish all over */
   },
   tick() {
     const g = car.ext; if (!g || !L.head) return;

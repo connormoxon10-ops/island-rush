@@ -1,7 +1,7 @@
-/* The island railway: one closed loop round the island on a viaduct, and a full-size freight train running round it.
+/* The island railway: one closed loop round the island on a viaduct, and three full-size freight trains running round it, a third of the loop apart.
    Checks the line (a closed loop of sensible length that goes all the way round, clear of the towns, high enough over the ground and every road for traffic
-   to pass under, never steeper than its grade, piers never standing in a road), the train (a locomotive and ten wagons, each several car-lengths
-   long, coupled nose to tail, every vehicle sitting on the rails), that it really runs round, and that a car driven at a pier is stopped by it.
+   to pass under, never steeper than its grade, piers never standing in a road), each train (a locomotive in its own livery and eight or ten wagons, each several
+   car-lengths long, coupled nose to tail, every vehicle sitting on the rails), that it really runs round, and that a car driven at a pier is stopped by it.
    Saves screenshots of the train passing.   usage: node tests/train.js   (needs dist/test.html: bash build.sh) ; env OUT=dir */
 const { chromium } = require('playwright'); const path = require('path'); const fs = require('fs');
 const OUT = process.env.OUT || __dirname;
@@ -26,14 +26,17 @@ const OUT = process.env.OUT || __dirname;
       for (const T of g.towns) nearTown = Math.min(nearTown, Math.max(Math.abs(P.x[i] - T.cx), Math.abs(P.z[i] - T.cz)) - T.half);
     }
     let onRoad = 0; for (const p of R.piers) { g.terrainHeight(p.x, p.z); if (g.NR.seg >= 0 && g.NR.d < g.NR.halfW + 1) onRoad++; }
-    const T = R.train, gaps = []; for (let k = 1; k < T.length; k++) gaps.push(T[k].off - T[k - 1].off - (T[k].L + T[k - 1].L) / 2);
+    const T = R.train, gaps = []; for (const tr of R.trains) for (let k = 1; k < tr.cars.length; k++) gaps.push(tr.cars[k].off - tr.cars[k - 1].off - (tr.cars[k].L + tr.cars[k - 1].L) / 2);
+    const spacing = R.trains.map((tr, k) => { const nx = R.trains[(k + 1) % R.trains.length]; return (((nx.cars[0].off - tr.cars[0].off) % R.L) + R.L) % R.L; });
+    const livery = R.trains.map((tr) => tr.livery);
+    const heistIdx = R.trains.map((tr) => T.indexOf(tr.heist));
     const carL = (() => { const b = new THREE.Box3().setFromObject(g.car.body); return Math.max(b.max.z - b.min.z, b.max.x - b.min.x) || 4.5; })();
     const sizes = T.map((t) => { t.m.geometry.computeBoundingBox(); const b = t.m.geometry.boundingBox; const s = new THREE.Vector3(); b.getSize(s); return [+s.x.toFixed(1), +s.y.toFixed(1), +s.z.toFixed(1)]; });
     const s0 = R.s, p0 = T[0].m.position.clone(); for (let i = 0; i < 300; i++) { window.__now += 1000 / 30; g.frame(window.__now); }
     const moved = T[0].m.position.distanceTo(p0), ds = ((R.s - s0) + R.L) % R.L;
     /* every vehicle on the rails: the middle of each vehicle is on the line, at rail height */
     let off = 0; const q = {}; for (const t of T) { R.at(R.s - t.off, q); off = Math.max(off, Math.hypot(t.m.position.x - q.x, t.m.position.z - q.z), Math.abs(t.m.position.y - q.y)); }
-    return { L: R.L, n, piers: R.piers.length, minClr, maxGrade, minR, maxR, turns: ang / (2 * Math.PI), nearTown, onRoad, cars: T.length, gaps, sizes, carL, moved, ds, off, v: R.v };
+    return { L: R.L, n, piers: R.piers.length, minClr, maxGrade, minR, maxR, turns: ang / (2 * Math.PI), nearTown, onRoad, cars: T.length, per: R.trains.map((tr) => tr.cars.length), spacing, livery, heistIdx, gaps, sizes, carL, moved, ds, off, v: R.v };
   });
   console.log(JSON.stringify(r));
   ok(r.L > 7000 && r.L < 16000, 'one closed loop of track ' + (r.L / 1000).toFixed(1) + ' km round, ' + r.piers + ' piers');
@@ -42,8 +45,10 @@ const OUT = process.env.OUT || __dirname;
   ok(r.minClr > 5, 'the underside of the deck is at least ' + r.minClr.toFixed(1) + ' m over the ground or the sea everywhere, so traffic passes under');
   ok(r.maxGrade < 0.045, 'no steeper than ' + (r.maxGrade * 100).toFixed(1) + ' %');
   ok(r.onRoad === 0, 'no pier stands in a road (' + r.onRoad + ')');
-  ok(r.cars === 11, 'a freight train: a locomotive and ten wagons (' + r.cars + ' vehicles)');
-  ok(r.sizes.every((s, i) => s[2] > 14.5 && s[2] < 20 && s[0] > 2.6 && s[0] < (i === r.sizes.length - 1 ? 5.6 : 3.6) && s[1] > 3.9 && s[1] < 4.8), 'every vehicle full size: ' + r.sizes.map((s) => s.join('x')).join(', ') + ' m');
+  ok(r.per.length === 3 && r.per.every((n) => n >= 9 && n <= 11), 'three freight trains: ' + r.per.join(', ') + ' vehicles each');
+  ok(r.spacing.every((d) => Math.abs(d - r.L / 3) < 1), 'a third of the loop apart (' + r.spacing.map((d) => (d / 1000).toFixed(2)).join(', ') + ' km)');
+  ok(new Set(r.livery).size === 3, 'each locomotive in its own livery (' + r.livery.map((h) => h.toString(16)).join(', ') + ')');
+  ok(r.sizes.every((s, i) => s[2] > 14.5 && s[2] < 20 && s[0] > 2.6 && s[0] < (r.heistIdx.includes(i) ? 5.6 : 3.6) && s[1] > 3.9 && s[1] < 4.8), 'every vehicle full size: ' + r.sizes.map((s) => s.join('x')).join(', ') + ' m');
   ok(r.sizes[1][2] / r.carL > 3.2, 'a boxcar is ' + (r.sizes[1][2] / r.carL).toFixed(1) + ' car-lengths long (car ' + r.carL.toFixed(1) + ' m)');
   ok(r.gaps.every((gp) => gp > 0.3 && gp < 1.2), 'coupled nose to tail (gaps ' + r.gaps.map((x) => x.toFixed(1)).join(' ') + ' m)');
   ok(r.moved > 150 && Math.abs(r.ds - r.v * 10) < 5, 'it runs: ' + r.ds.toFixed(0) + ' m along the line in 10 s (' + (r.v * 3.6).toFixed(0) + ' km/h)');
