@@ -48,6 +48,7 @@ function bchSite(x, z) {
   if (Track.s && x > Track.s.x0 - 60 && x < Track.s.x1 + 60 && z > Track.s.z0 - 60 && z < Track.s.z1 + 60) return 0;
   if (Dock.s && Math.hypot(x - Dock.s.ox, z - Dock.s.oz) < 170) return 0;
   if (Heist.site && Heist.clearTree(x, z)) return 0;   /* not on the Gold Rush run-up */
+  if (Dunes.s && Dunes.sand(x, z) > 0) return 0;   /* the Dune Dash is a race track, not a beach */
   return h >= 0.35 ? 1 : h < -0.5 ? 2 : 0;
 }
 /* a cell of shore: what (if anything) is on it. Looked at once and kept. */
