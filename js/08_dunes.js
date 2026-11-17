@@ -22,7 +22,7 @@ Dunes.plan = function () {
     for (let u = -DUNE.W / 2 - 20; u <= DUNE.W / 2 + 20 && ok; u += 20) for (let v = -DUNE.D / 2 - 10; v <= DUNE.D / 2 + 20; v += 20) {
       const x = cx + ux * u + vx * v, z = cz + uz * u + vz * v, h = terrainHeight(x, z);
       if (h < 0.4 || h > 26 || (NR.seg >= 0 && NR.d < NR.halfW + 12) || townAt(x, z, 90) || (Rail.hash && Rail.dist(x, z) < 40) ||
-        (Air.s && x > Air.s.x0 - 80 && x < Air.s.x1 + 80 && z > Air.s.z0 - 80 && z < Air.s.z1 + 80) || (Track.s && x > Track.s.x0 - 80 && x < Track.s.x1 + 80 && z > Track.s.z0 - 80 && z < Track.s.z1 + 80) || (Dock.s && Math.hypot(x - Dock.s.ox, z - Dock.s.oz) < 260) || (Heist.site && Math.hypot(x - Heist.site.cx, z - Heist.site.cz) < 240)) { ok = false; break; }
+        (Air.s && x > Air.s.x0 - 80 && x < Air.s.x1 + 80 && z > Air.s.z0 - 80 && z < Air.s.z1 + 80) || (Track.s && x > Track.s.x0 - 80 && x < Track.s.x1 + 80 && z > Track.s.z0 - 80 && z < Track.s.z1 + 80) || (Dock.s && Math.hypot(x - Dock.s.ox, z - Dock.s.oz) < 260) || (Heist.site && Math.hypot(x - Heist.site.cx, z - Heist.site.cz) < 240) || Surf.beaches.some((b) => Math.hypot(x - b.x, z - b.z) < 220)) { ok = false; break; }
       hs += h; h2 += h * h; n++;
     }
     if (!ok) continue; const m = hs / n, c = h2 / n - m * m + m * 0.3; if (c < bc) { bc = c; best = { cx, cz, ux, uz, vx, vz, base: Math.max(DUNE.BASE, m * 0.25) }; }
