@@ -15,7 +15,8 @@ const BANKJOB = [
   { g: 5, cams: 3, las: 3, cash: 30000, carts: 6, st: 5 }
 ];
 const BankJob = { on: false, rec: null, tier: 0, eye: 0, alarm: 0, loot: 0, guards: [], cams: [], lasers: [], vault: null, open: false, t: 0, seen: false, caught: false, camOff: 0, carts: [], msg: '' };
-BankJob.tierOf = function (rec) { if (rec.kind === 'reserve') return 4; return { 5: 0, 1: 1, 0: 2, 6: 3 }[rec.ti] != null ? { 5: 0, 1: 1, 0: 2, 6: 3 }[rec.ti] : 1; };
+const BJ_TIER = { 5: 0, 1: 1, 0: 2, 6: 3, 7: 0, 8: 1, 10: 1, 13: 3 };
+BankJob.tierOf = function (rec) { if (rec.kind === 'reserve') return 4; return BJ_TIER[rec.ti] != null ? BJ_TIER[rec.ti] : 1; };
 BankJob.record = function (key) { const s = intSave().banks[key]; return s || { n: 0, best: 0, stars: 0, t: 0 }; };
 /* the daytime bank: the staff door, where you case the job */
 BankJob.dress = function (K, rec) {
