@@ -120,6 +120,7 @@ function genTownLots(ch, T, gbB, gbP) {
         if (tall) {
           bldgBox(gbB, lx0 + 0.5, lz0 + 0.5, lx0 + ls - 0.5, lz0 + ls - 0.5, baseY, baseY + 8, _pk(r, A.M), uo, vo, 0.7);
           colBox(ch, lx0 + 0.5, lz0 + 0.5, lx0 + ls - 0.5, lz0 + ls - 0.5, baseY, baseY + 8);
+          Bld.reg(ch, T, i, j, a, b, lx0 + 0.5, lz0 + 0.5, lx0 + ls - 0.5, lz0 + ls - 0.5, baseY, hgt, 'tower', gbP);
           bldgBox(gbB, ox, oz, ox + fw, oz + fd, baseY + 8, baseY + hgt, c, uo, vo, key === 'city' ? 0.5 : 0.55);
           colBox(ch, ox, oz, ox + fw, oz + fd, baseY, baseY + hgt);
           let top = baseY + hgt;
@@ -133,6 +134,7 @@ function genTownLots(ch, T, gbB, gbP) {
         } else {
           const wc = _pk(r, A.H), rcol = _pk(r, A.R);
           bldgBox(gbB, ox, oz, ox + fw, oz + fd, baseY, baseY + hgt, c, uo, vo, roof === 'flat' || roof === 'low' ? 0.6 : 0);
+          Bld.reg(ch, T, i, j, a, b, ox, oz, ox + fw, oz + fd, baseY, hgt, 'down', gbP);
           colBox(ch, ox, oz, ox + fw, oz + fd, baseY, baseY + hgt, roof === 'pitch' || roof === 'steep' || roof === 'low' ? hr : 0);
           if (roof === 'pitch' || roof === 'steep') houseRoof(gbB, ox, oz, ox + fw, oz + fd, baseY + hgt, hr, rcol, wc);
           else if (roof === 'low') houseRoof(gbB, ox, oz, ox + fw, oz + fd, baseY + hgt, hr, rcol, c);
@@ -143,6 +145,7 @@ function genTownLots(ch, T, gbB, gbP) {
         const ox = lx0 + (ls - fw) / 2, oz = lz0 + (ls - fd) / 2, c = _pk(r, A.M), wc = _pk(r, A.H), rcol = _pk(r, A.R);
         const pitched = roof === 'pitch' || roof === 'steep';
         bldgBox(gbB, ox, oz, ox + fw, oz + fd, baseY, baseY + hgt, c, uo, vo, pitched ? 0 : 0.6);
+        Bld.reg(ch, T, i, j, a, b, ox, oz, ox + fw, oz + fd, baseY, hgt, 'mid', gbP);
         colBox(ch, ox, oz, ox + fw, oz + fd, baseY, baseY + hgt, pitched || roof === 'low' ? hr : 0);
         if (pitched) { houseRoof(gbB, ox, oz, ox + fw, oz + fd, baseY + hgt, hr, rcol, wc); if (r() < 0.6) chimneyAt(gbP, ox, oz, fw, fd, baseY + hgt, hr, rcol); }
         else if (roof === 'low') { houseRoof(gbB, ox, oz, ox + fw, oz + fd, baseY + hgt, hr, rcol, c); }
@@ -156,6 +159,7 @@ function genTownLots(ch, T, gbB, gbP) {
           const ox = lx0 + 1.5 + r() * (ls - hw - 3), oz = lz0 + 1.5 + r() * (ls - hd - 3), wc = _pk(r, A.H), rcol = _pk(r, A.R);
           const pitched = roof === 'pitch' || roof === 'steep';
           bldgBox(gbB, ox, oz, ox + hw, oz + hd, baseY, baseY + wh, wc, uo, vo, pitched ? 0 : 0.7);
+          Bld.reg(ch, T, i, j, a, b, ox, oz, ox + hw, oz + hd, baseY, wh, 'house', gbP);
           colBox(ch, ox, oz, ox + hw, oz + hd, baseY, baseY + wh, pitched || roof === 'low' ? hr : 0);
           if (pitched) { houseRoof(gbB, ox, oz, ox + hw, oz + hd, baseY + wh, hr, rcol, wc); if (key !== 'farm' || r() < 0.5) chimneyAt(gbP, ox, oz, hw, hd, baseY + wh, hr, rcol); }
           else if (roof === 'low') houseRoof(gbB, ox, oz, ox + hw, oz + hd, baseY + wh, hr, rcol, wc);
@@ -166,12 +170,14 @@ function genTownLots(ch, T, gbB, gbP) {
           if (key === 'farm') {   /* red barn with a silo */
             const bc = lc(_pk(r, [0x9a3a2b, 0x8a3226, 0xa8442f])), bw = 20, bd = 14, bo = lx0 + 2, bz = lz0 + 4;
             bldgBox(gbB, bo, bz, bo + bw, bz + bd, baseY, baseY + 6, bc, uo, vo, 0);
+            Bld.reg(ch, T, i, j, a, b, bo, bz, bo + bw, bz + bd, baseY, 6, 'barn', gbP);
             houseRoof(gbB, bo, bz, bo + bw, bz + bd, baseY + 6, 5.2, lc(0x4a4540), lc(0xd8d2c4));
             cylAt(gbP, bo + bw + 4.5, baseY, bz + 5, 2.8, 15, 2.8, 0.74, 0.76, 0.78); cylAt(gbP, bo + bw + 4.5, baseY + 15, bz + 5, 2.9, 1.1, 2.9, 0.5, 0.52, 0.55);
             colBox(ch, bo, bz, bo + bw, bz + bd, baseY, baseY + 6, 5.2); colCyl(ch, bo + bw + 4.5, bz + 5, 2.8, baseY, baseY + 16.1);
           } else {
             const pitched = roof === 'pitch' || roof === 'steep', c = _pk(r, A.M), sh = key === 'harbor' ? 12 : key === 'tropic' ? 12 : 8, fw2 = key === 'harbor' ? 28 : fw, fd2 = key === 'harbor' ? 22 : fd;
             bldgBox(gbB, ox, oz, ox + fw2, oz + fd2, baseY, baseY + sh, c, uo, vo, pitched || roof === 'low' ? 0 : 0.65);
+            Bld.reg(ch, T, i, j, a, b, ox, oz, ox + fw2, oz + fd2, baseY, sh, 'shed', gbP);
             colBox(ch, ox, oz, ox + fw2, oz + fd2, baseY, baseY + sh, pitched ? hr : roof === 'low' ? 1.4 : 0);
             if (pitched || roof === 'low') houseRoof(gbB, ox, oz, ox + fw2, oz + fd2, baseY + sh, pitched ? hr : 1.4, _pk(r, A.R), c);
             if (key === 'harbor') { const sx = ox + fw2 - 4, sz = oz + 4; cylAt(gbP, sx, baseY + sh, sz, 1.5, 34, 1.5, 0.66, 0.22, 0.18); cylAt(gbP, sx, baseY + sh + 24, sz, 1.56, 3, 1.56, 0.92, 0.92, 0.9); cylAt(gbP, sx, baseY + sh + 34, sz, 1.7, 0.6, 1.7, 0.22, 0.22, 0.22); colCyl(ch, sx, sz, 1.5, baseY + sh, baseY + sh + 34.6); }

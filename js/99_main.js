@@ -140,7 +140,7 @@ function step(dt) {
   if (Drag.on) { Drag.update(dt); carFx(dt); return; }
   if (Derby.on) { Derby.update(dt); carFx(dt); return; }   /* and the derby bowl */   /* so is the drag strip */   /* the stage is its own little world: no traffic, people, police or missions */
   /* world */
-  if (!(Fly.on && Fly.agl > 25)) { updateTraffic(dt); updatePeds(dt); } Police.update(dt); if (Foot.on) Foot.scan(); Fly.scan(); Boat.scan(dt); if (!Rally.on && !Derby.on && !Drag.on) { Rail.update(dt); Heist.update(dt); Surf.update(dt); Surf.visual(dt, App.time); Dunes.update(dt); } Talk.tick(dt); Rel.tick(dt); Home.tick(dt); Shop.tick(); Wk.tick(); Ven.tick(); Race.tick(); Race.update(dt); Jack.tick(dt); Fare.tick(dt); Court.tick(dt); updateMission(dt); VM.update(dt); updateGPS(dt);
+  if (!(Fly.on && Fly.agl > 25)) { updateTraffic(dt); updatePeds(dt); } Police.update(dt); if (Foot.on) Foot.scan(); Fly.scan(); Boat.scan(dt); if (!Rally.on && !Derby.on && !Drag.on) { Rail.update(dt); Heist.update(dt); Surf.update(dt); Surf.visual(dt, App.time); Dunes.update(dt); } Talk.tick(dt); Rel.tick(dt); Home.tick(dt); Shop.tick(); Wk.tick(); Ven.tick(); Bld.tick(); Race.tick(); Race.update(dt); Jack.tick(dt); Fare.tick(dt); Court.tick(dt); updateMission(dt); VM.update(dt); updateGPS(dt);
   if (Waypoint.on && !Mi && Math.hypot(Waypoint.x - Pl.x, Waypoint.z - Pl.z) < 28) { Waypoint.on = false; GPS.t = 0; UI.toast('Destination reached', 'good'); }
   carFx(dt);
 }
@@ -164,6 +164,7 @@ function frame(now) {
   if (App.mode === 'bust') { Bust.frame(dt); return; }
   if (App.mode === 'shop') { Shop.frame(dt); return; }
   if (App.mode === 'venue') { Ven.frame(dt); return; }
+  if (App.mode === 'int') { Int.frame(dt); return; }
   if (App.mode === 'mech') { Mech.frame(dt); return; }
   if (App.mode === 'wk') { Wk.frame(dt); return; }
   syncPl();
@@ -211,7 +212,7 @@ App.start = function () {
 async function boot() {
   try {
     let first = true; try { first = !localStorage.getItem(SAVE_KEY); } catch (e) { first = true; }
-    loadSave(); CUR = CAR_BY_ID[save.car] || CARS[0]; refreshTune(); bindUI(); bindInput(); Shop.initUI(); VM.initUI(); Ven.initUI(); UI.resize();
+    loadSave(); CUR = CAR_BY_ID[save.car] || CARS[0]; refreshTune(); bindUI(); bindInput(); Shop.initUI(); VM.initUI(); Ven.initUI(); Int.initUI(); UI.resize();
     if (first) { const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches; if (coarse) save.set.quality = 'low'; else if (window.innerWidth < 760 || (navigator.hardwareConcurrency || 8) <= 4) save.set.quality = 'med'; }
     UI.progress(0.03, 'Shaping the island'); await tick();
     genWorld(); Home.setup(); Shop.setup(); Ven.setup(); genMissions(); Col.setup(); Race.initUI(); Mech.init();
@@ -240,5 +241,5 @@ async function boot() {
     console.error(err); E.loadmsg.textContent = 'Could not start the 3D view: ' + (err && err.message ? err.message : err); window.__bootError = String(err && err.stack || err);
   }
 }
-window.__game = { get scene() { return scene; }, DEV_PLACES, HEIST_PRIZES, Part, L, Surf, Dunes, Rail, Beach, Heist, Wanted, GAR, terrainHeight, NR, Derby, DD, applyCar, buildCarModel, CAR_BY_ID, Env, get renderer() { return renderer; }, writePeds, Cam, Human, HU, Peds, Foot, Setup, TU, TU_PRESETS, CARS, CARP, tune, Drag, DG, DG_TIERS, Rally, RR, RY, RY_STAGES, RYG, RW, RY_FEATS, WK, Wk, WkF, WKSim, WKG, WKS, WkE, qfromAxes3, Dmg, Mech, RACE_DIFF, Wreck, Jack, JACK_MODELS, Race, Bots, Crash, newCarState, Track, TRK, Col, COLK, Ven, VDEF, CDEF, venSave, VM, VMD, VMK, towns, roads, Dock, MARINA, Boat, Boats, BSPEC, HB, solidHit, TREE, Air, AIR, Fly, Planes, PSPEC, Rel, REL_ROSTER, Shop, COS, Cosm, Biome, Weather, REG, Bust, CR, Fight, Police, Wanted, WANT, footBlockedAt, findNearestRoadPoint, Tow, GAR, Home, GP, Foot, Talk, Fare, Pl, pedHit, getMoney: () => save.money, get save() { return save; }, getLaw: () => save.law, Court, CR, Peds, pedSpawn, Dyn, abortMission, stepSim: step, frame, Env, Wheels, updateWheels, updateCamera, groundAt, buildCarModel, carSpec, TRAFFIC_DEFS, secAt, disposeCar, THREE_: THREE, TREE, GB, addTree, addGrass, terrainHeight, fbm, noise2, sstep, Dev, devReset, CARS, CAR_BY_ID, applyCar, stepCar, CARP, roads, loadAround, carThumb, car, App, UI, Chunks, Post, Cam, Keys, missions, towns, spawnAt, get Mi() { return Mi; }, startMission, applyQuality, get renderer() { return renderer; }, get scene() { return scene; }, get camera() { return camera; }, Snd, WorldMap, MView, Mirror, MAT, Cockpit, Q: () => Q, hasPost: () => hasPost, key(code, down) { Keys[code] = down; if (down) onKey(code); }, tune };
+window.__game = { get scene() { return scene; }, DEV_PLACES, Int, Bld, INT_KINDS, Jail, intSave, HEIST_PRIZES, Part, L, Surf, Dunes, Rail, Beach, Heist, Wanted, GAR, terrainHeight, NR, Derby, DD, applyCar, buildCarModel, CAR_BY_ID, Env, get renderer() { return renderer; }, writePeds, Cam, Human, HU, Peds, Foot, Setup, TU, TU_PRESETS, CARS, CARP, tune, Drag, DG, DG_TIERS, Rally, RR, RY, RY_STAGES, RYG, RW, RY_FEATS, WK, Wk, WkF, WKSim, WKG, WKS, WkE, qfromAxes3, Dmg, Mech, RACE_DIFF, Wreck, Jack, JACK_MODELS, Race, Bots, Crash, newCarState, Track, TRK, Col, COLK, Ven, VDEF, CDEF, venSave, VM, VMD, VMK, towns, roads, Dock, MARINA, Boat, Boats, BSPEC, HB, solidHit, TREE, Air, AIR, Fly, Planes, PSPEC, Rel, REL_ROSTER, Shop, COS, Cosm, Biome, Weather, REG, Bust, CR, Fight, Police, Wanted, WANT, footBlockedAt, findNearestRoadPoint, Tow, GAR, Home, GP, Foot, Talk, Fare, Pl, pedHit, getMoney: () => save.money, get save() { return save; }, getLaw: () => save.law, Court, CR, Peds, pedSpawn, Dyn, abortMission, stepSim: step, frame, Env, Wheels, updateWheels, updateCamera, groundAt, buildCarModel, carSpec, TRAFFIC_DEFS, secAt, disposeCar, THREE_: THREE, TREE, GB, addTree, addGrass, terrainHeight, fbm, noise2, sstep, Dev, devReset, CARS, CAR_BY_ID, applyCar, stepCar, CARP, roads, loadAround, carThumb, car, App, UI, Chunks, Post, Cam, Keys, missions, towns, spawnAt, get Mi() { return Mi; }, startMission, applyQuality, get renderer() { return renderer; }, get scene() { return scene; }, get camera() { return camera; }, Snd, WorldMap, MView, Mirror, MAT, Cockpit, Q: () => Q, hasPost: () => hasPost, key(code, down) { Keys[code] = down; if (down) onKey(code); }, tune };
 boot();
