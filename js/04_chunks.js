@@ -299,6 +299,7 @@ function buildChunk(cx, cz) {
       if (h < 1.6 || h > 190 || count > maxT) continue;
       if (townAt(x, z, 34) || Air.clear(x, z, 34) || Dock.clear(x, z, 12) || Track.clear(x, z, 30)) continue;
       if (dRoadAt(x, z) < 17) continue;
+      if (Heist.sites.length && Heist.clearTree(x, z, 8)) continue;   /* no rocks, trees or hay on a heist run-up (with room for a big boulder's width) */
       const hx = hAt(x + 2, z) - hAt(x - 2, z), hz = hAt(x, z + 2) - hAt(x, z - 2), slope = Math.hypot(hx, hz) / 4;
       if (slope > 0.8) continue;
       Biome.at(x, z); const R = Biome.pick(rp), tr = R ? R.tree : null, tl = Biome.num('tl', 'tree', 112), dm = Biome.num('dens', 'tree', 1), rk = Biome.num('rockK', 'tree', 1);

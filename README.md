@@ -28,7 +28,7 @@ An open-world racing, flying and boating game that runs in a single HTML file, p
 
 ## Play it
 
-Run `bash build.sh`, then open `dist/island-rush.html` in a desktop browser. three.js is inlined into the file, so it plays offline from `file://`. The in-game **Controls** tab lists every key; turn on **Settings → Developer mode** for cheats, a free camera and teleports. The Dev tab teleports you to every town, place (garage, raceway, workshop, airport, marina, Gold Rush ramp, Dune Dash, Surf Club), named beach and onto the viaduct behind the train, and has Gold Rush controls: start at the ramp, bring the open wagon round, skip the jump, take the prize, skip to the garage, reset, give the car, and set the train's speed.
+Run `bash build.sh`, then open `dist/island-rush.html` in a desktop browser. three.js is inlined into the file, so it plays offline from `file://`. The in-game **Controls** tab lists every key; turn on **Settings → Developer mode** for cheats, a free camera and teleports. The Dev tab teleports you to every town, place (garage, raceway, workshop, airport, marina, each train-heist ramp, Dune Dash, Surf Club), named beach and onto the viaduct behind each train, and has controls for each train heist (Gold, Silver and Ruby Rush): start at the ramp, bring the open wagon round, skip the jump, take the prize, skip to the garage, reset, give the car, and set the trains' speed.
 
 ## What's in it
 
@@ -86,8 +86,8 @@ node tests/cutscenes.js   # every court venue, the arrest and the booking room: 
 node tests/rally_stages.js   # every rally stage as a model: builds, never crosses itself, drivable grades, gates on straights, surfaces
 node tests/beach.js         # beaches all round the island: sand, umbrellas, loungers, lifeguard towers, people in beachwear lying, sitting, wading; cars knock them over
 node tests/rally_hazards.js  # mud pits, loose hay-bale slaloms and fallen logs on every stage: grip, drag, bump height, bale lanes
-node tests/train.js         # the island railway: a closed loop round the island on a viaduct, a full-size train running round it, solid piers
-node tests/heist.js         # Gold Rush: jump off the ramp into the freight train's open wagon, steal the golden car, drive it out the back and home
+node tests/train.js         # the island railway: a closed loop round the island on a viaduct, three full-size freight trains a third of the loop apart, each in its own livery, solid piers
+node tests/heist.js         # the train heists: three ramps, three trains, three prize cars (gold Aurum Spectre, chrome Argent Wraith, ruby Rubis 440): jump into each open wagon, steal it, drive it out the back and home
 node tests/surf.js          # named beaches with roads, signs and map labels; the Surf Club: three waves, airs, the curl, wipeouts, prize money
 node tests/nitro.js         # nitro: a small flame on each of the model's exhaust tips, a faint glow, stops with the nitro
 node tests/dunes.js         # Dune Dash: the beach dune track (on the map), a race against five dune buggies, prize money

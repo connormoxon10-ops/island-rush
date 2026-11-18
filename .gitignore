@@ -6,3 +6,4 @@ dist/test.html
 tests/*.log
 tests/*.done
 tests/*.png
+tests/*.jpg

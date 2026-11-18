@@ -1,5 +1,6 @@
-/* Dev mode: teleports to every town, place and named beach (and onto the viaduct behind the train), and the Gold Rush / train controls (start at the
-   ramp, bring the open wagon round, skip the jump, take the Aurum, skip to the garage, reset, give, train speed). Each lands the car where it says, on the
+/* Dev mode: teleports to every town, place (each heist ramp too) and named beach (and onto the viaduct behind each train), and the train-heist controls
+   for each of the three heists (pick it, start at the ramp, bring the open wagon round, skip the jump, take the prize, skip to the garage, reset, give,
+   train speed). Each lands the car where it says, on the
    ground, and leaves the heist in the state it says. Opens the dev tab to check it draws.   usage: node tests/dev_places.js   (needs dist/test.html) */
 const { chromium } = require('playwright'); const path = require('path');
 (async () => {
@@ -20,33 +21,38 @@ const { chromium } = require('playwright'); const path = require('path');
     g.towns.forEach((t, i) => { UI.devAct('tp' + i); at(t.name, t.cx, t.cz, t.half + 40); });
     for (const p of g.DEV_PLACES) { const q = p[2](); if (!q) { res.push({ label: p[1], missing: true }); continue; } UI.devAct('pl:' + p[0]); at(p[1], q[0], q[1], 3); }
     g.Surf.beaches.forEach((b, i) => { UI.devAct('bch' + i); at(b.name, b.px, b.pz, 3); });
-    UI.devAct('hz:train'); run(10); const tr = {}; g.Rail.near(c.x, c.z, tr); const onDeck = Math.abs(c.y - (tr.y + 0.05)) < 0.8 && Math.abs(tr.lat) < 2.5;
-    /* Gold Rush */
-    const H = g.Heist, st = {};
+    const onDeck = g.Rail.trains.map((T) => { UI.devAct('hz:train' + T.k); run(10); const tr = {}; g.Rail.near(c.x, c.z, tr); const L = {}; g.Rail.toLocal(T.heist, c.x, c.y, c.z, L); return Math.abs(c.y - (tr.y + 0.05)) < 0.8 && Math.abs(tr.lat) < 2.5 && L.z < -T.heist.L / 2 - 20 && L.z > -T.heist.L / 2 - 60; });
+    /* the train heists, each in turn */
+    const H = g.Heist, sts = [];
+    for (let k = 0; k < g.HEIST_PRIZES.length; k++) {
+    const P = g.HEIST_PRIZES[k], st = { id: P.id }; sts.push(st); UI.devAct('hz:pick' + k); st.picked = H.k === k;
     UI.devAct('hz:start'); run(5); st.start = H.phase; st.near = Math.hypot(c.x - H.site.sx, c.z - H.site.sz) < 30;
     UI.devAct('hz:cue'); st.eta = +H.doorEta().toFixed(1);
-    UI.devAct('hz:board'); run(30); st.board = H.phase; const L = {}; g.Rail.toLocal(g.Rail.heist, c.x, c.y, c.z, L); st.inWagon = Math.abs(L.x) < 0.5 && Math.abs(L.y - 1.32) < 0.3;
-    UI.devAct('hz:take'); run(5); st.take = H.phase; st.car = g.save.car;
+    UI.devAct('hz:board'); run(30); st.board = H.phase; const L = {}; g.Rail.toLocal(H.wagon(), c.x, c.y, c.z, L); st.inWagon = Math.abs(L.x) < 0.5 && Math.abs(L.y - 1.32) < 0.3;
+    UI.devAct('hz:take'); run(5); st.take = H.phase; st.car = g.save.car === P.id;
     UI.devAct('hz:home'); run(10); st.home = H.phase; st.homeD = Math.round(Math.hypot(c.x - g.GAR.ox, c.z - g.GAR.oz));
-    g.spawnAt(g.GAR.ox, g.GAR.oz - 6, Math.PI); run(20); st.won = !!g.save.owned.aurum;
-    UI.devAct('hz:reset'); st.reset = !g.save.owned.aurum && H.phase === 'idle' && !!H.gold;
-    UI.devAct('hz:give'); st.give = !!g.save.owned.aurum && !H.gold;
+    g.spawnAt(g.GAR.ox, g.GAR.oz - 6, Math.PI); run(20); st.won = !!g.save.owned[P.id];
+    UI.devAct('hz:reset'); st.reset = !g.save.owned[P.id] && H.phase === 'idle' && !!H.gold;
+    UI.devAct('hz:give'); st.give = !!g.save.owned[P.id] && !H.gold;
+    }
+    const st = {};
     UI.devAct('hz:v0'); run(10); const s0 = g.Rail.s; run(10); st.stopped = g.Rail.s === s0; UI.devAct('hz:v22');
-    return { pane, res, onDeck, st };
+    return { pane, res, onDeck, sts, st };
   });
   ok(r.pane === true, 'the dev tab draws');
   for (const p of r.res) ok(!p.missing && p.d <= p.tol && Math.abs(p.dy) < 0.6, 'teleport: ' + p.label + (p.missing ? ' (missing)' : ' (' + p.d + ' m from the spot, ' + p.dy + ' m off the ground)'));
-  ok(r.onDeck, 'teleport: onto the viaduct deck behind the train');
-  const s = r.st; console.log(JSON.stringify(s));
-  ok(s.start === 'armed' && s.near, 'Gold Rush: start at the ramp');
-  ok(Math.abs(s.eta - 8) < 1, 'Gold Rush: bring the open wagon round (door in ' + s.eta + ' s)');
-  ok(s.board === 'aboard' && s.inWagon, 'Gold Rush: skip the jump, parked in the wagon');
-  ok(s.take === 'ride' && s.car === 'aurum', 'Gold Rush: take the Aurum');
-  ok(s.home === 'escape' && s.homeD < 60, 'Gold Rush: skip to the garage (' + s.homeD + ' m away)');
-  ok(s.won, 'Gold Rush: driving in completes it');
-  ok(s.reset, 'Gold Rush: reset puts the Aurum back on the train');
-  ok(s.give, 'Gold Rush: give me the Aurum');
-  ok(s.stopped, 'train speed: stop');
+  ok(r.onDeck.length === 3 && r.onDeck.every(Boolean), 'teleport: onto the viaduct deck behind each train (' + r.onDeck.join(', ') + ')');
+  for (const s of r.sts) { console.log(JSON.stringify(s)); const n = s.id + ': ';
+    ok(s.picked, n + 'pick it in the dev tab');
+    ok(s.start === 'armed' && s.near, n + 'start at its ramp');
+    ok(Math.abs(s.eta - 8) < 1, n + 'bring the open wagon round (door in ' + s.eta + ' s)');
+    ok(s.board === 'aboard' && s.inWagon, n + 'skip the jump, parked in its wagon');
+    ok(s.take === 'ride' && s.car, n + 'take the prize car');
+    ok(s.home === 'escape' && s.homeD < 60, n + 'skip to the garage (' + s.homeD + ' m away)');
+    ok(s.won, n + 'driving in completes it');
+    ok(s.reset, n + 'reset puts the car back on its train');
+    ok(s.give, n + 'give me the car'); }
+  ok(r.st.stopped, 'train speed: stop');
   console.log(logs.length ? logs.join('\n') : 'no page errors'); ok(!logs.length, 'no page errors');
   console.log(fails ? fails + ' FAILED' : 'ALL OK'); await browser.close(); process.exit(fails ? 1 : 0);
 })();

@@ -104,19 +104,25 @@ Rail.buildViaduct = function () {
 const _railM = new THREE.Matrix4(), _railV = new THREE.Vector3(), _railQ = new THREE.Quaternion(), _railE = new THREE.Euler(0, 0, 0, 'YXZ'), _railS = new THREE.Vector3();
 const RailG = {};
 
-/* ---------- the train: a freight train ----------
-   A red-and-yellow diesel and ten wagons: boxcars, tank cars and flat cars with shipping containers, and at the very back the heist wagon (08_heist.js):
-   a boxcar with its right-hand side door slid open over most of its length and its rear end doors open, with the golden car parked inside. */
+/* ---------- the trains: three freight trains, a third of the loop apart ----------
+   Each is a diesel in its own livery and a string of boxcars, tank cars and flat cars with shipping containers, and at the very back a heist wagon
+   (08_heist.js): a boxcar with its right-hand side door slid open over most of its length and its rear end doors open, a one-off prize car parked inside
+   (a different car on each train). They all run at the same speed, so they keep their spacing. */
 const RAIL_WAGON = { W: 3.0, Y0: 1.2, H: 3.0, DOOR: [-1.0, 7.5], DOORH: 2.7 };   /* the heist wagon's open side door spans local z -1..7.5, up to 2.7 m over its floor */
+const RAIL_TRAINS = [
+  { name: 'Gold Line', body: 0xc8302a, band: 0xf2c81e, cars: [['loco', 19], ['box', 17], ['tank', 15], ['flat', 18], ['box', 17], ['flat', 18], ['tank', 15], ['box', 17], ['flat', 18], ['box', 17], ['heist', 18]] },
+  { name: 'Silver Line', body: 0x1f4f9a, band: 0xe8eef4, cars: [['loco', 19], ['flat', 18], ['flat', 18], ['box', 17], ['tank', 15], ['flat', 18], ['box', 17], ['flat', 18], ['heist', 18]] },
+  { name: 'Ruby Line', body: 0x2a6a3a, band: 0xe08a1a, cars: [['loco', 19], ['tank', 15], ['tank', 15], ['tank', 15], ['box', 17], ['tank', 15], ['tank', 15], ['box', 17], ['heist', 18]] }
+];
 const RAIL_CONS = [0x1f5fa8, 0xc8302a, 0x2a8a4a, 0xe08a1a, 0x6a6e74, 0x1a7f8a, 0x8a2a5a, 0xd8c040].map(lc);
 /* one vehicle, built along +z with its middle at the origin and the top of the rail at y = 0. kind: loco (nose at +z), box, tank, flat, heist */
-function railVehicle(kind, L, seed) {
+function railVehicle(kind, L, seed, liv) {
   const gb = new GB(0, 0, false), B = RailG.box, C = RailG.cyl, put = (g, x, y, z, sx, sy, sz, col, sh, rx, ry, rz) => { _railM.compose(_railV.set(x, y, z), _railQ.setFromEuler(_railE.set(rx || 0, ry || 0, rz || 0)), _railS.set(sx, sy, sz)); gb.geo(g, _railM, col, sh || 0); };
   const r = mulberry32(seed * 7919 + 13), DARK = lc(0x26282c), WHL = lc(0x3a3c40), RUST = lc(0x7a3a24), RUST2 = lc(0x5e2c1c), STEEL = lc(0x8c9096), half = L / 2, W = RAIL_WAGON.W, y0 = RAIL_WAGON.Y0, H = RAIL_WAGON.H;
   put(B, 0, y0 - 0.3, 0, W - 0.2, 0.36, L - 0.6, DARK, 0);                                            /* the underframe */
   for (const z of [-half + 0.1, half - 0.1]) put(B, 0, y0 - 0.25, z, 0.5, 0.3, 0.5, DARK, 0);       /* couplers */
   if (kind === 'loco') {
-    const BODY = lc(0xc8302a), BAND = lc(0xf2c81e), GLASS = lc(0x30485e), LAMP = lc(0xfff2c0);
+    const BODY = lc(liv ? liv.body : 0xc8302a), BAND = lc(liv ? liv.band : 0xf2c81e), GLASS = lc(0x30485e), LAMP = lc(0xfff2c0);
     put(B, 0, y0 + 1.25, -1.2, W - 0.6, 2.5, L - 4.6, BODY, 0.15);                                  /* the long hood */
     put(B, 0, y0 + H / 2, half - 2.0, W, H, 3.0, BODY, 0.12);                                         /* the cab */
     put(B, 0, y0 + H + 0.08, half - 2.0, W + 0.1, 0.16, 3.2, DARK, 0);
@@ -169,9 +175,13 @@ Rail.build = function () {
   if (Rail.built) return; Rail.built = true;
   RailG.box = ni(new THREE.BoxGeometry(1, 1, 1)); RailG.cyl = ni(new THREE.CylinderGeometry(1, 1, 1, 14, 1)); RailG.ball = ni(new THREE.SphereGeometry(1, 14, 8, 0, TAU, 0, Math.PI));
   Rail.plan(); Rail.group = new THREE.Group(); Rail.group.name = 'railway'; scene.add(Rail.group); Rail.buildViaduct();
-  const cars = [['loco', 19], ['box', 17], ['tank', 15], ['flat', 18], ['box', 17], ['flat', 18], ['tank', 15], ['box', 17], ['flat', 18], ['box', 17], ['heist', 18]];
-  let off = 0; Rail.train = cars.map(([kind, L], k) => { const m = railVehicle(kind, L, k); Rail.group.add(m); const o = { m, L, kind, off: off + L / 2 }; off += L + 0.8; return o; });
-  Rail.heist = Rail.train[Rail.train.length - 1];
+  /* every vehicle of every train in Rail.train (off: how far behind Rail.s its middle runs; train k starts k thirds of the loop back) */
+  Rail.train = []; Rail.trains = RAIL_TRAINS.map((D, k) => {
+    let off = k * Rail.L / RAIL_TRAINS.length; const tr = { k, name: D.name, livery: D.body, cars: [] };
+    D.cars.forEach(([kind, L], j) => { const m = railVehicle(kind, L, k * 31 + j, D); Rail.group.add(m); const o = { m, L, kind, off: off + L / 2, tk: k }; off += L + 0.8; tr.cars.push(o); Rail.train.push(o); });
+    tr.heist = tr.cars[tr.cars.length - 1]; return tr;
+  });
+  Rail.heist = Rail.trains[0].heist;
   Rail.s = Rail.L * 0.37; Rail.update(0);
 };
 const _rlA = {}, _rlB = {};
