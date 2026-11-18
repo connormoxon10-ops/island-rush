@@ -66,6 +66,14 @@ Run `bash build.sh`, then open `dist/island-rush.html` in a desktop browser. thr
     - **The Island County Jail.**
   - **Airport, marina and venues:** the airport terminal (check-in, departures, a café, and through to the planes) and the marina boathouse. Every venue and dance club is a bar or club you walk into, then play.
   - Code: `js/08_int_*.js`.
+- **Bank jobs:** any of the five banks can be robbed.
+  - **Planning:** case the bank in the day at its staff door, then do it that night.
+  - **Security:** guards walk set rounds with torch cones, cameras sweep, and the Island Reserve has lasers across the vault corridor.
+  - **Staying hidden:** an eye meter fills while you are in sight. It fills faster in the open, close up and when running. Walls and tall furniture hide you, and crouching (Ctrl) hides you behind counters and desks too. Loop the camera feeds from the security desk, and don't run near a guard: they hear it.
+  - **The vault:** crack the dial (press E as each of four tumblers lines up; a miss is loud), bag the cash, and walk out of the front door.
+  - **The alarm:** when the meter fills the alarm goes, the guards come for you and the police are a minute away. Get caught and you are in the county jail. Get out after an alarm and you have the police to lose.
+  - **Rewards:** from $12,000 at the Lakeshore Credit Union (two guards) to $180,000 at the Island Reserve (five guards, three cameras, lasers). A clean job is three stars.
+  - Code: `js/08_int_zjob.js`.
 - **Jail:** when you're busted you can do hours in the county jail instead of paying the fine. A night in the cells sends you there too. Inside you can sleep off your time on the bunk, mop floors to take hours off, or do pull-ups. Your car waits by the door when you're released.
 - **The Workshop** (walk into the hangar): a 3D parts editor with symmetry, snapping and staging, and a flight mode with an ISA atmosphere, aerodynamics, engines, fuel and staging, structural break-up and re-entry.
   - **A solar system:** Helios and the worlds Ember, Home, Luna, Rust, Pebble, Jove and Cinder, with patched-conic spheres of influence, time warp up to 1,000,000x, orbit and solar-system maps with encounter predictions, and landings.
@@ -102,6 +110,7 @@ node tests/beach.js         # beaches all round the island: sand, umbrellas, lou
 node tests/swimwear.js      # beachwear: men and boys in swim trunks, women in bikinis, girls in a swimsuit (checks which parts are cloth and which skin)
 node tests/interiors.js     # every building has a door and an interior: one of every kind entered on foot, walked about, furniture, people, things to use, out again (env ONLY=kind)
 node tests/interior_use.js   # the special buildings in use: buy a flat and sleep, buy a car at a dealer (the garage menu sends you there), gym, pool, bank account, restaurant, clothes, doing time in jail
+node tests/bankjob.js       # bank robberies: case the job, guards' sight (behind them unseen, in front the alarm goes), the vault dial, the cash, out clean for three stars, caught means jail
 node tests/rally_hazards.js  # mud pits, loose hay-bale slaloms and fallen logs on every stage: grip, drag, bump height, bale lanes
 node tests/train.js         # the island railway: a closed loop round the island on a viaduct, three full-size freight trains a third of the loop apart, each in its own livery, solid piers
 node tests/heist.js         # the train heists: three ramps, three trains, three prize cars (gold Aurum Spectre, chrome Argent Wraith, ruby Rubis 440): jump into each open wagon, steal it, drive it out the back and home
