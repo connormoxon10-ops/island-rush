@@ -7,7 +7,7 @@
      walk        someone strolling along the waterline and back
      tower       a lifeguard tower with its flag, a lifeguard on watch and surfboards stuck in the sand
      swim        out in the shallows: people standing waist-deep in the sea
-   The people are the game's Humans in beachwear (trunks or a swimsuit, bare feet, sun hats and sunglasses). They are made only near the camera (the nearest
+   The people are the game's Humans in beachwear (men in swim trunks, women in bikinis, girls in a swimsuit; bare feet, sun hats and sunglasses). They are made only near the camera (the nearest
    BCH.CAP), posed every frame through the pedestrians' own pose code and then laid down, sat or stood in the water. A car that hits one knocks them over. */
 const Beach = { cells: new Map(), group: null, live: [], scanT: 0, ready: false, geo: null, ppl: 0 };
 const BCH = { CELL: 34, R: 260, RP: 130, CAP: 34, SEA: 0 };
@@ -68,13 +68,13 @@ Beach.cell = function (i, j) {
 };
 /* spot-local (lx right, lz toward the sea) to world */
 function bchW(sp, lx, lz, o) { const s = Math.sin(sp.yaw), c = Math.cos(sp.yaw); o.x = sp.x + lx * c + lz * s; o.z = sp.z - lx * s + lz * c; return o; }
-/* beachwear: the person's own build, skin and hair, in trunks or a swimsuit, barefoot, with a sun hat and sunglasses now and then */
+/* beachwear: the person's own build, skin and hair, men and boys in swim trunks, women in bikinis (girls in a swimsuit), barefoot, with a sun hat and sunglasses now and then */
 function bchLook(rnd, opt) {
   const R0 = Math.random; let a; Math.random = rnd; try { a = pedRandomLook(); } finally { Math.random = R0; }
   const pk = (arr) => arr[(rnd() * arr.length) | 0];
   a.coat = false; a.skirt = 0; a.tights = false; a.bag = false; a.sleeve = false; a.shorts = true; a.swim = true; a.hat = null; a.glasses = false; a.glassC = null; a.shoe = a.skin; a.sun = rnd() < 0.7;
   if (opt && opt.lie && (a.hst === 'long' || a.hst === 'pony')) a.hst = a.fem ? 'bun' : 'short';   /* (hair lying flat on a towel would hang the wrong way) */
-  if (a.fem) { a.shirt = pk(BCH_SWIM); a.pants = rnd() < 0.55 ? a.shirt : pk(BCH_SWIM); }   /* a swimsuit, or a two-colour bikini */
+  if (a.fem) { a.shirt = pk(BCH_SWIM); a.pants = rnd() < 0.65 || a.kid ? a.shirt : pk(BCH_SWIM); }   /* a bikini, matching or two-colour (a girl's swimsuit is one colour) */
   else { a.pants = pk(BCH_SWIM); a.shirt = a.skin; }   /* swim trunks, bare-chested */
   if (!a.kid && rnd() < 0.28) a.hat = { k: 'straw', c: pk(BCH_STRAW), bc: null };
   else if (rnd() < 0.12) a.hat = { k: 'cap', c: pk(BCH_SWIM), bc: null };
@@ -84,7 +84,7 @@ function bchLook(rnd, opt) {
 }
 function bchPerson(sp, rnd, pose, lx, lz, yawOff, opt) {
   const w = bchW(sp, lx, lz, {}), app = bchLook(rnd, Object.assign({ lie: pose === 'lie' || pose === 'prone' }, opt || {}));
-  if (opt && opt.kid && !app.kid) { app.kid = true; app.s = 0.62 + rnd() * 0.12; app.hs = 1.26; app.old = false; app.beard = false; app.hat = null; app.glasses = false; if (!app.fem) app.shirt = app.skin; }
+  if (opt && opt.kid && !app.kid) { app.kid = true; app.s = 0.62 + rnd() * 0.12; app.hs = 1.26; app.old = false; app.beard = false; app.hat = null; app.glasses = false; if (!app.fem) app.shirt = app.skin; else app.pants = app.shirt; }
   const p = { app, x: w.x, z: w.z, y: 0, yaw: sp.yaw + (yawOff || 0), v: 0, ph: rnd() * TAU, state: pose === 'walk' ? 'walk' : 'stand', seed: rnd() * 20, pose, pose0: pose, wave: 0, pn: 0, jump: false, phone: false, pw: false, vx: 0, vy: 0, vz: 0, t: 0, hu: null };
   p.y = pose === 'swim' ? Math.max(terrainHeight(w.x, w.z), -1.25) : terrainHeight(w.x, w.z);
   sp.ppl.push(p); return p;
