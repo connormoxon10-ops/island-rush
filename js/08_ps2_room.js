@@ -332,21 +332,23 @@ Bust.verdict = function () {
     '<div class="chg">' + Bust.ch.map((c) => '<i>' + esc(c) + '</i>').join('') + '</div>' +
     '<div class="rows">' + o.rows.map((r) => '<div><span>' + r[0] + '</span><b class="' + (r[1] < 0 ? 'pos' : '') + '">' + (r[1] < 0 ? '−' : r[1] > 0 && o.rows.indexOf(r) > 0 ? '+' : '') + money(Math.abs(r[1])) + '</b></div>').join('') + '</div>' +
     '<p>' + o.line + '</p>' + (o.total > save.money ? '<p class="dim">That is more than you have, so they take all of it.</p>' : '') +
-    '<div class="rw neg">−' + money(pay) + '</div><div class="acts"><button class="btn primary" type="button" data-b="go">Walk out</button></div>';
+    '<div class="rw neg">−' + money(pay) + '</div><div class="acts"><button class="btn primary" type="button" data-b="go">' + (o.over ? 'To the cells' : 'Pay and walk out') + '</button>' + (!o.over && o.total > 0 ? '<button class="btn" type="button" data-b="time">Do ' + Bust.hours(o) + ' hours in jail instead</button>' : '') + '</div>';
+  Bust.time = false;
   E.bCard.hidden = false;
 };
+Bust.hours = (o) => clamp(Math.round(o.total / 150), 2, 24);
 Bust.leave = function () {
   if (Bust.phase !== 'verdict') return; Bust.phase = 'closing'; Bust.closeT = 0.75; E.bCard.hidden = true; UI.fade(true);
 };
 Bust.finish = function () {
-  const o = Bust.out; Police.fine = o ? Math.min(save.money, o.total) : Police.fine;
+  const o = Bust.out, jail = !!(o && (o.over || Bust.time)); Police.fine = o ? (Bust.time ? 0 : Math.min(save.money, o.total)) : Police.fine;
   Bust.on = false; Bust.phase = 'off'; Bust.gen = null; Bust.cap = null; Bust.paused = false; Bust.S = null; Bust.A = null; document.body.classList.remove('cut');
   E.bust.hidden = true; E.bCard.hidden = true; E.bSkip.hidden = true; E.bChoice.hidden = true; E.bust.classList.remove('tense');
   if (CR.cam && CR.hands) CR.shake = 0;
   Police.release(); Police.hold = false; Police.phase = 'off'; Police.on = false; Police.done = true; Police.t = 0; Police.hud(1);
-  if (o && o.over) App.tod = 7.5;
   UI.setMode('play'); UI.fade(false); last = performance.now(); Keys.Space = false; Cam.shake = 0;
-  if (o && o.over) UI.banner('RELEASED', 'You spent the night in a cell');
+  if (jail) { const h = o.over ? 8 : Bust.hours(o); if (!Jail.serve(h, o.over ? 'held overnight' : 'doing time instead of a fine')) { App.tod = (App.tod + h) % 24; UI.banner('RELEASED', 'You did ' + h + ' hours'); } }
+  Bust.time = false;
 };
 
 /* ---------- input ---------- */
@@ -365,7 +367,7 @@ Bust.key = function (code) {
 Bust.bind = function () {
   if (Bust.bound) return; Bust.bound = true;
   E.bSkip.addEventListener('click', () => Bust.skip());
-  E.bCard.addEventListener('click', (e) => { const b = e.target.closest('[data-b]'); if (b && b.dataset.b === 'go') Bust.leave(); });
+  E.bCard.addEventListener('click', (e) => { const b = e.target.closest('[data-b]'); if (b && b.dataset.b === 'go') Bust.leave(); else if (b && b.dataset.b === 'time') { Bust.time = true; Bust.leave(); } });
   E.bChoice.addEventListener('pointerdown', (e) => { const b = e.target.closest('[data-i]'); if (!b) return; e.stopPropagation(); e.preventDefault(); if (Bust.picking && Bust.pick < 0) Bust.pick = +b.dataset.i; });
   E.bCap.addEventListener('pointerdown', (e) => { e.stopPropagation(); Bust.adv = true; });
   E.bust.addEventListener('pointerdown', (e) => { if (e.target.closest('button,[data-i]')) return; Bust.adv = true; });

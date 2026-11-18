@@ -53,6 +53,20 @@ Run `bash build.sh`, then open `dist/island-rush.html` in a desktop browser. thr
 - **Elimination races:** a second format at the circuit's race office. One lap per rival; at the end of every lap the last car across the line is knocked out and leaves the track, until one car is left. A warning tells you when you are last, getting knocked out ends your race, and it pays more than a Grand Prix for the last car standing. Records are kept separately.
 - **Flying and boating:** an airport with planes, a jet, a helicopter and a blimp; boats with water physics; vehicle missions and dogfights.
 - **On foot:** walk, talk to people and build relationships, carjack, get arrested (and sued), repair vehicles, play venue games (pool, darts, curling, mini-golf, fishing and more), find hidden collectibles.
+- **Interiors:** every building in every town has a street door. Walk up and press **E** to go inside. The interior is laid out to the building's own footprint, with furniture you bump into, people at work, and things to use (shown on screen with **E**). Look with the mouse, walk with WASD, run with Shift and crouch with Ctrl; **C** switches to third person.
+  - **Ordinary buildings:** offices (a lift to the office floors), cafés, bakeries, corner shops, pharmacies, bookshops, barbers, electronics shops, florists, hardware stores, laundromats, bars, diners, homes, warehouses and barns.
+  - **Special buildings** (on the map):
+    - **Banks:** an account that fines cannot touch.
+    - **Apartment blocks:** buy a flat, sleep there to skip the night and save, raid the fridge, change your clothes.
+    - **Gyms:** work out in time with the bar. Fitness makes you run and swim faster.
+    - **Indoor pools:** swim laps.
+    - **Restaurants:** each town has its own menu.
+    - **Clothing shops:** try on and buy outfits.
+    - **Car dealerships:** cars are bought here now, from a showroom of real cars, and delivered to the door.
+    - **The Island County Jail.**
+  - **Airport, marina and venues:** the airport terminal (check-in, departures, a café, and through to the planes) and the marina boathouse. Every venue and dance club is a bar or club you walk into, then play.
+  - Code: `js/08_int_*.js`.
+- **Jail:** when you're busted you can do hours in the county jail instead of paying the fine. A night in the cells sends you there too. Inside you can sleep off your time on the bunk, mop floors to take hours off, or do pull-ups. Your car waits by the door when you're released.
 - **The Workshop** (walk into the hangar): a 3D parts editor with symmetry, snapping and staging, and a flight mode with an ISA atmosphere, aerodynamics, engines, fuel and staging, structural break-up and re-entry.
   - **A solar system:** Helios and the worlds Ember, Home, Luna, Rust, Pebble, Jove and Cinder, with patched-conic spheres of influence, time warp up to 1,000,000x, orbit and solar-system maps with encounter predictions, and landings.
   - **Space-suit EVA:** land on another world and press `H` to step out. Walk, jump and use a jetpack under the world's gravity, and find samples, supply caches, a flag to plant and procedurally placed landmarks (wrecks, outposts, monoliths, lava vents, arches, crystal gardens) with a discovery journal.
@@ -86,6 +100,8 @@ node tests/cutscenes.js   # every court venue, the arrest and the booking room: 
 node tests/rally_stages.js   # every rally stage as a model: builds, never crosses itself, drivable grades, gates on straights, surfaces
 node tests/beach.js         # beaches all round the island: sand, umbrellas, loungers, lifeguard towers, people in swimwear lying, sitting, wading; cars knock them over
 node tests/swimwear.js      # beachwear: men and boys in swim trunks, women in bikinis, girls in a swimsuit (checks which parts are cloth and which skin)
+node tests/interiors.js     # every building has a door and an interior: one of every kind entered on foot, walked about, furniture, people, things to use, out again (env ONLY=kind)
+node tests/interior_use.js   # the special buildings in use: buy a flat and sleep, buy a car at a dealer (the garage menu sends you there), gym, pool, bank account, restaurant, clothes, doing time in jail
 node tests/rally_hazards.js  # mud pits, loose hay-bale slaloms and fallen logs on every stage: grip, drag, bump height, bale lanes
 node tests/train.js         # the island railway: a closed loop round the island on a viaduct, three full-size freight trains a third of the loop apart, each in its own livery, solid piers
 node tests/heist.js         # the train heists: three ramps, three trains, three prize cars (gold Aurum Spectre, chrome Argent Wraith, ruby Rubis 440): jump into each open wagon, steal it, drive it out the back and home

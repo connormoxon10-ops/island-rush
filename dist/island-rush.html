@@ -465,6 +465,21 @@ body.gedit #speedo, body.gedit #touch, body.gedit #prompt { display: none; }
 @media (max-width: 760px) { #venModal .vfoot { position: sticky; bottom: -12px; background: rgba(8, 12, 18, 0.97); padding: 8px 0 6px; margin-top: 6px; z-index: 2; } #venModal { right: 8px; left: 8px; width: auto; top: auto; bottom: 8px; transform: none; max-height: 62vh; padding: 10px 14px 12px; } #venModal .vmh b { font-size: 24px; } #venModal p { font-size: 14px; margin: 5px 0; } #venTop b { font-size: 20px; } #venHud { top: 60px; font-size: 14px; } .vcnt { flex-direction: row; flex-wrap: wrap; } }
 @media (max-height: 560px) and (min-width: 761px) { #venModal { top: 8px; bottom: 8px; right: 10px; transform: none; max-height: none; width: min(390px, 46vw); padding: 8px 14px 10px; } #venModal .vmh b { font-size: 23px; } #venModal p { font-size: 13px; margin: 4px 0; line-height: 1.3; } .vrules { font-size: 12px; margin: 3px 0 4px; line-height: 1.3; } .vrec { margin: 4px 0; } .vrec b { font-size: 15px; } .vsl { margin: 5px 0 3px; } .vstk { padding: 4px 9px; font-size: 14px; } .vcnt { margin: 6px 0 2px; gap: 4px; } .vcnt .btn { font-size: 12px; padding: 5px 8px; } .vfoot { margin-top: 7px; } .vres { font-size: 15px; margin: 6px 0; } #venTop b { font-size: 21px; } #venHud { top: 58px; font-size: 14px; } }
 
+/* ---------- interiors ---------- */
+#int { position: absolute; inset: 0; z-index: 9; pointer-events: none; --sa: #ffcf6a; }
+#int[hidden], #intHud[hidden], #intBot[hidden], #intPan[hidden], #intDot[hidden] { display: none; }
+#intTop { position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 16px 24px; background: linear-gradient(rgba(4, 8, 14, 0.75), rgba(4, 8, 14, 0)); }
+#intTop > div:first-child { min-width: 0; } #intTop b { font-family: var(--display); font-size: 24px; display: block; line-height: 1.05; } #intTop small { color: var(--sa); font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 56vw; }
+#intCash { font-family: var(--display); font-size: 22px; color: var(--good); }
+#intHud { position: absolute; left: 50%; top: 72px; transform: translateX(-50%); min-width: 260px; max-width: min(460px, 90vw); background: rgba(8, 12, 18, 0.82); border-top: 3px solid var(--sa); padding: 8px 14px 10px; font-size: 15px; }
+.ibar small { display: block; color: #dfe6ee; letter-spacing: 0.06em; margin-bottom: 5px; } .ibt { position: relative; height: 14px; background: rgba(255,255,255,0.08); border: 1px solid var(--line); } .ibt .iz { position: absolute; top: 0; bottom: 0; background: rgba(75, 224, 138, 0.55); } .ibt .ik { position: absolute; top: -3px; bottom: -3px; width: 4px; margin-left: -2px; background: #fff; box-shadow: 0 0 6px #fff; }
+#intDot { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: rgba(255,255,255,0.75); box-shadow: 0 0 3px #000; }
+#intBot { position: absolute; left: 0; right: 0; bottom: 18px; text-align: center; font-size: 17px; letter-spacing: 0.04em; text-shadow: 0 1px 5px #000, 0 0 12px #000; padding: 0 16px; color: #eef3f9; } #intBot b { color: var(--sa); } #intBot em { font-style: normal; color: var(--sa); font-weight: 700; }
+#intPan { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); width: min(480px, calc(100vw - 20px)); max-height: calc(100vh - 28px); overflow-y: auto; background: rgba(8, 12, 18, 0.95); border-top: 3px solid var(--sa); padding: 14px 20px 16px; pointer-events: auto; animation: resIn 0.25s ease-out; scrollbar-width: thin; }
+#intPan .vmh b { font-family: var(--display); font-size: 28px; display: block; line-height: 1.05; font-weight: 400; } #intPan .vmh small { color: var(--sa); font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; }
+#intPan p { margin: 8px 0; font-size: 16px; line-height: 1.4; color: #dfe6ee; } #intPan .cstats { margin: 8px 0; }
+@media (max-width: 760px) { #intPan { right: 8px; left: 8px; width: auto; top: auto; bottom: 8px; transform: none; max-height: 62vh; padding: 10px 14px 12px; } #intPan .vmh b { font-size: 22px; } #intTop b { font-size: 19px; } #intBot { font-size: 14px; bottom: 120px; } }
+
 /* ---------- flight & harbour job boards ---------- */
 #vmp { position: absolute; inset: 0; z-index: 9; display: flex; align-items: center; justify-content: center; background: rgba(4, 8, 14, 0.58); pointer-events: auto; --sa: #ffb02e; }
 #vmp[hidden] { display: none; }
@@ -676,6 +691,7 @@ body.dogfight.fly #tFire { display: grid; }
   <div id="rcount" hidden></div>
   <div id="rres" hidden></div>
   <div id="vmp" hidden><div id="vmPanel" class="cham"><div class="sh"><div><b id="vmTitle">Jobs</b><small id="vmSub"></small></div><div id="vmCash"></div></div><div id="vmList"></div><div id="vmFoot"><button class="btn" type="button" data-act="close">Close</button></div></div></div>
+  <div id="int" hidden><div id="intTop"><div><b id="intTitle">Inside</b><small id="intSub"></small></div><div class="venR"><span id="intCash"></span><button class="btn sm" type="button" data-act="leave">Leave</button></div></div><div id="intHud" hidden></div><div id="intDot"></div><div id="intBot" hidden></div><div id="intPan" class="cham" hidden></div></div>
   <div id="ven" hidden><div id="venTop"><div><b id="venTitle">Venue</b><small id="venSub"></small></div><div class="venR"><span id="venCash"></span><button class="btn sm" type="button" data-act="leave">Leave</button></div></div><div id="venHud" hidden></div><div id="venBot" hidden></div><div id="venPow" hidden><span id="venPowL"></span><div class="vpb"><i id="venPowI"></i></div></div><div id="venModal" class="cham" hidden></div></div>
   <div id="relTags"></div>
   <div id="talk" class="cham" hidden><div class="tkh"><span id="tkWho"></span><span id="tkJob"></span></div><div id="tkRel" hidden></div><div id="tkTxt"></div><div id="tkOpts"></div></div>
@@ -763,7 +779,7 @@ const lc = (hex) => new THREE.Color(hex).convertSRGBToLinear();
 const SAVE_KEY = 'island-rush-v1';
 const save = { money: 600, rep: 0, law: { won: 0, part: 0, lost: 0, settled: 0, paid: 0 }, done: {}, up: { eng: 0, tire: 0, nit: 0, arm: 0 }, color: 0, car: 'rook', owned: { rook: true }, cc: {}, cos: { own: {}, car: {}, out: {} }, rel: {}, gar: { wall: 0, ext: 1, trim: 0, floor: 0, light: 0, neon: 3, sign: 'HOME GARAGE', bays: 4, decor: { posters: 1, tools: 1, tyres: 1, rug: 1, trophies: 1, plants: 1 }, slots: {} },
   air: { own: { sparrow: true }, hrs: 0, ldg: 0, best: 0, view: 1 }, boat: { own: {}, hrs: 0, view: 1 }, vm: { done: {}, kills: 0, rings: 0 }, ven: { rec: {}, souv: {} }, col: { got: {}, n: 0, fish: {}, prize: {} }, race: { races: 0, wins: 0, podiums: 0, bestLap: 0, earned: 0, best: {} }, rally: { runs: 0, best: 0, splits: [], gates: 0, jump: 0, tod: 2, earned: 0 }, drag: { runs: 0, wins: 0, earned: 0, bestRt: 0, tier: 1, best: {} }, setup: {},
-  tokens: 0, stolen: {}, jack: null, jn: 0, heist: { prev: null, done: 0 }, surf: { best: 0, sessions: 0 }, dune: { races: 0, wins: 0, best: 0 }, mech: { jobs: 0, sum: 0, rush: 0, best: 0, saved: 0 }, wk: { slots: [null, null, null], cur: null, flights: 0, done: {}, best: { alt: 0, spd: 0 } },
+  tokens: 0, stolen: {}, jack: null, jn: 0, heist: { prev: null, done: 0 }, int: { apts: {}, fit: 0, gym: 0, meals: 0, swims: 0, jail: 0, nights: 0, rooms: 0, banks: {}, acct: 0 }, surf: { best: 0, sessions: 0 }, dune: { races: 0, wins: 0, best: 0 }, mech: { jobs: 0, sum: 0, rush: 0, best: 0, saved: 0 }, wk: { slots: [null, null, null], cur: null, flights: 0, done: {}, best: { alt: 0, spd: 0 } },
   set: { quality: 'high', traffic: 'high', music: true, vol: 0.8, units: 'kmh', fov: 76, cycle: 1, shake: true, hud: true, dev: false, suits: 'on', finv: false, fassist: true } };
 /* developer mode: session-only cheat/debug state (only active while save.set.dev is on) */
 const Dev = { god: false, nit: false, power: 1, grip: 1, ts: 1, hud: false, hbox: false, free: false, fx: 0, fy: 0, fz: 0, fyaw: 0, fpitch: 0, ema: 0.016, t: 0 };
@@ -797,6 +813,8 @@ function loadSave() {
       if (s.jack && s.jack.id && save.stolen[s.jack.id] && !save.owned[s.jack.id]) save.jack = { id: s.jack.id, prev: save.owned[s.jack.prev] ? s.jack.prev : 'rook' };
       for (const id in save.stolen) if (!save.owned[id] && !(save.jack && save.jack.id === id)) delete save.stolen[id];
       if (s.heist && typeof s.heist === 'object') save.heist = { prev: typeof s.heist.prev === 'string' ? s.heist.prev : null, done: s.heist.done | 0 };
+      if (s.int && typeof s.int === 'object') { const q = s.int, ap = {}; for (const k of Object.keys(q.apts || {}).slice(0, 200)) if (/^[\d:#-]+$/.test(k)) ap[k] = { t: +((q.apts[k] || {}).t) || 0, p: +((q.apts[k] || {}).p) || 0 }; const bk = {}; for (const k of Object.keys(q.banks || {}).slice(0, 40)) { const b = q.banks[k] || {}; bk[String(k).slice(0, 40)] = { n: b.n | 0, best: Math.max(0, +b.best || 0), stars: clamp(b.stars | 0, 0, 3), t: +b.t || 0 }; }
+        save.int = { apts: ap, fit: clamp(+q.fit || 0, 0, 100), gym: q.gym | 0, meals: q.meals | 0, swims: q.swims | 0, jail: q.jail | 0, nights: q.nights | 0, rooms: Object.keys(ap).length, banks: bk, acct: Math.max(0, Math.round(+q.acct || 0)), gymMem: q.gymMem ? 1 : 0, flowers: q.flowers | 0, buzz: 0, delivery: q.delivery && CAR_BY_ID[q.delivery.id] ? { id: q.delivery.id, key: String(q.delivery.key || '') } : null }; }
       if (s.surf && typeof s.surf === 'object') save.surf = { best: +s.surf.best || 0, sessions: s.surf.sessions | 0 };
       if (s.dune && typeof s.dune === 'object') save.dune = { races: s.dune.races | 0, wins: s.dune.wins | 0, best: +s.dune.best || 0 };
       save.car = (s.car && (save.owned[s.car] || (save.jack && save.jack.id === s.car))) ? s.car : save.heist.prev && save.owned[save.heist.prev] ? save.heist.prev : 'rook'; }
@@ -1595,7 +1613,7 @@ function genTownLots(ch, T, gbB, gbP) {
       if (Shop.lot(T, i, j, a, b)) { Shop.build(ch, Shop.sites[ri], gbB, gbP); continue; }
       if (Ven.lot(T, i, j, a, b)) { Ven.build(ch, Ven.sites[ri], gbB, gbP); continue; }
       if (Ven.clubLot(T, i, j, a, b)) { Ven.buildClub(ch, Ven.clubs[ri], gbB, gbP); continue; }
-      const r = mulberry32(ihash(T.id * 977 + i * 31 + a, j * 57 + b, 11));
+      const r = mulberry32((ihash(T.id * 977 + i * 31 + a, j * 57 + b, 11) * 4294967296) >>> 0);   /* (each lot its own seed: ihash is a fraction, mulberry32 wants an integer) */
       const uo = ((r() * 4) | 0) * 0.25, vo = ((r() * 4) | 0) * 0.25;
       if (dn < 1) {
         const hgt = 4 * Math.max(2, Math.round((A.dtH[0] + r() * (A.dtH[1] - A.dtH[0])) / 4)), tall = hgt > 34;
@@ -1604,6 +1622,7 @@ function genTownLots(ch, T, gbB, gbP) {
         if (tall) {
           bldgBox(gbB, lx0 + 0.5, lz0 + 0.5, lx0 + ls - 0.5, lz0 + ls - 0.5, baseY, baseY + 8, _pk(r, A.M), uo, vo, 0.7);
           colBox(ch, lx0 + 0.5, lz0 + 0.5, lx0 + ls - 0.5, lz0 + ls - 0.5, baseY, baseY + 8);
+          Bld.reg(ch, T, i, j, a, b, lx0 + 0.5, lz0 + 0.5, lx0 + ls - 0.5, lz0 + ls - 0.5, baseY, hgt, 'tower', gbP);
           bldgBox(gbB, ox, oz, ox + fw, oz + fd, baseY + 8, baseY + hgt, c, uo, vo, key === 'city' ? 0.5 : 0.55);
           colBox(ch, ox, oz, ox + fw, oz + fd, baseY, baseY + hgt);
           let top = baseY + hgt;
@@ -1617,6 +1636,7 @@ function genTownLots(ch, T, gbB, gbP) {
         } else {
           const wc = _pk(r, A.H), rcol = _pk(r, A.R);
           bldgBox(gbB, ox, oz, ox + fw, oz + fd, baseY, baseY + hgt, c, uo, vo, roof === 'flat' || roof === 'low' ? 0.6 : 0);
+          Bld.reg(ch, T, i, j, a, b, ox, oz, ox + fw, oz + fd, baseY, hgt, 'down', gbP);
           colBox(ch, ox, oz, ox + fw, oz + fd, baseY, baseY + hgt, roof === 'pitch' || roof === 'steep' || roof === 'low' ? hr : 0);
           if (roof === 'pitch' || roof === 'steep') houseRoof(gbB, ox, oz, ox + fw, oz + fd, baseY + hgt, hr, rcol, wc);
           else if (roof === 'low') houseRoof(gbB, ox, oz, ox + fw, oz + fd, baseY + hgt, hr, rcol, c);
@@ -1627,6 +1647,7 @@ function genTownLots(ch, T, gbB, gbP) {
         const ox = lx0 + (ls - fw) / 2, oz = lz0 + (ls - fd) / 2, c = _pk(r, A.M), wc = _pk(r, A.H), rcol = _pk(r, A.R);
         const pitched = roof === 'pitch' || roof === 'steep';
         bldgBox(gbB, ox, oz, ox + fw, oz + fd, baseY, baseY + hgt, c, uo, vo, pitched ? 0 : 0.6);
+        Bld.reg(ch, T, i, j, a, b, ox, oz, ox + fw, oz + fd, baseY, hgt, 'mid', gbP);
         colBox(ch, ox, oz, ox + fw, oz + fd, baseY, baseY + hgt, pitched || roof === 'low' ? hr : 0);
         if (pitched) { houseRoof(gbB, ox, oz, ox + fw, oz + fd, baseY + hgt, hr, rcol, wc); if (r() < 0.6) chimneyAt(gbP, ox, oz, fw, fd, baseY + hgt, hr, rcol); }
         else if (roof === 'low') { houseRoof(gbB, ox, oz, ox + fw, oz + fd, baseY + hgt, hr, rcol, c); }
@@ -1640,6 +1661,7 @@ function genTownLots(ch, T, gbB, gbP) {
           const ox = lx0 + 1.5 + r() * (ls - hw - 3), oz = lz0 + 1.5 + r() * (ls - hd - 3), wc = _pk(r, A.H), rcol = _pk(r, A.R);
           const pitched = roof === 'pitch' || roof === 'steep';
           bldgBox(gbB, ox, oz, ox + hw, oz + hd, baseY, baseY + wh, wc, uo, vo, pitched ? 0 : 0.7);
+          Bld.reg(ch, T, i, j, a, b, ox, oz, ox + hw, oz + hd, baseY, wh, 'house', gbP);
           colBox(ch, ox, oz, ox + hw, oz + hd, baseY, baseY + wh, pitched || roof === 'low' ? hr : 0);
           if (pitched) { houseRoof(gbB, ox, oz, ox + hw, oz + hd, baseY + wh, hr, rcol, wc); if (key !== 'farm' || r() < 0.5) chimneyAt(gbP, ox, oz, hw, hd, baseY + wh, hr, rcol); }
           else if (roof === 'low') houseRoof(gbB, ox, oz, ox + hw, oz + hd, baseY + wh, hr, rcol, wc);
@@ -1650,12 +1672,14 @@ function genTownLots(ch, T, gbB, gbP) {
           if (key === 'farm') {   /* red barn with a silo */
             const bc = lc(_pk(r, [0x9a3a2b, 0x8a3226, 0xa8442f])), bw = 20, bd = 14, bo = lx0 + 2, bz = lz0 + 4;
             bldgBox(gbB, bo, bz, bo + bw, bz + bd, baseY, baseY + 6, bc, uo, vo, 0);
+            Bld.reg(ch, T, i, j, a, b, bo, bz, bo + bw, bz + bd, baseY, 6, 'barn', gbP);
             houseRoof(gbB, bo, bz, bo + bw, bz + bd, baseY + 6, 5.2, lc(0x4a4540), lc(0xd8d2c4));
             cylAt(gbP, bo + bw + 4.5, baseY, bz + 5, 2.8, 15, 2.8, 0.74, 0.76, 0.78); cylAt(gbP, bo + bw + 4.5, baseY + 15, bz + 5, 2.9, 1.1, 2.9, 0.5, 0.52, 0.55);
             colBox(ch, bo, bz, bo + bw, bz + bd, baseY, baseY + 6, 5.2); colCyl(ch, bo + bw + 4.5, bz + 5, 2.8, baseY, baseY + 16.1);
           } else {
             const pitched = roof === 'pitch' || roof === 'steep', c = _pk(r, A.M), sh = key === 'harbor' ? 12 : key === 'tropic' ? 12 : 8, fw2 = key === 'harbor' ? 28 : fw, fd2 = key === 'harbor' ? 22 : fd;
             bldgBox(gbB, ox, oz, ox + fw2, oz + fd2, baseY, baseY + sh, c, uo, vo, pitched || roof === 'low' ? 0 : 0.65);
+            Bld.reg(ch, T, i, j, a, b, ox, oz, ox + fw2, oz + fd2, baseY, sh, 'shed', gbP);
             colBox(ch, ox, oz, ox + fw2, oz + fd2, baseY, baseY + sh, pitched ? hr : roof === 'low' ? 1.4 : 0);
             if (pitched || roof === 'low') houseRoof(gbB, ox, oz, ox + fw2, oz + fd2, baseY + sh, pitched ? hr : 1.4, _pk(r, A.R), c);
             if (key === 'harbor') { const sx = ox + fw2 - 4, sz = oz + 4; cylAt(gbP, sx, baseY + sh, sz, 1.5, 34, 1.5, 0.66, 0.22, 0.18); cylAt(gbP, sx, baseY + sh + 24, sz, 1.56, 3, 1.56, 0.92, 0.92, 0.9); cylAt(gbP, sx, baseY + sh + 34, sz, 1.7, 0.6, 1.7, 0.22, 0.22, 0.22); colCyl(ch, sx, sz, 1.5, baseY + sh, baseY + sh + 34.6); }
@@ -8939,7 +8963,7 @@ Foot.step = function (dt) {
   /* walking */
   const s = Math.sin(F.yaw), c = Math.cos(F.yaw);
   let mx = s * I.f - c * I.r, mz = c * I.f + s * I.r; const ml = Math.hypot(mx, mz); if (ml > 1) { mx /= ml; mz /= ml; }
-  const run = I.run && I.f > -0.2 && ml > 0.1, vmax = (run ? 5.6 : 2.4) * (I.f < -0.3 && !I.r ? 0.6 : 1);
+  const run = I.run && I.f > -0.2 && ml > 0.1, vmax = (run ? 5.6 * intRunK() : 2.4) * (I.f < -0.3 && !I.r ? 0.6 : 1);
   const acc = F.air ? 1.6 : 10; F.vx += (mx * vmax - F.vx) * Math.min(1, dt * acc); F.vz += (mz * vmax - F.vz) * Math.min(1, dt * acc);
   const sp = Math.hypot(F.vx, F.vz), dist = sp * dt, n = Math.max(1, Math.ceil(dist / 0.22)), hx = F.vx * dt / n, hz = F.vz * dt / n;
   for (let i = 0; i < n; i++) {
@@ -14463,6 +14487,1176 @@ Heist.drawFull = function (g, k) {
     g.font = '700 ' + Math.round(13 * k) + 'px Rajdhani, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.strokeStyle = 'rgba(0,0,0,0.85)'; g.lineWidth = 3.5 * k; g.strokeText(P.title, s[0], s[1] - 16 * k); g.fillStyle = P.css; g.fillText(P.title, s[0], s[1] - 16 * k); g.restore(); });
 };
 
+/* ---- js/08_int_bld.js ---- */
+/* ================= BUILDINGS: every town building has a door and an inside =================
+   genTownLots (04_chunks.js) reports each building it raises (its footprint, height and what sort of building it is); this gives it a kind,
+   a name, a front door on the street side (with a frame, a step, a lamp, an awning or a sign) and registers it, so walking up to the door and
+   pressing E takes you inside (08_int_core.js). Most buildings are ordinary (offices, shops, cafés, homes, warehouses, barns: 08_int_gen.js);
+   each town also has its own special ones, planned once per town on fixed lots: banks, apartment blocks, gyms, indoor pools, restaurants,
+   clothing shops, car dealerships and the county jail (08_int_spec.js). Specials show on the map. */
+const Bld = { lots: new Map(), plans: new Map(), near: null, sites: [], sigMat: new Map() };
+/* specials by town (order follows REG: harbor, desert, farm, tropic, alpine, lake, city) */
+const BLD_SPECIAL = [
+  ['bank', 'apts', 'gym', 'dealer', 'resto', 'resto', 'clothes'],
+  ['bank', 'apts', 'dealer', 'resto', 'clothes'],
+  ['apts', 'resto', 'clothes'],
+  ['apts', 'gym', 'pool', 'resto', 'resto', 'clothes'],
+  ['apts', 'pool', 'resto', 'clothes'],
+  ['bank', 'apts', 'gym', 'pool', 'resto', 'clothes'],
+  ['reserve', 'bank', 'jail', 'apts', 'apts', 'gym', 'pool', 'dealer', 'resto', 'resto', 'clothes', 'clothes']
+];
+const BLD_NAMES = {
+  bank: ['Harbor Trust Bank', 'Mesa Savings & Loan', '', '', '', 'Lakeshore Credit Union', 'First Fairhaven Bank'], reserve: ['', '', '', '', '', '', 'Island Reserve Bank'],
+  apts: [['Quayside Apartments'], ['Red Rock Lofts'], ['Old Mill Flats'], ['Palm Court Residences'], ['Snowline Chalets'], ['Pinewater Apartments'], ['The Meridian Tower', 'Parkview Residences']],
+  gym: ['Iron Harbor Gym', '', '', 'Palm Fitness', '', 'Lakeside Athletic Club', 'Pulse Fitness'],
+  pool: ['', '', '', 'Cape Harlow Aquatic Centre', 'Summit Spa & Pool', 'Lakeshore Swim Centre', 'Fairhaven Natatorium'],
+  dealer: ['Marlow Motors', 'Redstone Auto Ranch', '', '', '', '', 'Fairhaven Prestige Motors'], jail: ['', '', '', '', '', '', 'Island County Jail'],
+  resto: [['The Salty Crab', 'Dockside Fish & Chips'], ['Cantina Roja'], ['Harvest Table'], ['Tiki Shack', 'Coral Grill'], ['Fondue Haus'], ['Lakeside Grill'], ['Kaito Sushi', 'Bistro Lumière']],
+  clothes: [['Deckhand Outfitters'], ['Trail & Turquoise'], ['Barnyard Threads'], ['Sun & Sand Boutique'], ['Peak Outfitters'], ['Timberline Wear'], ['Maison Fairhaven', 'Uptown Threads']]
+};
+const BLD_ICO = { bank: ['🏦', 0x3fbf6a], reserve: ['🏦', 0xffd23a], apts: ['🏢', 0x8aa8ff], gym: ['🏋', 0xff7a3a], pool: ['🏊', 0x3ac8ff], dealer: ['🚗', 0xff4a6a], jail: ['⛓', 0x9a9aa6], resto: ['🍽', 0xffb23a], clothes: ['👕', 0xd07aff] };
+const BLD_SUB = { bank: 'Bank', reserve: 'Bank · the island’s main vault', apts: 'Apartments · rooms for sale', gym: 'Gym', pool: 'Indoor pool', dealer: 'Car dealership', jail: 'County jail & police', resto: 'Restaurant', clothes: 'Clothing' };
+/* generic kinds: name lists, signs */
+const BLD_GEN = {
+  office: { names: ['Harbourview House', 'Atlas Building', 'One Market Place', 'Sterling Tower', 'Northgate Plaza', 'Corwin & Vale', 'The Exchange', 'Pinnacle House'], sub: 'Offices', sign: false },
+  cafe: { names: ['Daily Grind', 'Bean There', 'The Roastery', 'Steam & Crema', 'Little Cup'], sub: 'Café' },
+  store: { names: ['Quik Stop', 'Corner Mart', '24/7 Market', 'Handy Shop'], sub: 'Convenience store' },
+  pharmacy: { names: ['Island Pharmacy', 'Wellcare Chemist', 'Green Cross Pharmacy'], sub: 'Pharmacy' },
+  books: { names: ['Dog-Eared Books', 'The Reading Room', 'Chapter & Verse'], sub: 'Bookshop' },
+  barber: { names: ['Clean Cuts', 'The Barber Pole', 'Sharp & Co.'], sub: 'Barber' },
+  bakery: { names: ['Rise & Shine Bakery', 'The Crusty Loaf', 'Sugar & Flour'], sub: 'Bakery' },
+  electronics: { names: ['Circuit City', 'Volt Electronics', 'Pixel Shack'], sub: 'Electronics' },
+  florist: { names: ['Petal & Stem', 'Bloom Florist', 'Wild Rose Flowers'], sub: 'Florist' },
+  hardware: { names: ['Nuts & Bolts Hardware', 'Toolbox', 'Fix-It Depot'], sub: 'Hardware store' },
+  laundry: { names: ['Spin Cycle', 'Suds Laundromat', 'Wash & Fold'], sub: 'Laundromat' },
+  bar: { names: ['The Tipsy Gull', 'Last Orders', 'The Rusty Nail', 'Corner Tap'], sub: 'Bar' },
+  diner: { names: ['Starlite Diner', 'Rosie’s', 'Route 9 Diner', 'Blue Plate'], sub: 'Diner' },
+  home: { names: ['A house'], sub: 'Home', sign: false },
+  warehouse: { names: ['Warehouse'], sub: 'Warehouse', sign: false },
+  barn: { names: ['Barn'], sub: 'Farm barn', sign: false }
+};
+const BLD_SHOPMIX = { harbor: ['cafe', 'store', 'bar', 'hardware', 'diner', 'laundry', 'pharmacy', 'office'], desert: ['diner', 'store', 'hardware', 'bar', 'barber', 'pharmacy', 'cafe'], farm: ['bakery', 'hardware', 'store', 'diner', 'florist', 'cafe', 'barber'],
+  tropic: ['cafe', 'florist', 'store', 'bar', 'books', 'bakery', 'electronics'], alpine: ['cafe', 'bakery', 'hardware', 'books', 'bar', 'store', 'pharmacy'], lake: ['cafe', 'books', 'bakery', 'store', 'diner', 'florist', 'barber'],
+  city: ['office', 'cafe', 'electronics', 'books', 'pharmacy', 'bar', 'store', 'barber', 'laundry', 'office'] };
+
+/* ---------- the plan of special buildings for a town: fixed lots near the middle ---------- */
+Bld.plan = function (T) {
+  if (Bld.plans.has(T.id)) return Bld.plans.get(T.id);
+  const ti = Math.max(0, towns.indexOf(T)), list = BLD_SPECIAL[ti % BLD_SPECIAL.length], cand = [];
+  for (let i = 0; i < T.N; i++) for (let j = 0; j < T.N; j++) {
+    const dn = Math.max(Math.abs(i + 0.5 - T.N / 2), Math.abs(j + 0.5 - T.N / 2)); if (dn >= 2 || Home.isBlock(T, i, j)) continue;
+    for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) { if ((i === SHOP_I && j === SHOP_J) || (i === VEN_I && j === VEN_J && b === 0)) continue; cand.push({ i, j, a, b, dn, h: ihash(T.id * 71 + i * 7 + a, j * 13 + b, 99) }); }
+  }
+  cand.sort((p, q) => (p.dn < 1) - (q.dn < 1) || p.h - q.h);   /* the middle ring first (shorter buildings), the downtown towers last */
+  const plan = new Map(), seen = {}; let ci = 0;
+  for (const kind of list) {
+    const want = kind === 'reserve' || (kind === 'apts' && ti === 6) ? 'down' : 'any'; let k = ci;
+    if (want === 'down') { k = cand.findIndex((c, n) => n >= 0 && c.dn < 1 && !c.used); } else k = cand.findIndex((c) => !c.used && c.dn >= 1);
+    if (k < 0) k = cand.findIndex((c) => !c.used); if (k < 0) break;
+    const c = cand[k]; c.used = true; ci++;
+    const n = seen[kind] = (seen[kind] || 0); seen[kind]++; const nm = BLD_NAMES[kind] ? BLD_NAMES[kind][ti] : null, name = Array.isArray(nm) ? nm[n % nm.length] : nm || BLD_SUB[kind];
+    const ls = (T.cell - 14) / 2 - 3, lx0 = T.x0 + c.i * T.cell + 7 + c.a * (T.cell - 14) / 2 + 1.5, lz0 = T.z0 + c.j * T.cell + 7 + c.b * (T.cell - 14) / 2 + 1.5;
+    const S = { kind, name, ti, T, i: c.i, j: c.j, a: c.a, b: c.b, x: lx0 + ls / 2, z: c.b ? lz0 + ls + 1 : lz0 - 1, key: T.id + ':' + c.i + ':' + c.j + ':' + c.a + ':' + c.b, n };
+    plan.set(S.key, S); Bld.sites.push(S);
+  }
+  Bld.plans.set(T.id, plan); return plan;
+};
+Bld.prep = function () { if (Bld.plans.size >= towns.length) return; for (const T of towns) Bld.plan(T); };
+
+/* ---------- register a building raised by genTownLots and give it a door ---------- */
+/* cat: 'tower' | 'down' | 'mid' | 'house' | 'shed' | 'barn' */
+Bld.reg = function (ch, T, i, j, a, b, x0, z0, x1, z1, y0, h, cat, gbP) {
+  const key = T.id + ':' + i + ':' + j + ':' + a + ':' + b, ti = Math.max(0, towns.indexOf(T)), R = REG[ti % REG.length], plan = Bld.plan(T), sp = plan.get(key), seed = (ihash(T.id * 37 + i, j * 11 + a * 3 + b, 5) * 4294967296) >>> 0;
+  let rec = Bld.lots.get(key);
+  if (!rec) {
+    let kind, name, sub;
+    if (sp) { kind = sp.kind; name = sp.name; sub = BLD_SUB[kind]; }
+    else {
+      kind = cat === 'tower' ? 'office' : cat === 'house' ? 'home' : cat === 'shed' ? 'warehouse' : cat === 'barn' ? 'barn' : null;
+      if (!kind) { const mix = BLD_SHOPMIX[R.key] || BLD_SHOPMIX.city; kind = mix[(seed >>> 5) % mix.length]; }
+      const G = BLD_GEN[kind]; name = G.names[(seed >>> 4) % G.names.length]; sub = G.sub;
+      if (kind === 'home') { const st = ['Maple', 'Harbor', 'Cedar', 'Hill', 'Bay', 'Ridge', 'Mill', 'Shore'][seed % 8]; name = (10 + (seed >>> 3) % 180) + ' ' + st + ' ' + ['Street', 'Lane', 'Road', 'Avenue'][(seed >>> 7) & 3]; }
+    }
+    const nz = b ? 1 : -1, xm = (x0 + x1) / 2, zf = b ? z1 : z0;
+    rec = { key, kind, name, sub, seed, ti, tid: T.id, town: T.name, reg: R.key, x0, z0, x1, z1, y: T.baseH, h, cat, W: x1 - x0, D: z1 - z0, special: !!sp,
+      door: { x: xm, z: zf, nx: 0, nz, ox: xm, oz: zf + nz * 1.4 } };
+    Bld.lots.set(key, rec);
+  }
+  (ch.doors || (ch.doors = [])).push(rec);
+  Bld.dress(ch, rec, gbP, R);
+  return rec;
+};
+/* the door: a frame, the door itself, a step, a lamp; shops get an awning, specials and shops a sign */
+Bld.dress = function (ch, rec, gbP, R) {
+  const d = rec.door, g0 = rec.y, x = d.x, z = d.z, n = d.nz, wide = rec.kind === 'dealer' || rec.kind === 'bank' || rec.kind === 'reserve' || rec.kind === 'jail' || rec.cat === 'tower', dw = wide ? 1.6 : rec.kind === 'home' ? 0.6 : rec.kind === 'barn' || rec.kind === 'warehouse' ? 1.6 : 1.1, dh = rec.kind === 'barn' || rec.kind === 'warehouse' ? 3.4 : 2.7;
+  const B = (a0, b0, c0, a1, b1, c1, col, k) => { const C = typeof col === 'number' ? lc(col) : col; k = k == null ? 1 : k; gbP.box(Math.min(a0, a1), b0, Math.min(c0, c1), Math.max(a0, a1), b1, Math.max(c0, c1), C.r * k, C.g * k, C.b * k); };
+  const glassy = rec.cat === 'tower' || rec.kind === 'bank' || rec.kind === 'reserve' || rec.kind === 'dealer' || rec.kind === 'pool' || rec.kind === 'gym' || rec.kind === 'clothes' || rec.kind === 'electronics' || rec.kind === 'pharmacy';
+  const trim = rec.kind === 'home' ? 0xe8e2d4 : rec.kind === 'barn' ? 0xf0eadb : 0x2a2d33, door = glassy ? 0x1a2a38 : rec.kind === 'home' ? [0x7a2a24, 0x2a4a6a, 0x3a5a3a, 0x5a3a24][rec.seed & 3] : rec.kind === 'barn' ? 0x8a2a20 : 0x4a3a2c;
+  B(x - dw - 0.18, g0, z + n * 0.0, x + dw + 0.18, g0 + dh + 0.2, z + n * 0.08, trim);
+  B(x - dw, g0, z + n * 0.08, x + dw, g0 + dh, z + n * 0.12, door, glassy ? 1.4 : 1);
+  if (glassy) B(x - 0.03, g0, z + n * 0.12, x + 0.03, g0 + dh, z + n * 0.14, trim);
+  else if (rec.kind !== 'barn') B(x + dw * 0.6, g0 + 1.0, z + n * 0.12, x + dw * 0.7, g0 + 1.1, z + n * 0.17, 0xc8a050);
+  B(x - dw - 0.4, g0 - 0.2, z, x + dw + 0.4, g0 + 0.12, z + n * 0.9, 0x8a8a86);
+  B(x + dw + 0.35, g0 + 2.2, z + n * 0.08, x + dw + 0.5, g0 + 2.5, z + n * 0.25, 0xfff0c8, 1.6);   /* a lamp by the door */
+  const shop = !BLD_GEN[rec.kind] || BLD_GEN[rec.kind].sign !== false;
+  if (shop && rec.kind !== 'office') {   /* an awning */
+    const col = rec.special ? lc(BLD_ICO[rec.kind] ? BLD_ICO[rec.kind][1] : 0x4a6a8a) : lc([0xc8302a, 0x2a6a4a, 0x2a4a8a, 0xd89a2a, 0x6a2a6a, 0x2a8a8a][rec.seed % 6]);
+    for (let k = 0; k < 6; k++) B(x - dw - 0.9 + k * (2 * dw + 1.8) / 6, g0 + dh + 0.35, z + n * 0.1, x - dw - 0.9 + (k + 1) * (2 * dw + 1.8) / 6, g0 + dh + 0.45, z + n * 1.3, k % 2 ? col : lc(0xf2efe6), 1);
+  }
+  if (shop || rec.special) {
+    const W = Math.min(rec.W - 2, Math.max(6, rec.name.length * 0.62)), H = 1.15, yy = g0 + dh + (shop && rec.kind !== 'office' ? 1.35 : 0.9);
+    const key = rec.name + '|' + rec.kind; let mat = Bld.sigMat.get(key);
+    if (!mat) { const ic = BLD_ICO[rec.kind], fg = rec.special && ic ? _hexCss(ic[1]) : '#f4f0e6'; mat = new THREE.MeshBasicMaterial({ map: ikText(rec.name.toUpperCase(), { w: 1024, h: 160, fg, bg: '#101318', bar: rec.special && ic ? _hexCss(ic[1]) : null }), color: new THREE.Color(1.2, 1.2, 1.2) }); Bld.sigMat.set(key, mat); }
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(W, H), mat); m.position.set(x - ch.x0, yy, z + n * 0.14 - ch.z0); m.rotation.y = n > 0 ? 0 : Math.PI; ch.group.add(m);
+  }
+};
+
+/* ---------- the door in reach ---------- */
+Bld.tick = function () {
+  let best = null;
+  if (App.mode === 'play' && !Fly.on && !Boat.on && !Mi && !Talk.on && !GAR.edit && !Bust.on && !Tow.on && !Rally.on && !Derby.on && !Drag.on && !Surf.on && !Dunes.on && car.wrecked <= 0 && !devOn('free') && Fare.phase !== 'ride' && Heist.phase === 'idle' && (Foot.on || Math.abs(car.speed) < 2.5)) {
+    const ccx = Math.floor(Pl.x / CHUNK), ccz = Math.floor(Pl.z / CHUNK), lim = Foot.on ? 2.2 : 7; let bd = lim * lim;
+    for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+      const ch = Chunks.get(ccx + dx, ccz + dz); if (!ch || !ch.doors) continue;
+      for (const r of ch.doors) { const ex = Pl.x - (r.door.x + r.door.nx * 0.9), ez = Pl.z - (r.door.z + r.door.nz * 0.9), d2 = ex * ex + ez * ez; if (d2 < bd) { bd = d2; best = r; } }
+    }
+  }
+  if (!best && App.mode === 'play' && !Mi && !Fly.on && !Boat.on && !Bust.on && car.wrecked <= 0 && (Foot.on || Math.abs(car.speed) < 2.5)) best = Bld.fixedNear(Foot.on ? 2.4 : 7);
+  Bld.near = best;
+};
+Bld.enter = function () { const r = Bld.near; if (!r) return; Int.enter(r); };
+
+/* ---------- map ---------- */
+Bld.drawMini = function (g) { };
+Bld.drawFull = function (g, k) {
+  Bld.prep();
+  for (const S of Bld.sites) {
+    const ic = BLD_ICO[S.kind]; if (!ic) continue; const s = FM.toScreen(S.x, S.z), r = 5.5 * k;
+    g.fillStyle = _hexCss(ic[1]); g.strokeStyle = '#06090e'; g.lineWidth = 2 * k; g.beginPath(); g.arc(s[0], s[1], r, 0, TAU); g.fill(); g.stroke();
+    g.font = Math.round(7.5 * k) + 'px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#fff'; g.fillText(ic[0], s[0], s[1] + 0.5 * k);
+  }
+};
+/* the nearest special of a kind (for GPS) */
+Bld.nearest = function (kind, x, z) { Bld.prep(); let best = null, bd = 1e18; for (const S of Bld.sites) if (S.kind === kind || (kind === 'bank' && S.kind === 'reserve')) { const d = (S.x - x) ** 2 + (S.z - z) ** 2; if (d < bd) { bd = d; best = S; } } return best; };
+
+/* ---- js/08_int_core.js ---- */
+/* ================= INTERIORS: walk inside the buildings =================
+   Every town building has a door (08_int_bld.js). Walk up to it and press E: the building's interior is its own first-person scene (mode 'int'),
+   built from its kind (shop, office, home, bank, gym, ...) and the building's real footprint, and thrown away when you leave. You walk, run and look
+   about exactly as on foot (keys, mouse, pad or touch), bump into the furniture, and press E at anything marked to use it (buy, eat, work out, sleep,
+   take the lift, leave by the door). The people inside are the game's Humans, posed by the pedestrian code (standing, walking, sitting, working).
+   A kind is INT_KINDS[k] = { name, rooms: { main(K, rec, r), ...more rooms }, enter?(rec) }; K is the room kit (08_int_kit.js). */
+const INT = { EYE: 1.62, R: 0.3, NPC_CAP: 14 };
+const Int = { on: false, rec: null, kind: null, room: 'main', sc: null, cam: null, x: 0, z: 0, y: 0, yaw: 0, pitch: 0, vx: 0, vz: 0, bob: 0, cols: [], acts: [], npcs: [], ticks: [], swim: null, tp: false, near: null,
+  t: 0, msg: '', msgT: 0, hudH: '', botH: '', pan: null, fx: { speed: 0, damage: 0, chroma: 0, expo: 1 }, expo: 1.15, ped: null, back: null, drag: null, look: { k: 0 }, busy: null, entered: 0, hook: null };
+const _ii = { f: 0, r: 0, run: false, sneak: false, lx: 0, ly: 0, use: false, back: false };
+function intSave() { const s = save.int || (save.int = { apts: {}, fit: 0, gym: 0, meals: 0, swims: 0, jail: 0, nights: 0, rooms: 0, banks: {} }); s.apts = s.apts || {}; s.banks = s.banks || {}; return s; }
+
+/* ---------- enter / leave ---------- */
+Int.enter = function (rec, room) {
+  if (!rec || App.mode !== 'play') return false; const D = INT_KINDS[rec.kind]; if (!D) return false;
+  if (Wanted.stars > 0 && !rec.jail && !(Int.hook && Int.hook.allowHeat)) { UI.toast('The cops are on you · lose the heat first', 'bad'); return false; }
+  if (D.enter && D.enter(rec) === false) return false;
+  for (const k in Keys) Keys[k] = false; for (const k of ['l', 'r', 'gas', 'brk', 'nit', 'hand']) TouchIn[k] = 0;
+  try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) { /* ignore */ }
+  if (Talk.on) Talk.close(true);
+  Int.back = { foot: Foot.on, x: Foot.on ? Foot.x : car.x, z: Foot.on ? Foot.z : car.z };
+  Int.rec = rec; Int.kind = D; Int.on = true; Int.t = 0; Int.entered = App.time; Int.tp = !!(Foot.on && Foot.tp); Int.pan = null;
+  if (!Int.cam) Int.cam = new THREE.PerspectiveCamera(72, 1, 0.05, 400);
+  Int.go(room || 'main');
+  UI.setMode('int'); E.intTitle.textContent = rec.name; E.intSub.textContent = rec.sub || D.name; E.intPan.hidden = true; Snd.door();
+  return true;
+};
+Int.go = function (room, spawn) {
+  const rec = Int.rec, D = Int.kind, fn = D.rooms[room]; if (!fn) return;
+  Int.clear(); Int.room = room;
+  const K = new IntKit(rec, room), r = mulberry32((ihash(rec.seed | 0, room.length * 131 + room.charCodeAt(0), 3) * 4294967296) >>> 0);
+  fn(K, rec, r); K.done(); Int.sc = K.sc; Int.cols = K.cols; Int.acts = K.acts; Int.npcs = K.npcs; Int.ticks = K.ticks; Int.swim = K.swim; Int.bounds = K.bounds; Int.K = K;
+  const s = (spawn && K.spawns[spawn]) || K.spawns.door || [0, 0, Math.PI]; Int.x = s[0]; Int.z = s[1]; Int.yaw = s[2]; Int.pitch = 0; Int.vx = Int.vz = 0; Int.y = 0;
+  if (Int.tp) Int.mkPed();
+  Int.hudH = Int.botH = ''; Int.near = null; if (D.onRoom) D.onRoom(room, K);
+};
+Int.clear = function () {
+  if (Int.K && Int.K.extra) { for (const f of Int.K.extra) try { f(); } catch (e) { console.error(e); } Int.K.extra = null; }
+  for (const n of Int.npcs) if (n.hu) Human.dispose(n.hu);
+  if (Int.ped && Int.ped.hu) { Human.dispose(Int.ped.hu); Int.ped.hu = null; }
+  if (Int.sc) Int.sc.traverse((o) => { if (o.geometry && !o.geometry.__keep) o.geometry.dispose(); if (o.material && o.material.__own) { if (o.material.map && !o.material.map.__keep) o.material.map.dispose(); o.material.dispose(); } });
+  Int.sc = null; Int.npcs = []; Int.acts = []; Int.cols = []; Int.ticks = [];
+};
+Int.leave = function (silent) {
+  if (!Int.on) return; const rec = Int.rec, D = Int.kind;
+  if (Int.busy && Int.busy.lock) { Int.say(Int.busy.lock); return; }
+  if (D && D.canLeave && !D.canLeave()) { Int.say(D.canLeaveMsg || 'Walk out of the door'); return; }
+  if (D && D.leave && D.leave(rec) === false) return;
+  Int.panel(null); Int.clear(); Int.on = false; Int.busy = null;
+  const d = rec.door; let x = d.ox, z = d.oz;
+  if (!Foot.on) { if (!Foot.ped) Foot.ped = footNewPed(); Foot.ped.app = footApp(); Foot.on = true; Foot.state = 'walk'; Foot.tp = Int.tp; UI.footMode(true); Foot.parkCar(car); }
+  if (footBlockedAt(x, z)) { x = d.ox + d.nx * 1.2; z = d.oz + d.nz * 1.2; }
+  Foot.x = x; Foot.z = z; groundAt(x, z, _fg); Foot.y = _fg.h; Foot.vx = Foot.vz = Foot.vy = 0; Foot.air = false; Foot.yaw = Math.atan2(d.nx, d.nz); Foot.body = Foot.yaw; Foot.pitch = 0; Foot.tp = Int.tp;
+  syncPl(); UI.setMode('play'); writeSave(); if (!silent) Snd.door(); last = performance.now();
+  if (Int.hook && Int.hook.left) { const h = Int.hook; Int.hook = null; h.left(rec); }
+};
+Int.say = function (m, sec) { Int.msg = m; Int.msgT = sec || 2.6; };
+
+/* ---------- the player's own body (third person, and in the mirror of shop windows) ---------- */
+Int.mkPed = function () {
+  const P = Int.ped || (Int.ped = { app: null, x: 0, y: 0, z: 0, yaw: 0, v: 0, ph: 0, state: 'stand', seed: 3.7, avatar: true, tilt: 0, t: 0, vx: 0, vz: 0, vy: 0, wave: 0, pn: 0, jump: false, phone: false });
+  P.app = footApp(); if (P.hu) { Human.dispose(P.hu); P.hu = null; }
+  const h = P.hu = Human.make(pedSpec(P.app, P.seed)); h.sig = Human.sig(P.app); h.app = P.app; h.chk = 0; h.gy = 0; h.ps = null; if (Int.sc) Int.sc.add(h.root);
+};
+Int.view = function (tp) { Int.tp = tp == null ? !Int.tp : !!tp; if (Int.tp && !(Int.ped && Int.ped.hu)) Int.mkPed(); if (Int.ped && Int.ped.hu) Int.ped.hu.root.visible = Int.tp; };
+
+/* ---------- input ---------- */
+function intInput() {
+  const K = Keys, T = TouchIn, I = _ii;
+  I.f = (K.KeyW || K.ArrowUp ? 1 : 0) - (K.KeyS || K.ArrowDown ? 1 : 0) + T.gas - T.brk; I.r = (K.KeyD ? 1 : 0) - (K.KeyA ? 1 : 0) + T.r - T.l; I.lx = I.ly = 0;
+  if (K.ArrowLeft) I.lx -= 1; if (K.ArrowRight) I.lx += 1;
+  I.run = !!(K.ShiftLeft || K.ShiftRight) || !!T.nit; I.sneak = !!(K.ControlLeft || K.ControlRight) || !!T.hand; I.use = false; I.back = false;
+  let pads = null; try { pads = navigator.getGamepads ? navigator.getGamepads() : null; } catch (e) { pads = null; }
+  if (pads) for (const p of pads) if (p && p.connected) {
+    const dz = (v) => (Math.abs(v) > 0.15 ? v : 0), bv = (i) => (p.buttons[i] ? p.buttons[i].value || (p.buttons[i].pressed ? 1 : 0) : 0);
+    I.r += dz(p.axes[0]); I.f -= dz(p.axes[1]); I.lx += dz(p.axes[2] || 0); I.ly += dz(p.axes[3] || 0); I.run = I.run || bv(1) > 0.5 || bv(10) > 0.5; I.sneak = I.sneak || bv(11) > 0.5 || bv(6) > 0.5;
+    for (const [i, code] of [[0, 'KeyE'], [2, 'KeyE'], [3, 'KeyC'], [9, 'Escape'], [1, 'Backspace']]) { const on = bv(i) > 0.5; if (on && !padPrev[100 + i]) onKey(code); padPrev[100 + i] = on; }
+    break;
+  }
+  I.f = clamp(I.f, -1, 1); I.r = clamp(I.r, -1, 1); return I;
+}
+Int.look = function (dx, dy) { Int.yaw -= dx * 0.0042; Int.pitch = clamp(Int.pitch - dy * 0.0036 * (save.set.finv ? -1 : 1), -1.3, 1.2); };
+Int.key = function (code) {
+  if (Int.busy && Int.busy.press && (code === 'KeyE' || code === 'Space' || code === 'Enter')) { Int.busy.press(); return; }
+  if (Int.pan && Int.pan.key && Int.pan.key(code)) return;
+  switch (code) {
+    case 'Escape': case 'Backspace': if (Int.pan) Int.panel(null); else if (Int.busy && Int.busy.cancel) Int.busy.cancel(); else if (code === 'Escape') Int.leave(); break;
+    case 'KeyE': case 'Enter': if (Int.pan) { const b = E.intPan.querySelector('button.primary:not([disabled])'); if (b && code === 'Enter') b.click(); else if (code === 'KeyE') Int.panel(null); break; } if (Int.near) Int.use(Int.near); break;
+    case 'KeyC': case 'KeyV': Int.view(); break;
+    case 'Digit1': Int.view(false); break; case 'Digit2': Int.view(true); break;
+    case 'KeyF': if (!Int.pan && Int.near && Int.near.f) Int.use(Int.near, 'f'); break;
+    default: if (Int.kind && Int.kind.key) Int.kind.key(code);
+  }
+};
+Int.use = function (a, how) {
+  if (!a || (Int.busy && Int.busy.lock)) return;
+  if (a.cost && save.money < a.cost) { Int.say('You need ' + money(a.cost) + ' for that'); Snd.beep(200, 0.08); return; }
+  try { a.fn(a, how); } catch (e) { console.error(e); }
+};
+
+/* ---------- a panel (menus: buy a room, order food, pick a floor, a car on the showroom floor) ---------- */
+/* o = { title, sub, body (html), btns: [[label, fn, primary, disabled]], key?(code) } ; null closes it */
+Int.panel = function (o) {
+  Int.pan = o; const P = E.intPan;
+  if (!o) { P.hidden = true; P.innerHTML = ''; return; }
+  try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) { /* ignore */ }
+  let h = '<div class="vmh"><b>' + esc(o.title) + '</b>' + (o.sub ? '<small>' + esc(o.sub) + '</small>' : '') + '</div>' + (o.body || '');
+  h += '<div class="vfoot">' + (o.btns || []).map((b, i) => '<button type="button" class="btn' + (b[2] ? ' primary' : '') + '" data-ib="' + i + '"' + (b[3] ? ' disabled' : '') + '>' + b[0] + '</button>').join('') + '<button type="button" class="btn" data-ib="x">Close</button></div>';
+  P.innerHTML = h; P.hidden = false; Int.hudH = '';
+};
+Int.initUI = function () {
+  E.intPan.addEventListener('click', (e) => {
+    const b = e.target.closest ? e.target.closest('[data-ib],[data-ia]') : null; if (!b || b.disabled || !Int.pan) return;
+    if (b.dataset.ib === 'x') { Int.panel(null); return; }
+    const o = Int.pan; if (b.dataset.ia != null && o.pick) { o.pick(b.dataset.ia, b); return; }
+    const bt = o.btns && o.btns[+b.dataset.ib]; if (bt && bt[1]) bt[1](b);
+  });
+  E.intTop.addEventListener('click', (e) => { const b = e.target.closest ? e.target.closest('[data-act]') : null; if (b && b.dataset.act === 'leave') Int.leave(); });
+  const gl = E.gl;
+  gl.addEventListener('pointerdown', (e) => {
+    if (App.mode !== 'int' || Int.pan) return;
+    if (e.pointerType === 'mouse') { try { const r = gl.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (er) { /* ignore */ } return; }
+    Int.drag = { id: e.pointerId, x: e.clientX, y: e.clientY };
+  });
+  gl.addEventListener('pointermove', (e) => {
+    if (App.mode !== 'int') return;
+    if (document.pointerLockElement === gl) { Int.look(e.movementX, e.movementY); return; }
+    const d = Int.drag; if (!d || d.id !== e.pointerId) return; Int.look((e.clientX - d.x) * 1.6, (e.clientY - d.y) * 1.6); d.x = e.clientX; d.y = e.clientY;
+  });
+  const up = (e) => { if (Int.drag && Int.drag.id === e.pointerId) Int.drag = null; };
+  gl.addEventListener('pointerup', up); gl.addEventListener('pointercancel', up);
+};
+
+/* ---------- per frame ---------- */
+const _intV = new THREE.Vector3();
+function intResolve(x, z, R, cols, B) {
+  const o = { x, z };
+  for (let pass = 0; pass < 2; pass++) for (let i = 0; i < cols.length; i++) {
+    const c = cols[i]; if (c.off) continue; if (o.x < c[0] - R || o.x > c[2] + R || o.z < c[1] - R || o.z > c[3] + R) continue;
+    const qx = clamp(o.x, c[0], c[2]), qz = clamp(o.z, c[1], c[3]);
+    if (qx === o.x && qz === o.z) { const dl = o.x - c[0], dr = c[2] - o.x, dt = o.z - c[1], db = c[3] - o.z, m = Math.min(dl, dr, dt, db); if (m === dl) o.x = c[0] - R; else if (m === dr) o.x = c[2] + R; else if (m === dt) o.z = c[1] - R; else o.z = c[3] + R; }
+    else { const ex = o.x - qx, ez = o.z - qz, d = Math.hypot(ex, ez); if (d < R) { o.x = qx + ex / d * R; o.z = qz + ez / d * R; } }
+  }
+  if (B) { o.x = clamp(o.x, B[0] + R, B[2] - R); o.z = clamp(o.z, B[1] + R, B[3] - R); }
+  return o;
+}
+Int.frame = function (dt) {
+  App.time += dt; Int.t += dt; if (Snd.ok) Snd.update(car, dt, true);
+  App.tod = (App.tod + dt * (save.set.cycle ? 24 / 1440 : 0)) % 24;
+  if (Int.msgT > 0) Int.msgT -= dt;
+  const I = Int.pan || (Int.busy && Int.busy.freeze) ? { f: 0, r: 0, run: false, sneak: Int.sneak, lx: 0, ly: 0 } : intInput(); Int.sneak = !!I.sneak;
+  if (I.lx) Int.yaw -= I.lx * 2.4 * dt; if (I.ly) Int.pitch = clamp(Int.pitch - I.ly * 1.8 * dt, -1.3, 1.2);
+  /* walk (or swim) */
+  const sw = Int.swim && Int.swim.at(Int.x, Int.z), s = Math.sin(Int.yaw), c = Math.cos(Int.yaw), fit = intSave().fit || 0;
+  let mx = s * I.f - c * I.r, mz = c * I.f + s * I.r; const ml = Math.hypot(mx, mz); if (ml > 1) { mx /= ml; mz /= ml; }
+  const run = I.run && !I.sneak && I.f > -0.2 && ml > 0.1, vmax = sw ? (run ? 1.9 : 1.2) * (1 + fit * 0.002) : (run ? 5.2 * (1 + fit * 0.0015) : I.sneak ? 1.2 : 2.2) * (I.f < -0.3 && !I.r ? 0.6 : 1);
+  Int.vx += (mx * vmax - Int.vx) * Math.min(1, dt * (sw ? 3 : 10)); Int.vz += (mz * vmax - Int.vz) * Math.min(1, dt * (sw ? 3 : 10));
+  const o = intResolve(Int.x + Int.vx * dt, Int.z + Int.vz * dt, INT.R, Int.cols, Int.bounds); Int.x = o.x; Int.z = o.z;
+  const sp = Math.hypot(Int.vx, Int.vz); Int.bob += sp * dt * (run ? 1.7 : 2.1);
+  const swy = sw ? sw.y : 0; Int.y += ((swy) - Int.y) * Math.min(1, dt * 6);
+  if (sw) intSave().swimT = (intSave().swimT || 0) + dt;
+  /* what is in reach */
+  let best = null, bs = 1e9;
+  if (!Int.pan && !(Int.busy && Int.busy.freeze)) for (const a of Int.acts) {
+    if (a.off || (a.when && !a.when())) continue; const dx = a.x - Int.x, dz = a.z - Int.z, d = Math.hypot(dx, dz); if (d > a.r) continue;
+    const face = d < 0.5 ? 1 : (dx * s + dz * c) / d; if (face < (a.wide ? -0.2 : 0.25)) continue; const sc = d - face * 0.8; if (sc < bs) { bs = sc; best = a; }
+  }
+  Int.near = best;
+  for (const f of Int.ticks) f(dt, Int.t);
+  if (Int.kind && Int.kind.tick) Int.kind.tick(dt, Int.t);
+  if (Int.busy && Int.busy.tick) Int.busy.tick(dt);
+  if (!Int.on) return;   /* a tick can send you out (released from jail, caught in the vault) */
+  /* people */
+  const px = Pl.x, pz = Pl.z; Pl.x = Int.x; Pl.z = Int.z; HU.frame = (HU.frame || 0) + 1;
+  try { for (const n of Int.npcs) intNpc(n, dt); if (Int.tp && Int.ped && Int.ped.hu) { const P = Int.ped; P.x = Int.x; P.z = Int.z; P.y = Int.y - (sw ? 1.0 : 0); P.yaw = Int.yaw; P.v = sp; P.state = sp > 0.2 ? 'walk' : 'stand'; P.ph += TAU * sp / pedCyc(Math.max(0.4, sp), P.app) * dt; pedPose(P, App.time, dt, false, false); } }
+  finally { Pl.x = px; Pl.z = pz; }
+  if (Int.ped && Int.ped.hu) Int.ped.hu.root.visible = Int.tp;
+  /* camera */
+  const cam = Int.cam, W = innerWidth, H = innerHeight; cam.aspect = W / H; cam.fov = save.set.fov || 72; cam.updateProjectionMatrix();
+  Int.eyeK = (Int.eyeK == null ? 1 : Int.eyeK) + ((Int.sneak ? 0.64 : 1) - (Int.eyeK == null ? 1 : Int.eyeK)) * Math.min(1, dt * 8);
+  const eye = (sw ? 0.55 : INT.EYE * Int.eyeK) + Int.y + (sp > 0.3 && !sw ? Math.sin(Int.bob * 2) * 0.025 : 0), cp = Math.cos(Int.pitch);
+  if (Int.tp) {
+    const bx = Int.x - s * 2.6 * cp, bz = Int.z - c * 2.6 * cp, o2 = intResolve(bx, bz, 0.2, Int.cols, Int.bounds);
+    cam.position.set(o2.x, eye + 0.3 - Math.sin(Int.pitch) * 1.6, o2.z); cam.lookAt(Int.x, eye - 0.1, Int.z);
+  } else { cam.position.set(Int.x, eye, Int.z); _intV.set(Int.x + s * cp, eye + Math.sin(Int.pitch), Int.z + c * cp); cam.lookAt(_intV); }
+  /* draw */
+  const s0 = scene, c0 = camera, e0 = env.exposure; scene = Int.sc; camera = cam; env.exposure = Int.K.expo || Int.expo;
+  try { renderFrame(Int.fx, App.time); } finally { env.exposure = e0; scene = s0; camera = c0; }
+  Int.hudT = (Int.hudT || 0) - dt; if (Int.hudT <= 0) { Int.hudT = 0.08; Int.paint(); }
+};
+Int.paint = function () {
+  let b = '';
+  if (Int.msgT > 0) b = '<b>' + Int.msg + '</b>';
+  else if (Int.busy && Int.busy.hint) b = Int.busy.hint();
+  else if (Int.near && !Int.pan) { const a = Int.near, lab = typeof a.label === 'function' ? a.label() : a.label; b = (TouchIn.on ? '<em>USE</em> ' : '<em>E</em> ') + lab + (a.cost ? ' · ' + money(a.cost) : '') + (a.f ? ' &nbsp; <em>F</em> ' + a.f : ''); }
+  else if (!Int.pan && Int.t < 4) b = TouchIn.on ? 'Drag to look · walk out the door to leave' : 'Mouse to look · WASD walk · Shift run · E use · C view · walk out the door (or Esc) to leave';
+  if (b !== Int.botH) { Int.botH = b; E.intBot.innerHTML = b; E.intBot.hidden = !b; }
+  const h = Int.busy && Int.busy.hud ? Int.busy.hud() : Int.kind && Int.kind.hud ? Int.kind.hud() : '';
+  if (h !== Int.hudH) { Int.hudH = h; E.intHud.innerHTML = h; E.intHud.hidden = !h; }
+  E.intCash.textContent = money(save.money); E.intDot.hidden = Int.tp || !!Int.pan;
+  if (E.tAct && TouchIn.on) { E.tAct.dataset.k = 'KeyE'; E.tAct.style.display = ''; const t = Int.busy && Int.busy.press ? 'PRESS' : Int.near ? 'USE' : '·'; if (E.tAct.textContent !== t) E.tAct.textContent = t; }
+};
+
+/* ---------- people inside ---------- */
+/* n = ped-like: { app, x, z, y, yaw, v, ph, seed, state, kind: 'stand' | 'walk' | 'sit' | 'lift' | 'swim' | 'dance' | 'sleep' | 'lie', path?: [[x,z,wait]...] } */
+function intNpc(n, dt) {
+  if (n.kind === 'walk' && n.path) {
+    const P = n.path, q = P[n.pi]; if (n.wait > 0) { n.wait -= dt; n.v = 0; n.state = 'stand'; }
+    else { const dx = q[0] - n.x, dz = q[1] - n.z, d = Math.hypot(dx, dz); if (d < 0.25) { n.wait = q[2] || 0; n.pi = (n.pi + 1) % P.length; if (q[3] != null) n.yaw = q[3]; } else { n.state = 'walk'; n.v = n.vt; n.x += dx / d * n.v * dt; n.z += dz / d * n.v * dt; n.yaw += angDiff(n.yaw, Math.atan2(dx, dz)) * Math.min(1, dt * 6); n.ph += TAU * n.v / pedCyc(n.v, n.app) * dt; } }
+  } else if (n.kind === 'ctl') { /* moved by its owner (a guard on its rounds) */ }
+  else if (n.kind === 'treadmill') { n.v = 2.7; n.state = 'walk'; n.ph += TAU * n.v / pedCyc(n.v, n.app) * dt; }
+  else if (n.kind !== 'walk') { n.v = 0; n.state = n.talk ? 'talk' : 'stand'; }
+  if (n.face) { const dx = Int.x - n.x, dz = Int.z - n.z; if (dx * dx + dz * dz < 16) n.yaw += angDiff(n.yaw, Math.atan2(dx, dz)) * Math.min(1, dt * 3); }
+  n.spk = n.talk ? 0.6 : 0;
+  pedPose(n, App.time, dt, false, false);
+  const h = n.hu; if (!h) return; const b = h.b, R = h.root, t = App.time + n.seed;
+  if (n.kind === 'sit') {
+    R.position.set(n.x, n.y + (n.sy || 0.0), n.z); R.rotation.set(0, n.yaw, 0);
+    b.hips.position.set(0, 0.47 + (n.sy0 || 0), 0); b.hips.rotation.set(0, 0, 0); b.tor.rotation.set(-0.05, 0, 0); b.chest.rotation.set(0.02 + 0.02 * Math.sin(t * 1.6), 0, 0);
+    b.legL.rotation.set(-1.5, 0, -0.06); b.knL.rotation.set(1.5, 0, 0); b.footL.rotation.set(0.0, 0, 0); b.legR.rotation.set(-1.5, 0, 0.06); b.knR.rotation.set(1.5, 0, 0); b.footR.rotation.set(0.0, 0, 0);
+    if (n.eat) { const u = Math.max(0, Math.sin(t * 1.3)); b.armR.rotation.set(-0.5 - 0.6 * u, 0, 0.15); b.elR.rotation.set(-1.3 - 0.5 * u, 0, 0); b.armL.rotation.set(-0.5, 0, -0.15); b.elL.rotation.set(-1.2, 0, 0); }
+    else if (n.type) { const u = Math.sin(t * 9); b.armR.rotation.set(-0.55, 0, 0.12); b.elR.rotation.set(-1.25 + 0.05 * u, 0, 0); b.armL.rotation.set(-0.55, 0, -0.12); b.elL.rotation.set(-1.25 - 0.05 * u, 0, 0); b.head.rotation.x = 0.15; }
+    else { b.armL.rotation.set(-0.35, 0, -0.1); b.armR.rotation.set(-0.35, 0, 0.1); b.elL.rotation.set(-0.9, 0, 0); b.elR.rotation.set(-0.9, 0, 0); }
+  } else if (n.kind === 'lift') {   /* a bench press, a curl or a squat, in time */
+    const u = 0.5 + 0.5 * Math.sin(t * 2.2), m = n.move || 'curl';
+    if (m === 'curl') { b.armL.rotation.set(-0.15, 0, -0.08); b.armR.rotation.set(-0.15, 0, 0.08); b.elL.rotation.set(-0.2 - 1.9 * u, 0, 0); b.elR.rotation.set(-0.2 - 1.9 * (1 - u), 0, 0); }
+    else if (m === 'press') { b.armL.rotation.set(-1.55 - 1.2 * u, 0, -0.35); b.armR.rotation.set(-1.55 - 1.2 * u, 0, 0.35); b.elL.rotation.set(-1.6 * (1 - u), 0, 0); b.elR.rotation.set(-1.6 * (1 - u), 0, 0); }
+    else if (m === 'squat') { const k = 1.3 * u; b.hips.position.y -= 0.32 * u; b.legL.rotation.set(-k, 0, -0.1); b.legR.rotation.set(-k, 0, 0.1); b.knL.rotation.set(k * 1.8, 0, 0); b.knR.rotation.set(k * 1.8, 0, 0); b.footL.rotation.set(-k * 0.8, 0, 0); b.footR.rotation.set(-k * 0.8, 0, 0); b.tor.rotation.x = 0.4 * u; b.armL.rotation.set(-2.6, 0, -0.5); b.armR.rotation.set(-2.6, 0, 0.5); b.elL.rotation.set(-2.2, 0, 0); b.elR.rotation.set(-2.2, 0, 0); }
+    else if (m === 'run') { n.ph += dt * 9; }
+  } else if (n.kind === 'dance') {
+    const u = Math.sin(t * 6), v = Math.sin(t * 3 + n.seed); R.position.y = n.y + 0.04 * Math.abs(u); b.hips.rotation.set(0, 0.3 * v, 0.08 * u); b.armL.rotation.set(-1.2 - 0.8 * Math.max(0, u), 0, -0.4); b.armR.rotation.set(-1.2 - 0.8 * Math.max(0, -u), 0, 0.4); b.elL.rotation.set(-0.8, 0, 0); b.elR.rotation.set(-0.8, 0, 0); b.knL.rotation.x = 0.2 + 0.2 * Math.max(0, u); b.knR.rotation.x = 0.2 + 0.2 * Math.max(0, -u);
+  } else if (n.kind === 'swim') {
+    const u = Math.sin(t * 2.4); R.position.y = n.y - 1.0 + 0.04 * u; b.armL.rotation.set(-0.4 - 0.3 * u, 0, -0.9); b.armR.rotation.set(-0.4 + 0.3 * u, 0, 0.9); b.elL.rotation.set(-0.4, 0, 0); b.elR.rotation.set(-0.4, 0, 0);
+  } else if (n.kind === 'lie' || n.kind === 'sleep') {
+    R.rotation.order = 'YXZ'; R.position.set(n.x, n.y + 0.14, n.z); R.rotation.set(-Math.PI / 2, n.yaw, 0); b.hips.position.set(0, 0.955, 0); b.hips.rotation.set(0, 0, 0); b.tor.rotation.set(0, 0, 0); b.chest.rotation.set(0.015 * Math.sin(t * 1.2), 0, 0);
+    b.armL.rotation.set(0, 0, -0.12); b.armR.rotation.set(0, 0, 0.12); b.elL.rotation.set(-0.1, 0, 0); b.elR.rotation.set(-0.1, 0, 0); b.legL.rotation.set(0, 0, 0); b.legR.rotation.set(0, 0, 0); b.knL.rotation.set(0.05, 0, 0); b.knR.rotation.set(0.05, 0, 0); b.footL.rotation.set(0.6, 0, 0); b.footR.rotation.set(0.6, 0, 0);
+    if (n.kind === 'sleep') { b.head.rotation.set(0, 0.4, 0); }
+  } else if (n.kind === 'work') {   /* busy with the hands at a counter: sweep, wipe, type */
+    const u = Math.sin(t * 3.1); b.armR.rotation.set(-0.7 + 0.15 * u, 0, 0.1); b.elR.rotation.set(-0.9 - 0.2 * u, 0, 0); b.armL.rotation.set(-0.5, 0, -0.1); b.elL.rotation.set(-1.0, 0, 0); b.head.rotation.x = 0.25;
+  }
+  if (n.after) n.after(n, h, t);
+}
+
+/* ---- js/08_int_gen.js ---- */
+/* ================= INTERIORS: the ordinary buildings =================
+   Offices (a lobby and a lift up to the office floors), cafés, corner shops, pharmacies, bookshops, barbers, bakeries, electronics shops, florists,
+   hardware stores, laundromats, bars, diners, homes, warehouses and barns. Each is laid out to the building's own footprint, with its staff and
+   customers, and something to buy or do. Food and coffee give you a buzz (you run faster for a few minutes); a meal also tops up the car. */
+const INT_KINDS = {};
+function intDims(rec, wMax, dMax) { return { W: clamp(Math.round((rec.W - 0.8) * 2) / 2, 8, wMax || 30), D: clamp(Math.round((rec.D - 0.8) * 2) / 2, 7, dMax || 26) }; }
+const INT_PROD = [0xd82a2a, 0x2a6ad8, 0xf2c81e, 0x3ab04a, 0xf28a1e, 0xe8e8e8, 0x8a3ad8, 0x1ab0b0, 0xd85a8a, 0x5a3a2a];
+const INT_BOOK = [0x7a1a1a, 0x1a3a6a, 0x2a5a2a, 0x6a5a1a, 0x3a1a4a, 0xa8762a, 0x1a1a1a, 0xc8b88a, 0x8a2a4a];
+/* things to buy: the buzz (run faster), a meal (buzz + the car topped up), a repair kit */
+function intBuzz(min) { const s = intSave(); s.buzz = Math.max(s.buzz || 0, App.time) + min * 60; }
+function intBuy(price, what, fx, line) {
+  if (save.money < price) { Int.say('You need ' + money(price)); Snd.beep(200, 0.08); return false; }
+  save.money -= price; if (fx) fx(); writeSave(); Snd.beep(660, 0.06); Int.say((line || 'Bought: ' + what) + ' · −' + money(price)); return true;
+}
+const intMeal = () => { intBuzz(5); car.health = Math.min(100, car.health + 25); car.nitro = tune.nitroMax; intSave().meals = (intSave().meals || 0) + 1; };
+function intRunK() { const s = save.int; if (!s) return 1; return 1 + (s.fit || 0) * 0.0015 + ((s.buzz || 0) > App.time ? 0.12 : 0); }
+/* staff in a uniform, customers in their own clothes */
+function intStaff(K, x, z, yaw, col, o) { return K.person(Object.assign({ x, z, yaw, shirt: col, pants: 0x1c1e24, face: true, role: 'staff' }, o || {})); }
+function intShoppers(K, r, n, pts) { for (let k = 0; k < n; k++) { const P = []; for (let q = 0; q < 4; q++) { const p = pts[(r() * pts.length) | 0]; P.push([p[0] + (r() - 0.5) * 0.6, p[1] + (r() - 0.5) * 0.6, 1 + r() * 4]); } K.person({ x: P[0][0], z: P[0][1], kind: 'walk', path: P }); } }
+function intSeat(K, x, z, yaw, o) { return K.person(Object.assign({ x: x - Math.sin(yaw) * 0.08, z: z - Math.cos(yaw) * 0.08, yaw, kind: 'sit' }, o || {})); }
+
+/* ---------- offices ---------- */
+INT_KINDS.office = { name: 'Offices', rooms: {
+  main(K, rec, r) {
+    const { W, D } = intDims(rec, 18, 15); K.shell({ W, D, H: 4.6, floor: 0xc8c4bc, wall: 0xe8e6e0, tiles: 0xb0aca4, trim: 0x2a2c30 });
+    K.counter(-3, K.z0 + 3, 3, K.z0 + 3.8, 0x2a2c30, 0xe8e4dc, 1.1); K.sign(rec.name.toUpperCase(), 0, 3.2, K.z0 + 0.02, Math.min(W - 2, 8), 0.8, 0, { fg: '#e8e2d0', bg: null });
+    intStaff(K, 0, K.z0 + 2.4, 0, 0x2a3a5a, { suit: true });
+    K.sofa(K.x0 + 1.4, 0, Math.PI / 2, 2.4, 0x4a5a6a); K.sofa(K.x0 + 3.6, 0, -Math.PI / 2, 2.4, 0x4a5a6a); K.table(K.x0 + 2.5, 0, 0.9, 1.6, 0x2a2a2a, 0.42);
+    K.plant(K.x1 - 1, K.z1 - 1.2, 1.2); K.plant(K.x0 + 1, K.z1 - 1.2, 1.2); K.plant(K.x1 - 1, K.z0 + 1, 1.3); K.plant(K.x0 + 1, K.z0 + 1, 1.3); K.rug(-2.5, 1, 2.5, K.z1 - 1.5, 0x3a3c44, 0x4a4c56);
+    for (let k = 0; k < 2; k++) K.pic(K.x0 + 0.02, 2.2, K.z0 + 4 + k * 3, Math.PI / 2, 2, 1.3, [0x6a8aa8, 0xa8846a][k]); K.box(-1.4, 0, 2.4, 1.4, 0.45, 3.0, 0x6a6c70, true); K.box(-1.4, 0, -3.4, 1.4, 0.45, -2.8, 0x6a6c70, true); intSeat(K, 0.6, 2.7, Math.PI, { sy: -0.02, suit: true, phone: true });
+    /* lifts on the right wall */
+    for (let k = 0; k < 2; k++) { const z = -1.5 + k * 3; K.box(K.x1 - 0.12, 0, z - 0.8, K.x1, 2.5, z + 0.8, 0xa8acb2); K.box(K.x1 - 0.14, 0, z - 0.02, K.x1 - 0.12, 2.5, z + 0.02, 0x5a5e64); K.glow(K.x1 - 0.14, 2.65, z - 0.15, K.x1 - 0.13, 2.8, z + 0.15, 0xffa840, 1.2); }
+    const floors = Math.max(2, Math.min(30, Math.round(rec.h / 4)));
+    K.act(K.x1 - 0.9, 0, 2.2, 'Take the lift', () => Int.panel({ title: 'Lift', sub: rec.name + ' · ' + floors + ' floors', body: '<div class="vsl"><span>Which floor?</span><div>' + Array.from({ length: Math.min(floors - 1, 12) }, (_, i) => { const f = Math.round(2 + i * (floors - 2) / Math.max(1, Math.min(floors - 1, 12) - 1)); return '<button type="button" class="vstk" data-ia="' + f + '">' + f + '</button>'; }).join('') + '</div></div>', pick: (f) => { rec.floor = +f; Int.panel(null); Snd.beep(880, 0.05); Int.go('floor', 'lift'); }, btns: [] }), { wide: true });
+    K.spawn('lift', K.x1 - 1.4, 0, -Math.PI / 2);
+    intShoppers(K, r, 2, [[0, 0], [K.x0 + 3, 2], [2, K.z0 + 4.5], [K.x1 - 2, 1]]);
+  },
+  floor(K, rec, r) {
+    const { W, D } = intDims(rec, 18, 15); K.shell({ W, D, H: 3.4, floor: 0x5a6068, wall: 0xeceae4, door: false, noBackWin: false, winH: [0.6, 2.9], trim: 0x2a2c30 });
+    K.sign('FLOOR ' + (rec.floor || 2), K.x1 - 0.02, 2.4, 2, 1.6, 0.5, -Math.PI / 2, { fg: '#2a2c30', bg: '#e8e6e0' });
+    for (let k = 0; k < 2; k++) { const z = -1.5 + k * 3; K.box(K.x1 - 0.12, 0, z - 0.8, K.x1, 2.5, z + 0.8, 0xa8acb2); }
+    K.act(K.x1 - 0.9, 0, 2.2, 'Take the lift down', () => { Snd.beep(660, 0.05); Int.go('main', 'lift'); }, { wide: true });
+    K.spawn('lift', K.x1 - 1.4, 0, -Math.PI / 2);
+    let n = 0; for (let x = K.x0 + 2; x < K.x1 - 4; x += 3.4) for (let z = K.z0 + 2.2; z < K.z1 - 3; z += 3.2) { K.desk(x, z, 0); K.chair(x, z + 0.6, Math.PI, 0x2a2a30); if (r() < 0.55 && n < 9) { intSeat(K, x, z + 0.62, Math.PI, { type: true, suit: r() < 0.5 }); n++; } }
+    K.box(K.x0, 0, K.z1 - 2.6, K.x0 + 4, 3.4, K.z1 - 2.5, 0xd8d6d0, true); K.glass(K.x0 + 4, 0, K.z1 - 2.6, K.x0 + 4.1, 3.4, K.z1); K.col(K.x0 + 4, K.z1 - 2.6, K.x0 + 4.1, K.z1 - 0.9);
+    K.table(K.x0 + 2, K.z1 - 1.2, 2.4, 1, 0xe8e4dc); K.plant(K.x1 - 1, K.z1 - 1, 1.2);
+    K.counter(K.x1 - 4, K.z1 - 0.7, K.x1 - 1.6, K.z1 - 0.1, 0xd8d2c4); K.box(K.x1 - 3.6, 1.02, K.z1 - 0.6, K.x1 - 3.2, 1.4, K.z1 - 0.2, 0x2a2a2a);
+    K.act(K.x1 - 2.8, K.z1 - 1.2, 1.4, 'A coffee from the office machine (free)', () => { intBuzz(2); Snd.beep(700, 0.05); Int.say('Office coffee. Not good, but free.'); });
+  } } };
+
+/* ---------- café, bakery ---------- */
+function intCafe(K, rec, r, bake) {
+  const { W, D } = intDims(rec, 15, 12); K.shell({ W, D, floor: bake ? 0xd8c8a8 : 0x6a4a34, wall: bake ? 0xf2e8d8 : 0xe0d2bc, trim: 0x4a3426, lamp: 0xffe2b0, lightI: 0.85 });
+  const cz = K.z0 + 2.2; K.counter(K.x0 + 1, cz, K.x1 - 3.5, cz + 0.8, 0x5a3a28, 0xe8e0d0);
+  K.glass(K.x0 + 1.2, 1.02, cz + 0.05, K.x0 + 4.6, 1.45, cz + 0.75); for (let k = 0; k < 8; k++) K.box(K.x0 + 1.4 + k * 0.4, 1.05, cz + 0.25, K.x0 + 1.7 + k * 0.4, 1.15, cz + 0.55, [0xc88a3a, 0xe8c070, 0x8a4a2a, 0xf2d8a0][k % 4]);
+  if (bake) { K.box(K.x0 + 1, 0, K.z0, K.x0 + 3, 1.8, K.z0 + 0.8, 0x6a6c70, true); K.glow(K.x0 + 1.2, 0.5, K.z0 + 0.81, K.x0 + 2.8, 1.2, K.z0 + 0.82, 0xff8a30, 1.2); }
+  else { K.box(K.x1 - 5.5, 1.02, cz + 0.2, K.x1 - 4.8, 1.55, cz + 0.6, 0xb0b4b8); K.box(K.x1 - 5.4, 1.4, cz + 0.6, K.x1 - 4.9, 1.45, cz + 0.75, 0x2a2a2a); }
+  K.sign(bake ? 'BREAD · PASTRIES · CAKES' : 'ESPRESSO · LATTE · TEA · CAKE', (K.x0 + K.x1 - 3.5) / 2, 2.7, K.z0 + 0.02, Math.min(W - 4, 6), 0.7, 0, { fg: '#f2e8d0', bg: '#1a1410' });
+  intStaff(K, K.x0 + 3, cz - 0.7, 0, bake ? 0xf2f2f2 : 0x2a1a14, { sleeve: false });
+  const price = bake ? 5 : 4; K.act(K.x0 + 3, cz + 1.4, 1.8, bake ? 'Buy a pastry' : 'Buy a coffee', () => intBuy(price, bake ? 'a warm pastry' : 'a flat white', () => intBuzz(3), bake ? 'Still warm. You feel ready for anything.' : 'Flat white. You feel wide awake (run faster for a while).'), { cost: price });
+  let n = 0; for (let x = K.x0 + 2.2; x < K.x1 - 1.5; x += 3.6) for (let z = cz + 3.2; z < K.z1 - 2; z += 3.4) { K.table(x, z, 0.8, 0.8, 0x3a2a20, 0.75, true); K.chair(x, z - 0.7, 0); K.chair(x, z + 0.7, Math.PI); if (r() < 0.6 && n++ < 6) intSeat(K, x, z - 0.72, 0, { eat: r() < 0.5 }); }
+  K.plant(K.x1 - 1, K.z1 - 1, 1); K.pic(K.x1 - 0.02, 1.8, 0, -Math.PI / 2, 1.2, 0.9, 0x8a6a4a);
+}
+INT_KINDS.cafe = { name: 'Café', rooms: { main(K, rec, r) { intCafe(K, rec, r, false); } } };
+INT_KINDS.bakery = { name: 'Bakery', rooms: { main(K, rec, r) { intCafe(K, rec, r, true); } } };
+
+/* ---------- shops with aisles: corner shop, pharmacy, hardware, electronics, books ---------- */
+function intAisles(K, r, pal, h, step) { const pts = []; for (let x = K.x0 + 3; x < K.x1 - 2.5; x += step || 2.8) { K.shelf(x - 0.35, K.z0 + 4, x + 0.35, K.z1 - 3.5, h || 1.7, 4, r, pal); pts.push([x + 1.35, K.z0 + 5], [x + 1.35, K.z1 - 4]); } return pts; }
+INT_KINDS.store = { name: 'Convenience store', rooms: { main(K, rec, r) {
+  const { W, D } = intDims(rec, 16, 14); K.shell({ W, D, floor: 0xd8d8d0, wall: 0xf0f0ec, tiles: 0xc0c0b8, lamp: 0xf0f8ff, lightI: 0.95 });
+  const pts = intAisles(K, r, INT_PROD); for (let x = K.x0 + 1; x < K.x1 - 1; x += 1) K.fridge(x + 0.5, K.z0 + 0.4, 0, true);
+  K.counter(K.x1 - 4, K.z1 - 3, K.x1 - 1, K.z1 - 2.2, 0x2a6a4a, 0xe8e8e0); K.box(K.x1 - 3.4, 1.02, K.z1 - 2.9, K.x1 - 2.9, 1.3, K.z1 - 2.5, 0x2a2a2a); intStaff(K, K.x1 - 2.5, K.z1 - 3.6, 0, 0x2a8a5a);
+  K.act(K.x1 - 2.5, K.z1 - 1.5, 1.6, 'Buy an energy drink', () => intBuy(6, 'an energy drink', () => intBuzz(4), 'Tastes like a battery. You feel fast.'), { cost: 6, wide: true });
+  intShoppers(K, r, 3, pts);
+} } };
+INT_KINDS.pharmacy = { name: 'Pharmacy', rooms: { main(K, rec, r) {
+  const { W, D } = intDims(rec, 15, 12); K.shell({ W, D, floor: 0xe8e8e4, wall: 0xffffff, tiles: 0xd0d0cc, lamp: 0xf4fbff, lightI: 1 });
+  const pts = intAisles(K, r, [0xffffff, 0x2a8ad8, 0x3ab04a, 0xe8e8e8, 0xd82a4a], 1.6, 3); K.counter(K.x0 + 1, K.z0 + 1.6, K.x1 - 1, K.z0 + 2.4, 0xffffff, 0x3ab04a);
+  K.shelf(K.x0 + 1, K.z0 + 0.1, K.x1 - 1, K.z0 + 0.5, 2.2, 5, r, [0xffffff, 0xf2f2f2, 0x2a8ad8, 0x3ab04a]); K.sign('✚ PHARMACY', 0, 2.9, K.z0 + 0.52, 3, 0.6, 0, { fg: '#3ab04a', bg: '#ffffff' });
+  intStaff(K, 0, K.z0 + 1, 0, 0xf2f2f2, { sleeve: true });
+  K.act(0, K.z0 + 3.2, 1.8, 'Buy vitamins (a little fitter)', () => intBuy(25, 'vitamins', () => { const s = intSave(); s.fit = Math.min(100, (s.fit || 0) + 2); }, 'Vitamins. +2 fitness.'), { cost: 25 });
+  intShoppers(K, r, 2, pts);
+} } };
+INT_KINDS.hardware = { name: 'Hardware store', rooms: { main(K, rec, r) {
+  const { W, D } = intDims(rec, 18, 15); K.shell({ W, D, floor: 0x9a9890, wall: 0xd8d4c8, tiles: 0x8a8880, lamp: 0xfff8e8 });
+  const pts = intAisles(K, r, [0xd82a2a, 0xf2c81e, 0x5a5a5a, 0x2a5aa8, 0x9a6a3a, 0x3a3a3a], 2.2, 3); K.counter(K.x1 - 4, K.z1 - 3, K.x1 - 1, K.z1 - 2.2, 0xd85a1a); intStaff(K, K.x1 - 2.5, K.z1 - 3.6, 0, 0xd85a1a);
+  for (let k = 0; k < 4; k++) K.box(K.x0 + 1 + k * 1.2, 0, K.z1 - 1.5, K.x0 + 1.9 + k * 1.2, 0.9, K.z1 - 0.7, [0x6a8a3a, 0xc8302a, 0x3a5a9a, 0x9a9a9a][k], true);
+  K.act(K.x1 - 2.5, K.z1 - 1.5, 1.6, 'Buy a repair kit (car +40 health)', () => intBuy(60, 'a repair kit', () => { car.health = Math.min(100, car.health + 40); }, 'Repair kit. Your car is in better shape.'), { cost: 60, wide: true });
+  intShoppers(K, r, 2, pts);
+} } };
+INT_KINDS.electronics = { name: 'Electronics', rooms: { main(K, rec, r) {
+  const { W, D } = intDims(rec, 16, 14); K.shell({ W, D, floor: 0x2a2c30, wall: 0xe8e8ec, lamp: 0xeef4ff, lightI: 1 });
+  for (let x = K.x0 + 1.5; x < K.x1 - 1; x += 1.9) K.tv(x, 1.9, K.z0 + 0.05, 0, 1.6, [0x3a7ac0, 0xc04a3a, 0x3ac07a, 0xc0a03a][((x * 7) | 0) & 3]);
+  const pts = []; for (let x = K.x0 + 3; x < K.x1 - 2; x += 4) { K.table(x, 0, 2.2, 1, 0xf2f2f2, 0.9); for (let k = 0; k < 4; k++) K.glow(x - 0.9 + k * 0.5, 0.91, -0.15, x - 0.65 + k * 0.5, 0.92, 0.25, 0x6a9ad8, 1.1); pts.push([x, 1.4], [x, -1.4]); }
+  K.counter(K.x1 - 4, K.z1 - 3, K.x1 - 1, K.z1 - 2.2, 0x1a5cff); intStaff(K, K.x1 - 2.5, K.z1 - 3.6, 0, 0x1a5cff);
+  K.act(K.x1 - 2.5, K.z1 - 1.5, 1.6, 'Buy headphones', () => intBuy(80, 'headphones', null, 'Nice headphones. The music sounds better already.'), { cost: 80, wide: true });
+  intShoppers(K, r, 3, pts);
+} } };
+INT_KINDS.books = { name: 'Bookshop', rooms: { main(K, rec, r) {
+  const { W, D } = intDims(rec, 15, 12); K.shell({ W, D, floor: 0x5a3a24, wall: 0xe8dcc4, lamp: 0xffe2b0, lightI: 0.8 });
+  for (const sx of [-1, 1]) K.shelf(sx < 0 ? K.x0 + 0.05 : K.x1 - 0.45, K.z0 + 1, sx < 0 ? K.x0 + 0.45 : K.x1 - 0.05, K.z1 - 2, 2.6, 6, r, INT_BOOK, 0x4a2a1a);
+  K.shelf(K.x0 + 1, K.z0 + 0.05, K.x1 - 1, K.z0 + 0.45, 2.6, 6, r, INT_BOOK, 0x4a2a1a);
+  const pts = []; for (let x = K.x0 + 3; x < K.x1 - 2; x += 3.2) { K.shelf(x - 0.3, K.z0 + 3, x + 0.3, K.z1 - 4, 1.6, 4, r, INT_BOOK, 0x4a2a1a); pts.push([x + 1.4, 0]); }
+  K.rug(K.x0 + 1, K.z1 - 3.4, K.x0 + 4.6, K.z1 - 1.4, 0x7a2a24, 0x9a4a34); K.sofa(K.x0 + 2.8, K.z1 - 1.6, Math.PI, 2, 0x6a3a2a); K.lamp(K.x0 + 4.9, K.z1 - 1.4);
+  K.counter(K.x1 - 4, K.z1 - 3, K.x1 - 1.5, K.z1 - 2.3, 0x4a2a1a); intStaff(K, K.x1 - 2.8, K.z1 - 3.6, 0, 0x6a7a5a, { sleeve: true });
+  K.act(K.x1 - 2.8, K.z1 - 1.6, 1.6, 'Buy a paperback', () => intBuy(12, 'a paperback', null, 'A thriller about a bank job. Research.'), { cost: 12, wide: true });
+  intShoppers(K, r, 2, pts);
+} } };
+INT_KINDS.barber = { name: 'Barber', rooms: { main(K, rec, r) {
+  const { W, D } = intDims(rec, 12, 10); K.shell({ W, D, floor: 0xe8e8e8, wall: 0xf2efe8, tiles: 0x1a1a1a, lamp: 0xffffff });
+  for (let k = 0; k < 3; k++) { const x = K.x0 + 2 + k * 2.4; K.glow(x - 0.7, 1.0, K.z0 + 0.02, x + 0.7, 2.2, K.z0 + 0.03, 0xc8d4dc, 0.9); K.box(x - 0.8, 0.8, K.z0, x + 0.8, 0.86, K.z0 + 0.4, 0xf2f2f2); K.box(x - 0.32, 0, K.z0 + 1.1, x + 0.32, 0.55, K.z0 + 1.7, 0x8a1a1a, true); K.box(x - 0.32, 0.55, K.z0 + 1.6, x + 0.32, 1.25, K.z0 + 1.75, 0x8a1a1a); if (k < 2) { intSeat(K, x, K.z0 + 1.45, Math.PI, { sy: 0.12 }); intStaff(K, x + 0.6, K.z0 + 2.1, Math.PI, 0xf2f2f2, { kind: 'work' }); } }
+  K.sofa(K.x1 - 1, 0, -Math.PI / 2, 2.2, 0x2a2a2a); K.cyl(K.x1 - 0.3, 1.2, K.z1 - 0.6, 0.12, 1, 0xd82a2a);
+  K.act(K.x0 + 6.8, K.z0 + 2.4, 1.6, 'Get a haircut', () => intBuy(25, 'a haircut', () => { const ids = COS.items.filter((i) => i.cat === 'hair' && i.price <= 0).map((i) => i.id); const o = cosSave().out; if (ids.length) { const k = (ids.indexOf(o.hair) + 1) % (ids.length + 1); o.hair = ids[k] || null; } if (Int.ped) Int.mkPed(); }, 'Fresh cut. Looking sharp.'), { cost: 25 });
+} } };
+INT_KINDS.florist = { name: 'Florist', rooms: { main(K, rec, r) {
+  const { W, D } = intDims(rec, 12, 10); K.shell({ W, D, floor: 0x8a7a68, wall: 0xf2f0e6, lamp: 0xfff4e0 });
+  for (let x = K.x0 + 1.2; x < K.x1 - 1; x += 1.1) for (const z of [K.z0 + 0.8, K.z0 + 3]) { K.cyl(x, 0, z, 0.25, 0.5, 0x4a5a6a, true); for (let k = 0; k < 7; k++) { const a = k * 0.9; K.cyl(x + Math.sin(a) * 0.12, 0.5, z + Math.cos(a) * 0.12, 0.01, 0.35, 0x3a7a2a); K.cyl(x + Math.sin(a) * 0.14, 0.85, z + Math.cos(a) * 0.14, 0.06, 0.08, [0xd82a4a, 0xf2c81e, 0xf2f2f2, 0xd85ad8, 0xf28a1e][(k + ((x * 3) | 0)) % 5]); } }
+  K.counter(K.x1 - 4, K.z1 - 3, K.x1 - 1, K.z1 - 2.3, 0x6a8a5a); intStaff(K, K.x1 - 2.5, K.z1 - 3.6, 0, 0x6a8a5a);
+  K.act(K.x1 - 2.5, K.z1 - 1.6, 1.6, 'Buy a bunch of flowers', () => intBuy(15, 'flowers', () => { save.int.flowers = (save.int.flowers || 0) + 1; }, 'Lovely. Someone will be pleased.'), { cost: 15, wide: true });
+} } };
+INT_KINDS.laundry = { name: 'Laundromat', rooms: { main(K, rec, r) {
+  const { W, D } = intDims(rec, 13, 10); K.shell({ W, D, floor: 0xd8d8d0, wall: 0xa8d8e8, tiles: 0xc0c0b8, lamp: 0xf4fbff });
+  for (let x = K.x0 + 1; x < K.x1 - 0.8; x += 1) { K.box(x - 0.45, 0, K.z0, x + 0.45, 1.0, K.z0 + 0.75, 0xf2f2f2, true); K.cyl(x, 0.3, K.z0 + 0.76, 0.28, 0.02, 0x2a3a4a, false); K.box(x - 0.45, 1.0, K.z0, x + 0.45, 1.9, K.z0 + 0.75, 0xe8e8e8); }
+  K.table(0, 1, 3, 0.9, 0xd8d2c4); for (const x of [-2.5, -1.5, 1.5, 2.5]) K.chair(x, K.z1 - 2, Math.PI, 0xd8a83a); intSeat(K, -1.5, K.z1 - 2, Math.PI, { phone: true });
+  K.act(0, 2.2, 1.6, 'Wash your clothes', () => intBuy(4, 'a wash', null, 'Spin cycle. Smells of lavender.'), { cost: 4 });
+} } };
+/* ---------- bar, diner ---------- */
+INT_KINDS.bar = { name: 'Bar', rooms: { main(K, rec, r) {
+  const { W, D } = intDims(rec, 15, 12); K.shell({ W, D, floor: 0x3a2618, wall: 0x4a2a20, ceil: 0x1a120c, trim: 0x2a1a10, lamp: 0xffc070, lightI: 0.55, hemi: 0.4 });
+  K.counter(K.x0 + 1, K.z0 + 2, K.x1 - 3, K.z0 + 2.7, 0x5a3420, 0x2a1a10, 1.1); K.box(K.x0 + 1, 0, K.z0, K.x1 - 3, 2.4, K.z0 + 0.4, 0x3a2416, true);
+  for (let x = K.x0 + 1.3; x < K.x1 - 3.2; x += 0.22) for (const y of [1.2, 1.7]) K.glow(x, y, K.z0 + 0.15, x + 0.08, y + 0.32, K.z0 + 0.25, [0x8ad84a, 0xd8a83a, 0x8a3a1a, 0xd8d8f0][((x * 13) | 0) & 3], 0.7);
+  for (let x = K.x0 + 1.6; x < K.x1 - 3.4; x += 1.1) { K.chair(x, K.z0 + 3.3, 0, 0x8a1a1a, true); if (r() < 0.45) intSeat(K, x, K.z0 + 3.35, Math.PI, { sy: 0.25, sy0: 0.0, eat: r() < 0.5 }); }
+  intStaff(K, 0, K.z0 + 1.3, 0, 0x1a1a1a, { sleeve: false });
+  for (let z = K.z0 + 6; z < K.z1 - 2; z += 2.6) { K.table(K.x1 - 2, z, 1, 1, 0x3a2416, 0.75); K.box(K.x1 - 0.7, 0, z - 0.6, K.x1 - 0.1, 1.1, z + 0.6, 0x6a1a1a, true); }
+  K.tv(K.x0 + 0.05, 2.2, 0, Math.PI / 2, 1.6, 0x3a9a4a); K.glow(-1.5, 2.6, K.z0 + 0.41, 1.5, 3.0, K.z0 + 0.42, 0xff3a6a, 2);
+  K.act(0, K.z0 + 3.2, 1.8, 'Order a soda', () => intBuy(5, 'a soda', () => intBuzz(2), 'A cold soda with lime.'), { cost: 5 });
+} } };
+INT_KINDS.diner = { name: 'Diner', rooms: { main(K, rec, r) { intDiner(K, rec, r); } } };
+function intDiner(K, rec, r, th) {
+  th = th || { floor: 0xe8e8e8, tiles: 0x1a1a1a, wall: 0xf2e6d0, seat: 0xc8202a, top: 0xe8e4dc, staff: 0xf2f2f2, menu: 'BURGERS · FRIES · SHAKES · PIE', price: 12, meal: 'a burger and a shake' };
+  const { W, D } = intDims(rec, 18, 15); K.shell({ W, D, floor: th.floor, tiles: th.tiles, wall: th.wall, trim: th.trim || 0xc8202a, lamp: th.lamp || 0xfff2d8, lightI: th.lightI || 0.85 });
+  K.counter(K.x0 + 1, K.z0 + 2.2, K.x1 - 1, K.z0 + 2.9, th.counter || 0xc8202a, th.top);
+  K.box(K.x0 + 1, 0, K.z0, K.x1 - 1, 1.0, K.z0 + 0.7, 0xb0b4b8, true); K.box(K.x0 + 1, 1.4, K.z0 + 0.05, K.x1 - 1, 1.42, K.z0 + 0.5, 0xb0b4b8); K.glow(K.x0 + 2, 1.7, K.z0 + 0.02, K.x0 + 3.5, 2.1, K.z0 + 0.03, 0xff8a3a, 1);
+  K.sign(th.menu, 0, 2.8, K.z0 + 0.03, Math.min(W - 3, 9), 0.6, 0, { fg: th.menuFg || '#fff', bg: th.menuBg || '#c8202a' });
+  intStaff(K, -1, K.z0 + 1.5, 0, th.staff, { sleeve: false }); intStaff(K, 2, K.z0 + 1.4, Math.PI / 2, th.staff, { kind: 'work', sleeve: false });
+  for (let x = K.x0 + 1.5; x < K.x1 - 1.5; x += 1.2) { K.chair(x, K.z0 + 3.5, 0, th.seat, true); if (r() < 0.3) intSeat(K, x, K.z0 + 3.55, Math.PI, { sy: 0.25, eat: true }); }
+  let n = 0; for (let z = K.z0 + 5.5; z < K.z1 - 1.8; z += 2.4) for (const sx of [-1, 1]) {
+    const x = sx < 0 ? K.x0 + 1.4 : K.x1 - 1.4; K.table(x, z, 1.2, 0.8, th.top, 0.75); K.box(x - 0.75, 0, z - 1.0, x + 0.75, 0.48, z - 0.55, th.seat, true); K.box(x - 0.75, 0.48, z - 1.0, x + 0.75, 1.15, z - 0.85, th.seat); K.box(x - 0.75, 0, z + 0.55, x + 0.75, 0.48, z + 1.0, th.seat, true); K.box(x - 0.75, 0.48, z + 0.85, x + 0.75, 1.15, z + 1.0, th.seat);
+    if (r() < 0.65 && n++ < 7) { intSeat(K, x, z - 0.7, 0, { eat: true }); if (r() < 0.5) intSeat(K, x, z + 0.7, Math.PI, { eat: true, talk: true }); }
+  }
+  K.act(0, K.z0 + 3.4, 2, 'Order ' + th.meal, () => intBuy(th.price, th.meal, intMeal, 'You eat ' + th.meal + '. Car topped up, and you feel great.'), { cost: th.price });
+}
+
+/* ---------- a home ---------- */
+INT_KINDS.home = { name: 'Home', rooms: { main(K, rec, r) {
+  const { W, D } = intDims(rec, 12, 10); const wall = [0xf2ead8, 0xdce8e0, 0xe8dcd0, 0xdce0ec][rec.seed & 3];
+  K.shell({ W, D, H: 2.8, floor: 0x8a6a4a, wall, trim: 0xf2f2f2, lamp: 0xffe8c0, lightI: 0.8, noBackWin: true });
+  const mx = K.x0 + W * 0.58; K.wallZ(mx, K.z0, K.z1, [[K.z1 - 3.2, K.z1 - 2.2]], wall);
+  /* living room */
+  K.rug(K.x0 + 1, -1.2, mx - 1, 1.6, 0x7a4a3a, 0x9a6a4a); K.sofa((K.x0 + mx) / 2, 1.2, Math.PI, 2.2, [0x5a6a7a, 0x7a5a4a, 0x4a6a4a][rec.seed % 3]); K.table((K.x0 + mx) / 2, 0, 1.2, 0.6, 0x5a3a24, 0.42);
+  K.box((K.x0 + mx) / 2 - 0.9, 0, K.z0 + 0.1, (K.x0 + mx) / 2 + 0.9, 0.55, K.z0 + 0.55, 0x4a3424, true); K.tv((K.x0 + mx) / 2, 1.05, K.z0 + 0.35, 0, 1.3, 0x4a8ac0); K.lamp(K.x0 + 0.6, 1.4); K.plant(mx - 0.6, K.z1 - 0.8, 0.9);
+  K.pic(K.x0 + 0.02, 1.6, 0, Math.PI / 2, 1.0, 0.7, [0x6a8aa8, 0xa86a4a, 0x6aa86a][rec.seed % 3]);
+  /* kitchen and bedroom beyond the wall */
+  K.counter(mx + 0.1, K.z0 + 0.1, K.x1 - 0.1, K.z0 + 0.7, 0xe8e4dc, 0x6a6a6a, 0.92); K.fridge(K.x1 - 0.5, K.z0 + 1.3, -Math.PI / 2); K.stove(mx + 1, K.z0 + 0.4, 0);
+  K.table((mx + K.x1) / 2, -0.4, 1.2, 0.8, 0x8a6a4a); K.chair((mx + K.x1) / 2 - 0.4, 0.2, Math.PI); K.chair((mx + K.x1) / 2 + 0.4, 0.2, Math.PI);
+  K.wallX(1.6, mx, K.x1, [[mx + 0.3, mx + 1.2]], wall); K.bed((mx + K.x1) / 2 + 0.3, K.z1 - 1.3, Math.PI / 2, [0x4a6aa0, 0xa04a5a, 0x5a8a5a][rec.seed % 3], true);
+  const who = K.person({ x: (K.x0 + mx) / 2, z: 1.2, yaw: Math.PI, kind: 'sit', sy0: 0, talk: false });
+  if (who) who.after = (n) => { if (Int.t > 1.5 && Int.t < 4.5) { n.talk = true; Int.say('“Er… can I help you? This is my house.”', 0.2); } else n.talk = false; };
+  if (r() < 0.6) K.person({ x: mx + 1, z: K.z0 + 1.1, yaw: 0, kind: 'work' });
+  K.act((K.x0 + mx) / 2, -0.4, 1.6, 'Watch their TV', () => Int.say(intNews() + ' · “Do you mind?”', 5));
+  K.act((mx + K.x1) / 2, 0.6, 1.6, 'Ask for a glass of water', () => { intBuzz(1); Snd.beep(600, 0.05); Int.say('“Er… sure. Here. And then you’ll be going?”', 3); });
+} } };
+/* ---------- warehouse, barn ---------- */
+INT_KINDS.warehouse = { name: 'Warehouse', rooms: { main(K, rec, r) {
+  const { W, D } = intDims(rec, 28, 22); K.shell({ W, D, H: 6, floor: 0x7a7a74, wall: 0x9a9a94, ceil: 0x5a5a56, trim: 0xe8c81e, lamp: 0xf4f8ff, lightI: 0.9, winH: [3.5, 5.2] });
+  for (let x = K.x0 + 2; x < K.x1 - 2; x += 4.5) { K.box(x - 0.6, 0, K.z0 + 1, x - 0.5, 4.5, K.z1 - 4, 0x2a5aa8); K.box(x + 0.5, 0, K.z0 + 1, x + 0.6, 4.5, K.z1 - 4, 0x2a5aa8); for (const y of [1.5, 3, 4.5]) K.box(x - 0.6, y - 0.08, K.z0 + 1, x + 0.6, y, K.z1 - 4, 0xe86a1a); K.col(x - 0.6, K.z0 + 1, x + 0.6, K.z1 - 4); for (let z = K.z0 + 1.6; z < K.z1 - 4.5; z += 1.3) for (const y of [0, 1.5, 3]) if (r() < 0.75) K.crate(x, z, 1.0, [0xa07a4a, 0x8a6a3a, 0x6a7a8a][(r() * 3) | 0], y + 0.02); }
+  K.box(K.x1 - 4, 0, K.z1 - 3, K.x1 - 2.4, 1.3, K.z1 - 1.2, 0xe8b81e, true); K.box(K.x1 - 3.9, 1.3, K.z1 - 2.2, K.x1 - 2.5, 2.3, K.z1 - 1.3, 0x2a2a2a); K.box(K.x1 - 4.2, 0, K.z1 - 3.6, K.x1 - 4.1, 2.6, K.z1 - 3.0, 0x2a2a2a);
+  K.person({ x: K.x0 + 3, z: K.z1 - 2.5, kind: 'walk', shirt: 0xe8b81e, pants: 0x2a3a5a, path: [[K.x0 + 3, K.z1 - 2.5, 2], [K.x1 - 6, K.z1 - 2.5, 3]] });
+  K.act(K.x1 - 5, K.z1 - 2, 1.6, 'Lend a hand shifting boxes (earn $30)', (a) => { if (a.t && App.time - a.t < 30) { Int.say('“That’s plenty for now, thanks.”'); return; } a.t = App.time; save.money += 30; writeSave(); Snd.beep(700, 0.05); Int.say('Ten minutes of lifting. The foreman hands you $30.'); });
+} } };
+INT_KINDS.barn = { name: 'Barn', rooms: { main(K, rec, r) {
+  const { W, D } = intDims(rec, 22, 16); K.shell({ W, D, H: 5.5, floor: 0x8a7050, wall: 0x7a3a2a, ceil: 0x4a2a1a, trim: 0x4a2a1a, lamp: 0xffd8a0, lightI: 0.7, win: false });
+  for (let x = K.x0 + 1; x < K.x1 - 1; x += 1.4) for (let y = 0; y < 3; y++) if (x < K.x0 + 6 || y === 0) K.box(x, y * 0.6, K.z0 + 0.3, x + 1.2, y * 0.6 + 0.58, K.z0 + 1.1, 0xd8b84a, y === 0);
+  for (let z = K.z0 + 3; z < K.z1 - 2; z += 3) { K.box(K.x1 - 3, 0, z - 0.05, K.x1, 1.3, z + 0.05, 0x6a4a2a, true); } K.box(K.x1 - 3, 0, K.z0 + 3, K.x1 - 2.95, 1.3, K.z1 - 2, 0x6a4a2a);
+  K.box(K.x0 + 2, 0.5, 0, K.x0 + 5, 1.6, 1.8, 0x2a7a3a, true); K.cyl(K.x0 + 2.3, 0, -0.1, 0.55, 0.12, 0x1a1a1a); K.cyl(K.x0 + 4.6, 0, 1.9, 0.8, 0.14, 0x1a1a1a); K.box(K.x0 + 4, 1.6, 0.2, K.x0 + 5, 2.6, 1.6, 0x2a7a3a);
+  K.person({ x: 0, z: 1.5, kind: 'work', shirt: 0x3a5a8a, pants: 0x2a3a5a, hat: { k: 'cap', c: lc(0xd8302a), bc: null } });
+  K.act(0, 2.5, 1.6, 'Help with the hay (earn $25)', (a) => { if (a.t && App.time - a.t < 30) { Int.say('“We’re good for now, thanks partner.”'); return; } a.t = App.time; save.money += 25; writeSave(); Snd.beep(700, 0.05); Int.say('You stack bales until your arms ache. $25.'); });
+} } };
+
+/* ---- js/08_int_kit.js ---- */
+/* ================= INTERIORS: the room kit =================
+   Everything an interior is made of, as one merged mesh of boxes and cylinders (vertex coloured), one of glowing parts (screens, signs, lamps, windows),
+   one of glass, a few point lights, canvas signs, the walls and furniture you bump into (2D boxes), the things you can use and the people.
+   Room frame: x across, z along, y up; the room is centred on (0, 0); the street door is on the +z wall at x = K.dx. */
+const _ikC = new THREE.Color();
+function ikCol(c) { if (c && c.isColor) return c; if (Array.isArray(c)) return _ikC.setRGB(c[0], c[1], c[2]).clone(); return lc(c == null ? 0x888888 : c); }
+const IK_TEX = new Map();
+function ikText(txt, o) {
+  o = o || {}; const key = txt + '|' + (o.fg || '') + '|' + (o.bg || '') + '|' + (o.font || '') + '|' + (o.w || 512) + 'x' + (o.h || 128); if (IK_TEX.has(key)) return IK_TEX.get(key);
+  const W = o.w || 512, H = o.h || 128, cv = mkCanvas(W, H), g = cv.getContext('2d');
+  if (o.bg) { g.fillStyle = o.bg; g.fillRect(0, 0, W, H); }
+  if (o.bar) { g.fillStyle = o.bar; g.fillRect(0, 0, W, Math.round(H * 0.06)); g.fillRect(0, H - Math.round(H * 0.06), W, Math.round(H * 0.06)); }
+  g.fillStyle = o.fg || '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  const lines = String(txt).split('\n'); let fs = o.size || Math.round(H * (lines.length > 1 ? 0.36 : 0.62));
+  const font = (n) => (o.font || '700 ') + n + 'px "Chakra Petch", Rajdhani, "Arial Black", sans-serif';
+  g.font = font(fs); while (fs > 10 && Math.max(...lines.map((l) => g.measureText(l).width)) > W * 0.92) { fs -= 2; g.font = font(fs); }
+  lines.forEach((l, i) => g.fillText(l, W / 2, H / 2 + (i - (lines.length - 1) / 2) * fs * 1.1 + 2));
+  const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.anisotropy = 4; t.__keep = true; IK_TEX.set(key, t); return t;
+}
+class IntKit {
+  constructor(rec, room) {
+    this.rec = rec; this.room = room; this.sc = new THREE.Scene(); this.sc.background = lc(0x0c0e12);
+    this.gb = new GB(0, 0, false); this.gl = new GB(0, 0, false); this.gs = new GB(0, 0, false); this.gw = null;
+    this.cols = []; this.acts = []; this.npcs = []; this.ticks = []; this.spawns = {}; this.bounds = null; this.swim = null; this.lights = 0; this.expo = 1.12; this.dx = 0;
+    this.night = env.lampOn > 0.5;
+  }
+  /* ---- primitives ---- */
+  box(x0, y0, z0, x1, y1, z1, c, solid, k) { const C = ikCol(c), q = k == null ? 1 : k, a = Math.min(x0, x1), b = Math.min(y0, y1), d = Math.min(z0, z1), e = Math.max(x0, x1), f = Math.max(y0, y1), g = Math.max(z0, z1); this.gb.box(a, b, d, e, f, g, C.r * q, C.g * q, C.b * q); if (b > 0.01) this.gb.quadA([a, b, d, 0, 0], [e, b, d, 0, 0], [e, b, g, 0, 0], [a, b, g, 0, 0], 0, -1, 0, C.r * q * 0.8, C.g * q * 0.8, C.b * q * 0.8); if (solid && b < 1.6 && f > 0.25) this.col(x0, z0, x1, z1).h = f; return this; }
+  glow(x0, y0, z0, x1, y1, z1, c, k) { const C = ikCol(c), q = k == null ? 1 : k; this.gl.box(Math.min(x0, x1), Math.min(y0, y1), Math.min(z0, z1), Math.max(x0, x1), Math.max(y0, y1), Math.max(z0, z1), C.r * q, C.g * q, C.b * q); return this; }
+  glass(x0, y0, z0, x1, y1, z1, c) { const C = ikCol(c == null ? 0x9ec8dc : c); this.gs.box(Math.min(x0, x1), Math.min(y0, y1), Math.min(z0, z1), Math.max(x0, x1), Math.max(y0, y1), Math.max(z0, z1), C.r, C.g, C.b); return this; }
+  water(x0, z0, x1, z1, y, c) { const C = ikCol(c == null ? 0x2a8fc0 : c); (this.gw || (this.gw = new GB(0, 0, false))).box(x0, y - 0.04, z0, x1, y, z1, C.r, C.g, C.b); return this; }
+  cyl(x, y, z, r, h, c, solid, rz) { const C = ikCol(c); cylAt(this.gb, x, y, z, r, h, rz == null ? r : rz, C.r, C.g, C.b); if (solid && y < 1.6 && y + h > 0.25) this.col(x - r * 0.8, z - r * 0.8, x + r * 0.8, z + r * 0.8).h = y + h; return this; }
+  col(x0, z0, x1, z1) { const c = [Math.min(x0, x1), Math.min(z0, z1), Math.max(x0, x1), Math.max(z0, z1)]; this.cols.push(c); return c; }
+  /* a box given in a local frame turned by a quarter-turn yaw (0, PI/2, PI, -PI/2) about (x, z) */
+  rb(x, z, yaw, a, c, solid, k) {
+    const q = Math.round(yaw / (Math.PI / 2)) & 3, T = (u, v) => (q === 0 ? [x + u, z + v] : q === 1 ? [x + v, z - u] : q === 2 ? [x - u, z - v] : [x - v, z + u]);
+    const p = T(a[0], a[2]), r = T(a[3], a[5]); return this.box(p[0], a[1], p[1], r[0], a[4], r[1], c, solid, k);
+  }
+  rg(x, z, yaw, a, c, k) { const q = Math.round(yaw / (Math.PI / 2)) & 3, T = (u, v) => (q === 0 ? [x + u, z + v] : q === 1 ? [x + v, z - u] : q === 2 ? [x - u, z - v] : [x - v, z + u]); const p = T(a[0], a[2]), r = T(a[3], a[5]); return this.glow(p[0], a[1], p[1], r[0], a[4], r[1], c, k); }
+  light(x, y, z, c, I, d) { if (this.lights >= 6) return this; this.lights++; const L = new THREE.PointLight(ikCol(c == null ? 0xfff0dc : c), I == null ? 0.9 : I, d || 16, 1.4); L.position.set(x, y, z); this.sc.add(L); return this; }
+  sign(txt, x, y, z, w, h, ry, o) {
+    o = o || {}; const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: ikText(txt, Object.assign({ w: Math.round(256 * w / h) > 1024 ? 1024 : Math.round(256 * w / h), h: 256 }, o)), transparent: !o.bg, toneMapped: false, color: new THREE.Color(o.k || 1.1, o.k || 1.1, o.k || 1.1) }));
+    m.material.__own = true; m.position.set(x, y, z); m.rotation.y = ry || 0; this.sc.add(m); return m;
+  }
+  act(x, z, r, label, fn, o) { const a = Object.assign({ x, z, r: r || 1.6, label, fn }, o || {}); this.acts.push(a); return a; }
+  spawn(name, x, z, yaw) { this.spawns[name] = [x, z, yaw]; return this; }
+  tick(f) { this.ticks.push(f); return this; }
+  /* ---- the room ---- */
+  /* o = { W, D, H, floor, wall, ceil, trim, door (x of the street door, or false), win (windows), lightsN, base, exit: label } */
+  shell(o) {
+    const W = o.W, D = o.D, H = o.H || 3.6, x0 = -W / 2, x1 = W / 2, z0 = -D / 2, z1 = D / 2, T = 0.25; this.W = W; this.D = D; this.H = H; this.x0 = x0; this.x1 = x1; this.z0 = z0; this.z1 = z1;
+    const fl = o.floor == null ? 0x8a7a68 : o.floor, wa = o.wall == null ? 0xd8d2c6 : o.wall, ce = o.ceil == null ? 0xe8e6e0 : o.ceil, tr = o.trim == null ? 0x3a3530 : o.trim;
+    if (o.hole) { const h = o.hole; this.box(x0, -0.2, z0, x1, 0, h[1], fl); this.box(x0, -0.2, h[3], x1, 0, z1, fl); this.box(x0, -0.2, h[1], h[0], 0, h[3], fl); this.box(h[2], -0.2, h[1], x1, 0, h[3], fl); }
+    else this.box(x0, -0.2, z0, x1, 0, z1, fl);
+    if (o.tiles) { const tc = ikCol(o.tiles); for (let x = Math.ceil(x0); x < x1; x += 2) this.box(x - 0.01, 0, z0, x + 0.01, 0.003, z1, tc); for (let z = Math.ceil(z0); z < z1; z += 2) this.box(x0, 0, z - 0.01, x1, 0.003, z + 0.01, tc); }
+    this.box(x0, H, z0, x1, H + 0.2, z1, ce);
+    const dx = this.dx = o.door == null ? 0 : o.door === false ? null : o.door, dw = o.dw || 2.2;
+    this.box(x0 - T, 0, z0 - T, x1 + T, H, z0, wa); this.box(x0 - T, 0, z0, x0, H, z1 + T, wa, false, 0.92); this.box(x1, 0, z0, x1 + T, H, z1 + T, wa, false, 0.92);
+    if (dx == null) this.box(x0 - T, 0, z1, x1 + T, H, z1 + T, wa, false, 0.96);
+    else {
+      this.box(x0 - T, 0, z1, dx - dw / 2, H, z1 + T, wa, false, 0.96); this.box(dx + dw / 2, 0, z1, x1 + T, H, z1 + T, wa, false, 0.96); this.box(dx - dw / 2, 2.6, z1, dx + dw / 2, H, z1 + T, wa, false, 0.96);
+      /* the street door: frame, glass, daylight beyond, a mat */
+      this.box(dx - dw / 2 - 0.12, 0, z1 - 0.06, dx - dw / 2, 2.72, z1 + 0.02, tr); this.box(dx + dw / 2, 0, z1 - 0.06, dx + dw / 2 + 0.12, 2.72, z1 + 0.02, tr); this.box(dx - dw / 2 - 0.12, 2.6, z1 - 0.06, dx + dw / 2 + 0.12, 2.72, z1 + 0.02, tr);
+      this.glow(dx - dw / 2, 0, z1 + 0.2, dx + dw / 2, 2.6, z1 + 0.24, this.night ? 0x1a2433 : 0xcfe2f2, this.night ? 1 : 1.25);
+      this.glass(dx - dw / 2, 0.02, z1 + 0.08, dx + dw / 2, 2.58, z1 + 0.12); this.box(dx - 0.02, 0.02, z1 + 0.06, dx + 0.02, 2.58, z1 + 0.14, tr);
+      this.box(dx - 1, 0, z1 - 1.6, dx + 1, 0.012, z1 - 0.2, 0x3a2a24);
+      this.spawn('door', dx, z1 - 1.3, Math.PI);
+      this.act(dx, z1 - 0.6, 1.5, o.exit || 'Leave', () => Int.leave(), { wide: true });
+      this.tick(() => { if (Math.abs(Int.x - dx) < dw / 2 - 0.1 && Int.z > z1 - 0.34 && Int.vz > 0.4 && Int.t > 0.8) Int.leave(); });
+    }
+    /* skirting, cornice */
+    const tc = ikCol(tr); for (const [a, b, c, d] of [[x0, z0, x1, z0 + 0.03], [x0, z0, x0 + 0.03, z1], [x1 - 0.03, z0, x1, z1], [x0, z1 - 0.03, x1, z1]]) { this.box(a, 0, b, c, 0.12, d, tc); this.box(a, H - 0.08, b, c, H, d, tc, false, 1.1); }
+    /* windows on the side and back walls */
+    if (o.win !== false) {
+      const sky = this.night ? 0x18243a : 0xbcd8ee, k = this.night ? 1 : 1.2, wh = o.winH || [1.0, 2.6];
+      for (let z = z0 + 2.5; z < z1 - 2.5; z += 4) for (const sx of [-1, 1]) { const x = sx < 0 ? x0 + 0.02 : x1 - 0.02; this.glow(x - sx * 0.0, wh[0], z - 1.1, x - sx * 0.01, wh[1], z + 1.1, sky, k); this.box(x - sx * 0.06, wh[0] - 0.08, z - 1.2, x, wh[0], z + 1.2, 0xe8e4dc); this.box(x - sx * 0.05, (wh[0] + wh[1]) / 2 - 0.03, z - 1.1, x, (wh[0] + wh[1]) / 2 + 0.03, z + 1.1, 0xe8e4dc); }
+      if (!o.noBackWin) for (let x = x0 + 2.5; x < x1 - 2.5; x += 4) { this.glow(x - 1.1, wh[0], z0 + 0.01, x + 1.1, wh[1], z0 + 0.02, sky, k); this.box(x - 1.2, wh[0] - 0.08, z0, x + 1.2, wh[0], z0 + 0.06, 0xe8e4dc); }
+    }
+    /* ceiling lights in a grid */
+    if (o.lights !== false) {
+      const lc0 = o.lamp || 0xfff4e0; let n = 0;
+      for (let x = x0 + 3; x < x1 - 1; x += 6) for (let z = z0 + 3; z < z1 - 1; z += 6) { this.glow(x - 0.6, H - 0.03, z - 0.25, x + 0.6, H - 0.01, z + 0.25, lc0, 1.6); n++; }
+      const step = Math.max(6, Math.ceil(Math.max(W, D) / 2.2));
+      for (let x = x0 + W / 4; x < x1; x += W / 2) for (let z = z0 + D / 4; z < z1; z += D / 2) this.light(x, H - 0.4, z, lc0, o.lightI == null ? 0.75 : o.lightI, step * 1.6);
+    }
+    this.bounds = [x0, z0, x1, dx == null ? z1 : z1 + 0.05];
+    const hemi = new THREE.HemisphereLight(lc(o.sky || 0xfff6ea), lc(o.gnd || 0x4a4038), o.hemi == null ? 0.75 : o.hemi); this.sc.add(hemi);
+    return this;
+  }
+  /* a partition wall along x (at z) or along z (at x), with door gaps [[a, b], ...] */
+  wallX(z, xa, xb, gaps, c, h, t) { const H = h || this.H, T = (t || 0.14) / 2; let a = xa; for (const g of (gaps || []).slice().sort((p, q) => p[0] - q[0])) { if (g[0] > a) this.box(a, 0, z - T, g[0], H, z + T, c, true); this.box(g[0], 2.3, z - T, g[1], H, z + T, c); a = g[1]; } if (xb > a) this.box(a, 0, z - T, xb, H, z + T, c, true); return this; }
+  wallZ(x, za, zb, gaps, c, h, t) { const H = h || this.H, T = (t || 0.14) / 2; let a = za; for (const g of (gaps || []).slice().sort((p, q) => p[0] - q[0])) { if (g[0] > a) this.box(x - T, 0, a, x + T, H, g[0], c, true); this.box(x - T, 2.3, g[0], x + T, H, g[1], c); a = g[1]; } if (zb > a) this.box(x - T, 0, a, x + T, H, zb, c, true); return this; }
+  /* ---- furniture ---- */
+  counter(x0, z0, x1, z1, c, top, h) { const H = h || 1.02; this.box(x0, 0, z0, x1, H - 0.05, z1, c, true); this.box(x0 - 0.04, H - 0.05, z0 - 0.04, x1 + 0.04, H, z1 + 0.04, top == null ? 0xe8e4dc : top); return this; }
+  table(x, z, w, d, c, h, round) {
+    const H = h || 0.76, C = c == null ? 0x6a4a32 : c;
+    if (round) { this.cyl(x, H - 0.04, z, w / 2, 0.04, C); this.cyl(x, 0, z, 0.05, H - 0.04, 0x2a2a2a); this.cyl(x, 0, z, 0.3, 0.03, 0x2a2a2a); }
+    else { this.box(x - w / 2, H - 0.05, z - d / 2, x + w / 2, H, z + d / 2, C); for (const [a, b] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) this.box(x + a * (w / 2 - 0.08) - 0.03, 0, z + b * (d / 2 - 0.08) - 0.03, x + a * (w / 2 - 0.08) + 0.03, H - 0.05, z + b * (d / 2 - 0.08) + 0.03, C, false, 0.7); }
+    this.col(x - w / 2 + 0.05, z - d / 2 + 0.05, x + w / 2 - 0.05, z + d / 2 - 0.05); return this;
+  }
+  chair(x, z, yaw, c, stool) {
+    const C = c == null ? 0x3a2a20 : c;
+    this.col(x - 0.2, z - 0.2, x + 0.2, z + 0.2).h = stool ? 0.78 : 0.95;
+    if (stool) { this.cyl(x, 0, z, 0.04, 0.72, 0x3a3a3a); this.cyl(x, 0.72, z, 0.2, 0.06, C); return this; }
+    this.rb(x, z, yaw, [-0.22, 0.42, -0.22, 0.22, 0.47, 0.22], C); this.rb(x, z, yaw, [-0.22, 0.47, -0.24, 0.22, 0.95, -0.2], C, false, 0.9);
+    for (const [a, b] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) this.rb(x, z, yaw, [a * 0.19 - 0.02, 0, b * 0.19 - 0.02, a * 0.19 + 0.02, 0.42, b * 0.19 + 0.02], 0x2a2a2a);
+    return this;
+  }
+  shelf(x0, z0, x1, z1, h, rows, r, pal, c) {
+    const C = c == null ? 0xb8b2a6 : c, H = h || 2, n = rows || 4, along = x1 - x0 > z1 - z0; this.box(x0, 0, z0, x1, 0.1, z1, C, true);
+    for (const e of along ? [x0, x1 - 0.04] : [z0, z1 - 0.04]) along ? this.box(e, 0, z0, e + 0.04, H, z1, C) : this.box(x0, 0, e, x1, H, e + 0.04, C);
+    for (let i = 1; i <= n; i++) {
+      const y = 0.1 + (H - 0.15) * i / n; this.box(x0, y - 0.03, z0, x1, y, z1, C);
+      if (r && pal) { const L = along ? x1 - x0 : z1 - z0, dd = along ? z1 - z0 : x1 - x0; let u = 0.06; while (u < L - 0.1) { const w = 0.08 + r() * 0.22, hh = Math.min(0.08 + r() * 0.26, (H - 0.15) / n - 0.06), col = pal[(r() * pal.length) | 0]; if (r() < 0.88) { if (along) this.box(x0 + u, y - 0.03 - (H - 0.15) / n + 0.03 + 0.03, z0 + dd * 0.12, x0 + u + w, y - 0.03 - (H - 0.15) / n + 0.06 + hh, z1 - dd * 0.12, col); else this.box(x0 + dd * 0.12, y - 0.03 - (H - 0.15) / n + 0.06, z0 + u, x1 - dd * 0.12, y - 0.03 - (H - 0.15) / n + 0.06 + hh, z0 + u + w, col); } u += w + 0.02; } }
+    }
+    this.col(x0, z0, x1, z1); return this;
+  }
+  rack(x0, z, x1, r, pal) {   /* a clothes rail: garments on hangers */
+    this.cyl(x0, 0, z, 0.03, 1.6, 0x9a9aa0); this.cyl(x1, 0, z, 0.03, 1.6, 0x9a9aa0); this.box(x0, 1.56, z - 0.02, x1, 1.6, z + 0.02, 0xb0b0b8);
+    for (let x = x0 + 0.12; x < x1 - 0.08; x += 0.09 + r() * 0.05) { const c = pal[(r() * pal.length) | 0], L = 0.6 + r() * 0.45; this.box(x - 0.012, 1.56 - L, z - 0.24, x + 0.012, 1.5, z + 0.24, c); }
+    this.col(x0 - 0.05, z - 0.28, x1 + 0.05, z + 0.28); return this;
+  }
+  sofa(x, z, yaw, w, c) { const C = c == null ? 0x5a6a7a : c, W = (w || 2.2) / 2; this.rb(x, z, yaw, [-W, 0, -0.45, W, 0.45, 0.45], C, true); this.rb(x, z, yaw, [-W, 0.45, -0.45, W, 0.95, -0.22], C, false, 0.9); this.rb(x, z, yaw, [-W, 0.45, -0.45, -W + 0.2, 0.68, 0.45], C, false, 0.85); this.rb(x, z, yaw, [W - 0.2, 0.45, -0.45, W, 0.68, 0.45], C, false, 0.85); for (let i = 0; i < Math.max(1, Math.round(W)); i++) { const u = -W + 0.22 + (2 * W - 0.44) * (i + 0.5) / Math.max(1, Math.round(W)); this.rb(x, z, yaw, [u - (W - 0.22) / Math.max(1, Math.round(W)) + 0.03, 0.45, -0.2, u + (W - 0.22) / Math.max(1, Math.round(W)) - 0.03, 0.56, 0.42], C, false, 1.08); } return this; }
+  bed(x, z, yaw, c, dbl) { const W = dbl ? 0.85 : 0.5; this.rb(x, z, yaw, [-W, 0, -1.05, W, 0.42, 1.05], 0x5a4030, true); this.rb(x, z, yaw, [-W + 0.03, 0.42, -1.0, W - 0.03, 0.58, 1.0], 0xf2f0ea); this.rb(x, z, yaw, [-W + 0.02, 0.58, -0.35, W - 0.02, 0.62, 1.0], c == null ? 0x4a6aa0 : c); this.rb(x, z, yaw, [-W, 0, -1.12, W, 1.05, -1.04], 0x5a4030); for (const s of dbl ? [-0.42, 0.42] : [0]) this.rb(x, z, yaw, [s - 0.3, 0.58, -0.95, s + 0.3, 0.72, -0.6], 0xffffff); return this; }
+  plant(x, z, s, pot) { const S = s || 1; this.cyl(x, 0, z, 0.22 * S, 0.42 * S, pot == null ? 0xb06a4a : pot, true); for (let i = 0; i < 5; i++) { const a = i * 1.26, rr = 0.12 * S; this.cyl(x + Math.sin(a) * rr, 0.42 * S, z + Math.cos(a) * rr, 0.16 * S, (0.6 + (i % 3) * 0.25) * S, i % 2 ? 0x3f7a3a : 0x2f6a30, false, 0.1 * S); } this.cyl(x, 0.42 * S, z, 0.24 * S, 0.9 * S, 0x356f34); return this; }
+  rug(x0, z0, x1, z1, c, c2) { this.box(x0, 0, z0, x1, 0.012, z1, c); if (c2 != null) this.box(x0 + 0.15, 0.012, z0 + 0.15, x1 - 0.15, 0.016, z1 - 0.15, c2); return this; }
+  tv(x, y, z, yaw, w, img) { const W = (w || 1.4) / 2, H = W * 0.58; this.rb(x, z, yaw, [-W, y - H, -0.04, W, y + H, 0.03], 0x0a0a0c); this.rg(x, z, yaw, [-W + 0.04, y - H + 0.04, 0.03, W - 0.04, y + H - 0.04, 0.035], img == null ? 0x3a7ac0 : img, 1.1); return this; }
+  desk(x, z, yaw, c) { const C = c == null ? 0xd8d2c4 : c; this.rb(x, z, yaw, [-0.75, 0.72, -0.4, 0.75, 0.76, 0.4], C, true); this.rb(x, z, yaw, [-0.75, 0, -0.4, -0.7, 0.72, 0.4], 0x5a5a60); this.rb(x, z, yaw, [0.7, 0, -0.4, 0.75, 0.72, 0.4], 0x5a5a60); this.rb(x, z, yaw, [-0.3, 0.76, -0.3, 0.3, 1.12, -0.26], 0x16181c); this.rg(x, z, yaw, [-0.27, 0.79, -0.26, 0.27, 1.09, -0.255], 0x4a7ab8, 1.1); this.rb(x, z, yaw, [-0.25, 0.76, -0.05, 0.25, 0.78, 0.12], 0x2a2a30); return this; }
+  lamp(x, z, c) { this.cyl(x, 0, z, 0.15, 0.03, 0x2a2a2a); this.cyl(x, 0, z, 0.02, 1.5, 0x2a2a2a); this.cyl(x, 1.42, z, 0.22, 0.3, c == null ? 0xf2e6c8 : c, false, 0.16); this.glow(x - 0.1, 1.5, z - 0.1, x + 0.1, 1.6, z + 0.1, 0xffe8b8, 1.6); return this; }
+  crate(x, z, s, c, y) { const S = (s || 1) / 2, Y = y || 0; this.box(x - S, Y, z - S, x + S, Y + S * 2, z + S, c == null ? 0xa07a4a : c, true); this.box(x - S - 0.01, Y + S * 0.9, z - S - 0.01, x + S + 0.01, Y + S * 1.1, z + S + 0.01, 0x7a5a34); return this; }
+  pic(x, y, z, yaw, w, h, c) { this.rb(x, z, yaw, [-w / 2 - 0.05, y - h / 2 - 0.05, 0, w / 2 + 0.05, y + h / 2 + 0.05, 0.03], 0x2a2018); this.rb(x, z, yaw, [-w / 2, y - h / 2, 0.03, w / 2, y + h / 2, 0.035], c == null ? 0x6a8aa8 : c); return this; }
+  fridge(x, z, yaw, glassFront) { this.rb(x, z, yaw, [-0.45, 0, -0.35, 0.45, 2.0, 0.35], 0xe8eaec, true); if (glassFront) { this.rg(x, z, yaw, [-0.4, 0.15, 0.35, 0.4, 1.9, 0.36], 0xd8f0ff, 0.9); for (let i = 0; i < 4; i++) for (let j = 0; j < 5; j++) this.rb(x, z, yaw, [-0.36 + j * 0.15, 0.25 + i * 0.42, 0.1, -0.26 + j * 0.15, 0.5 + i * 0.42, 0.3], [0xd82a2a, 0x2a8ad8, 0xf2c81e, 0x3ab04a, 0xf28a1e][(i + j) % 5]); } else this.rb(x, z, yaw, [-0.43, 1.2, 0.35, 0.43, 1.22, 0.37], 0xb0b4b8); return this; }
+  stove(x, z, yaw) { this.rb(x, z, yaw, [-0.45, 0, -0.3, 0.45, 0.9, 0.3], 0x3a3c40, true); for (const [a, b] of [[-0.2, -0.12], [0.2, -0.12], [-0.2, 0.14], [0.2, 0.14]]) this.rb(x, z, yaw, [a - 0.09, 0.9, b - 0.09, a + 0.09, 0.92, b + 0.09], 0x15161a); return this; }
+  person(o) {
+    if (this.npcs.length >= INT.NPC_CAP) return null;
+    const r = mulberry32((ihash((this.rec.seed | 0) + this.npcs.length * 17, this.room.length, (o.seed || 0) | 0) * 4294967296) >>> 0), R0 = Math.random; let a; Math.random = r; try { a = pedRandomLook(); } finally { Math.random = R0; }
+    if (o.fem != null && a.fem !== o.fem) { Math.random = r; try { for (let k = 0; k < 8 && a.fem !== o.fem; k++) a = pedRandomLook(); } finally { Math.random = R0; } }
+    a.kid = !!o.kid && a.kid; if (!o.kid) { if (a.kid) { a.kid = false; a.s = 0.95 + r() * 0.1; a.hs = 1; } }
+    if (o.shirt != null) { a.shirt = lc(o.shirt); a.sleeve = o.sleeve != null ? o.sleeve : true; a.coat = false; a.skirt = 0; a.bag = false; }
+    if (o.pants != null) { a.pants = lc(o.pants); a.shorts = !!o.shorts; a.skirt = 0; }
+    if (o.suit) { a.coat = false; a.skirt = 0; a.bag = false; a.sleeve = true; }
+    if (o.hat !== undefined) a.hat = o.hat; if (o.swim) { a.swim = true; a.shorts = true; a.sleeve = false; a.coat = false; a.skirt = 0; a.bag = false; a.hat = null; a.shoe = a.skin; if (a.fem) { a.shirt = lc(o.swimC || 0x2a6ad8); a.pants = a.shirt; } else { a.shirt = a.skin; a.pants = lc(o.swimC || 0x2a6ad8); } }
+    if (o.sport) { a.coat = false; a.skirt = 0; a.bag = false; a.sleeve = false; a.shorts = true; a.shirt = lc(o.sport); a.pants = lc(0x1a1c22); a.shoe = lc(0xf2f2f2); a.hat = null; }
+    if (o.app) Object.assign(a, o.app);
+    const n = { app: a, x: o.x, z: o.z, y: o.y || 0, yaw: o.yaw || 0, v: 0, vt: o.vt || 1.1 + r() * 0.3, ph: r() * TAU, seed: r() * 20, state: 'stand', kind: o.kind || 'stand', path: o.path || null, pi: 0, wait: r() * 2, face: !!o.face, talk: !!o.talk, eat: !!o.eat, type: !!o.type, move: o.move, sy: o.sy, sy0: o.sy0, after: o.after, role: o.role, tilt: 0, t: 0, vx: 0, vz: 0, vy: 0, wave: 0, pn: 0, jump: false, phone: !!o.phone, pw: false };
+    const h = n.hu = Human.make(pedSpec(a, n.seed)); h.sig = Human.sig(a); h.app = a; h.chk = 0; h.gy = n.y; h.ps = null; this.sc.add(h.root);
+    this.npcs.push(n); return n;
+  }
+  /* ---- build the meshes ---- */
+  done() {
+    const sc = this.sc, mk = (gb, mat) => { if (!gb.count) return; const m = gb.mesh(mat, false, false); mat.__own = true; sc.add(m); };
+    mk(this.gb, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, metalness: 0.04 }));
+    mk(this.gl, new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false }));
+    mk(this.gs, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.05, metalness: 0.2, transparent: true, opacity: 0.28, depthWrite: false }));
+    if (this.gw) mk(this.gw, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.72, depthWrite: false }));
+    sc.add(new THREE.AmbientLight(0xffffff, 0.12));
+  }
+}
+
+/* ---- js/08_int_place.js ---- */
+/* ================= INTERIORS: the airport terminal, the marina boathouse, the venues and clubs =================
+   These buildings are not town lots, so their doors are listed here (Bld.fixed) and found by the same door check. The airport terminal has
+   check-in desks, a departures board, a café, security and a door through to the planes; the marina's boathouse a chandlery, a workshop and
+   the harbour master. Every venue (the pool hall, the darts pub, the range, ...) and every dance club now opens into a walkable bar or club
+   with its regulars; walk up to the table, the oche, the lanes or the dance floor and press E to play (the game itself is unchanged). */
+Bld.fixed = null;
+Bld.prepFixed = function () {
+  if (Bld.fixed) return Bld.fixed; const L = [];
+  if (Air.s) {   /* the terminal: landside doors face the car park (+z) */
+    const A = Air.s, T = AIR.TERM, x0 = A.cx + T[0], x1 = A.cx + T[1], z0 = A.cz + T[2], z1 = A.cz + T[3], xm = A.cx - 50;
+    L.push({ key: 'air:term', kind: 'terminal', name: Air.name || 'Airfield', sub: 'Airport terminal', seed: 4242, ti: 6, reg: 'city', x0, z0, x1, z1, y: A.H0, h: AIR.TH, cat: 'fixed', W: Math.min(40, x1 - x0), D: Math.min(26, z1 - z0), special: true,
+      door: { x: xm, z: z1, nx: 0, nz: 1, ox: xm, oz: z1 + 1.6 }, air: { x: xm, z: z0 - 3 } });
+  }
+  if (Dock.s && Dock.s.house) {   /* the boathouse: its door faces the quay */
+    const D = Dock.s, h = D.house, Y = MARINA.DY, p = Dock.toWorld((h[0] + h[1]) / 2, h[3], {}), q = Dock.toWorld((h[0] + h[1]) / 2, h[3] + 1.6, {}), r = Dock.rect(h[0], h[1], h[2], h[3]);
+    L.push({ key: 'dock:house', kind: 'boathouse', name: Dock.name || 'Marina', sub: 'Boathouse · harbour master', seed: 8181, ti: 0, reg: 'harbor', x0: r[0], z0: r[1], x1: r[2], z1: r[3], y: Y, h: 4.6, cat: 'fixed', W: Math.abs(h[1] - h[0]), D: Math.abs(h[3] - h[2]), special: true,
+      door: { x: p.x, z: p.z, nx: D.Sx, nz: D.Sz, ox: q.x, oz: q.z } });
+  }
+  if (Ven.ready) for (const S of Ven.all) {
+    const xm = S.bx + S.bw / 2;
+    L.push({ key: 'ven:' + S.ti + (S.club ? 'c' : 'v'), kind: S.club ? 'club' : 'venue', name: S.D.name, sub: S.D.sub, seed: 900 + S.ti * 7 + (S.club ? 3 : 0), ti: S.ti, reg: S.R.key, x0: S.bx, z0: S.bz, x1: S.bx + S.bw, z1: S.bz + S.bd, y: S.T.baseH, h: 9, cat: 'fixed', W: S.bw, D: S.bd, special: true,
+      door: { x: xm, z: S.bz, nx: 0, nz: -1, ox: xm, oz: S.bz - 1.6 }, S });
+  }
+  Bld.fixed = L; return L;
+};
+Bld.fixedNear = function (lim) {
+  const L = Bld.prepFixed(); let best = null, bd = lim * lim;
+  for (const r of L) { if (r.S) continue; const ex = Pl.x - (r.door.x + r.door.nx * 0.9), ez = Pl.z - (r.door.z + r.door.nz * 0.9), d2 = ex * ex + ez * ez; if (d2 < bd) { bd = d2; best = r; } }
+  return best;
+};
+/* a venue's own room: walk in, then play */
+Bld.venueRec = function (S) { const L = Bld.prepFixed(); return L.find((r) => r.S === S) || null; };
+function intPlayVenue(rec) { const S = rec.S; Int.leave(true); Ven.near = S; Ven.open(); }
+
+/* ---------- airport terminal ---------- */
+INT_KINDS.terminal = { name: 'Airport terminal', rooms: { main(K, rec, r) {
+  const W = 34, D = 22; K.shell({ W, D, H: 7, floor: 0xd8d8d4, tiles: 0xbcbcb6, wall: 0xe8eaec, trim: 0x2a3a5a, lamp: 0xf4f8ff, lightI: 1, winH: [0.3, 6.4], noBackWin: true, hemi: 0.95 });
+  /* the airside wall is all glass: the apron and planes beyond */
+  K.glow(K.x0 + 1, 0.2, K.z0 + 0.01, K.x1 - 1, 6.5, K.z0 + 0.02, K.night ? 0x1a2433 : 0xc8dcec, K.night ? 1 : 1.2); for (let x = K.x0 + 1; x <= K.x1 - 1; x += 3) K.box(x - 0.06, 0, K.z0, x + 0.06, 7, K.z0 + 0.15, 0x2a3a5a);
+  K.sign(rec.name.toUpperCase(), 0, 6.1, K.z1 - 0.04, 12, 1, Math.PI, { fg: '#ffffff', bg: '#2a3a5a' });
+  /* check-in: a long desk with belts and staff */
+  for (let k = 0; k < 4; k++) { const x = K.x0 + 3 + k * 3.2; K.counter(x - 1.2, K.z1 - 6.5, x + 1.2, K.z1 - 5.8, 0x2a3a5a, 0xe8e8e8, 1.05); K.glow(x - 0.5, 1.6, K.z1 - 6.2, x + 0.5, 2.0, K.z1 - 6.15, 0x1a5cff, 1.2); intStaff(K, x, K.z1 - 7.2, Math.PI, 0x2a3a5a, { suit: true }); }
+  for (let z = K.z1 - 4.5; z < K.z1 - 1.5; z += 1) { K.cyl(K.x0 + 2, 0, z, 0.04, 1, 0x9a9aa0); K.cyl(K.x0 + 14, 0, z, 0.04, 1, 0x9a9aa0); }
+  /* departures board */
+  K.box(-4.5, 3.4, K.z1 - 0.3, 4.5, 6, K.z1 - 0.15, 0x101418); const fl = ['09:40  HARBOUR HOP      ON TIME', '10:15  SUMMIT SHUTTLE   BOARDING', '11:00  ISLAND TOUR      ON TIME', '12:30  CAPE EXPRESS     DELAYED', '13:45  CARGO RUN        ON TIME'];
+  K.sign('DEPARTURES\n' + fl.join('\n'), 0, 4.7, K.z1 - 0.32, 8.6, 2.4, Math.PI, { fg: '#ffcf3a', bg: '#101418', font: '600 ', h: 512, w: 1024, size: 46 });
+  /* seats, a café, a shop, security */
+  for (let x = 3; x < K.x1 - 2; x += 3.4) for (const z of [-2, 0.5]) for (let k = 0; k < 4; k++) K.chair(x - 1.2 + k * 0.6, z, z < 0 ? 0 : Math.PI, 0x2a5aa8);
+  intSeat(K, 3 - 0.6, 0.5, Math.PI, { phone: true }); intSeat(K, 6.4, -2, 0, {}); intSeat(K, 9.8 + 0.6, 0.5, Math.PI, { eat: true });
+  K.counter(K.x1 - 6, K.z1 - 3, K.x1 - 1, K.z1 - 2.2, 0x6a4a34, 0xe8e0d0); intStaff(K, K.x1 - 3.5, K.z1 - 1.5, Math.PI, 0x2a1a14); K.sign('CAFÉ', K.x1 - 3.5, 3, K.z1 - 0.04, 2, 0.6, Math.PI, { fg: '#ffcf6a', bg: '#2a1a14' });
+  K.act(K.x1 - 3.5, K.z1 - 3.8, 1.6, 'Buy an airport coffee', () => intBuy(7, 'a coffee', () => intBuzz(3), 'Airport prices. Still, you feel awake.'), { cost: 7 });
+  K.shelf(K.x0 + 0.05, K.z0 + 3, K.x0 + 0.5, K.z0 + 9, 2, 4, r, INT_PROD); K.sign('NEWS · TRAVEL', K.x0 + 0.04, 2.5, K.z0 + 6, 2.4, 0.4, Math.PI / 2, { fg: '#fff', bg: '#c8302a' });
+  for (let k = 0; k < 2; k++) { const x = -4 + k * 4; K.box(x - 0.5, 0, K.z0 + 6, x - 0.35, 2.2, K.z0 + 7, 0x9a9aa0, true); K.box(x + 0.35, 0, K.z0 + 6, x + 0.5, 2.2, K.z0 + 7, 0x9a9aa0, true); K.box(x - 0.5, 2.2, K.z0 + 6, x + 0.5, 2.4, K.z0 + 7, 0x9a9aa0); K.box(x + 0.7, 0, K.z0 + 5.5, x + 1.4, 0.9, K.z0 + 7.5, 0x3a3c40, true); }
+  K.person({ x: -1.5, z: K.z0 + 6.5, yaw: 0, shirt: 0x1a2a4a, pants: 0x1a1c24, face: true, role: 'guard' });
+  intShoppers(K, r, 4, [[0, K.z1 - 3], [-8, K.z1 - 3], [8, 2], [-6, 3], [K.x1 - 4, K.z1 - 5]]);
+  /* through security to the apron */
+  const ax = 0; K.box(ax - 1.2, 0, K.z0 + 0.15, ax + 1.2, 2.7, K.z0 + 0.3, 0x2a3a5a); K.sign('GATES · APRON ▸', ax, 3.0, K.z0 + 0.32, 2.6, 0.4, 0, { fg: '#fff', bg: '#2a3a5a' });
+  K.act(ax, K.z0 + 1.2, 1.8, 'Through to the planes (the apron)', () => { const d = rec.door, ox = d.ox, oz = d.oz; d.ox = rec.air.x; d.oz = rec.air.z; Int.leave(); d.ox = ox; d.oz = oz; Foot.yaw = Math.PI; }, { wide: true });
+  K.act(0, K.z1 - 0.8, 1.6, 'Read the departures board', () => Int.say('Every flight leaves from the apron. Your own planes are parked out there: walk up to one and press F.', 4));
+} } };
+
+/* ---------- marina boathouse ---------- */
+INT_KINDS.boathouse = { name: 'Boathouse', rooms: { main(K, rec, r) {
+  const W = 20, D = 14; K.shell({ W, D, H: 4.6, floor: 0x8a6a4a, wall: 0x6a7a8a, ceil: 0x4a3a2a, trim: 0xf2f2f2, lamp: 0xfff0d8, lightI: 0.85 });
+  K.sign(rec.name.toUpperCase() + ' · HARBOUR MASTER', 0, 3.6, K.z0 + 0.04, 9, 0.7, 0, { fg: '#fff', bg: '#1a3a5a' });
+  K.counter(-3, K.z0 + 2.4, 3, K.z0 + 3.1, 0x1a3a5a, 0xe8e0d0); intStaff(K, 0, K.z0 + 1.6, 0, 0x1a3a5a, { hat: { k: 'cap', c: lc(0xf2f2f2), bc: lc(0x1a1a1a) } });
+  K.shelf(K.x0 + 0.05, K.z0 + 1, K.x0 + 0.5, K.z1 - 3, 2.2, 4, r, [0xf2c81e, 0xd85a1a, 0xf2f2f2, 0x1a5ad8, 0x6a4a2a]);
+  for (let k = 0; k < 6; k++) K.cyl(K.x0 + 1.5 + k * 0.7, 0, K.z1 - 1.5, 0.28, 0.5, 0xf2f2f2); for (let k = 0; k < 4; k++) K.cyl(K.x0 + 1.6 + k * 0.9, 2.6, K.z0 + 0.25, 0.3, 0.6, [0xd82a2a, 0xf2f2f2][k & 1]);
+  /* a dinghy on stands in the workshop */
+  K.box(K.x1 - 6, 0, -1.5, K.x1 - 5.8, 0.8, 1.5, 0x5a5a5a, true); K.box(K.x1 - 2.2, 0, -1.5, K.x1 - 2, 0.8, 1.5, 0x5a5a5a, true); K.box(K.x1 - 6.4, 0.8, -0.9, K.x1 - 1.6, 1.5, 0.9, 0xf2f2f2, true); K.box(K.x1 - 6.2, 1.5, -0.8, K.x1 - 1.8, 1.55, 0.8, 0x6a4a2a);
+  K.person({ x: K.x1 - 4, z: 1.6, yaw: Math.PI, kind: 'work', shirt: 0x3a5a7a, pants: 0x2a3a5a });
+  K.pic(K.x1 - 0.02, 2.2, K.z0 + 3, -Math.PI / 2, 2.4, 1.6, 0x4a7aa8);
+  K.act(0, K.z0 + 3.8, 1.6, 'Ask the harbour master about boats', () => Int.say('“Boats are moored on the pier. Walk out to a slip and press F to buy or take one out.”', 4));
+  K.act(K.x0 + 1.2, 0, 1.6, 'Buy a fishing licence', () => intBuy(30, 'a fishing licence', null, 'A fishing licence. The fish are not impressed.'), { cost: 30 });
+} } };
+
+/* ---------- venues and clubs: walk in, play when you are ready ---------- */
+INT_KINDS.venue = { name: 'Venue', rooms: { main(K, rec, r) {
+  const S = rec.S, D = S.D, g = D.game, col = D.col, W = 22, Dd = 14, warm = g === 'darts' || g === 'pool' || g === 'fish';
+  K.shell({ W, D: Dd, H: 4.2, floor: warm ? 0x4a2a18 : 0x2a2c30, wall: warm ? 0x5a3424 : 0x1e2228, ceil: 0x141210, trim: col, lamp: warm ? 0xffc070 : 0xf4f8ff, lightI: 0.6, hemi: 0.45, win: !warm });
+  K.sign(D.name.toUpperCase(), 0, 3.3, K.z0 + 0.04, 9, 0.8, 0, { fg: _hexCss(col), bg: null }); K.glow(K.x0 + 0.5, 3.75, K.z0 + 0.02, K.x1 - 0.5, 3.8, K.z0 + 0.04, col, 1.6);
+  /* the bar on the left, the regulars */
+  K.counter(K.x0 + 0.5, -3, K.x0 + 1.3, K.z1 - 2, 0x3a2416, 0x1a120c, 1.1); K.shelf(K.x0 + 0.05, -3, K.x0 + 0.35, K.z1 - 2, 2.2, 3, r, [0x8ad84a, 0xd8a83a, 0x8a3a1a, 0xd8d8f0], 0x2a1a10);
+  intStaff(K, K.x0 + 0.85 - 0.5 + 0.2, 0.5, Math.PI / 2, 0x1a1a1a, { sleeve: false });
+  for (let z = -2; z < K.z1 - 2.5; z += 1.1) { K.chair(K.x0 + 1.8, z, 0, col, true); if (r() < 0.4) intSeat(K, K.x0 + 1.85, z, -Math.PI / 2, { sy: 0.25, eat: r() < 0.5 }); }
+  /* what the place is about, on the far side */
+  const px = 4, pz = -1.5;
+  if (g === 'pool') { for (const x of [0.5, 6]) { K.box(x - 1.4, 0.7, pz - 0.75, x + 1.4, 0.85, pz + 0.75, 0x4a2a14, true); K.box(x - 1.3, 0.85, pz - 0.65, x + 1.3, 0.86, pz + 0.65, 0x1a6a3a); K.cyl(x, 0, pz, 0.25, 0.7, 0x2a1a0a); } K.glow(-1, 2.6, pz - 0.4, 7.5, 2.65, pz + 0.4, 0xffe0a0, 1.4); }
+  else if (g === 'darts') { for (const x of [2, 6]) { K.cyl(x, 1.73, K.z0 + 0.05, 0.23, 0.04, 0x1a1a1a); K.box(x - 0.22, 1.5, K.z0 + 0.06, x + 0.22, 1.96, K.z0 + 0.09, 0x2a6a2a); K.box(x - 0.3, 0, K.z0 + 2.37, x + 0.3, 0.02, K.z0 + 2.43, 0xf2f2f2); } }
+  else if (g === 'range') { for (let k = 0; k < 4; k++) { const x = 1 + k * 2; K.box(x - 0.05, 0, K.z0, x + 0.05, 2.4, K.z0 + 5, 0x3a3c40, true); K.box(x + 0.6, 1.0, K.z0 + 0.3, x + 1.4, 1.9, K.z0 + 0.35, 0xf2f2f2); K.cyl(x + 1, 1.45, K.z0 + 0.36, 0.25, 0.01, 0xd82a2a); } K.counter(0.5, K.z0 + 5, 9, K.z0 + 5.6, 0x3a3c40, 0x5a5c60); }
+  else if (g === 'gopher') { for (let k = 0; k < 4; k++) { const x = 1 + k * 2; K.box(x - 0.6, 0, K.z0 + 0.2, x + 0.6, 1.9, K.z0 + 1.2, [0xd82a4a, 0x2a8ad8, 0xf2c81e, 0x3ab04a][k], true); K.glow(x - 0.45, 1.2, K.z0 + 1.21, x + 0.45, 1.75, K.z0 + 1.22, 0x6ad8ff, 1.2); } }
+  else if (g === 'golf') { K.box(-1, 0, K.z0 + 0.5, 9, 0.04, pz + 2.5, 0x3a8a3a, true); K.cyl(7.5, 0.04, K.z0 + 1.5, 0.12, 0.01, 0x1a1a1a); K.cyl(7.5, 0.04, K.z0 + 1.5, 0.015, 1.4, 0xd8d8d8); K.box(7.52, 1.1, K.z0 + 1.5, 7.9, 1.4, K.z0 + 1.52, 0xd82a2a); }
+  else if (g === 'curl') { K.box(-1, 0, K.z0 + 0.4, 9, 0.03, pz + 2.5, 0xe8f2fa, true); K.cyl(4, 0.03, K.z0 + 1.5, 1.2, 0.005, 0x2a5ad8); K.cyl(4, 0.035, K.z0 + 1.5, 0.8, 0.005, 0xf2f2f2); K.cyl(4, 0.04, K.z0 + 1.5, 0.4, 0.005, 0xd82a2a); }
+  else if (g === 'fish') { K.glow(-1, 0.8, K.z0 + 0.05, 9, 2.6, K.z0 + 0.1, 0x2a7ab0, 0.9); K.shelf(-1, K.z0 + 3, 4, K.z0 + 3.4, 1.8, 4, r, [0x6a4a2a, 0x2a6a3a, 0xd8a83a, 0x5a5a5a]); }
+  for (let k = 0; k < 3; k++) { const x = 1 + k * 3; K.table(x, K.z1 - 2.8, 0.8, 0.8, 0x3a2416, 0.75, true); K.chair(x - 0.6, K.z1 - 2.8, -Math.PI / 2 + Math.PI, 0x3a2416); if (r() < 0.6) intSeat(K, x - 0.62, K.z1 - 2.8, Math.PI / 2, { eat: r() < 0.5, talk: true }); }
+  K.person({ x: px + 1, z: pz + 1.5, kind: 'walk', path: [[px - 2, pz + 1.6, 3], [px + 3, pz + 1.4, 3]] });
+  K.act(px, pz + 2.4, 2.4, 'Play: ' + D.sub.replace(/^[^·]*· ?/, '') + ' (pick your stake)', () => intPlayVenue(rec), { wide: true });
+  K.act(K.x0 + 2.2, 0.5, 1.6, 'Order: ' + D.snack.name, () => intBuy(D.snack.price, D.snack.name, () => { car.health = Math.min(100, car.health + 25); car.nitro = tune.nitroMax; intBuzz(2); }, D.snack.name + '. Your car feels better already.'), { cost: D.snack.price });
+} } };
+INT_KINDS.club = { name: 'Club', rooms: { main(K, rec, r) {
+  const S = rec.S, D = S.D, col = D.col, W = 22, Dd = 14, show = D.game === 'show';
+  K.shell({ W, D: Dd, H: 4.6, floor: 0x121418, wall: 0x0e1014, ceil: 0x08090c, trim: col, lamp: col, lightI: 0.5, hemi: 0.3, win: false, lights: false });
+  K.light(0, 3.8, -1, col, 1.2, 14); K.light(-6, 3.5, 3, 0xff3aa8, 0.8, 10); K.light(6, 3.5, 3, 0x3ad8ff, 0.8, 10);
+  K.sign(D.name.toUpperCase(), 0, 3.6, K.z0 + 0.04, 9, 0.8, 0, { fg: _hexCss(col) });
+  /* the floor (or the stage) glows in squares; the DJ booth behind */
+  const tiles = []; for (let i = -3; i < 3; i++) for (let j = 0; j < 4; j++) tiles.push([i * 1.2, K.z0 + 2.4 + j * 1.2]);
+  for (const [x, z] of tiles) K.glow(x + 0.04, 0.005, z + 0.04, x + 1.16, 0.02, z + 1.16, [col, 0xff3aa8, 0x3ad8ff, 0xffcf3a][((x * 7 + z * 3) | 0) & 3], 0.55);
+  K.box(-2, 0, K.z0 + 0.3, 2, 1.2, K.z0 + 1.3, 0x1a1c22, true); K.glow(-1.8, 1.21, K.z0 + 0.4, 1.8, 1.22, K.z0 + 1.2, col, 0.8); K.person({ x: 0, z: K.z0 + 0.8, yaw: 0, kind: 'dance', shirt: 0x1a1a1a, pants: 0x1a1a1a, hat: { k: 'cap', c: lc(0x1a1a1a), bc: null } });
+  if (show) { K.box(-3.6, 0, K.z0 + 1.6, 3.6, 0.6, K.z0 + 3.4, 0x2a1a24, true); }
+  for (let k = 0; k < 9; k++) { const t = tiles[(k * 5 + 3) % tiles.length]; K.person({ x: t[0] + 0.6 + (r() - 0.5) * 0.4, z: t[1] + 0.6 + (r() - 0.5) * 0.4, yaw: r() * TAU, kind: 'dance' }); }
+  K.counter(K.x1 - 1.3, -3, K.x1 - 0.5, K.z1 - 2, 0x1a1c22, 0x2a2c34, 1.1); K.glow(K.x1 - 1.32, 0.1, -3, K.x1 - 1.3, 0.15, K.z1 - 2, col, 1.4); intStaff(K, K.x1 - 0.2, 0.2, -Math.PI / 2, 0x1a1a1a, { sleeve: false });
+  for (let k = 0; k < 2; k++) K.sofa(K.x0 + 1, -1 + k * 3, Math.PI / 2, 2.4, 0x3a1a2a);
+  K.act(0, K.z0 + 4.6, 2.6, (show ? 'Watch the show (buy a ticket)' : 'Hit the dance floor (the dance game)'), () => intPlayVenue(rec), { wide: true });
+  K.act(K.x1 - 1.9, 0.2, 1.6, 'Buy a mocktail', () => intBuy(9, 'a mocktail', () => intBuzz(2), 'Something blue with an umbrella in it.'), { cost: 9 });
+  let ph = 0; K.tick((dt) => { ph += dt; });
+} } };
+
+/* ---- js/08_int_spec.js ---- */
+/* ================= INTERIORS: the special buildings =================
+   Banks (a marble hall, tellers behind glass, a guard, a manager's office and the vault door; you can keep money in an account, which a fine
+   cannot touch), apartment blocks (a lobby, a lift, corridors of flats: buy one and it is yours to sleep in, with a fridge, a TV and a wardrobe),
+   gyms (work out in time with the beat to get fitter: you run and swim faster), indoor pools (swim laps), restaurants (each town's own menu),
+   clothing shops (try on and buy outfits), car dealerships (the only place to buy a car: a showroom of real cars) and the county jail
+   (do time instead of paying a fine; sleep, work and work out until you are let out). */
+const intGold = 0xc8a050;
+/* ---------- bank ---------- */
+function intBankHall(K, rec, r, big) {
+  const { W, D } = intDims(rec, big ? 26 : 20, big ? 21 : 17); K.shell({ W, D, H: big ? 6 : 5, floor: 0xe8e4dc, tiles: 0xc8c0b0, wall: 0xf0ece2, trim: 0x8a7a5a, lamp: 0xfff4dc, lightI: 0.9, hemi: 0.8 });
+  for (const sx of [-1, 1]) for (let z = K.z0 + 6; z < K.z1 - 2; z += 4) K.cyl(sx * (W / 2 - 2.2), 0, z, 0.38, K.H, 0xf2eee4, true);
+  K.rug(-1.2, K.z0 + 6, 1.2, K.z1 - 0.5, 0x7a1a1a, 0x9a2a2a);
+  /* the teller line: a counter, glass above it, three windows */
+  const cz = K.z0 + 4.5; K.counter(K.x0 + 1.5, cz, K.x1 - 1.5, cz + 0.8, 0x6a4a2a, 0x2a2a2a, 1.15); K.glass(K.x0 + 1.5, 1.15, cz + 0.35, K.x1 - 1.5, 2.6, cz + 0.4);
+  for (let k = -1; k <= 1; k++) { const x = k * 3.2; K.box(x - 0.04, 1.15, cz + 0.3, x + 0.04, 2.6, cz + 0.45, intGold); K.sign(String(k + 2), x + 1.6, 2.4, cz + 0.42, 0.5, 0.4, 0, { fg: '#c8a050', bg: '#1a1a1a' }); intStaff(K, x + 1.6, cz - 0.6, 0, 0x2a3a5a, { suit: true, role: 'teller' }); }
+  K.sign(rec.name.toUpperCase(), 0, K.H - 1, K.z0 + 0.03, Math.min(W - 4, 12), 1.0, 0, { fg: '#c8a050', bg: null });
+  /* queue ropes, chairs */
+  for (let z = cz + 2.2; z < cz + 6; z += 1.2) { K.cyl(-1.6, 0, z, 0.05, 1, intGold); K.cyl(1.6, 0, z, 0.05, 1, intGold); }
+  for (let k = 0; k < 4; k++) K.chair(K.x0 + 1.2, K.z1 - 3 - k * 0.8, Math.PI / 2, 0x2a3a5a); K.plant(K.x1 - 1, K.z1 - 1, 1.3); K.plant(K.x0 + 1, K.z1 - 1, 1.3);
+  /* the vault door at the back behind the tellers */
+  K.cyl(0, 0.3, K.z0 + 0.1, 1.5, 0.3, 0x8a8c90, false); K.box(-1.6, 0, K.z0, 1.6, 3.4, K.z0 + 0.12, 0x5a5c60);
+  K.rb(0, K.z0 + 0.25, 0, [-1.3, 0.2, 0, 1.3, 2.8, 0.25], 0x9a9ca2); for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3; K.box(Math.cos(a) * 0.5 - 0.04, 1.5 + Math.sin(a) * 0.5 - 0.04, K.z0 + 0.5, Math.cos(a) * 0.5 + 0.04, 1.5 + Math.sin(a) * 0.5 + 0.04, K.z0 + 0.7, 0x4a4c50); }
+  K.cyl(0, 1.5, K.z0 + 0.5, 0.18, 0.05, 0xd8d8d8);
+  /* customers, a guard by the door */
+  intShoppers(K, r, 3, [[0, cz + 2.4], [-1, cz + 3.4], [K.x1 - 3, K.z1 - 3], [K.x0 + 3, K.z1 - 4]]);
+  K.person({ x: K.x1 - 2.4, z: K.z1 - 2.2, yaw: Math.PI, shirt: 0x1a2a4a, pants: 0x1a1c24, hat: { k: 'cap', c: lc(0x1a2a4a), bc: null }, face: true, role: 'guard' });
+  return cz;
+}
+function intBankDesk(rec) {
+  const s = intSave(), bal = s.acct || 0;
+  Int.panel({ title: rec.name, sub: 'Your account', body: '<p>Money in the bank is safe: fines and the police only ever take what is in your wallet.</p><div class="vrec"><div><small>Wallet</small><b>' + money(save.money) + '</b></div><div><small>In the bank</small><b>' + money(bal) + '</b></div></div>',
+    btns: [['Deposit ' + money(Math.min(save.money, 1000)), () => intBankMove(Math.min(save.money, 1000), rec), false, save.money <= 0], ['Deposit all', () => intBankMove(save.money, rec), true, save.money <= 0], ['Withdraw ' + money(Math.min(bal, 1000)), () => intBankMove(-Math.min(bal, 1000), rec), false, bal <= 0], ['Withdraw all', () => intBankMove(-bal, rec), false, bal <= 0]] });
+}
+function intBankMove(n, rec) { const s = intSave(); n = Math.round(n); if (!n) return; save.money -= n; s.acct = (s.acct || 0) + n; writeSave(); Snd.beep(n > 0 ? 760 : 560, 0.06); intBankDesk(rec); }
+const intBankRooms = (big) => ({ main(K, rec, r) {
+  const cz = intBankHall(K, rec, r, big);
+  for (let k = -1; k <= 1; k++) K.act(k * 3.2 + 1.6, cz + 1.5, 1.4, 'Banking at window ' + (k + 2), () => intBankDesk(rec));
+} });
+INT_KINDS.bank = { name: 'Bank', rooms: intBankRooms(false) };
+INT_KINDS.reserve = { name: 'Bank', rooms: intBankRooms(true) };
+
+/* ---------- apartments ---------- */
+const INT_APT_BASE = [26000, 22000, 18000, 42000, 36000, 24000, 65000];
+function intAptPrice(rec, floor, u) { return Math.round((INT_APT_BASE[rec.ti % 7] * (1 + floor * 0.06) * (u % 3 === 2 ? 1.25 : 1)) / 500) * 500; }
+function intAptId(rec, floor, u) { return rec.key + '#' + floor + '-' + u; }
+INT_KINDS.apts = { name: 'Apartments', rooms: {
+  main(K, rec, r) {
+    const { W, D } = intDims(rec, 16, 13); K.shell({ W, D, H: 4, floor: 0x5a4a3a, wall: 0xe8e0d0, trim: 0x2a2a2a, lamp: 0xffe8c8, lightI: 0.8 });
+    K.counter(-2, K.z0 + 2.5, 2, K.z0 + 3.2, 0x3a2a20, 0xe8e4dc); intStaff(K, 0, K.z0 + 1.8, 0, 0x2a2a2a, { suit: true, role: 'concierge' });
+    for (let k = 0; k < 14; k++) K.box(K.x0 + 0.02, 0.8 + (k % 7) * 0.22, K.z0 + 2 + ((k / 7) | 0) * 0.5, K.x0 + 0.15, 0.98 + (k % 7) * 0.22, K.z0 + 2.45 + ((k / 7) | 0) * 0.5, 0xb8a060);
+    K.sofa(K.x0 + 1.5, 1.5, Math.PI / 2, 2.4, 0x6a4a3a); K.plant(K.x1 - 1, K.z1 - 1, 1.2); K.plant(K.x0 + 1, K.z1 - 1, 1.2); K.plant(K.x0 + 1, K.z0 + 1, 1.1); K.table(K.x0 + 2.6, 1.5, 0.7, 1.4, 0x2a2a2a, 0.42); K.lamp(K.x0 + 0.6, -0.4);
+    for (let k = 0; k < 3; k++) K.pic(K.x0 + 0.02, 1.9, K.z1 - 3 - k * 2.2, Math.PI / 2, 1.2, 0.9, [0x8a5a3a, 0x3a6a8a, 0x6a8a4a][k]); K.pic(K.x1 - 0.02, 1.9, K.z1 - 3, -Math.PI / 2, 1.6, 1.0, 0xa86a4a); K.person({ x: K.x0 + 1.6, z: 1.0, yaw: Math.PI / 2, kind: 'sit', phone: true }); K.rug(-2, 0, 2, K.z1 - 1, 0x2a3a5a, 0x3a4a6a); K.sign(rec.name.toUpperCase(), 0, 3.3, K.z0 + 0.03, Math.min(W - 2, 8), 0.7, 0, { fg: '#c8a050' });
+    for (let k = 0; k < 2; k++) { const z = -1 + k * 2.6; K.box(K.x1 - 0.12, 0, z - 0.8, K.x1, 2.5, z + 0.8, 0xa8acb2); K.box(K.x1 - 0.14, 0, z - 0.02, K.x1 - 0.12, 2.5, z + 0.02, 0x5a5e64); }
+    K.spawn('lift', K.x1 - 1.4, 0.3, -Math.PI / 2);
+    const floors = Math.max(3, Math.min(12, Math.round(rec.h / 3.4)));
+    K.act(K.x1 - 0.9, 0.3, 2.2, 'Take the lift', () => Int.panel({ title: 'Lift', sub: rec.name, body: '<div class="vsl"><span>Which floor?</span><div>' + Array.from({ length: floors - 1 }, (_, i) => { const f = i + 2, mine = Object.keys(intSave().apts).some((id) => id.indexOf(rec.key + '#' + f + '-') === 0); return '<button type="button" class="vstk' + (mine ? ' on' : '') + '" data-ia="' + f + '">' + f + (mine ? ' ★' : '') + '</button>'; }).join('') + '</div></div>', pick: (f) => { rec.floor = +f; Int.panel(null); Snd.beep(880, 0.05); Int.go('hall', 'lift'); }, btns: [] }), { wide: true });
+    K.act(0, K.z0 + 3.9, 1.6, () => (Object.keys(intSave().apts).some((id) => id.indexOf(rec.key) === 0) ? 'Ask the concierge about your flat' : 'Ask about flats for sale'), () => {
+      const mine = Object.keys(intSave().apts).filter((id) => id.indexOf(rec.key) === 0); Int.say(mine.length ? '“Welcome home. Flat ' + mine.map((id) => { const q = id.split('#')[1].split('-'); return q[0] + 'ABCDEF'[+q[1]]; }).join(', ') + ' is ready for you.”' : '“We have flats on every floor. Take the lift up and have a look: the prices are on the doors.”', 4);
+    });
+  },
+  hall(K, rec, r) {
+    const f = rec.floor || 2, L = 22; K.shell({ W: 4, D: L, H: 3, floor: 0x6a3a2a, wall: 0xe8dcc8, trim: 0x3a2a20, door: false, win: false, lamp: 0xffe8c8, lightI: 0.8 });
+    K.rug(-0.9, K.z0 + 0.5, 0.9, K.z1 - 0.5, 0x7a2a24, 0x8a3a2a); K.sign('FLOOR ' + f, 0, 2.3, K.z1 - 0.02, 1.4, 0.45, Math.PI, { fg: '#c8a050', bg: '#2a1a12' });
+    K.box(-1.0, 0, K.z1 - 0.12, 1.0, 2.5, K.z1, 0xa8acb2); K.spawn('lift', 0, K.z1 - 1.2, Math.PI);
+    K.act(0, K.z1 - 0.8, 1.6, 'Take the lift down', () => { Snd.beep(660, 0.05); Int.go('main', 'lift'); }, { wide: true });
+    for (let u = 0; u < 6; u++) {
+      const sx = u % 2 ? 1 : -1, z = K.z1 - 4 - ((u / 2) | 0) * 6, x = sx * 2, id = intAptId(rec, f, u), lab = f + 'ABCDEF'[u];
+      K.box(x - sx * 0.02, 0, z - 0.6, x, 2.3, z + 0.6, [0x5a3424, 0x2a3a4a][u & 1]); K.box(x - sx * 0.06, 1.0, z + 0.4, x - sx * 0.02, 1.08, z + 0.5, intGold); K.sign(lab, x - sx * 0.03, 2.5, z, 0.5, 0.3, -sx * Math.PI / 2, { fg: '#c8a050', bg: '#1a1a1a' });
+      K.spawn('u' + u, x - sx * 1.0, z, sx > 0 ? Math.PI / 2 : -Math.PI / 2);
+      K.act(x - sx * 0.5, z, 1.3, () => (intSave().apts[id] ? 'Go into flat ' + lab + ' (yours)' : 'Flat ' + lab + ' · for sale'), () => {
+        if (intSave().apts[id]) { rec.unit = u; Snd.door(); Int.go('flat', 'door'); return; }
+        const p = intAptPrice(rec, f, u), big = u % 3 === 2;
+        Int.panel({ title: 'Flat ' + lab + ' · ' + rec.name, sub: (big ? 'Two-bedroom' : 'One-bedroom') + ' · floor ' + f + ' · ' + rec.town, body: '<p>Yours to keep: sleep here to skip the night (it saves your game), raid the fridge, watch the news and change your clothes.' + (big ? ' Corner flat, extra bedroom, a bigger view.' : '') + '</p><div class="vrec"><div><small>Price</small><b>' + money(p) + '</b></div><div><small>Your wallet</small><b>' + money(save.money) + '</b></div><div><small>Flats owned</small><b>' + Object.keys(intSave().apts).length + '</b></div></div>',
+          btns: [['Buy for ' + money(p), () => { if (save.money < p) return; save.money -= p; intSave().apts[id] = { t: Date.now(), p }; intSave().rooms = Object.keys(intSave().apts).length; writeSave(); Snd.win(); Int.panel(null); UI.banner('NEW HOME', 'Flat ' + lab + ' · ' + rec.name); rec.unit = u; Int.go('flat', 'door'); }, true, save.money < p]] });
+      }, { wide: true });
+    }
+    K.person({ x: 0, z: K.z0 + 3, kind: 'walk', path: [[0, K.z0 + 3, 3], [0, K.z1 - 3, 2]] });
+  },
+  flat(K, rec, r) {
+    const u = rec.unit || 0, big = u % 3 === 2, W = big ? 14 : 11, D = big ? 11 : 9, wall = [0xf2ece0, 0xe0e8ec, 0xece4f0][u % 3];
+    K.shell({ W, D, H: 2.9, floor: 0xa8845a, wall, trim: 0xf2f2f2, lamp: 0xffe8c8, lightI: 0.85, exit: 'Back to the corridor', door: K.dx, noBackWin: false, winH: [0.5, 2.6] });
+    const ex = K.acts.find((a) => a.label === 'Back to the corridor'); if (ex) ex.fn = () => { Snd.door(); Int.go('hall', 'u' + u); };
+    K.ticks.length = 0;   /* (the corridor door is not the street) */
+    const mx = K.x0 + W * 0.55; K.wallZ(mx, K.z0, K.z1, [[K.z1 - 3, K.z1 - 2]], wall);
+    K.rug(K.x0 + 1, -1.5, mx - 1, 1.5, 0x3a4a6a, 0x4a5a7a); K.sofa((K.x0 + mx) / 2, 1.2, Math.PI, 2.4, 0x3a3a40); K.table((K.x0 + mx) / 2, 0, 1.2, 0.6, 0x2a2a2a, 0.42);
+    K.box((K.x0 + mx) / 2 - 1, 0, K.z0 + 0.1, (K.x0 + mx) / 2 + 1, 0.5, K.z0 + 0.5, 0x2a2a2a, true); K.tv((K.x0 + mx) / 2, 1.1, K.z0 + 0.35, 0, 1.6, 0x2a6ab8); K.lamp(K.x0 + 0.6, 1.5); K.plant(mx - 0.6, K.z1 - 0.7, 1);
+    K.counter(K.x0 + 0.1, K.z1 - 0.7, K.x0 + 2.6, K.z1 - 0.1, 0xf2f2f2, 0x3a3a3a, 0.92); K.fridge(K.x0 + 3.2, K.z1 - 0.45, Math.PI);
+    K.bed((mx + K.x1) / 2, K.z0 + 1.3, 0, [0x2a4a7a, 0x7a2a3a, 0x3a6a4a][u % 3], true); K.box(K.x1 - 0.7, 0, 0.5, K.x1 - 0.1, 2.1, 2.3, 0x6a4a34, true);
+    if (big) { K.wallX(K.z0 + 3.4, mx, K.x1, [[mx + 0.3, mx + 1.2]], wall); K.bed(K.x1 - 1.2, K.z1 - 1.6, Math.PI / 2, 0x6a6a8a, false); }
+    K.act((K.x0 + mx) / 2, 0.6, 1.6, 'Watch the news', () => Int.say(intNews(), 6));
+    K.act(K.x0 + 3.2, K.z1 - 1.3, 1.4, 'Raid the fridge', () => { intBuzz(3); Snd.beep(600, 0.05); Int.say('Leftover pizza. You feel ready to go.'); });
+    K.act(K.x1 - 1.2, 1.4, 1.5, 'Open the wardrobe (change clothes)', () => intWardrobe(rec, true));
+    K.act((mx + K.x1) / 2, K.z0 + 2.6, 1.8, () => (App.tod > 20 || App.tod < 6 ? 'Sleep until morning (saves the game)' : 'Sleep until evening (saves the game)'), () => {
+      const night = App.tod > 20 || App.tod < 6; Int.busy = { freeze: true, lock: 'Sleeping…', t: 0, hint: () => '<b>Zzz…</b>', tick(dt) { this.t += dt; if (this.t > 1.6) { Int.busy = null; App.tod = night ? 7.5 : 19.5; car.health = 100; intSave().nights = (intSave().nights || 0) + 1; writeSave(); UI.banner(night ? 'GOOD MORNING' : 'GOOD EVENING', 'Rested · car serviced · game saved'); } } };
+    });
+    K.spawn('door', K.dx, K.z1 - 1.2, Math.PI);
+  } } };
+function intNews() {
+  const L = ['Police are looking for a speeding driver seen on the coast road.', 'Island Reserve Bank posts record profits; security tightened at the vault.', 'Fairhaven traffic snarled by a parade of freight trains carrying gold.', 'Surf is up at the beaches this week: lifeguards urge caution.', 'The county jail says it has room for “anyone who wants to try us”.', 'A dealership reports a rush on hypercars after a celebrity sighting.', 'Weather: mist over Lakeshore in the morning, clear by noon.'];
+  return '📺 ' + L[(Math.floor(App.time / 7) + L.length) % L.length];
+}
+/* ---------- clothes: buy (in a shop) or change into what you own (the wardrobe) ---------- */
+function intWardrobe(rec, own) {
+  const cats = ['hat', 'glasses', 'top', 'bottom', 'shoes'], s = cosSave(), out = s.out, reg = rec ? REG[rec.ti % REG.length].key : null;
+  const items = COS.items.filter((i) => cats.includes(i.cat) && (own ? s.own[i.id] : (!i.reg || i.reg === reg)));
+  const row = (i) => { const has = !!s.own[i.id], on = out[i.cat] === i.id, sw = i.sw != null ? '<i style="display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;background:' + _hexCss(i.sw) + '"></i>' : '';
+    return '<button type="button" class="vstk' + (on ? ' on' : '') + '" data-ia="' + i.id + '"' + (!has && save.money < i.price ? ' disabled' : '') + '>' + sw + esc(i.name) + ' · ' + (on ? 'Wearing' : has ? 'Wear' : money(i.price)) + '</button>'; };
+  const body = cats.map((c) => { const L = items.filter((i) => i.cat === c); return L.length ? '<div class="vsl"><span>' + esc((COS.cats.find((q) => q[0] === c) || [c, c])[1]) + '</span><div>' + L.map(row).join('') + (out[c] ? '<button type="button" class="vstk" data-ia="off:' + c + '">Take off</button>' : '') + '</div></div>' : ''; }).join('') || '<p>Nothing here yet. The clothing shops in town sell outfits.</p>';
+  Int.panel({ title: own ? 'Your wardrobe' : rec.name, sub: own ? 'Change into anything you own' : 'Try it on: press C to see yourself · ' + money(save.money), body, btns: [], pick: (id) => {
+    if (id.indexOf('off:') === 0) { out[id.slice(4)] = null; }
+    else { const i = COS.by[id]; if (!i) return; if (!s.own[id]) { if (save.money < i.price) return; save.money -= i.price; s.own[id] = 1; Snd.win(); } out[i.cat] = out[i.cat] === id ? null : id; }
+    writeSave(); if (Foot.ped) Foot.ped.app = footApp(); if (Int.ped && Int.ped.hu) Int.mkPed(); Snd.beep(700, 0.04); intWardrobe(rec, own);
+  } });
+}
+INT_KINDS.clothes = { name: 'Clothing', rooms: { main(K, rec, r) {
+  const { W, D } = intDims(rec, 16, 13), R = REG[rec.ti % 7]; K.shell({ W, D, floor: 0xd8d0c4, wall: 0xf4f0ea, trim: 0x1a1a1a, lamp: 0xfff8f0, lightI: 1 });
+  const pal = [0xd82a4a, 0x1a1a1a, 0xf2f2f2, 0x2a4a8a, 0xc8a050, 0x3a6a4a, 0xd8a8b8, 0x8a5a3a, R.col];
+  const pts = []; for (let z = K.z0 + 3; z < K.z1 - 3; z += 2.6) for (const x of [K.x0 + 2.5, 0, K.x1 - 2.5]) if (Math.abs(x) > 0.1 || z > K.z0 + 6) { K.rack(x - 1.2, z, x + 1.2, r, pal); pts.push([x, z + 1.2]); }
+  K.shelf(K.x0 + 0.05, K.z0 + 1, K.x0 + 0.5, K.z1 - 2, 2.2, 5, r, pal, 0xf2f2f2);
+  for (let k = 0; k < 3; k++) { const x = -2 + k * 2; K.box(x - 0.35, 0, K.z0 + 1.2, x + 0.35, 0.15, K.z0 + 1.9, 0xf2f2f2, true); K.person({ x, z: K.z0 + 1.55, y: 0.15, yaw: 0, app: { skin: lc(0xe8e4dc), hair: lc(0xe8e4dc), hat: null }, shirt: pal[(k * 3) % pal.length], pants: pal[(k * 3 + 1) % pal.length] }); }
+  K.glow(K.x1 - 0.02, 0.3, -1, K.x1 - 0.01, 2.2, 1, 0xc8d4dc, 0.9); K.sign('FITTING ROOMS', K.x1 - 0.03, 2.5, 2.4, 2.2, 0.4, -Math.PI / 2, { fg: '#1a1a1a', bg: '#f4f0ea' });
+  for (let k = 0; k < 2; k++) K.box(K.x1 - 1.6, 0, 2 + k * 1.4, K.x1 - 0.02, 2.2, 2.05 + k * 1.4, 0x1a1a1a, true);
+  K.counter(K.x1 - 4.5, K.z1 - 3, K.x1 - 1.2, K.z1 - 2.3, 0x1a1a1a, 0xf2f2f2); intStaff(K, K.x1 - 2.8, K.z1 - 3.6, 0, 0x1a1a1a, { suit: true });
+  K.act(K.x1 - 2.8, K.z1 - 1.6, 1.8, 'Browse the collection', () => intWardrobe(rec, false), { wide: true });
+  K.act(K.x1 - 0.8, 0, 1.6, 'Look in the mirror', () => { Int.view(true); Int.yaw = Math.PI / 2; Int.say('Looking good.'); });
+  intShoppers(K, r, 3, pts);
+} } };
+
+/* ---------- gym ---------- */
+function intWorkout(name, gain, cost) {
+  const s = intSave(); if (!s.gymMem && cost) { if (save.money < cost) { Int.say('A gym pass is ' + money(cost)); return; } save.money -= cost; s.gymMem = 1; writeSave(); Int.say('Gym pass bought · ' + money(cost) + ' · train any time, in any gym', 3); }
+  const B = Int.busy = { freeze: true, t: 0, u: 0, dir: 1, reps: 0, miss: 0, n: 10, zone: [0.62, 0.86], spd: 0.75 + Math.min(0.9, (s.fit || 0) / 90), done: 0,
+    hint: () => (TouchIn.on ? '<em>USE</em>' : '<em>E</em> / <em>Space</em>') + ' when the bar is in the green · ' + B.reps + ' / ' + B.n + ' reps · <em>Esc</em> stop',
+    hud: () => '<div class="ibar"><small>' + esc(name) + ' · fitness ' + Math.round(intSave().fit || 0) + '</small><div class="ibt"><i class="iz" style="left:' + (B.zone[0] * 100) + '%;width:' + ((B.zone[1] - B.zone[0]) * 100) + '%"></i><i class="ik" style="left:' + (B.u * 100) + '%"></i></div></div>',
+    tick(dt) { if (B.done) { B.done -= dt; if (B.done <= 0) Int.busy = null; return; } B.u += B.dir * B.spd * dt; if (B.u > 1) { B.u = 1; B.dir = -1; } else if (B.u < 0) { B.u = 0; B.dir = 1; } },
+    press() { if (B.done) return; if (B.u >= B.zone[0] && B.u <= B.zone[1]) { B.reps++; Snd.beep(880, 0.04); } else { B.miss++; Snd.beep(220, 0.05); } B.zone = [0.15 + Math.random() * 0.55, 0]; B.zone[1] = B.zone[0] + 0.24 - Math.min(0.1, (intSave().fit || 0) / 600); if (B.reps + B.miss >= B.n) B.finish(); },
+    finish() { const f = intSave(), g = B.reps * gain * (1 - (f.fit || 0) / 140); f.fit = Math.min(100, (f.fit || 0) + g); f.gym = (f.gym || 0) + 1; writeSave(); B.done = 2.2; Int.say(B.reps + ' good reps · fitness ' + Math.round(f.fit) + ' (+' + g.toFixed(1) + ') · you run and swim faster the fitter you are', 3.5); Snd.win(); },
+    cancel() { Int.busy = null; } };
+}
+INT_KINDS.gym = { name: 'Gym', rooms: { main(K, rec, r) {
+  const { W, D } = intDims(rec, 20, 16); K.shell({ W, D, H: 4.5, floor: 0x2a2c30, wall: 0xd8d8dc, trim: 0xff6a1a, lamp: 0xf4f8ff, lightI: 1 });
+  K.rug(K.x0 + 0.5, K.z0 + 0.5, K.x1 - 0.5, K.z0 + 6, 0x1a1a1a); K.glow(K.x0 + 0.5, 0.4, K.z0 + 0.02, K.x1 - 0.5, 2.4, K.z0 + 0.03, 0xb8c4cc, 0.8);
+  /* free weights: a dumbbell rack, benches, a squat rack */
+  K.box(K.x0 + 1, 0, K.z0 + 0.6, K.x0 + 4, 0.8, K.z0 + 1.1, 0x3a3a3a, true); for (let k = 0; k < 10; k++) K.cyl(K.x0 + 1.15 + k * 0.28, 0.8, K.z0 + 0.85, 0.08, 0.12, 0x1a1a1a);
+  const st = [[K.x0 + 2, K.z0 + 3, 'press'], [K.x0 + 5, K.z0 + 3, 'curl'], [K.x0 + 8, K.z0 + 3.2, 'squat']];
+  for (const [x, z, m] of st) { if (m === 'squat') { K.box(x - 1, 0, z - 0.6, x - 0.9, 2.4, z - 0.5, 0x1a1a1a, true); K.box(x + 0.9, 0, z - 0.6, x + 1, 2.4, z - 0.5, 0x1a1a1a, true); K.box(x - 1.2, 1.55, z - 0.6, x + 1.2, 1.6, z - 0.5, 0xb0b0b0); } else if (m === 'press') { K.box(x - 0.2, 0, z - 0.8, x + 0.2, 0.45, z + 0.8, 0x1a1a1a, true); } K.person({ x, z: m === 'squat' ? z : z + 0.4, yaw: 0, kind: 'lift', move: m, sport: [0xff6a1a, 0x2a8ad8, 0x3ab04a][st.findIndex((q) => q[2] === m)] }); }
+  /* treadmills along the window wall, runners on them */
+  for (let k = 0; k < 4; k++) { const x = K.x1 - 1.4, z = K.z0 + 2 + k * 2.2; K.box(x - 0.4, 0, z - 0.9, x + 0.4, 0.2, z + 0.9, 0x2a2a2a); K.col(x - 0.4, z - 1.0, x + 0.4, z + 0.9).h = 1.3; K.box(x - 0.4, 0, z - 1.0, x + 0.4, 1.3, z - 0.9, 0x3a3a3a); K.glow(x - 0.25, 1.2, z - 0.89, x + 0.25, 1.35, z - 0.88, 0x3ad8ff, 1.2); if (k < 2) { const n = K.person({ x, z, y: 0.2, yaw: Math.PI, sport: [0xd82a4a, 0x8a3ad8][k] }); if (n) n.kind = 'treadmill'; } }
+  /* a punch bag */
+  K.cyl(K.x0 + 2, 0.4, K.z1 - 3, 0.3, 1.2, 0x8a1a1a, true); K.cyl(K.x0 + 2, 1.6, K.z1 - 3, 0.02, 1.6, 0x9a9a9a);
+  for (let k = 0; k < 5; k++) { const x = 1.6 + k * 1.3, z = 1.5; K.box(x - 0.15, 0, z - 0.5, x + 0.15, 0.7, z + 0.5, 0x2a2a2a, true); K.box(x - 0.2, 0.7, z + 0.2, x + 0.2, 0.78, z + 0.5, 0x1a1a1a); K.box(x - 0.05, 0.7, z - 0.55, x + 0.05, 1.15, z - 0.45, 0x5a5a5a); K.cyl(x, 0.15, z - 0.2, 0.25, 0.05, 0xff6a1a, false, 0.05); if (k % 2 === 0) K.person({ x, z: z + 0.25, y: 0.1, yaw: Math.PI, kind: 'treadmill', sport: [0x2a8ad8, 0xd8c81e, 0x3ab04a][k / 2] }); }
+  for (let k = 0; k < 8; k++) K.cyl(K.x0 + 1.2 + k * 0.5, 0, K.z1 - 1.0, 0.12, 0.3, 0x1a1a1a);
+  K.rug(K.x0 + 4, K.z1 - 4.5, K.x0 + 9, K.z1 - 2, 0x2a6a8a); K.person({ x: K.x0 + 6.5, z: K.z1 - 3.2, yaw: 0, kind: 'lift', move: 'squat', sport: 0xd82a8a, fem: true });
+  K.counter(K.x1 - 6, K.z1 - 3, K.x1 - 3, K.z1 - 2.3, 0xff6a1a, 0x1a1a1a); intStaff(K, K.x1 - 4.5, K.z1 - 3.6, 0, 0xff6a1a, { sport: 0xff6a1a });
+  K.sign(rec.name.toUpperCase(), 0, 3.6, K.z0 + 0.04, Math.min(W - 3, 9), 0.8, 0, { fg: '#ff6a1a' });
+  const pass = 50;
+  K.act(K.x0 + 3.4, K.z0 + 3.6, 1.5, 'Bench press', () => intWorkout('Bench press', 0.55, pass), { cost: intSave().gymMem ? 0 : pass });
+  K.act(K.x0 + 6.5, K.z0 + 3.6, 1.5, 'Dumbbell curls', () => intWorkout('Curls', 0.45, pass), { cost: intSave().gymMem ? 0 : pass });
+  K.act(K.x1 - 1.4, K.z0 + 2 + 2 * 2.2 + 1.3, 1.5, 'Run on the treadmill', () => intWorkout('Treadmill', 0.5, pass), { cost: intSave().gymMem ? 0 : pass });
+  K.act(K.x0 + 2, K.z1 - 2.2, 1.5, 'Hit the punch bag', () => intWorkout('Punch bag', 0.5, pass), { cost: intSave().gymMem ? 0 : pass });
+  K.act(K.x1 - 4.5, K.z1 - 1.6, 1.6, () => (intSave().gymMem ? 'Your gym pass · fitness ' + Math.round(intSave().fit || 0) : 'Buy a gym pass'), () => { if (intSave().gymMem) { Int.say('Fitness ' + Math.round(intSave().fit || 0) + ' / 100 · ' + (intSave().gym || 0) + ' workouts', 3); return; } intBuy(pass, 'a gym pass', () => { intSave().gymMem = 1; }, 'Gym pass. Every gym on the island is yours to use.'); });
+} }, key(code) { if (Int.busy && Int.busy.press && (code === 'Space')) Int.busy.press(); } };
+
+/* ---------- indoor pool ---------- */
+INT_KINDS.pool = { name: 'Indoor pool', rooms: { main(K, rec, r) {
+  const { W, D } = intDims(rec, 30, 24), px0 = -W / 2 + 2.5, px1 = W / 2 - 2.5, pz0 = -D / 2 + 2.5, pz1 = Math.min(D / 2 - 5, pz0 + 25), wy = -0.25, bot = -1.7;
+  K.shell({ W, D, H: 7, floor: 0xe8f0f2, wall: 0xdaeef2, trim: 0x2a8ab0, lamp: 0xf4fbff, lightI: 1, sky: 0xe8f8ff, winH: [1.5, 6], hole: [px0, pz0, px1, pz1] });
+  /* the basin: blue tile walls down to the floor, lane ropes, the water */
+  K.box(px0, bot, pz0, px1, bot + 0.02, pz1, 0x3ab0d8); for (const [a, b, c, d] of [[px0, pz0, px1, pz0 + 0.05], [px0, pz1 - 0.05, px1, pz1], [px0, pz0, px0 + 0.05, pz1], [px1 - 0.05, pz0, px1, pz1]]) K.box(a, bot, b, c, 0, d, 0x5ac0e0);
+  K.box(px0 - 0.5, -0.2, pz0 - 0.5, px1 + 0.5, 0.0, pz0, 0xffffff); K.box(px0 - 0.5, -0.2, pz1, px1 + 0.5, 0.0, pz1 + 0.5, 0xffffff);
+  K.water(px0, pz0, px1, pz1, wy, 0x2a9ad0); const lanes = Math.max(3, Math.floor((px1 - px0) / 2.5));
+  for (let k = 1; k < lanes; k++) { const x = px0 + k * (px1 - px0) / lanes; for (let z = pz0; z < pz1; z += 0.5) K.cyl(x, wy - 0.05, z, 0.06, 0.08, (z * 2 | 0) % 2 ? 0xd82a2a : 0xf2f2f2); K.box(x - 0.15, bot, pz0, x + 0.15, bot + 0.025, pz1, 0x1a4a7a); }
+  /* a ladder, a diving board, a lifeguard's chair, benches */
+  K.box(px1 - 0.6, -0.1, pz1 - 0.1, px1 + 1.6, 0.55, pz1 + 0.8, 0x2a8ab0, true); K.box(px1 - 0.4, 0.55, pz1 - 2.2, px1 + 0.2, 0.62, pz1 + 0.5, 0xf2f2f2);
+  K.box(K.x0 + 0.8, 0, (pz0 + pz1) / 2 - 0.4, K.x0 + 1.6, 1.6, (pz0 + pz1) / 2 + 0.4, 0xd82a2a, true);
+  for (let k = 0; k < 4; k++) K.box(K.x1 - 1.6 + 0.0, 0, pz0 + 2 + k * 3, K.x1 - 0.6, 0.45, pz0 + 3.6 + k * 3, 0x2a8ab0, true);
+  K.sign(rec.name.toUpperCase(), 0, 5.6, K.z0 + 0.04, Math.min(W - 4, 12), 1, 0, { fg: '#2a8ab0' });
+  if (/Spa/.test(rec.name)) { K.cyl(K.x0 + 3, -0.1, K.z1 - 3, 1.6, 0.6, 0xe8e8e8, true); K.glow(K.x0 + 1.6, 0.45, K.z1 - 4.4, K.x0 + 4.4, 0.46, K.z1 - 1.6, 0x6ad8ff, 0.9); }
+  K.swim = { at(x, z) { return x > px0 + 0.1 && x < px1 - 0.1 && z > pz0 + 0.1 && z < pz1 - 0.1 ? { y: -0.32 } : null; } };
+  /* swimmers doing laps, a lifeguard, people by the pool */
+  for (let k = 0; k < Math.min(lanes, 4); k++) { const x = px0 + (k + 0.5) * (px1 - px0) / lanes; const n = K.person({ x, z: pz0 + 1, kind: 'walk', swim: true, swimC: [0xd82a4a, 0x1a1a1a, 0x2a6ad8, 0xf2c81e][k], vt: 0.9 + k * 0.1, path: [[x, pz0 + 1, 0.5], [x, pz1 - 1, 0.5]] }); if (n) n.after = (q, h) => { h.root.position.y = -0.62 + 0.04 * Math.sin(App.time * 3 + q.seed); const b = h.b, u = Math.sin(App.time * 4 + q.seed); h.root.rotation.order = 'YXZ'; h.root.rotation.x = 1.2; b.armL.rotation.set(-1.6 - 1.4 * u, 0, -0.2); b.armR.rotation.set(-1.6 + 1.4 * u, 0, 0.2); }; }
+  K.person({ x: K.x0 + 1.2, z: (pz0 + pz1) / 2, y: 1.6, yaw: Math.PI / 2, kind: 'sit', swim: true, swimC: 0xd82a2a, face: true });
+  intSeat(K, K.x1 - 1.1, pz0 + 2.8, -Math.PI / 2, { swim: true, sy: 0.0 }); intSeat(K, K.x1 - 1.1, pz0 + 5.8, -Math.PI / 2, { swim: true, sy: 0.0 });
+  const lapK = { last: null, m: 0 };
+  K.tick((dt) => { if (!K.swim.at(Int.x, Int.z)) { lapK.last = null; return; } if (lapK.last) lapK.m += Math.hypot(Int.x - lapK.last[0], Int.z - lapK.last[1]); lapK.last = [Int.x, Int.z]; if (lapK.m > 50) { lapK.m -= 50; const s = intSave(); s.swims = (s.swims || 0) + 1; s.fit = Math.min(100, (s.fit || 0) + 0.8 * (1 - (s.fit || 0) / 140)); writeSave(); Int.say('50 m swum · fitness ' + Math.round(s.fit), 2.4); Snd.beep(820, 0.05); } });
+  K.counter(K.x1 - 5, K.z1 - 2.6, K.x1 - 1.5, K.z1 - 1.9, 0x2a8ab0); intStaff(K, K.x1 - 3.2, K.z1 - 3.2, 0, 0x2a8ab0);
+  K.act(K.x1 - 3.2, K.z1 - 1.3, 1.6, 'Swim laps: walk into the water (every 50 m makes you fitter)', () => Int.say('Walk into the pool. Every 50 m you swim makes you a little fitter.', 3), { wide: true });
+} }, hud() { const s = Int.swim && Int.swim.at(Int.x, Int.z); return s ? '<div class="ibar"><small>Swimming · ' + (intSave().swims || 0) + ' × 50 m · fitness ' + Math.round(intSave().fit || 0) + '</small></div>' : ''; } };
+
+/* ---------- restaurants (one menu per town) ---------- */
+const INT_RESTO = [
+  { floor: 0x6a5a48, wall: 0x2a4a6a, seat: 0xe8e2d4, top: 0x8a6a4a, staff: 0x2a4a6a, counter: 0x2a4a6a, trim: 0xf2c81e, menu: 'CRAB · CHOWDER · FISH & CHIPS', menuBg: '#1a2a3a', price: 18, meal: 'a bowl of chowder and fish and chips' },
+  { floor: 0xa86a3a, tiles: 0x8a4a2a, wall: 0xe8c890, seat: 0xc8402a, top: 0xe8d8b8, staff: 0xc8402a, counter: 0x2a8a8a, trim: 0x2a8a8a, menu: 'TACOS · ENCHILADAS · HORCHATA', menuBg: '#2a8a8a', price: 14, meal: 'three tacos and a horchata' },
+  { floor: 0x8a6a4a, wall: 0xf0e8d8, seat: 0x6a4a2a, top: 0xa8845a, staff: 0x4a6a3a, counter: 0x6a4a2a, trim: 0x4a6a3a, menu: 'FARM PLATES · PIES · CIDER', menuBg: '#4a6a3a', price: 16, meal: 'a farm plate and apple pie' },
+  { floor: 0xd8c8a0, wall: 0x8ad8c8, seat: 0xff7a6a, top: 0xc8a070, staff: 0xff7a6a, counter: 0x8a5a2a, trim: 0x2fc4c0, menu: 'POKE · GRILLED FISH · SMOOTHIES', menuBg: '#ff7a6a', price: 17, meal: 'a poke bowl and a mango smoothie' },
+  { floor: 0x5a3a24, wall: 0xd8c0a0, seat: 0xa8302a, top: 0x6a4a2a, staff: 0xa8302a, counter: 0x5a3a24, trim: 0xa8302a, menu: 'CHEESE FONDUE · RÖSTI · COCOA', menuBg: '#a8302a', price: 22, meal: 'cheese fondue and hot cocoa' },
+  { floor: 0x6a5a4a, wall: 0xd8d0b8, seat: 0x3a5a3a, top: 0x8a6a4a, staff: 0x3a5a3a, counter: 0x4a3a2a, trim: 0x3a5a3a, menu: 'GRILLED TROUT · BURGERS · LEMONADE', menuBg: '#3a5a3a', price: 15, meal: 'grilled trout and lemonade' },
+  { floor: 0x2a2a2a, wall: 0x1a1a1e, seat: 0x2a2a2e, top: 0xd8c8a8, staff: 0x1a1a1a, counter: 0xd8c8a8, trim: 0xc8a050, menu: 'NIGIRI · RAMEN · MATCHA', menuFg: '#c8a050', menuBg: '#1a1a1a', price: 32, meal: 'the chef’s nigiri set', lamp: 0xffd8a0, lightI: 0.65 }
+];
+INT_KINDS.resto = { name: 'Restaurant', rooms: { main(K, rec, r) { const th = Object.assign({}, INT_RESTO[rec.ti % INT_RESTO.length]); if (/Lumi/.test(rec.name)) Object.assign(th, { menu: 'STEAK FRITES · SOUFFLÉ · WINE LIST', meal: 'steak frites and a soufflé', price: 38, seat: 0x7a1a2a }); intDiner(K, rec, r, th); K.sign(rec.name.toUpperCase(), 0, 3.25, K.z0 + 0.03, 6, 0.5, 0, { fg: _hexCss(th.trim || 0xffffff) }); K.person({ x: 0, z: K.z0 + 5, kind: 'walk', shirt: th.staff, pants: 0x1a1a1a, path: [[0, K.z0 + 5, 2], [K.x0 + 3, K.z1 - 3, 2], [K.x1 - 3, K.z1 - 4, 2]] }); } } };
+
+/* ---------- car dealership: the only place to buy a car ---------- */
+const INT_DEALER = [{ max: 6000, cls: null, col: 0x2a6ad8 }, { max: 1e9, cls: /truck|off|buggy|4x4|rally|pickup|suv|van/i, col: 0xd86a1a }, { min: 4000, max: 1e9, cls: null, col: 0xc8a050 }];
+function intDealerCars(rec) {
+  const all = CARS.filter((d) => !d.stolen && !d.prize && d.price > 0), t = rec.ti === 1 ? INT_DEALER[1] : rec.ti === 6 ? INT_DEALER[2] : INT_DEALER[0];
+  let L = all.filter((d) => d.price <= t.max && (!t.min || d.price >= t.min) && (!t.cls || t.cls.test(d.cls + ' ' + d.name)));
+  if (L.length < 4) L = all.slice().sort((a, b) => a.price - b.price); return L;
+}
+function intCarPanel(d, rec) {
+  const own = !!save.owned[d.id], bar = (l, v) => '<div class="cs"><span>' + l + '</span><i><b style="width:' + v * 10 + '%"></b></i></div>';
+  Int.panel({ title: d.name, sub: d.cls + ' · ' + rec.name, body: '<p>' + esc(d.blurb) + '</p><div class="cstats">' + bar('Speed', d.stats.spd) + bar('Accel', d.stats.acc) + bar('Handling', d.stats.hdl) + bar('Off-road', d.stats.off) + '</div><div class="vrec"><div><small>Price</small><b>' + money(d.price) + '</b></div><div><small>Wallet</small><b>' + money(save.money) + '</b></div>' + (intSave().acct ? '<div><small>Bank</small><b>' + money(intSave().acct) + '</b></div>' : '') + '</div>',
+    btns: own ? [['You own this one', null, false, true]] : [['Buy for ' + money(d.price), () => intBuyCar(d, rec), true, save.money < d.price]] });
+}
+function intBuyCar(d, rec) {
+  if (save.owned[d.id] || save.money < d.price) return; save.money -= d.price; save.owned[d.id] = true; writeSave(); Snd.win(); Int.panel(null);
+  const s = intSave(); s.delivery = { id: d.id, key: rec.key };
+  UI.banner('SOLD', 'The ' + d.name + ' is yours · it is waiting outside'); Int.say('The keys are yours. Your new ' + d.name + ' is parked out front.', 4);
+}
+INT_KINDS.dealer = { name: 'Car dealership', rooms: { main(K, rec, r) {
+  const { W, D } = intDims(rec, 26, 22), col = (rec.ti === 1 ? INT_DEALER[1] : rec.ti === 6 ? INT_DEALER[2] : INT_DEALER[0]).col;
+  K.shell({ W, D, H: 6, floor: 0xf2f2f2, tiles: 0xd8d8d8, wall: 0xeef0f2, trim: 0x1a1a1a, lamp: 0xffffff, lightI: 1.1, winH: [0.3, 5.6], hemi: 0.9 });
+  K.sign(rec.name.toUpperCase(), 0, 4.8, K.z0 + 0.04, Math.min(W - 4, 12), 1, 0, { fg: _hexCss(col) });
+  const cars = intDealerCars(rec), spots = []; for (let z = K.z0 + 4; z < K.z1 - 4; z += 6.2) for (const x of [K.x0 + 4.5, 0, K.x1 - 4.5]) spots.push([x, z]);
+  K.extra = K.extra || [];
+  spots.slice(0, Math.min(spots.length, 7)).forEach((p, i) => {
+    const d = cars[i % cars.length], m = buildCarModel(d, PAINTS[(i * 3 + rec.seed) % PAINTS.length], { studio: true, static: true }); m.position.set(p[0], 0.18, p[1]); m.rotation.y = 0.6 + i * 0.9; K.sc.add(m); K.extra.push(() => { K.sc.remove(m); disposeCar(m); });
+    K.cyl(p[0], 0, p[1], 3.1, 0.18, 0xd8d8dc); K.glow(p[0] - 2.9, 0.181, p[1] - 0.02, p[0] + 2.9, 0.182, p[1] + 0.02, col, 1.4); K.col(p[0] - 2.2, p[1] - 2.2, p[0] + 2.2, p[1] + 2.2);
+    K.sign(d.name + '  ·  ' + money(d.price), p[0], 2.9, p[1], 3.2, 0.5, 0, { fg: '#ffffff', bg: '#16181c' }).rotation.y = 0;
+    K.act(p[0], p[1] + 2.8, 1.8, () => (save.owned[d.id] ? 'The ' + d.name + ' (yours)' : 'Look at the ' + d.name), () => intCarPanel(d, rec), { cost: 0 });
+    K.act(p[0], p[1] - 2.8, 1.8, () => 'Look at the ' + d.name, () => intCarPanel(d, rec));
+  });
+  K.counter(K.x1 - 5, K.z1 - 3.4, K.x1 - 1.4, K.z1 - 2.6, 0x1a1a1a, 0xf2f2f2); K.desk(K.x1 - 3.2, K.z1 - 3.0, 0); intStaff(K, K.x1 - 3.2, K.z1 - 3.9, 0, 0x1a1a1a, { suit: true });
+  K.person({ x: -2, z: K.z0 + 7, kind: 'walk', suit: true, shirt: 0x2a2a3a, pants: 0x2a2a3a, path: spots.slice(0, 4).map((p) => [p[0] + 2.6, p[1] + 2.6, 4]) });
+  K.act(K.x1 - 3.2, K.z1 - 1.8, 1.8, 'Talk to the salesperson (the full catalogue)', () => Int.panel({ title: rec.name, sub: 'Every car we can get you · ' + money(save.money), body: '<div class="vsl"><div>' + CARS.filter((d) => !d.stolen && !d.prize && d.price > 0).sort((a, b) => a.price - b.price).map((d) => '<button type="button" class="vstk' + (save.owned[d.id] ? ' on' : '') + '" data-ia="' + d.id + '">' + esc(d.name) + ' · ' + (save.owned[d.id] ? 'owned' : money(d.price)) + '</button>').join('') + '</div></div>', btns: [], pick: (id) => intCarPanel(CAR_BY_ID[id], rec) }), { wide: true });
+  intShoppers(K, r, 2, spots.map((p) => [p[0] - 2.8, p[1]]));
+} }, leave(rec) {
+  const s = intSave(), dl = s.delivery; if (!dl || dl.key !== rec.key) return;
+  const d = rec.door, x = d.ox + d.nz * 0 + 4.5, z = d.oz + d.nz * 4; loadAround(x, z, 6); const yaw = d.nz > 0 ? Math.PI / 2 : -Math.PI / 2;
+  if (App.setCar(dl.id)) { s.delivery = null; spawnAt(x, z, yaw); car.health = 100; }
+} };
+
+/* ---------- the county jail ---------- */
+const Jail = { on: false, hrs: 0, left: 0, t: 0, work: 0 };
+Jail.rec = function () { Bld.prep(); const S = Bld.sites.find((q) => q.kind === 'jail'); if (!S) return null; let rec = Bld.lots.get(S.key); if (!rec) { rec = { key: S.key, kind: 'jail', name: S.name, sub: BLD_SUB.jail, seed: 77, ti: S.ti, tid: S.T.id, town: S.T.name, reg: 'city', x0: S.x - 12, z0: S.z - 26, x1: S.x + 12, z1: S.z - 2, y: S.T.baseH, h: 16, cat: 'mid', W: 24, D: 24, special: true, door: { x: S.x, z: S.z - 1, nx: 0, nz: S.b ? 1 : -1, ox: S.x, oz: S.z + (S.b ? 0.4 : -0.4) } }; if (!S.b) { rec.z0 = S.z + 2; rec.z1 = S.z + 26; rec.door.z = S.z + 1; } } return rec; };
+/* do time: hours of game time, passed at about ten real seconds an hour (sleeping skips the rest) */
+Jail.serve = function (hrs, why) {
+  const rec = Jail.rec(); if (!rec) return false;
+  Jail.on = true; Jail.hrs = hrs; Jail.left = hrs; Jail.t = 0; Jail.why = why || ''; Int.hook = { allowHeat: true, left: () => Jail.release() };
+  if (Foot.on) { Foot.on = false; UI.footMode(false); }
+  const ok = Int.enter(rec, 'cells'); if (!ok) { Jail.on = false; Int.hook = null; return false; }
+  intSave().jail = (intSave().jail || 0) + 1; writeSave(); return true;
+};
+Jail.release = function () {
+  Jail.on = false; const rec = Int.rec || Jail.rec(), d = rec.door; loadAround(d.ox, d.oz, 8);
+  /* the impound lot gives you your car back by the door */
+  const cx = d.ox + 5, cz = d.oz + d.nz * 5; spawnAt(cx, cz, d.nz > 0 ? 0 : Math.PI); car.health = Math.max(car.health, 60);
+  if (!Foot.ped) Foot.ped = footNewPed(); Foot.ped.app = footApp(); Foot.on = true; Foot.x = d.ox; Foot.z = d.oz; groundAt(d.ox, d.oz, _fg); Foot.y = _fg.h; Foot.vx = Foot.vz = Foot.vy = 0; Foot.state = 'walk'; Foot.yaw = d.nz > 0 ? 0 : Math.PI; UI.footMode(true); syncPl();
+  UI.banner('RELEASED', 'Time served · your car is by the door');
+};
+INT_KINDS.jail = { name: 'County jail', rooms: {
+  main(K, rec, r) {   /* the police front desk: open to visitors */
+    const { W, D } = intDims(rec, 16, 13); K.shell({ W, D, floor: 0x8a8c90, tiles: 0x7a7c80, wall: 0xc8ccd0, trim: 0x1a2a4a, lamp: 0xf4f8ff, lightI: 0.95 });
+    K.counter(-3, K.z0 + 3, 3, K.z0 + 3.8, 0x1a2a4a, 0xd8d8d8, 1.15); K.glass(-3, 1.15, K.z0 + 3.3, 3, 2.4, K.z0 + 3.35); intStaff(K, 0, K.z0 + 2.3, 0, 0x1a2a4a, { hat: { k: 'cap', c: lc(0x1a2a4a), bc: null }, role: 'cop' });
+    K.sign('ISLAND COUNTY POLICE', 0, 3.0, K.z0 + 0.03, 6, 0.6, 0, { fg: '#d8d8d8', bg: '#1a2a4a' });
+    for (let k = 0; k < 5; k++) K.pic(K.x0 + 0.02, 1.7, K.z0 + 2 + k * 1.1, Math.PI / 2, 0.6, 0.8, 0xe8e0c8);
+    K.sign('WANTED', K.x0 + 0.04, 2.35, K.z0 + 4.2, 2.4, 0.35, Math.PI / 2, { fg: '#c8302a', bg: '#e8e0c8' });
+    for (let k = 0; k < 4; k++) K.chair(K.x1 - 1, K.z1 - 2 - k * 0.8, -Math.PI / 2, 0x3a3c40); intSeat(K, K.x1 - 1, K.z1 - 3.6, -Math.PI / 2, { phone: true });
+    K.box(K.x0 + 0.6, 0, -1, K.x0 + 1.1, 0.45, 2.5, 0x6a6c70, true); K.box(-0.5, 0, K.z0 + 6, 0.5, 2.2, K.z0 + 6.15, 0x9a9aa0, true); K.plant(K.x0 + 1, K.z1 - 1, 1);
+    K.box(K.x0 + 4, 0, K.z0, K.x0 + 6, 2.4, K.z0 + 0.1, 0x5a5c60); K.sign('CELLS · STAFF ONLY', K.x0 + 5, 2.65, K.z0 + 0.12, 2, 0.3, 0, { fg: '#fff', bg: '#c8302a' });
+    K.act(0, K.z0 + 4.6, 1.8, () => (Wanted.stars > 0 ? 'Turn yourself in' : 'Talk to the desk sergeant'), () => {
+      if (Wanted.stars > 0) { const h = 2 + Wanted.stars * 2; Int.panel({ title: 'Turn yourself in?', sub: Wanted.stars + ' star' + (Wanted.stars > 1 ? 's' : ''), body: '<p>Hand yourself over and do ' + h + ' hours in the cells. The charges are dropped, no fine, and your car waits in the impound lot by the door.</p>', btns: [['Do ' + h + ' hours', () => { Int.panel(null); Police.clearAll && Police.clearAll(); Wanted.stars = 0; Wanted.esc = Wanted.cool = Wanted.bust = 0; Int.hook = { allowHeat: true, left: () => Jail.release() }; Jail.on = true; Jail.hrs = Jail.left = h; Jail.t = 0; Int.go('cells', 'bunk'); }, true]] }); }
+      else Int.say('“Nothing to report? Then move along. Unless you fancy a night in the cells.”', 3.5);
+    });
+  },
+  cells(K, rec, r) {   /* the cell block: four cells each side, a day room in the middle, a yard door */
+    const W = 18, D = 20; K.shell({ W, D, H: 4, floor: 0x7a7c80, wall: 0xb8bcc0, ceil: 0x8a8c90, trim: 0x3a3c40, door: false, lamp: 0xf4f8ff, lightI: 0.8, winH: [2.8, 3.6] });
+    const bar = 0x4a4c50;
+    for (const sx of [-1, 1]) for (let k = 0; k < 4; k++) {
+      const z = K.z0 + 2.5 + k * 3.6, xi = sx * 5.5, xw = sx * (W / 2); K.box(Math.min(xi, xw), 0, z - 1.8, Math.max(xi, xw), 4, z - 1.72, 0x9a9ca0, true);
+      for (let q = -1.6; q <= 1.6; q += 0.2) if (!(sx < 0 && k === 0 && Math.abs(q) < 0.55)) K.box(xi - 0.02, 0, z + q - 0.02, xi + 0.02, 2.6, z + q + 0.02, bar); K.box(xi - 0.05, 2.6, z - 1.8, xi + 0.05, 2.7, z + 1.8, bar);
+      if (!(sx < 0 && k === 0)) K.col(xi - 0.05, z - 1.8, xi + 0.05, z + 1.8); else { K.col(xi - 0.05, z - 1.8, xi + 0.05, z - 0.55); K.col(xi - 0.05, z + 0.55, xi + 0.05, z + 1.8); }
+      K.box(xw - sx * 0.9, 0, z - 1.6, xw - sx * 0.05, 0.5, z + 0.4, 0x6a6c70, true); K.box(xw - sx * 0.85, 0.5, z - 1.55, xw - sx * 0.1, 0.62, z + 0.35, 0xd8d0c0);
+      K.cyl(xw - sx * 0.5, 0, z + 1.2, 0.22, 0.45, 0xe8e8e8, true);
+      if (!(sx < 0 && k === 0) && r() < 0.6) { const n = K.person({ x: xw - sx * 0.5, z: z - 0.6, yaw: -sx * Math.PI / 2, kind: r() < 0.5 ? 'sit' : 'sleep', shirt: 0xe8701a, pants: 0xe8701a, sleeve: false }); if (n && n.kind === 'sit') { n.sy = 0.05; n.sy0 = 0; } if (n && n.kind === 'sleep') { n.x = xw - sx * 0.48; n.z = z - 1.4; n.y = 0.48; n.yaw = Math.PI; } }
+    }
+    const myZ = K.z0 + 2.5; K.spawn('bunk', -7, myZ + 0.6, Math.PI / 2);
+    /* the day room: steel tables, a phone, a pull-up bar, a mop */
+    for (const z of [0, 3]) { K.table(0, z, 2.2, 1, 0x8a8c90, 0.76); for (const x of [-0.6, 0.6]) { K.chair(x, z - 0.8, 0, 0x6a6c70, true); K.chair(x, z + 0.8, 0, 0x6a6c70, true); } }
+    intSeat(K, 0.6, 3.8, Math.PI, { sy: 0.25, shirt: 0xe8701a, pants: 0xe8701a, sleeve: false, talk: true }); intSeat(K, -0.6, 2.2, 0, { sy: 0.25, shirt: 0xe8701a, pants: 0xe8701a, sleeve: false, eat: true });
+    K.box(-0.2, 0, K.z1 - 0.15, 0.2, 2.4, K.z1, 0x1a1a1a); K.box(-0.15, 1.5, K.z1 - 0.3, 0.15, 1.8, K.z1 - 0.15, 0x2a2a2a);
+    K.box(3.5, 2.2, K.z1 - 2.5, 3.55, 2.25, K.z1 - 1.3, 0x9a9a9a); K.box(3.5, 0, K.z1 - 2.5, 3.6, 2.25, K.z1 - 2.42, 0x3a3a3a); K.box(3.5, 0, K.z1 - 1.38, 3.6, 2.25, K.z1 - 1.3, 0x3a3a3a);
+    K.cyl(-3.5, 0, K.z1 - 1.5, 0.25, 0.5, 0xd8b81e, true); K.cyl(-3.3, 0.5, K.z1 - 1.5, 0.02, 1.2, 0x8a6a3a);
+    K.box(-1.2, 0, K.z1 - 0.12, 1.2, 2.6, K.z1, 0x5a5c60); K.sign('EXIT · RELEASE', 0, 2.9, K.z1 - 0.13, 1.8, 0.35, Math.PI, { fg: '#fff', bg: '#2a6a3a' });
+    K.person({ x: 0, z: K.z1 - 2, kind: 'walk', shirt: 0x1a2a4a, pants: 0x1a1c24, hat: { k: 'cap', c: lc(0x1a2a4a), bc: null }, path: [[0, K.z1 - 2, 3], [0, K.z0 + 4, 3], [2.5, K.z0 + 10, 2]], role: 'guard' });
+    K.act(-7, myZ + 0.6, 1.4, 'Sleep on the bunk (sleep off the rest of your time)', () => { Int.busy = { freeze: true, lock: 'Sleeping…', t: 0, hint: () => '<b>Zzz…</b>', tick(dt) { this.t += dt; if (this.t > 1.4) { Int.busy = null; App.tod = (App.tod + Jail.left) % 24; Jail.left = 0; Int.say('You wake up. The guard is rattling the door: “You’re free to go.”', 4); } } }; }, { wide: true });
+    K.act(3.55, K.z1 - 1.9, 1.4, 'Pull-ups (fitness)', () => intWorkout('Pull-ups', 0.5, 0));
+    K.act(-3.5, K.z1 - 2.1, 1.4, 'Mop the floor (an hour off your time, $5)', () => { if (!Jail.on) { Int.say('You are not doing time.'); return; } Jail.left = Math.max(0, Jail.left - 1); save.money += 5; Jail.work++; writeSave(); Snd.beep(600, 0.05); Int.say('You mop the day room. An hour off, and $5 in your account.', 2.6); });
+    K.act(0, K.z1 - 0.6, 1.6, () => (Jail.left > 0.01 ? 'The door is locked (' + Math.ceil(Jail.left) + 'h left)' : 'Walk out a free person'), () => { if (Jail.on && Jail.left > 0.01) { Int.say('The guard shakes his head. ' + Math.ceil(Jail.left) + ' more hours.'); return; } Int.leave(); }, { wide: true });
+    K.act(0.1, K.z1 - 0.2, 1.2, 'Make a phone call', () => Int.say('You call your mechanic. “Your car’s fine. Don’t drop the soap.”', 3.5));
+  } },
+  tick(dt) { if (Int.room === 'cells' && Jail.on && Jail.left > 0) { Jail.left = Math.max(0, Jail.left - dt / 10); App.tod = (App.tod + dt / 10) % 24; if (Jail.left <= 0) Int.say('“Time’s up. You’re free to go.” The door buzzes open.', 4); } },
+  hud() { if (Int.room !== 'cells' || !Jail.on) return ''; const h = Math.ceil(Jail.left); return '<div class="ibar"><small>Doing time · ' + (h > 0 ? h + ' hour' + (h > 1 ? 's' : '') + ' left' : 'free to go') + (Jail.why ? ' · ' + esc(Jail.why) : '') + '</small><div class="ibt"><i class="iz" style="left:0;width:' + (100 * (1 - Jail.left / Math.max(1, Jail.hrs))).toFixed(0) + '%"></i></div></div>'; },
+  leave(rec) { if (Int.room === 'cells' && Jail.on && Jail.left > 0.01) { Int.say('The door is locked · ' + Math.ceil(Jail.left) + 'h left. Sleep on your bunk to skip it.'); return false; } }
+};
+
 /* ---- js/08_mech.js ---- */
 /* ---------- mechanic: repair quick-time events — or skip them by paying the rush rate ---------- */
 /* After a crash the bill goes through Mech.offer(kind, base, cb). The player picks "fix it yourself" (four short mini-games that cut the bill
@@ -15713,21 +16907,23 @@ Bust.verdict = function () {
     '<div class="chg">' + Bust.ch.map((c) => '<i>' + esc(c) + '</i>').join('') + '</div>' +
     '<div class="rows">' + o.rows.map((r) => '<div><span>' + r[0] + '</span><b class="' + (r[1] < 0 ? 'pos' : '') + '">' + (r[1] < 0 ? '−' : r[1] > 0 && o.rows.indexOf(r) > 0 ? '+' : '') + money(Math.abs(r[1])) + '</b></div>').join('') + '</div>' +
     '<p>' + o.line + '</p>' + (o.total > save.money ? '<p class="dim">That is more than you have, so they take all of it.</p>' : '') +
-    '<div class="rw neg">−' + money(pay) + '</div><div class="acts"><button class="btn primary" type="button" data-b="go">Walk out</button></div>';
+    '<div class="rw neg">−' + money(pay) + '</div><div class="acts"><button class="btn primary" type="button" data-b="go">' + (o.over ? 'To the cells' : 'Pay and walk out') + '</button>' + (!o.over && o.total > 0 ? '<button class="btn" type="button" data-b="time">Do ' + Bust.hours(o) + ' hours in jail instead</button>' : '') + '</div>';
+  Bust.time = false;
   E.bCard.hidden = false;
 };
+Bust.hours = (o) => clamp(Math.round(o.total / 150), 2, 24);
 Bust.leave = function () {
   if (Bust.phase !== 'verdict') return; Bust.phase = 'closing'; Bust.closeT = 0.75; E.bCard.hidden = true; UI.fade(true);
 };
 Bust.finish = function () {
-  const o = Bust.out; Police.fine = o ? Math.min(save.money, o.total) : Police.fine;
+  const o = Bust.out, jail = !!(o && (o.over || Bust.time)); Police.fine = o ? (Bust.time ? 0 : Math.min(save.money, o.total)) : Police.fine;
   Bust.on = false; Bust.phase = 'off'; Bust.gen = null; Bust.cap = null; Bust.paused = false; Bust.S = null; Bust.A = null; document.body.classList.remove('cut');
   E.bust.hidden = true; E.bCard.hidden = true; E.bSkip.hidden = true; E.bChoice.hidden = true; E.bust.classList.remove('tense');
   if (CR.cam && CR.hands) CR.shake = 0;
   Police.release(); Police.hold = false; Police.phase = 'off'; Police.on = false; Police.done = true; Police.t = 0; Police.hud(1);
-  if (o && o.over) App.tod = 7.5;
   UI.setMode('play'); UI.fade(false); last = performance.now(); Keys.Space = false; Cam.shake = 0;
-  if (o && o.over) UI.banner('RELEASED', 'You spent the night in a cell');
+  if (jail) { const h = o.over ? 8 : Bust.hours(o); if (!Jail.serve(h, o.over ? 'held overnight' : 'doing time instead of a fine')) { App.tod = (App.tod + h) % 24; UI.banner('RELEASED', 'You did ' + h + ' hours'); } }
+  Bust.time = false;
 };
 
 /* ---------- input ---------- */
@@ -15746,7 +16942,7 @@ Bust.key = function (code) {
 Bust.bind = function () {
   if (Bust.bound) return; Bust.bound = true;
   E.bSkip.addEventListener('click', () => Bust.skip());
-  E.bCard.addEventListener('click', (e) => { const b = e.target.closest('[data-b]'); if (b && b.dataset.b === 'go') Bust.leave(); });
+  E.bCard.addEventListener('click', (e) => { const b = e.target.closest('[data-b]'); if (b && b.dataset.b === 'go') Bust.leave(); else if (b && b.dataset.b === 'time') { Bust.time = true; Bust.leave(); } });
   E.bChoice.addEventListener('pointerdown', (e) => { const b = e.target.closest('[data-i]'); if (!b) return; e.stopPropagation(); e.preventDefault(); if (Bust.picking && Bust.pick < 0) Bust.pick = +b.dataset.i; });
   E.bCap.addEventListener('pointerdown', (e) => { e.stopPropagation(); Bust.adv = true; });
   E.bust.addEventListener('pointerdown', (e) => { if (e.target.closest('button,[data-i]')) return; Bust.adv = true; });
@@ -21056,7 +22252,7 @@ WorldMap.drawFull = function (cv) {
     const s = FM.toScreen(T.cx, T.cz), hs = T.half * FM.ppm; g.fillStyle = 'rgba(255,176,46,0.28)'; g.strokeStyle = '#ffb02e'; g.lineWidth = 1.5 * k; g.fillRect(s[0] - hs, s[1] - hs, hs * 2, hs * 2); g.strokeRect(s[0] - hs, s[1] - hs, hs * 2, hs * 2);
     g.fillStyle = '#fff'; g.strokeStyle = 'rgba(0,0,0,0.85)'; g.lineWidth = 3.5 * k; g.strokeText(T.name.toUpperCase(), s[0], s[1] - hs - 10 * k); g.fillText(T.name.toUpperCase(), s[0], s[1] - hs - 10 * k);
   }
-  Heist.drawFull(g, k); Surf.drawFull(g, k); Dunes.drawFull(g, k); Air.drawFull(g, k); Track.drawFull(g, k); Ven.drawFull(g, k); Col.drawFull(g, k); Dock.drawFull(g, k); Boat.drawFullIcons(g, k); VM.full(g, k);
+  Heist.drawFull(g, k); Surf.drawFull(g, k); Dunes.drawFull(g, k); Air.drawFull(g, k); Track.drawFull(g, k); Ven.drawFull(g, k); Bld.drawFull(g, k); Col.drawFull(g, k); Dock.drawFull(g, k); Boat.drawFullIcons(g, k); VM.full(g, k);
   if (GAR.ok) { const s = FM.toScreen(GAR.ox, GAR.oz - 15), u = k * 1.1; g.fillStyle = '#ffb02e'; g.strokeStyle = '#06090e'; g.lineWidth = 2.5 * k; g.beginPath(); g.moveTo(s[0] - 9 * u, s[1] + 7 * u); g.lineTo(s[0] - 9 * u, s[1] - 2 * u); g.lineTo(s[0], s[1] - 10 * u); g.lineTo(s[0] + 9 * u, s[1] - 2 * u); g.lineTo(s[0] + 9 * u, s[1] + 7 * u); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#06090e'; g.fillRect(s[0] - 4 * u, s[1] + 0.5 * u, 8 * u, 6.5 * u); if (FM.zoom > 1.8) { g.fillStyle = '#fff'; g.strokeStyle = 'rgba(0,0,0,0.85)'; g.lineWidth = 3 * k; g.strokeText('HOME', s[0], s[1] + 19 * u); g.fillText('HOME', s[0], s[1] + 19 * u); } } Shop.drawMap(g, k);
   if (GPS.pts && Target.on) { g.strokeStyle = '#33d4ff'; g.lineWidth = 3 * k; g.beginPath(); GPS.pts.forEach((p, i) => { const s = FM.toScreen(p.x, p.z); if (i) g.lineTo(s[0], s[1]); else g.moveTo(s[0], s[1]); }); g.stroke(); }
   for (const mk of MView.markers) {
@@ -22783,6 +23979,14 @@ const DEV_PLACES = [
   ['dune', 'Dune Dash', () => { const S = Dunes.s; return S ? [S.ox, S.oz, Math.atan2(S.tx[S.start], S.tz[S.start])] : null; }],
   ['surf', 'Surf Club', () => { const B = Surf.beaches.find((b) => b.surf); return B && B.ox != null ? [B.ox - B.ix * 6, B.oz - B.iz * 6, Math.atan2(-B.ix, -B.iz)] : null; }]
 ];
+/* dev: straight into the nearest building of a kind (the specials, the terminal, the boathouse) */
+UI.devInside = function (kind) {
+  if (App.mode !== 'play') return; Bld.prep(); let rec = null;
+  const fx = Bld.prepFixed().find((r) => r.kind === kind); if (fx) rec = fx;
+  else { const S = Bld.nearest(kind, Pl.x, Pl.z); if (!S) { UI.toast('No ' + kind + ' on the island', 'bad'); return; } if (kind === 'jail') rec = Jail.rec(); else { loadAround(S.x, S.z, 40); rec = Bld.lots.get(S.key); } }
+  if (!rec) { UI.toast('Could not find it', 'bad'); return; }
+  const d = rec.door; loadAround(d.ox, d.oz, 30); spawnAt(d.ox + d.nz * 5 + d.nx * 5, d.oz + d.nz * 5, 0); Int.enter(rec);
+};
 /* the train heists, for testing: pick which one (Gold, Silver or Ruby Rush), put its open wagon at its ramp, skip the jump, skip to the escape, reset it,
    change the trains' speed */
 UI.devHeist = function (k) {
@@ -22830,6 +24034,9 @@ UI.devAct = function (id) {
   else if (id === 'unboats') { for (const k of BIDS) save.boat.own[k] = true; Boat.tags(); UI.toast('All boats unlocked', 'good'); }
   else if (id === 'unplanes') { for (const k in PSPEC) save.air.own[k] = true; Fly.tags(); UI.toast('All planes unlocked', 'good'); }
   else if (id.startsWith('pl:')) { const P = DEV_PLACES.find((q) => q[0] === id.slice(3)), p = P && P[2](); if (p) { close(); devPlace(p[0], p[1], p[2], P[1]); } }
+  else if (id.startsWith('in:')) { close(); UI.devInside(id.slice(3)); }
+  else if (id === 'jail4') { close(); Jail.serve(4, 'dev mode'); }
+  else if (id === 'fit100') { intSave().fit = 100; writeSave(); UI.toast('Fitness 100', 'good'); }
   else if (id.startsWith('bch')) { const b = Surf.beaches[+id.slice(3)]; if (b) { close(); devPlace(b.px, b.pz, Math.atan2(-b.ix, -b.iz), b.name); } }
   else if (id.startsWith('hz:')) { if (!id.startsWith('hz:pick')) close(); UI.devHeist(id.slice(3)); }
   else if (id.startsWith('tp')) { const t = towns[+id.slice(2)]; if (t) { close(); devTeleport(t.cx, t.cz, t.name); } }
@@ -22894,6 +24101,7 @@ UI.footPrompt = function () {
   if (Wk.near && !p && !Talk.on && !Shop.near) parts.push(TouchIn.on ? '<em>BUILD</em> Workshop' : '<em>E</em> Workshop \u00b7 build and fly planes and rockets');
   if (Shop.near && !p && !Talk.on) parts.push(TouchIn.on ? '<em>SHOP</em> Customs · ' + esc(Shop.near.R.name) : '<em>E</em> Customs · ' + esc(Shop.near.R.name));
   if (Ven.near && !p && !Talk.on) parts.push(TouchIn.on ? '<em>ENTER</em> ' + esc(Ven.near.D.name) : '<em>E</em> ' + esc(Ven.near.D.name) + ' · ' + esc(Ven.near.D.sub));
+  if (Bld.near && !p && !Talk.on && !Ven.near && !Shop.near) parts.push((TouchIn.on ? '<em>ENTER</em> ' : '<em>E</em> Go into ') + esc(Bld.near.name) + ' · ' + esc(Bld.near.sub));
   if (VM.near && !p && !Talk.on) parts.push(TouchIn.on ? '<em>JOBS</em> ' + esc(VM.near.title) : '<em>E</em> ' + esc(VM.near.title) + ' · ' + esc(VM.near.sub));
   if (VM.armed && !Talk.on && !parts.length) parts.push('Job accepted: <em>' + esc(VM.armed.title) + '</em> · ' + (VMK[VM.armed.kind].veh === 'plane' ? 'board a plane (F)' : 'take a boat out (F)'));
   if (Fly.near && !Talk.on) { const q = Fly.near.spec, own = Fly.owned(q.id), lab = own ? 'Fly the ' + q.name + ' · ' + q.role : 'Buy the ' + q.name + ' · ' + money(q.cost); parts.push(TouchIn.on ? '<em>' + (own ? 'FLY' : 'BUY') + '</em> ' + esc(lab.replace(/^(Fly|Buy) /, '')) : '<em>F</em> ' + esc(lab)); }
@@ -22929,6 +24137,7 @@ UI.update = function (dt) {
   else if (Race.near && !Mi) { const h = TouchIn.on ? '<em>RACE</em> ' + esc(Track.name) : '<em>E</em> ' + esc(Track.name) + ' · race the field'; if (pr._h !== h) { pr._h = h; pr.innerHTML = h; } pr.hidden = false; }
   else if (Ven.near && !Mi && !Shop.near) { const h = TouchIn.on ? '<em>ENTER</em> ' + esc(Ven.near.D.name) : '<em>E</em> ' + esc(Ven.near.D.name) + ' · ' + esc(Ven.near.D.sub); if (pr._h !== h) { pr._h = h; pr.innerHTML = h; } pr.hidden = false; }
   else if (Wk.near && !Mi && !Shop.near) { const h = TouchIn.on ? '<em>BUILD</em> Workshop' : '<em>E</em> Workshop \u00b7 build and fly planes and rockets'; if (pr._h !== h) { pr._h = h; pr.innerHTML = h; } pr.hidden = false; }
+  else if (Bld.near && !Mi && !Shop.near && !Ven.near) { const h = (TouchIn.on ? '<em>ENTER</em> ' : '<em>E</em> Park and go into ') + esc(Bld.near.name) + ' · ' + esc(Bld.near.sub); if (pr._h !== h) { pr._h = h; pr.innerHTML = h; } pr.hidden = false; }
   else if (Shop.near && !Mi) { const h = TouchIn.on ? '<em>SHOP</em> Customs · ' + esc(Shop.near.R.name) : '<em>E</em> Customs · ' + esc(Shop.near.R.name) + ' · paint, wheels, body kits, outfits'; if (pr._h !== h) { pr._h = h; pr.innerHTML = h; } pr.hidden = false; }
   else if (!near && GAR.inside && !Mi && !GAR.edit) { const h = TouchIn.on ? '<em>STYLE</em> to customise your garage' : '<em>G</em> Customise garage'; if (pr._h !== h) { pr._h = h; pr.innerHTML = h; } pr.hidden = false; }
   else if (near) {
@@ -22936,7 +24145,7 @@ UI.update = function (dt) {
     const h = '<em>' + (TouchIn.on ? 'TAP' : 'E') + '</em> ' + esc(t.name) + ' · ' + esc(near.title.replace(/^[^:]+: /, '')) + ' · ' + money(near.reward) + (done ? ' · ' + '★'.repeat(done.stars) : '');
     if (pr._h !== h) { pr._h = h; pr.innerHTML = h; } pr.hidden = false;
   } else if (!pr.hidden) pr.hidden = true;
-  { const act = GAR.edit || Fly.on || Boat.on ? null : Jack.canStash() ? ['STASH', 'KeyE'] : Foot.on && Jack.tgt && !Talk.on ? ['JACK', 'KeyF'] : Race.near && !Foot.on ? ['RACE', 'KeyE'] : Wk.near && !Talk.on && !(Foot.on && Foot.target) ? ['BUILD', 'KeyE'] : Shop.near && !Talk.on && !(Foot.on && Foot.target) ? ['SHOP', 'KeyE'] : Ven.near && !Talk.on && !(Foot.on && Foot.target) ? ['ENTER', 'KeyE'] : Foot.on && VM.near && !Talk.on && !Foot.target ? ['JOBS', 'KeyE'] : Foot.on ? (Foot.target && !Talk.on ? ['TALK', 'KeyE'] : GAR.inside && !Talk.on ? ['STYLE', 'KeyG'] : null) : near ? ['GO', 'KeyE'] : GAR.inside && !Mi ? ['STYLE', 'KeyG'] : null;
+  { const act = GAR.edit || Fly.on || Boat.on ? null : Jack.canStash() ? ['STASH', 'KeyE'] : Foot.on && Jack.tgt && !Talk.on ? ['JACK', 'KeyF'] : Race.near && !Foot.on ? ['RACE', 'KeyE'] : Wk.near && !Talk.on && !(Foot.on && Foot.target) ? ['BUILD', 'KeyE'] : Shop.near && !Talk.on && !(Foot.on && Foot.target) ? ['SHOP', 'KeyE'] : Ven.near && !Talk.on && !(Foot.on && Foot.target) ? ['ENTER', 'KeyE'] : Bld.near && !Talk.on && !(Foot.on && Foot.target) ? ['ENTER', 'KeyE'] : Foot.on && VM.near && !Talk.on && !Foot.target ? ['JOBS', 'KeyE'] : Foot.on ? (Foot.target && !Talk.on ? ['TALK', 'KeyE'] : GAR.inside && !Talk.on ? ['STYLE', 'KeyG'] : null) : near ? ['GO', 'KeyE'] : GAR.inside && !Mi ? ['STYLE', 'KeyG'] : null;
     E.tAct.style.display = act ? '' : 'none'; if (act) { if (E.tAct.textContent !== act[0]) E.tAct.textContent = act[0]; E.tAct.dataset.k = act[1]; } }
   E.tFoot.style.display = (Fly.on ? Fly.canExit && Fly.p && Fly.p.st === 'flying' : Boat.on ? Boat.canExit && Boat.p && Boat.p.st === 'driving' : Foot.on ? (Fly.near || Boat.near || (Foot.carNear && !Jack.tgt) || GAR.nearId) && !Talk.on && !Jack.busy : !Mi && Math.abs(car.speed) < 3 && car.wrecked <= 0) ? '' : 'none';
   if (Foot.on) { const l = Fly.near ? (Fly.owned(Fly.near.id) ? 'FLY' : 'BUY') : Boat.near ? (Boat.owned(Boat.near.id) ? 'BOAT' : 'BUY') : Foot.carNear ? 'CAR' : 'DRIVE'; if (E.tFoot.textContent !== l) E.tFoot.textContent = l; }
@@ -23000,11 +24209,11 @@ UI.drawOverlay = function (dt) {
 /* ---------- screens ---------- */
 UI.setMode = function (m) {
   App.mode = m;
-  E.loading.hidden = m !== 'load'; E.title.hidden = m !== 'title'; E.menu.hidden = m !== 'pause'; E.court.hidden = m !== 'court'; E.bust.hidden = !Bust.on; E.shop.hidden = m !== 'shop'; E.vmp.hidden = m !== 'vm'; E.ven.hidden = m !== 'venue'; E.rl.hidden = m !== 'rlobby'; E.mech.hidden = m !== 'mech'; E.wk.hidden = m !== 'wk';
-  E.hud.classList.toggle('off', m === 'title' || m === 'load' || m === 'court' || m === 'bust' || m === 'shop' || m === 'vm' || m === 'venue' || m === 'rlobby' || m === 'mech' || m === 'wk' || !save.set.hud);
+  E.loading.hidden = m !== 'load'; E.title.hidden = m !== 'title'; E.menu.hidden = m !== 'pause'; E.court.hidden = m !== 'court'; E.bust.hidden = !Bust.on; E.shop.hidden = m !== 'shop'; E.vmp.hidden = m !== 'vm'; E.ven.hidden = m !== 'venue'; E.int.hidden = m !== 'int'; E.rl.hidden = m !== 'rlobby'; E.mech.hidden = m !== 'mech'; E.wk.hidden = m !== 'wk';
+  E.hud.classList.toggle('off', m === 'title' || m === 'load' || m === 'court' || m === 'bust' || m === 'shop' || m === 'vm' || m === 'venue' || m === 'int' || m === 'rlobby' || m === 'mech' || m === 'wk' || !save.set.hud);
   if (m !== 'play' && E.dbg) E.dbg.hidden = true;
   if (m !== 'play') { try { if (document.pointerLockElement) document.exitPointerLock(); } catch (er) { /* ignore */ } }
-  E.touch.hidden = !(TouchIn.on && m === 'play'); document.body.classList.toggle('touch', TouchIn.on);
+  E.touch.hidden = !(TouchIn.on && (m === 'play' || m === 'int')); document.body.classList.toggle('touch', TouchIn.on);
 };
 UI.progress = function (f, msg) { E.loadfill.style.width = (f * 100).toFixed(0) + '%'; if (msg) E.loadmsg.textContent = msg; };
 UI.openMenu = function (tab) { if (App.mode !== 'play') return; Home.closeEdit(); UI.setMode('pause'); UI.tabTo(tab || App.tab); for (const k in Keys) Keys[k] = false; };
@@ -23043,7 +24252,7 @@ UI.renderPane = function () {
       return '<div class="carc' + (cur ? ' cur' : '') + (own ? '' : ' locked') + '"><div class="cimg">' + (img ? '<img alt="' + d.name + '" src="' + img + '">' : '') + '</div>' +
         '<div class="chead"><h4>' + d.name + '</h4><small>' + d.cls + (d.stolen ? ' · stolen' : '') + '</small></div><p>' + d.blurb + '</p>' +
         '<div class="cstats">' + bar('Speed', d.stats.spd) + bar('Accel', d.stats.acc) + bar('Handling', d.stats.hdl) + bar('Off-road', d.stats.off) + '</div>' +
-        '<div class="cact">' + (cur ? '<span class="tag">Driving</span>' : own ? '<button class="btn sm" type="button" data-act="drive" data-id="' + d.id + '">Drive</button>' : '<button class="btn sm" type="button" data-act="buycar" data-id="' + d.id + '"' + (save.money < d.price ? ' disabled' : '') + '>Buy ' + money(d.price) + '</button>') +
+        '<div class="cact">' + (cur ? '<span class="tag">Driving</span>' : own ? '<button class="btn sm" type="button" data-act="drive" data-id="' + d.id + '">Drive</button>' : d.price > 0 ? '<button class="btn sm" type="button" data-act="dealer" data-id="' + d.id + '" title="Cars are sold at the dealerships">' + money(d.price) + ' · GPS to a dealer</button>' : '') +
         (d.stolen && !cur ? '<button class="btn sm" type="button" data-act="sellk" data-id="' + d.id + '">' + (Jack.conf === 'sellk:' + d.id ? 'Sure? ' : 'Sell ') + money(Jack.worth(d.id)) + '</button><button class="btn sm" type="button" data-act="scrapk" data-id="' + d.id + '">' + (Jack.conf === 'scrapk:' + d.id ? 'Sure? ' : 'Scrap ') + '+' + save.stolen[d.id].tok + '</button>' : '') + '</div></div>';
     }).join('') + '</div>';
     h += '<div class="sect">Paint · ' + CUR.name + '</div><div class="swatches">' + PAINTS.map((hx, i) => '<button class="sw" type="button" data-act="paint" data-i="' + i + '" aria-pressed="' + (curPaint() === i) + '" aria-label="Paint ' + (i + 1) + '" style="background:#' + hx.toString(16).padStart(6, '0') + '"></button>').join('') + '</div>';
@@ -23067,7 +24276,7 @@ UI.renderPane = function () {
     h += '<div class="sect">Cheats</div>' + row('God mode', dseg('god', Dev.god)) + row('Infinite nitro', dseg('nit', Dev.nit)) +
       row('Cash', grp(btn('cash1', '+$1k'), btn('cash10', '+$10k'), btn('cash100', '+$100k'))) + row('Garage', grp(btn('unlock', 'Unlock all cars'), btn('maxup', 'Max upgrades'), btn('repair', 'Repair'), btn('unplanes', 'Unlock planes'), btn('unboats', 'Unlock boats')));
     h += '<div class="sect">Vehicle &amp; time</div>' + row('Engine power', sl('dPow', 'dpower', 0.25, 4, 0.05, Dev.power), 'dpower') + row('Tyre grip', sl('dGrip', 'dgrip', 0.4, 2.5, 0.05, Dev.grip), 'dgrip') + row('Time scale', sl('dTs', 'dts', 0.1, 2, 0.05, Dev.ts), 'dts');
-    h += '<div class="sect">World</div>' + row('Teleport: towns', grp(...towns.map((t, i) => btn('tp' + i, t.name)), btn('tpwp', 'Waypoint', !Waypoint.on))) + row('Teleport: places', grp(btn('tpair', 'Airport'), btn('tpdock', 'Marina'), ...DEV_PLACES.map((p) => btn('pl:' + p[0], p[1], !p[2]())))) + row('Teleport: beaches', grp(...Surf.beaches.map((b, i) => btn('bch' + i, b.name)))) + row('Teleport: trains', grp(...(Rail.trains || []).map((tr) => btn('hz:train' + tr.k, 'Behind the ' + tr.name)))) + row('Planets: orbit', grp(...WK.BODIES.map((B) => btn('wk:orbit:' + B.id, B.name)))) + row('Planets: surface', grp(...WK.BODIES.filter((B) => B !== WK.SUN && !B.crush && B !== WK.HOME).map((B) => btn('wk:land:' + B.id, B.name)))) + row('Time of day', grp(btn('tod6', 'Dawn'), btn('tod12', 'Noon'), btn('tod18.5', 'Dusk'), btn('tod23', 'Night'))) + row('Traffic', grp(btn('traf', 'Spawn 10 cars'))) + row('Lawsuit', grp(btn('lawsuit', 'Get sued now'))) + row('Mishaps', grp(btn('tow', 'Wreck car (tow truck)'), btn('cops', 'Call the police'))) + row('Wanted level', grp(btn('wl1', '1★'), btn('wl2', '2★'), btn('wl3', '3★'), btn('wl4', '4★'), btn('wl5', '5★'), btn('wl0', 'Clear'), btn('bustme', 'Get busted')));
+    h += '<div class="sect">World</div>' + row('Teleport: towns', grp(...towns.map((t, i) => btn('tp' + i, t.name)), btn('tpwp', 'Waypoint', !Waypoint.on))) + row('Teleport: places', grp(btn('tpair', 'Airport'), btn('tpdock', 'Marina'), ...DEV_PLACES.map((p) => btn('pl:' + p[0], p[1], !p[2]())))) + row('Go inside', grp(...[['bank', 'A bank'], ['reserve', 'Island Reserve'], ['apts', 'Apartments'], ['gym', 'Gym'], ['pool', 'Indoor pool'], ['resto', 'Restaurant'], ['clothes', 'Clothing'], ['dealer', 'Dealership'], ['jail', 'Jail'], ['terminal', 'Airport terminal'], ['boathouse', 'Boathouse']].map((q) => btn('in:' + q[0], q[1])), btn('jail4', 'Do 4 hours'), btn('fit100', 'Fitness 100'))) + row('Teleport: beaches', grp(...Surf.beaches.map((b, i) => btn('bch' + i, b.name)))) + row('Teleport: trains', grp(...(Rail.trains || []).map((tr) => btn('hz:train' + tr.k, 'Behind the ' + tr.name)))) + row('Planets: orbit', grp(...WK.BODIES.map((B) => btn('wk:orbit:' + B.id, B.name)))) + row('Planets: surface', grp(...WK.BODIES.filter((B) => B !== WK.SUN && !B.crush && B !== WK.HOME).map((B) => btn('wk:land:' + B.id, B.name)))) + row('Time of day', grp(btn('tod6', 'Dawn'), btn('tod12', 'Noon'), btn('tod18.5', 'Dusk'), btn('tod23', 'Night'))) + row('Traffic', grp(btn('traf', 'Spawn 10 cars'))) + row('Lawsuit', grp(btn('lawsuit', 'Get sued now'))) + row('Mishaps', grp(btn('tow', 'Wreck car (tow truck)'), btn('cops', 'Call the police'))) + row('Wanted level', grp(btn('wl1', '1★'), btn('wl2', '2★'), btn('wl3', '3★'), btn('wl4', '4★'), btn('wl5', '5★'), btn('wl0', 'Clear'), btn('bustme', 'Get busted')));
     const HP = Heist.P(), HN = heistName(Heist.k);
     h += '<div class="sect">Train heists</div>' + row('Which heist', grp(...Heist.sites.map((q, k) => btn('hz:pick' + k, (k === Heist.k ? '● ' : '') + heistName(k) + (save.owned[HEIST_PRIZES[k].id] ? ' ✓' : ''))))) +
       row(HN + ': ' + (save.owned[HP.id] ? 'done · ' + HP.short + ' owned' : Heist.phase), grp(btn('hz:start', 'Start at the ramp'), btn('hz:cue', 'Bring the wagon round', Heist.phase !== 'armed'), btn('hz:board', 'Skip the jump (into the wagon)'), btn('hz:take', 'Take the ' + HP.short), btn('hz:home', 'Skip to the garage', Heist.phase !== 'escape' && Heist.phase !== 'ride'))) +
@@ -23121,6 +24330,7 @@ function bindUI() {
     else if (a === 'dev') { const k = b.dataset.k, v = b.dataset.v === 'true'; if (k === 'free') UI.devFree(v); else Dev[k] = v; UI.renderPane(); }
     else if (a === 'dact') UI.devAct(b.dataset.id);
     else if (a === 'drive') { if (App.setCar(b.dataset.id)) { UI.toast(CUR.name + ' ready', 'info'); UI.renderPane(); } }
+    else if (a === 'dealer') { const S = Bld.nearest('dealer', Pl.x, Pl.z); if (S) { UI.setWaypoint(S.x, S.z); UI.toast('GPS set: ' + S.name + ' · cars are bought at the dealerships', 'info'); UI.closeMenu(); } }
     else if (a === 'buycar') { const d = CAR_BY_ID[b.dataset.id]; if (d && !save.owned[d.id] && save.money >= d.price) { save.money -= d.price; save.owned[d.id] = true; Snd.beep(900, 0.12); if (!Mi) { App.setCar(d.id); car.health = 100; } writeSave(); UI.toast('Bought ' + d.name, 'good'); UI.renderPane(); } }
     else if (a === 'tupre') { Setup.preset(b.dataset.id); Snd.beep(700, 0.06); UI.renderPane(); }
     else if (a === 'buytok') { if (Jack.buyTok(b.dataset.k)) UI.renderPane(); }
@@ -23179,6 +24389,7 @@ function onKey(code) {
   if (App.mode === 'shop') { Shop.key(code); return; }
   if (App.mode === 'vm') { VM.key(code); return; }
   if (App.mode === 'venue') { Ven.key(code); return; }
+  if (App.mode === 'int') { Int.key(code); return; }
   if (App.mode === 'rlobby') { Race.key(code); return; }
   if (App.mode === 'mech') { Mech.key(code); return; }
   if (App.mode === 'wk') { Wk.key(code); return; }
@@ -23204,7 +24415,7 @@ function onKey(code) {
     case 'KeyV': if (save.set.dev) UI.devFree(!Dev.free); break;
     case 'KeyY': if (save.set.dev) { Dev.hbox = !Dev.hbox; UI.toast('Hitboxes ' + (Dev.hbox ? 'shown' : 'hidden'), 'info'); } break;
     case 'Digit1': if (Fly.on) { Fly.view = 0; save.air.view = 0; Fly.snapCam = true; } else if (Boat.on) { Boat.view = 0; save.boat.view = 0; Boat.snapCam = true; } else if (Foot.on) Foot.tp = false; else UI.setView(0, true); break; case 'Digit2': if (Fly.on) { Fly.view = 1; save.air.view = 1; Fly.snapCam = true; } else if (Boat.on) { Boat.view = 1; save.boat.view = 1; Boat.snapCam = true; } else if (Foot.on) Foot.tp = true; else UI.setView(2, true); break; case 'Digit3': if (Fly.on) { Fly.view = 2; save.air.view = 2; Fly.snapCam = true; } else if (Boat.on) { Boat.view = 2; save.boat.view = 2; Boat.snapCam = true; } else if (!Foot.on) UI.setView(1, true); break;
-    case 'KeyE': case 'Enter': if (Jack.canStash() && code === 'KeyE') Jack.openPanel(); else if (Fly.on || Boat.on) { if (code === 'Enter' && !E.result.hidden) UI.hideResult(); } else if (!E.result.hidden) UI.hideResult(); else if (Wk.near && !(Foot.on && Foot.target)) Wk.open(); else if (Shop.near && !(Foot.on && Foot.target)) Shop.open(); else if (Ven.near && !(Foot.on && Foot.target)) Ven.open(); else if (Race.near) Race.open(); else if (VM.near && Foot.on && !Foot.target) VM.open(); else if (Foot.on) { if (Foot.target) Talk.open(Foot.target); } else if (!Mi && Mission.nearby) { if (Fare.phase === 'ride') UI.toast('Drop off your passenger first', 'bad'); else startMission(Mission.nearby); } break;
+    case 'KeyE': case 'Enter': if (Jack.canStash() && code === 'KeyE') Jack.openPanel(); else if (Fly.on || Boat.on) { if (code === 'Enter' && !E.result.hidden) UI.hideResult(); } else if (!E.result.hidden) UI.hideResult(); else if (Wk.near && !(Foot.on && Foot.target)) Wk.open(); else if (Shop.near && !(Foot.on && Foot.target)) Shop.open(); else if (Ven.near && !(Foot.on && Foot.target)) { const vr = Bld.venueRec(Ven.near); if (vr) Int.enter(vr); else Ven.open(); } else if (Bld.near && !(Foot.on && Foot.target)) Bld.enter(); else if (Race.near) Race.open(); else if (VM.near && Foot.on && !Foot.target) VM.open(); else if (Foot.on) { if (Foot.target) Talk.open(Foot.target); } else if (!Mi && Mission.nearby) { if (Fare.phase === 'ride') UI.toast('Drop off your passenger first', 'bad'); else startMission(Mission.nearby); } break;
     case 'KeyR': if (Race.on) Race.reset(); else if (Fly.on) Fly.reset(); else if (Boat.on) Boat.reset(); else if (Foot.on) Foot.toCar(); else if (Tow.on || car.wrecked > 0) Tow.skip(); else App.respawn(true); break;
     case 'KeyT': save.set.hud = !save.set.hud; UI.setMode('play'); break;
     default:
@@ -26392,7 +27603,7 @@ function step(dt) {
   if (Drag.on) { Drag.update(dt); carFx(dt); return; }
   if (Derby.on) { Derby.update(dt); carFx(dt); return; }   /* and the derby bowl */   /* so is the drag strip */   /* the stage is its own little world: no traffic, people, police or missions */
   /* world */
-  if (!(Fly.on && Fly.agl > 25)) { updateTraffic(dt); updatePeds(dt); } Police.update(dt); if (Foot.on) Foot.scan(); Fly.scan(); Boat.scan(dt); if (!Rally.on && !Derby.on && !Drag.on) { Rail.update(dt); Heist.update(dt); Surf.update(dt); Surf.visual(dt, App.time); Dunes.update(dt); } Talk.tick(dt); Rel.tick(dt); Home.tick(dt); Shop.tick(); Wk.tick(); Ven.tick(); Race.tick(); Race.update(dt); Jack.tick(dt); Fare.tick(dt); Court.tick(dt); updateMission(dt); VM.update(dt); updateGPS(dt);
+  if (!(Fly.on && Fly.agl > 25)) { updateTraffic(dt); updatePeds(dt); } Police.update(dt); if (Foot.on) Foot.scan(); Fly.scan(); Boat.scan(dt); if (!Rally.on && !Derby.on && !Drag.on) { Rail.update(dt); Heist.update(dt); Surf.update(dt); Surf.visual(dt, App.time); Dunes.update(dt); } Talk.tick(dt); Rel.tick(dt); Home.tick(dt); Shop.tick(); Wk.tick(); Ven.tick(); Bld.tick(); Race.tick(); Race.update(dt); Jack.tick(dt); Fare.tick(dt); Court.tick(dt); updateMission(dt); VM.update(dt); updateGPS(dt);
   if (Waypoint.on && !Mi && Math.hypot(Waypoint.x - Pl.x, Waypoint.z - Pl.z) < 28) { Waypoint.on = false; GPS.t = 0; UI.toast('Destination reached', 'good'); }
   carFx(dt);
 }
@@ -26416,6 +27627,7 @@ function frame(now) {
   if (App.mode === 'bust') { Bust.frame(dt); return; }
   if (App.mode === 'shop') { Shop.frame(dt); return; }
   if (App.mode === 'venue') { Ven.frame(dt); return; }
+  if (App.mode === 'int') { Int.frame(dt); return; }
   if (App.mode === 'mech') { Mech.frame(dt); return; }
   if (App.mode === 'wk') { Wk.frame(dt); return; }
   syncPl();
@@ -26463,7 +27675,7 @@ App.start = function () {
 async function boot() {
   try {
     let first = true; try { first = !localStorage.getItem(SAVE_KEY); } catch (e) { first = true; }
-    loadSave(); CUR = CAR_BY_ID[save.car] || CARS[0]; refreshTune(); bindUI(); bindInput(); Shop.initUI(); VM.initUI(); Ven.initUI(); UI.resize();
+    loadSave(); CUR = CAR_BY_ID[save.car] || CARS[0]; refreshTune(); bindUI(); bindInput(); Shop.initUI(); VM.initUI(); Ven.initUI(); Int.initUI(); UI.resize();
     if (first) { const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches; if (coarse) save.set.quality = 'low'; else if (window.innerWidth < 760 || (navigator.hardwareConcurrency || 8) <= 4) save.set.quality = 'med'; }
     UI.progress(0.03, 'Shaping the island'); await tick();
     genWorld(); Home.setup(); Shop.setup(); Ven.setup(); genMissions(); Col.setup(); Race.initUI(); Mech.init();
@@ -26492,7 +27704,7 @@ async function boot() {
     console.error(err); E.loadmsg.textContent = 'Could not start the 3D view: ' + (err && err.message ? err.message : err); window.__bootError = String(err && err.stack || err);
   }
 }
-window.__game = { get scene() { return scene; }, DEV_PLACES, HEIST_PRIZES, Part, L, Surf, Dunes, Rail, Beach, Heist, Wanted, GAR, terrainHeight, NR, Derby, DD, applyCar, buildCarModel, CAR_BY_ID, Env, get renderer() { return renderer; }, writePeds, Cam, Human, HU, Peds, Foot, Setup, TU, TU_PRESETS, CARS, CARP, tune, Drag, DG, DG_TIERS, Rally, RR, RY, RY_STAGES, RYG, RW, RY_FEATS, WK, Wk, WkF, WKSim, WKG, WKS, WkE, qfromAxes3, Dmg, Mech, RACE_DIFF, Wreck, Jack, JACK_MODELS, Race, Bots, Crash, newCarState, Track, TRK, Col, COLK, Ven, VDEF, CDEF, venSave, VM, VMD, VMK, towns, roads, Dock, MARINA, Boat, Boats, BSPEC, HB, solidHit, TREE, Air, AIR, Fly, Planes, PSPEC, Rel, REL_ROSTER, Shop, COS, Cosm, Biome, Weather, REG, Bust, CR, Fight, Police, Wanted, WANT, footBlockedAt, findNearestRoadPoint, Tow, GAR, Home, GP, Foot, Talk, Fare, Pl, pedHit, getMoney: () => save.money, get save() { return save; }, getLaw: () => save.law, Court, CR, Peds, pedSpawn, Dyn, abortMission, stepSim: step, frame, Env, Wheels, updateWheels, updateCamera, groundAt, buildCarModel, carSpec, TRAFFIC_DEFS, secAt, disposeCar, THREE_: THREE, TREE, GB, addTree, addGrass, terrainHeight, fbm, noise2, sstep, Dev, devReset, CARS, CAR_BY_ID, applyCar, stepCar, CARP, roads, loadAround, carThumb, car, App, UI, Chunks, Post, Cam, Keys, missions, towns, spawnAt, get Mi() { return Mi; }, startMission, applyQuality, get renderer() { return renderer; }, get scene() { return scene; }, get camera() { return camera; }, Snd, WorldMap, MView, Mirror, MAT, Cockpit, Q: () => Q, hasPost: () => hasPost, key(code, down) { Keys[code] = down; if (down) onKey(code); }, tune };
+window.__game = { get scene() { return scene; }, DEV_PLACES, Int, Bld, INT_KINDS, Jail, intSave, HEIST_PRIZES, Part, L, Surf, Dunes, Rail, Beach, Heist, Wanted, GAR, terrainHeight, NR, Derby, DD, applyCar, buildCarModel, CAR_BY_ID, Env, get renderer() { return renderer; }, writePeds, Cam, Human, HU, Peds, Foot, Setup, TU, TU_PRESETS, CARS, CARP, tune, Drag, DG, DG_TIERS, Rally, RR, RY, RY_STAGES, RYG, RW, RY_FEATS, WK, Wk, WkF, WKSim, WKG, WKS, WkE, qfromAxes3, Dmg, Mech, RACE_DIFF, Wreck, Jack, JACK_MODELS, Race, Bots, Crash, newCarState, Track, TRK, Col, COLK, Ven, VDEF, CDEF, venSave, VM, VMD, VMK, towns, roads, Dock, MARINA, Boat, Boats, BSPEC, HB, solidHit, TREE, Air, AIR, Fly, Planes, PSPEC, Rel, REL_ROSTER, Shop, COS, Cosm, Biome, Weather, REG, Bust, CR, Fight, Police, Wanted, WANT, footBlockedAt, findNearestRoadPoint, Tow, GAR, Home, GP, Foot, Talk, Fare, Pl, pedHit, getMoney: () => save.money, get save() { return save; }, getLaw: () => save.law, Court, CR, Peds, pedSpawn, Dyn, abortMission, stepSim: step, frame, Env, Wheels, updateWheels, updateCamera, groundAt, buildCarModel, carSpec, TRAFFIC_DEFS, secAt, disposeCar, THREE_: THREE, TREE, GB, addTree, addGrass, terrainHeight, fbm, noise2, sstep, Dev, devReset, CARS, CAR_BY_ID, applyCar, stepCar, CARP, roads, loadAround, carThumb, car, App, UI, Chunks, Post, Cam, Keys, missions, towns, spawnAt, get Mi() { return Mi; }, startMission, applyQuality, get renderer() { return renderer; }, get scene() { return scene; }, get camera() { return camera; }, Snd, WorldMap, MView, Mirror, MAT, Cockpit, Q: () => Q, hasPost: () => hasPost, key(code, down) { Keys[code] = down; if (down) onKey(code); }, tune };
 boot();
 
 })();

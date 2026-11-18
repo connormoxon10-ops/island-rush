@@ -22,11 +22,12 @@ function intSeat(K, x, z, yaw, o) { return K.person(Object.assign({ x: x - Math.
 /* ---------- offices ---------- */
 INT_KINDS.office = { name: 'Offices', rooms: {
   main(K, rec, r) {
-    const { W, D } = intDims(rec, 26, 22); K.shell({ W, D, H: 4.6, floor: 0xc8c4bc, wall: 0xe8e6e0, tiles: 0xb0aca4, trim: 0x2a2c30 });
+    const { W, D } = intDims(rec, 18, 15); K.shell({ W, D, H: 4.6, floor: 0xc8c4bc, wall: 0xe8e6e0, tiles: 0xb0aca4, trim: 0x2a2c30 });
     K.counter(-3, K.z0 + 3, 3, K.z0 + 3.8, 0x2a2c30, 0xe8e4dc, 1.1); K.sign(rec.name.toUpperCase(), 0, 3.2, K.z0 + 0.02, Math.min(W - 2, 8), 0.8, 0, { fg: '#e8e2d0', bg: null });
     intStaff(K, 0, K.z0 + 2.4, 0, 0x2a3a5a, { suit: true });
     K.sofa(K.x0 + 1.4, 0, Math.PI / 2, 2.4, 0x4a5a6a); K.sofa(K.x0 + 3.6, 0, -Math.PI / 2, 2.4, 0x4a5a6a); K.table(K.x0 + 2.5, 0, 0.9, 1.6, 0x2a2a2a, 0.42);
-    K.plant(K.x1 - 1, K.z1 - 1.2, 1.2); K.plant(K.x0 + 1, K.z1 - 1.2, 1.2); K.plant(K.x1 - 1, K.z0 + 1, 1.3);
+    K.plant(K.x1 - 1, K.z1 - 1.2, 1.2); K.plant(K.x0 + 1, K.z1 - 1.2, 1.2); K.plant(K.x1 - 1, K.z0 + 1, 1.3); K.plant(K.x0 + 1, K.z0 + 1, 1.3); K.rug(-2.5, 1, 2.5, K.z1 - 1.5, 0x3a3c44, 0x4a4c56);
+    for (let k = 0; k < 2; k++) K.pic(K.x0 + 0.02, 2.2, K.z0 + 4 + k * 3, Math.PI / 2, 2, 1.3, [0x6a8aa8, 0xa8846a][k]); K.box(-1.4, 0, 2.4, 1.4, 0.45, 3.0, 0x6a6c70, true); K.box(-1.4, 0, -3.4, 1.4, 0.45, -2.8, 0x6a6c70, true); intSeat(K, 0.6, 2.7, Math.PI, { sy: -0.02, suit: true, phone: true });
     /* lifts on the right wall */
     for (let k = 0; k < 2; k++) { const z = -1.5 + k * 3; K.box(K.x1 - 0.12, 0, z - 0.8, K.x1, 2.5, z + 0.8, 0xa8acb2); K.box(K.x1 - 0.14, 0, z - 0.02, K.x1 - 0.12, 2.5, z + 0.02, 0x5a5e64); K.glow(K.x1 - 0.14, 2.65, z - 0.15, K.x1 - 0.13, 2.8, z + 0.15, 0xffa840, 1.2); }
     const floors = Math.max(2, Math.min(30, Math.round(rec.h / 4)));
@@ -35,7 +36,7 @@ INT_KINDS.office = { name: 'Offices', rooms: {
     intShoppers(K, r, 2, [[0, 0], [K.x0 + 3, 2], [2, K.z0 + 4.5], [K.x1 - 2, 1]]);
   },
   floor(K, rec, r) {
-    const { W, D } = intDims(rec, 26, 22); K.shell({ W, D, H: 3.4, floor: 0x5a6068, wall: 0xeceae4, door: false, noBackWin: false, winH: [0.6, 2.9], trim: 0x2a2c30 });
+    const { W, D } = intDims(rec, 18, 15); K.shell({ W, D, H: 3.4, floor: 0x5a6068, wall: 0xeceae4, door: false, noBackWin: false, winH: [0.6, 2.9], trim: 0x2a2c30 });
     K.sign('FLOOR ' + (rec.floor || 2), K.x1 - 0.02, 2.4, 2, 1.6, 0.5, -Math.PI / 2, { fg: '#2a2c30', bg: '#e8e6e0' });
     for (let k = 0; k < 2; k++) { const z = -1.5 + k * 3; K.box(K.x1 - 0.12, 0, z - 0.8, K.x1, 2.5, z + 0.8, 0xa8acb2); }
     K.act(K.x1 - 0.9, 0, 2.2, 'Take the lift down', () => { Snd.beep(660, 0.05); Int.go('main', 'lift'); }, { wide: true });
@@ -49,7 +50,7 @@ INT_KINDS.office = { name: 'Offices', rooms: {
 
 /* ---------- café, bakery ---------- */
 function intCafe(K, rec, r, bake) {
-  const { W, D } = intDims(rec, 20, 16); K.shell({ W, D, floor: bake ? 0xd8c8a8 : 0x6a4a34, wall: bake ? 0xf2e8d8 : 0xe0d2bc, trim: 0x4a3426, lamp: 0xffe2b0, lightI: 0.85 });
+  const { W, D } = intDims(rec, 15, 12); K.shell({ W, D, floor: bake ? 0xd8c8a8 : 0x6a4a34, wall: bake ? 0xf2e8d8 : 0xe0d2bc, trim: 0x4a3426, lamp: 0xffe2b0, lightI: 0.85 });
   const cz = K.z0 + 2.2; K.counter(K.x0 + 1, cz, K.x1 - 3.5, cz + 0.8, 0x5a3a28, 0xe8e0d0);
   K.glass(K.x0 + 1.2, 1.02, cz + 0.05, K.x0 + 4.6, 1.45, cz + 0.75); for (let k = 0; k < 8; k++) K.box(K.x0 + 1.4 + k * 0.4, 1.05, cz + 0.25, K.x0 + 1.7 + k * 0.4, 1.15, cz + 0.55, [0xc88a3a, 0xe8c070, 0x8a4a2a, 0xf2d8a0][k % 4]);
   if (bake) { K.box(K.x0 + 1, 0, K.z0, K.x0 + 3, 1.8, K.z0 + 0.8, 0x6a6c70, true); K.glow(K.x0 + 1.2, 0.5, K.z0 + 0.81, K.x0 + 2.8, 1.2, K.z0 + 0.82, 0xff8a30, 1.2); }
@@ -66,14 +67,14 @@ INT_KINDS.bakery = { name: 'Bakery', rooms: { main(K, rec, r) { intCafe(K, rec, 
 /* ---------- shops with aisles: corner shop, pharmacy, hardware, electronics, books ---------- */
 function intAisles(K, r, pal, h, step) { const pts = []; for (let x = K.x0 + 3; x < K.x1 - 2.5; x += step || 2.8) { K.shelf(x - 0.35, K.z0 + 4, x + 0.35, K.z1 - 3.5, h || 1.7, 4, r, pal); pts.push([x + 1.35, K.z0 + 5], [x + 1.35, K.z1 - 4]); } return pts; }
 INT_KINDS.store = { name: 'Convenience store', rooms: { main(K, rec, r) {
-  const { W, D } = intDims(rec, 22, 18); K.shell({ W, D, floor: 0xd8d8d0, wall: 0xf0f0ec, tiles: 0xc0c0b8, lamp: 0xf0f8ff, lightI: 0.95 });
+  const { W, D } = intDims(rec, 16, 14); K.shell({ W, D, floor: 0xd8d8d0, wall: 0xf0f0ec, tiles: 0xc0c0b8, lamp: 0xf0f8ff, lightI: 0.95 });
   const pts = intAisles(K, r, INT_PROD); for (let x = K.x0 + 1; x < K.x1 - 1; x += 1) K.fridge(x + 0.5, K.z0 + 0.4, 0, true);
   K.counter(K.x1 - 4, K.z1 - 3, K.x1 - 1, K.z1 - 2.2, 0x2a6a4a, 0xe8e8e0); K.box(K.x1 - 3.4, 1.02, K.z1 - 2.9, K.x1 - 2.9, 1.3, K.z1 - 2.5, 0x2a2a2a); intStaff(K, K.x1 - 2.5, K.z1 - 3.6, 0, 0x2a8a5a);
   K.act(K.x1 - 2.5, K.z1 - 1.5, 1.6, 'Buy an energy drink', () => intBuy(6, 'an energy drink', () => intBuzz(4), 'Tastes like a battery. You feel fast.'), { cost: 6, wide: true });
   intShoppers(K, r, 3, pts);
 } } };
 INT_KINDS.pharmacy = { name: 'Pharmacy', rooms: { main(K, rec, r) {
-  const { W, D } = intDims(rec, 20, 16); K.shell({ W, D, floor: 0xe8e8e4, wall: 0xffffff, tiles: 0xd0d0cc, lamp: 0xf4fbff, lightI: 1 });
+  const { W, D } = intDims(rec, 15, 12); K.shell({ W, D, floor: 0xe8e8e4, wall: 0xffffff, tiles: 0xd0d0cc, lamp: 0xf4fbff, lightI: 1 });
   const pts = intAisles(K, r, [0xffffff, 0x2a8ad8, 0x3ab04a, 0xe8e8e8, 0xd82a4a], 1.6, 3); K.counter(K.x0 + 1, K.z0 + 1.6, K.x1 - 1, K.z0 + 2.4, 0xffffff, 0x3ab04a);
   K.shelf(K.x0 + 1, K.z0 + 0.1, K.x1 - 1, K.z0 + 0.5, 2.2, 5, r, [0xffffff, 0xf2f2f2, 0x2a8ad8, 0x3ab04a]); K.sign('✚ PHARMACY', 0, 2.9, K.z0 + 0.52, 3, 0.6, 0, { fg: '#3ab04a', bg: '#ffffff' });
   intStaff(K, 0, K.z0 + 1, 0, 0xf2f2f2, { sleeve: true });
@@ -81,14 +82,14 @@ INT_KINDS.pharmacy = { name: 'Pharmacy', rooms: { main(K, rec, r) {
   intShoppers(K, r, 2, pts);
 } } };
 INT_KINDS.hardware = { name: 'Hardware store', rooms: { main(K, rec, r) {
-  const { W, D } = intDims(rec, 24, 20); K.shell({ W, D, floor: 0x9a9890, wall: 0xd8d4c8, tiles: 0x8a8880, lamp: 0xfff8e8 });
+  const { W, D } = intDims(rec, 18, 15); K.shell({ W, D, floor: 0x9a9890, wall: 0xd8d4c8, tiles: 0x8a8880, lamp: 0xfff8e8 });
   const pts = intAisles(K, r, [0xd82a2a, 0xf2c81e, 0x5a5a5a, 0x2a5aa8, 0x9a6a3a, 0x3a3a3a], 2.2, 3); K.counter(K.x1 - 4, K.z1 - 3, K.x1 - 1, K.z1 - 2.2, 0xd85a1a); intStaff(K, K.x1 - 2.5, K.z1 - 3.6, 0, 0xd85a1a);
   for (let k = 0; k < 4; k++) K.box(K.x0 + 1 + k * 1.2, 0, K.z1 - 1.5, K.x0 + 1.9 + k * 1.2, 0.9, K.z1 - 0.7, [0x6a8a3a, 0xc8302a, 0x3a5a9a, 0x9a9a9a][k], true);
   K.act(K.x1 - 2.5, K.z1 - 1.5, 1.6, 'Buy a repair kit (car +40 health)', () => intBuy(60, 'a repair kit', () => { car.health = Math.min(100, car.health + 40); }, 'Repair kit. Your car is in better shape.'), { cost: 60, wide: true });
   intShoppers(K, r, 2, pts);
 } } };
 INT_KINDS.electronics = { name: 'Electronics', rooms: { main(K, rec, r) {
-  const { W, D } = intDims(rec, 22, 18); K.shell({ W, D, floor: 0x2a2c30, wall: 0xe8e8ec, lamp: 0xeef4ff, lightI: 1 });
+  const { W, D } = intDims(rec, 16, 14); K.shell({ W, D, floor: 0x2a2c30, wall: 0xe8e8ec, lamp: 0xeef4ff, lightI: 1 });
   for (let x = K.x0 + 1.5; x < K.x1 - 1; x += 1.9) K.tv(x, 1.9, K.z0 + 0.05, 0, 1.6, [0x3a7ac0, 0xc04a3a, 0x3ac07a, 0xc0a03a][((x * 7) | 0) & 3]);
   const pts = []; for (let x = K.x0 + 3; x < K.x1 - 2; x += 4) { K.table(x, 0, 2.2, 1, 0xf2f2f2, 0.9); for (let k = 0; k < 4; k++) K.glow(x - 0.9 + k * 0.5, 0.91, -0.15, x - 0.65 + k * 0.5, 0.92, 0.25, 0x6a9ad8, 1.1); pts.push([x, 1.4], [x, -1.4]); }
   K.counter(K.x1 - 4, K.z1 - 3, K.x1 - 1, K.z1 - 2.2, 0x1a5cff); intStaff(K, K.x1 - 2.5, K.z1 - 3.6, 0, 0x1a5cff);
@@ -96,36 +97,36 @@ INT_KINDS.electronics = { name: 'Electronics', rooms: { main(K, rec, r) {
   intShoppers(K, r, 3, pts);
 } } };
 INT_KINDS.books = { name: 'Bookshop', rooms: { main(K, rec, r) {
-  const { W, D } = intDims(rec, 20, 16); K.shell({ W, D, floor: 0x5a3a24, wall: 0xe8dcc4, lamp: 0xffe2b0, lightI: 0.8 });
+  const { W, D } = intDims(rec, 15, 12); K.shell({ W, D, floor: 0x5a3a24, wall: 0xe8dcc4, lamp: 0xffe2b0, lightI: 0.8 });
   for (const sx of [-1, 1]) K.shelf(sx < 0 ? K.x0 + 0.05 : K.x1 - 0.45, K.z0 + 1, sx < 0 ? K.x0 + 0.45 : K.x1 - 0.05, K.z1 - 2, 2.6, 6, r, INT_BOOK, 0x4a2a1a);
   K.shelf(K.x0 + 1, K.z0 + 0.05, K.x1 - 1, K.z0 + 0.45, 2.6, 6, r, INT_BOOK, 0x4a2a1a);
   const pts = []; for (let x = K.x0 + 3; x < K.x1 - 2; x += 3.2) { K.shelf(x - 0.3, K.z0 + 3, x + 0.3, K.z1 - 4, 1.6, 4, r, INT_BOOK, 0x4a2a1a); pts.push([x + 1.4, 0]); }
-  K.rug(-2, K.z1 - 3.4, 2, K.z1 - 1.4, 0x7a2a24, 0x9a4a34); K.sofa(0, K.z1 - 2, Math.PI, 2, 0x6a3a2a); K.lamp(2.4, K.z1 - 2.2);
+  K.rug(K.x0 + 1, K.z1 - 3.4, K.x0 + 4.6, K.z1 - 1.4, 0x7a2a24, 0x9a4a34); K.sofa(K.x0 + 2.8, K.z1 - 1.6, Math.PI, 2, 0x6a3a2a); K.lamp(K.x0 + 4.9, K.z1 - 1.4);
   K.counter(K.x1 - 4, K.z1 - 3, K.x1 - 1.5, K.z1 - 2.3, 0x4a2a1a); intStaff(K, K.x1 - 2.8, K.z1 - 3.6, 0, 0x6a7a5a, { sleeve: true });
   K.act(K.x1 - 2.8, K.z1 - 1.6, 1.6, 'Buy a paperback', () => intBuy(12, 'a paperback', null, 'A thriller about a bank job. Research.'), { cost: 12, wide: true });
   intShoppers(K, r, 2, pts);
 } } };
 INT_KINDS.barber = { name: 'Barber', rooms: { main(K, rec, r) {
-  const { W, D } = intDims(rec, 16, 12); K.shell({ W, D, floor: 0xe8e8e8, wall: 0xf2efe8, tiles: 0x1a1a1a, lamp: 0xffffff });
+  const { W, D } = intDims(rec, 12, 10); K.shell({ W, D, floor: 0xe8e8e8, wall: 0xf2efe8, tiles: 0x1a1a1a, lamp: 0xffffff });
   for (let k = 0; k < 3; k++) { const x = K.x0 + 2 + k * 2.4; K.glow(x - 0.7, 1.0, K.z0 + 0.02, x + 0.7, 2.2, K.z0 + 0.03, 0xc8d4dc, 0.9); K.box(x - 0.8, 0.8, K.z0, x + 0.8, 0.86, K.z0 + 0.4, 0xf2f2f2); K.box(x - 0.32, 0, K.z0 + 1.1, x + 0.32, 0.55, K.z0 + 1.7, 0x8a1a1a, true); K.box(x - 0.32, 0.55, K.z0 + 1.6, x + 0.32, 1.25, K.z0 + 1.75, 0x8a1a1a); if (k < 2) { intSeat(K, x, K.z0 + 1.45, Math.PI, { sy: 0.12 }); intStaff(K, x + 0.6, K.z0 + 2.1, Math.PI, 0xf2f2f2, { kind: 'work' }); } }
   K.sofa(K.x1 - 1, 0, -Math.PI / 2, 2.2, 0x2a2a2a); K.cyl(K.x1 - 0.3, 1.2, K.z1 - 0.6, 0.12, 1, 0xd82a2a);
   K.act(K.x0 + 6.8, K.z0 + 2.4, 1.6, 'Get a haircut', () => intBuy(25, 'a haircut', () => { const ids = COS.items.filter((i) => i.cat === 'hair' && i.price <= 0).map((i) => i.id); const o = cosSave().out; if (ids.length) { const k = (ids.indexOf(o.hair) + 1) % (ids.length + 1); o.hair = ids[k] || null; } if (Int.ped) Int.mkPed(); }, 'Fresh cut. Looking sharp.'), { cost: 25 });
 } } };
 INT_KINDS.florist = { name: 'Florist', rooms: { main(K, rec, r) {
-  const { W, D } = intDims(rec, 16, 12); K.shell({ W, D, floor: 0x8a7a68, wall: 0xf2f0e6, lamp: 0xfff4e0 });
+  const { W, D } = intDims(rec, 12, 10); K.shell({ W, D, floor: 0x8a7a68, wall: 0xf2f0e6, lamp: 0xfff4e0 });
   for (let x = K.x0 + 1.2; x < K.x1 - 1; x += 1.1) for (const z of [K.z0 + 0.8, K.z0 + 3]) { K.cyl(x, 0, z, 0.25, 0.5, 0x4a5a6a, true); for (let k = 0; k < 7; k++) { const a = k * 0.9; K.cyl(x + Math.sin(a) * 0.12, 0.5, z + Math.cos(a) * 0.12, 0.01, 0.35, 0x3a7a2a); K.cyl(x + Math.sin(a) * 0.14, 0.85, z + Math.cos(a) * 0.14, 0.06, 0.08, [0xd82a4a, 0xf2c81e, 0xf2f2f2, 0xd85ad8, 0xf28a1e][(k + ((x * 3) | 0)) % 5]); } }
   K.counter(K.x1 - 4, K.z1 - 3, K.x1 - 1, K.z1 - 2.3, 0x6a8a5a); intStaff(K, K.x1 - 2.5, K.z1 - 3.6, 0, 0x6a8a5a);
   K.act(K.x1 - 2.5, K.z1 - 1.6, 1.6, 'Buy a bunch of flowers', () => intBuy(15, 'flowers', () => { save.int.flowers = (save.int.flowers || 0) + 1; }, 'Lovely. Someone will be pleased.'), { cost: 15, wide: true });
 } } };
 INT_KINDS.laundry = { name: 'Laundromat', rooms: { main(K, rec, r) {
-  const { W, D } = intDims(rec, 18, 14); K.shell({ W, D, floor: 0xd8d8d0, wall: 0xa8d8e8, tiles: 0xc0c0b8, lamp: 0xf4fbff });
+  const { W, D } = intDims(rec, 13, 10); K.shell({ W, D, floor: 0xd8d8d0, wall: 0xa8d8e8, tiles: 0xc0c0b8, lamp: 0xf4fbff });
   for (let x = K.x0 + 1; x < K.x1 - 0.8; x += 1) { K.box(x - 0.45, 0, K.z0, x + 0.45, 1.0, K.z0 + 0.75, 0xf2f2f2, true); K.cyl(x, 0.3, K.z0 + 0.76, 0.28, 0.02, 0x2a3a4a, false); K.box(x - 0.45, 1.0, K.z0, x + 0.45, 1.9, K.z0 + 0.75, 0xe8e8e8); }
   K.table(0, 1, 3, 0.9, 0xd8d2c4); for (const x of [-2.5, -1.5, 1.5, 2.5]) K.chair(x, K.z1 - 2, Math.PI, 0xd8a83a); intSeat(K, -1.5, K.z1 - 2, Math.PI, { phone: true });
   K.act(0, 2.2, 1.6, 'Wash your clothes', () => intBuy(4, 'a wash', null, 'Spin cycle. Smells of lavender.'), { cost: 4 });
 } } };
 /* ---------- bar, diner ---------- */
 INT_KINDS.bar = { name: 'Bar', rooms: { main(K, rec, r) {
-  const { W, D } = intDims(rec, 20, 16); K.shell({ W, D, floor: 0x3a2618, wall: 0x4a2a20, ceil: 0x1a120c, trim: 0x2a1a10, lamp: 0xffc070, lightI: 0.55, hemi: 0.4 });
+  const { W, D } = intDims(rec, 15, 12); K.shell({ W, D, floor: 0x3a2618, wall: 0x4a2a20, ceil: 0x1a120c, trim: 0x2a1a10, lamp: 0xffc070, lightI: 0.55, hemi: 0.4 });
   K.counter(K.x0 + 1, K.z0 + 2, K.x1 - 3, K.z0 + 2.7, 0x5a3420, 0x2a1a10, 1.1); K.box(K.x0 + 1, 0, K.z0, K.x1 - 3, 2.4, K.z0 + 0.4, 0x3a2416, true);
   for (let x = K.x0 + 1.3; x < K.x1 - 3.2; x += 0.22) for (const y of [1.2, 1.7]) K.glow(x, y, K.z0 + 0.15, x + 0.08, y + 0.32, K.z0 + 0.25, [0x8ad84a, 0xd8a83a, 0x8a3a1a, 0xd8d8f0][((x * 13) | 0) & 3], 0.7);
   for (let x = K.x0 + 1.6; x < K.x1 - 3.4; x += 1.1) { K.chair(x, K.z0 + 3.3, 0, 0x8a1a1a, true); if (r() < 0.45) intSeat(K, x, K.z0 + 3.35, Math.PI, { sy: 0.25, sy0: 0.0, eat: r() < 0.5 }); }
@@ -137,7 +138,7 @@ INT_KINDS.bar = { name: 'Bar', rooms: { main(K, rec, r) {
 INT_KINDS.diner = { name: 'Diner', rooms: { main(K, rec, r) { intDiner(K, rec, r); } } };
 function intDiner(K, rec, r, th) {
   th = th || { floor: 0xe8e8e8, tiles: 0x1a1a1a, wall: 0xf2e6d0, seat: 0xc8202a, top: 0xe8e4dc, staff: 0xf2f2f2, menu: 'BURGERS · FRIES · SHAKES · PIE', price: 12, meal: 'a burger and a shake' };
-  const { W, D } = intDims(rec, 24, 20); K.shell({ W, D, floor: th.floor, tiles: th.tiles, wall: th.wall, trim: th.trim || 0xc8202a, lamp: th.lamp || 0xfff2d8, lightI: th.lightI || 0.85 });
+  const { W, D } = intDims(rec, 18, 15); K.shell({ W, D, floor: th.floor, tiles: th.tiles, wall: th.wall, trim: th.trim || 0xc8202a, lamp: th.lamp || 0xfff2d8, lightI: th.lightI || 0.85 });
   K.counter(K.x0 + 1, K.z0 + 2.2, K.x1 - 1, K.z0 + 2.9, th.counter || 0xc8202a, th.top);
   K.box(K.x0 + 1, 0, K.z0, K.x1 - 1, 1.0, K.z0 + 0.7, 0xb0b4b8, true); K.box(K.x0 + 1, 1.4, K.z0 + 0.05, K.x1 - 1, 1.42, K.z0 + 0.5, 0xb0b4b8); K.glow(K.x0 + 2, 1.7, K.z0 + 0.02, K.x0 + 3.5, 2.1, K.z0 + 0.03, 0xff8a3a, 1);
   K.sign(th.menu, 0, 2.8, K.z0 + 0.03, Math.min(W - 3, 9), 0.6, 0, { fg: th.menuFg || '#fff', bg: th.menuBg || '#c8202a' });
@@ -152,7 +153,7 @@ function intDiner(K, rec, r, th) {
 
 /* ---------- a home ---------- */
 INT_KINDS.home = { name: 'Home', rooms: { main(K, rec, r) {
-  const { W, D } = intDims(rec, 16, 12); const wall = [0xf2ead8, 0xdce8e0, 0xe8dcd0, 0xdce0ec][rec.seed & 3];
+  const { W, D } = intDims(rec, 12, 10); const wall = [0xf2ead8, 0xdce8e0, 0xe8dcd0, 0xdce0ec][rec.seed & 3];
   K.shell({ W, D, H: 2.8, floor: 0x8a6a4a, wall, trim: 0xf2f2f2, lamp: 0xffe8c0, lightI: 0.8, noBackWin: true });
   const mx = K.x0 + W * 0.58; K.wallZ(mx, K.z0, K.z1, [[K.z1 - 3.2, K.z1 - 2.2]], wall);
   /* living room */
@@ -166,6 +167,8 @@ INT_KINDS.home = { name: 'Home', rooms: { main(K, rec, r) {
   const who = K.person({ x: (K.x0 + mx) / 2, z: 1.2, yaw: Math.PI, kind: 'sit', sy0: 0, talk: false });
   if (who) who.after = (n) => { if (Int.t > 1.5 && Int.t < 4.5) { n.talk = true; Int.say('“Er… can I help you? This is my house.”', 0.2); } else n.talk = false; };
   if (r() < 0.6) K.person({ x: mx + 1, z: K.z0 + 1.1, yaw: 0, kind: 'work' });
+  K.act((K.x0 + mx) / 2, -0.4, 1.6, 'Watch their TV', () => Int.say(intNews() + ' · “Do you mind?”', 5));
+  K.act((mx + K.x1) / 2, 0.6, 1.6, 'Ask for a glass of water', () => { intBuzz(1); Snd.beep(600, 0.05); Int.say('“Er… sure. Here. And then you’ll be going?”', 3); });
 } } };
 /* ---------- warehouse, barn ---------- */
 INT_KINDS.warehouse = { name: 'Warehouse', rooms: { main(K, rec, r) {

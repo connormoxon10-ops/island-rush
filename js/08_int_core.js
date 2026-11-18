@@ -7,7 +7,7 @@
 const INT = { EYE: 1.62, R: 0.3, NPC_CAP: 14 };
 const Int = { on: false, rec: null, kind: null, room: 'main', sc: null, cam: null, x: 0, z: 0, y: 0, yaw: 0, pitch: 0, vx: 0, vz: 0, bob: 0, cols: [], acts: [], npcs: [], ticks: [], swim: null, tp: false, near: null,
   t: 0, msg: '', msgT: 0, hudH: '', botH: '', pan: null, fx: { speed: 0, damage: 0, chroma: 0, expo: 1 }, expo: 1.15, ped: null, back: null, drag: null, look: { k: 0 }, busy: null, entered: 0, hook: null };
-const _ii = { f: 0, r: 0, run: false, lx: 0, ly: 0, use: false, back: false };
+const _ii = { f: 0, r: 0, run: false, sneak: false, lx: 0, ly: 0, use: false, back: false };
 function intSave() { const s = save.int || (save.int = { apts: {}, fit: 0, gym: 0, meals: 0, swims: 0, jail: 0, nights: 0, rooms: 0, banks: {} }); s.apts = s.apts || {}; s.banks = s.banks || {}; return s; }
 
 /* ---------- enter / leave ---------- */
@@ -44,6 +44,7 @@ Int.clear = function () {
 Int.leave = function (silent) {
   if (!Int.on) return; const rec = Int.rec, D = Int.kind;
   if (Int.busy && Int.busy.lock) { Int.say(Int.busy.lock); return; }
+  if (D && D.canLeave && !D.canLeave()) { Int.say(D.canLeaveMsg || 'Walk out of the door'); return; }
   if (D && D.leave && D.leave(rec) === false) return;
   Int.panel(null); Int.clear(); Int.on = false; Int.busy = null;
   const d = rec.door; let x = d.ox, z = d.oz;
@@ -68,11 +69,11 @@ function intInput() {
   const K = Keys, T = TouchIn, I = _ii;
   I.f = (K.KeyW || K.ArrowUp ? 1 : 0) - (K.KeyS || K.ArrowDown ? 1 : 0) + T.gas - T.brk; I.r = (K.KeyD ? 1 : 0) - (K.KeyA ? 1 : 0) + T.r - T.l; I.lx = I.ly = 0;
   if (K.ArrowLeft) I.lx -= 1; if (K.ArrowRight) I.lx += 1;
-  I.run = !!(K.ShiftLeft || K.ShiftRight) || !!T.nit; I.use = false; I.back = false;
+  I.run = !!(K.ShiftLeft || K.ShiftRight) || !!T.nit; I.sneak = !!(K.ControlLeft || K.ControlRight) || !!T.hand; I.use = false; I.back = false;
   let pads = null; try { pads = navigator.getGamepads ? navigator.getGamepads() : null; } catch (e) { pads = null; }
   if (pads) for (const p of pads) if (p && p.connected) {
     const dz = (v) => (Math.abs(v) > 0.15 ? v : 0), bv = (i) => (p.buttons[i] ? p.buttons[i].value || (p.buttons[i].pressed ? 1 : 0) : 0);
-    I.r += dz(p.axes[0]); I.f -= dz(p.axes[1]); I.lx += dz(p.axes[2] || 0); I.ly += dz(p.axes[3] || 0); I.run = I.run || bv(1) > 0.5 || bv(10) > 0.5;
+    I.r += dz(p.axes[0]); I.f -= dz(p.axes[1]); I.lx += dz(p.axes[2] || 0); I.ly += dz(p.axes[3] || 0); I.run = I.run || bv(1) > 0.5 || bv(10) > 0.5; I.sneak = I.sneak || bv(11) > 0.5 || bv(6) > 0.5;
     for (const [i, code] of [[0, 'KeyE'], [2, 'KeyE'], [3, 'KeyC'], [9, 'Escape'], [1, 'Backspace']]) { const on = bv(i) > 0.5; if (on && !padPrev[100 + i]) onKey(code); padPrev[100 + i] = on; }
     break;
   }
@@ -147,12 +148,12 @@ Int.frame = function (dt) {
   App.time += dt; Int.t += dt; if (Snd.ok) Snd.update(car, dt, true);
   App.tod = (App.tod + dt * (save.set.cycle ? 24 / 1440 : 0)) % 24;
   if (Int.msgT > 0) Int.msgT -= dt;
-  const I = Int.pan || (Int.busy && Int.busy.freeze) ? { f: 0, r: 0, run: false, lx: 0, ly: 0 } : intInput();
+  const I = Int.pan || (Int.busy && Int.busy.freeze) ? { f: 0, r: 0, run: false, sneak: Int.sneak, lx: 0, ly: 0 } : intInput(); Int.sneak = !!I.sneak;
   if (I.lx) Int.yaw -= I.lx * 2.4 * dt; if (I.ly) Int.pitch = clamp(Int.pitch - I.ly * 1.8 * dt, -1.3, 1.2);
   /* walk (or swim) */
   const sw = Int.swim && Int.swim.at(Int.x, Int.z), s = Math.sin(Int.yaw), c = Math.cos(Int.yaw), fit = intSave().fit || 0;
   let mx = s * I.f - c * I.r, mz = c * I.f + s * I.r; const ml = Math.hypot(mx, mz); if (ml > 1) { mx /= ml; mz /= ml; }
-  const run = I.run && I.f > -0.2 && ml > 0.1, vmax = sw ? (run ? 1.9 : 1.2) * (1 + fit * 0.002) : (run ? 5.2 * (1 + fit * 0.0015) : 2.2) * (I.f < -0.3 && !I.r ? 0.6 : 1);
+  const run = I.run && !I.sneak && I.f > -0.2 && ml > 0.1, vmax = sw ? (run ? 1.9 : 1.2) * (1 + fit * 0.002) : (run ? 5.2 * (1 + fit * 0.0015) : I.sneak ? 1.2 : 2.2) * (I.f < -0.3 && !I.r ? 0.6 : 1);
   Int.vx += (mx * vmax - Int.vx) * Math.min(1, dt * (sw ? 3 : 10)); Int.vz += (mz * vmax - Int.vz) * Math.min(1, dt * (sw ? 3 : 10));
   const o = intResolve(Int.x + Int.vx * dt, Int.z + Int.vz * dt, INT.R, Int.cols, Int.bounds); Int.x = o.x; Int.z = o.z;
   const sp = Math.hypot(Int.vx, Int.vz); Int.bob += sp * dt * (run ? 1.7 : 2.1);
@@ -176,7 +177,8 @@ Int.frame = function (dt) {
   if (Int.ped && Int.ped.hu) Int.ped.hu.root.visible = Int.tp;
   /* camera */
   const cam = Int.cam, W = innerWidth, H = innerHeight; cam.aspect = W / H; cam.fov = save.set.fov || 72; cam.updateProjectionMatrix();
-  const eye = (sw ? 0.55 : INT.EYE) + Int.y + (sp > 0.3 && !sw ? Math.sin(Int.bob * 2) * 0.025 : 0), cp = Math.cos(Int.pitch);
+  Int.eyeK = (Int.eyeK == null ? 1 : Int.eyeK) + ((Int.sneak ? 0.64 : 1) - (Int.eyeK == null ? 1 : Int.eyeK)) * Math.min(1, dt * 8);
+  const eye = (sw ? 0.55 : INT.EYE * Int.eyeK) + Int.y + (sp > 0.3 && !sw ? Math.sin(Int.bob * 2) * 0.025 : 0), cp = Math.cos(Int.pitch);
   if (Int.tp) {
     const bx = Int.x - s * 2.6 * cp, bz = Int.z - c * 2.6 * cp, o2 = intResolve(bx, bz, 0.2, Int.cols, Int.bounds);
     cam.position.set(o2.x, eye + 0.3 - Math.sin(Int.pitch) * 1.6, o2.z); cam.lookAt(Int.x, eye - 0.1, Int.z);
@@ -196,7 +198,7 @@ Int.paint = function () {
   const h = Int.busy && Int.busy.hud ? Int.busy.hud() : Int.kind && Int.kind.hud ? Int.kind.hud() : '';
   if (h !== Int.hudH) { Int.hudH = h; E.intHud.innerHTML = h; E.intHud.hidden = !h; }
   E.intCash.textContent = money(save.money); E.intDot.hidden = Int.tp || !!Int.pan;
-  if (E.tAct) { E.tAct.dataset.k = 'KeyE'; E.tAct.textContent = Int.near ? 'USE' : '·'; }
+  if (E.tAct && TouchIn.on) { E.tAct.dataset.k = 'KeyE'; E.tAct.style.display = ''; const t = Int.busy && Int.busy.press ? 'PRESS' : Int.near ? 'USE' : '·'; if (E.tAct.textContent !== t) E.tAct.textContent = t; }
 };
 
 /* ---------- people inside ---------- */
@@ -205,7 +207,7 @@ function intNpc(n, dt) {
   if (n.kind === 'walk' && n.path) {
     const P = n.path, q = P[n.pi]; if (n.wait > 0) { n.wait -= dt; n.v = 0; n.state = 'stand'; }
     else { const dx = q[0] - n.x, dz = q[1] - n.z, d = Math.hypot(dx, dz); if (d < 0.25) { n.wait = q[2] || 0; n.pi = (n.pi + 1) % P.length; if (q[3] != null) n.yaw = q[3]; } else { n.state = 'walk'; n.v = n.vt; n.x += dx / d * n.v * dt; n.z += dz / d * n.v * dt; n.yaw += angDiff(n.yaw, Math.atan2(dx, dz)) * Math.min(1, dt * 6); n.ph += TAU * n.v / pedCyc(n.v, n.app) * dt; } }
-  } else if (n.kind === 'chase' && n.tgt) { /* moved by its owner */ }
+  } else if (n.kind === 'ctl') { /* moved by its owner (a guard on its rounds) */ }
   else if (n.kind === 'treadmill') { n.v = 2.7; n.state = 'walk'; n.ph += TAU * n.v / pedCyc(n.v, n.app) * dt; }
   else if (n.kind !== 'walk') { n.v = 0; n.state = n.talk ? 'talk' : 'stand'; }
   if (n.face) { const dx = Int.x - n.x, dz = Int.z - n.z; if (dx * dx + dz * dz < 16) n.yaw += angDiff(n.yaw, Math.atan2(dx, dz)) * Math.min(1, dt * 3); }

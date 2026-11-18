@@ -111,7 +111,7 @@ function genTownLots(ch, T, gbB, gbP) {
       if (Shop.lot(T, i, j, a, b)) { Shop.build(ch, Shop.sites[ri], gbB, gbP); continue; }
       if (Ven.lot(T, i, j, a, b)) { Ven.build(ch, Ven.sites[ri], gbB, gbP); continue; }
       if (Ven.clubLot(T, i, j, a, b)) { Ven.buildClub(ch, Ven.clubs[ri], gbB, gbP); continue; }
-      const r = mulberry32(ihash(T.id * 977 + i * 31 + a, j * 57 + b, 11));
+      const r = mulberry32((ihash(T.id * 977 + i * 31 + a, j * 57 + b, 11) * 4294967296) >>> 0);   /* (each lot its own seed: ihash is a fraction, mulberry32 wants an integer) */
       const uo = ((r() * 4) | 0) * 0.25, vo = ((r() * 4) | 0) * 0.25;
       if (dn < 1) {
         const hgt = 4 * Math.max(2, Math.round((A.dtH[0] + r() * (A.dtH[1] - A.dtH[0])) / 4)), tall = hgt > 34;

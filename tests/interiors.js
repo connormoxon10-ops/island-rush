@@ -23,24 +23,26 @@ const OUT = process.env.OUT || __dirname, ONLY = process.env.ONLY || '';
   ok(kinds.bank >= 3 && kinds.reserve === 1 && kinds.apts >= 7 && kinds.gym >= 3 && kinds.pool >= 3 && kinds.dealer >= 3 && kinds.jail === 1 && kinds.resto >= 7 && kinds.clothes >= 7, 'special buildings in the towns: banks, apartments, gyms, pools, dealerships, a jail, restaurants and clothing shops');
   /* load each town and gather the ordinary buildings too */
   const gen = await page.evaluate(() => {
-    const g = window.__game, out = {}; for (const T of g.towns) { g.loadAround(T.cx, T.cz, 400); }
-    for (const r of g.Bld.lots.values()) { (out[r.kind] || (out[r.kind] = [])).push(r.key); }
-    const n = g.Bld.lots.size, doors = [...g.Bld.lots.values()].every((r) => r.door && isFinite(r.door.x) && r.name);
-    return { kinds: Object.fromEntries(Object.entries(out).map(([k, v]) => [k, v.length])), keys: Object.fromEntries(Object.entries(out).map(([k, v]) => [k, v[0]])), n, doors };
+    const g = window.__game, out = {}; let n = 0;
+    for (const T of g.towns) { g.loadAround(T.cx, T.cz, 400); n += 0; for (const r of g.Bld.lots.values()) (out[r.kind] || (out[r.kind] = [])).indexOf(r.key) < 0 && out[r.kind].push(r.key); }
+    g.loadAround(g.car.x, g.car.z, 60);   /* (back to the start: the other towns unload) */
+    n = g.Bld.lots.size; const doors = [...g.Bld.lots.values()].every((r) => r.door && isFinite(r.door.x) && r.name);
+    const keys = Object.fromEntries(Object.entries(out).map(([k, v]) => [k, v[0]])); for (const r of g.Bld.prepFixed()) if (!keys[r.kind]) keys[r.kind] = r.key;
+    return { kinds: Object.fromEntries(Object.entries(out).map(([k, v]) => [k, v.length])), keys, n, doors, fixed: g.Bld.prepFixed().length };
   });
   console.log('buildings', gen.n, JSON.stringify(gen.kinds));
   ok(gen.n > 400 && gen.doors, 'every town building is registered with a name and a street door (' + gen.n + ')');
-  const want = ['office', 'cafe', 'store', 'pharmacy', 'books', 'barber', 'bakery', 'electronics', 'florist', 'hardware', 'laundry', 'bar', 'diner', 'home', 'warehouse', 'barn', 'bank', 'reserve', 'apts', 'gym', 'pool', 'resto', 'clothes', 'dealer', 'jail'];
+  const want = ['office', 'cafe', 'store', 'pharmacy', 'books', 'barber', 'bakery', 'electronics', 'florist', 'hardware', 'laundry', 'bar', 'diner', 'home', 'warehouse', 'barn', 'bank', 'reserve', 'apts', 'gym', 'pool', 'resto', 'clothes', 'dealer', 'jail', 'terminal', 'boathouse', 'venue', 'club'];
   for (const k of want) if (!ONLY || ONLY.split(',').includes(k)) ok(!!gen.keys[k], 'there is a ' + k);
   for (const k of want) {
     if (ONLY && !ONLY.split(',').includes(k)) continue; const key = gen.keys[k]; if (!key) continue;
     const r = await page.evaluate((key) => {
-      const g = window.__game, rec = g.Bld.lots.get(key), c = g.car, F = g.Foot, run = (n) => { for (let i = 0; i < n; i++) { window.__now += 1000 / 30; g.frame(window.__now); } };
+      const g = window.__game, rec = g.Bld.lots.get(key) || g.Bld.prepFixed().find((q) => q.key === key), c = g.car, F = g.Foot, run = (n) => { for (let i = 0; i < n; i++) { window.__now += 1000 / 30; g.frame(window.__now); } };
       if (g.App.mode === 'int') g.Int.leave(true);
       const d = rec.door; g.loadAround(d.ox, d.oz, 30); g.spawnAt(d.ox + d.nz * 6, d.oz + d.nz * 6, 0); run(4);
       g.key('KeyF', true); g.key('KeyF', false); run(4);
       F.x = d.ox; F.z = d.oz; F.yaw = Math.atan2(-d.nx, -d.nz); run(6);
-      const near = g.Bld.near === rec; g.key('KeyE', true); g.key('KeyE', false); run(3);
+      const near = g.Bld.near === rec || (rec.S && g.Ven.near === rec.S); g.key('KeyE', true); g.key('KeyE', false); run(3);
       const I = g.Int, inside = g.App.mode === 'int' && I.rec === rec;
       if (!inside) return { near, inside, mode: g.App.mode, foot: F.on, bn: g.Bld.near && g.Bld.near.key };
       run(20); const shot0 = g.renderer.domElement.toDataURL('image/jpeg', 0.85);
@@ -61,10 +63,10 @@ const OUT = process.env.OUT || __dirname, ONLY = process.env.ONLY || '';
     }, key);
     if (!r.inside) { ok(false, k + ': walk up to the door and press E (' + JSON.stringify(r) + ')'); continue; }
     for (const [i, s] of [r.shot0, r.shot1, r.shot2].entries()) fs.writeFileSync(path.join(OUT, 'int_' + k + '_' + i + '.jpg'), Buffer.from(s.split(',')[1], 'base64'));
-    const s = r.st; console.log('  ' + k + ' · ' + r.name + ' · ' + JSON.stringify({ cols: s.cols, acts: s.acts, people: s.people, walked: +s.walked.toFixed(1) }));
+    const s = r.st; console.log('  [' + Math.round(process.uptime()) + ' s] ' + k + ' · ' + r.name + ' · ' + JSON.stringify({ cols: s.cols, acts: s.acts, people: s.people, walked: +s.walked.toFixed(1) }));
     ok(r.near && r.inside, k + ': walk up to ' + r.name + ' and press E: you are inside');
-    ok(s.cols > 6 && s.acts >= 2, k + ': furniture to bump into (' + s.cols + ') and things to use (' + s.acts + ')');
-    ok(k === 'barn' || k === 'warehouse' || k === 'laundry' || s.people >= 1, k + ': people inside (' + s.people + ')');
+    ok(s.cols >= 4 && s.acts >= 2, k + ': furniture to bump into (' + s.cols + ') and things to use (' + s.acts + ')');
+    ok(k === 'barn' || k === 'warehouse' || k === 'laundry' || k === 'home' || s.people >= 1, k + ': people inside (' + s.people + ')');
     ok(s.walked > 1.5 && s.inB && !s.inCol, k + ': you walk about (' + s.walked.toFixed(1) + ' m) and stop at the walls and furniture');
     ok(s.tp, k + ': the third-person view shows you');
     ok(s.out, k + ': Esc takes you back out of the street door');

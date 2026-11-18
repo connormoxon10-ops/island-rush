@@ -131,6 +131,7 @@ Bld.tick = function () {
       for (const r of ch.doors) { const ex = Pl.x - (r.door.x + r.door.nx * 0.9), ez = Pl.z - (r.door.z + r.door.nz * 0.9), d2 = ex * ex + ez * ez; if (d2 < bd) { bd = d2; best = r; } }
     }
   }
+  if (!best && App.mode === 'play' && !Mi && !Fly.on && !Boat.on && !Bust.on && car.wrecked <= 0 && (Foot.on || Math.abs(car.speed) < 2.5)) best = Bld.fixedNear(Foot.on ? 2.4 : 7);
   Bld.near = best;
 };
 Bld.enter = function () { const r = Bld.near; if (!r) return; Int.enter(r); };

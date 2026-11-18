@@ -7,7 +7,7 @@
 const intGold = 0xc8a050;
 /* ---------- bank ---------- */
 function intBankHall(K, rec, r, big) {
-  const { W, D } = intDims(rec, big ? 30 : 24, big ? 26 : 20); K.shell({ W, D, H: big ? 6 : 5, floor: 0xe8e4dc, tiles: 0xc8c0b0, wall: 0xf0ece2, trim: 0x8a7a5a, lamp: 0xfff4dc, lightI: 0.9, hemi: 0.8 });
+  const { W, D } = intDims(rec, big ? 26 : 20, big ? 21 : 17); K.shell({ W, D, H: big ? 6 : 5, floor: 0xe8e4dc, tiles: 0xc8c0b0, wall: 0xf0ece2, trim: 0x8a7a5a, lamp: 0xfff4dc, lightI: 0.9, hemi: 0.8 });
   for (const sx of [-1, 1]) for (let z = K.z0 + 6; z < K.z1 - 2; z += 4) K.cyl(sx * (W / 2 - 2.2), 0, z, 0.38, K.H, 0xf2eee4, true);
   K.rug(-1.2, K.z0 + 6, 1.2, K.z1 - 0.5, 0x7a1a1a, 0x9a2a2a);
   /* the teller line: a counter, glass above it, three windows */
@@ -45,10 +45,11 @@ function intAptPrice(rec, floor, u) { return Math.round((INT_APT_BASE[rec.ti % 7
 function intAptId(rec, floor, u) { return rec.key + '#' + floor + '-' + u; }
 INT_KINDS.apts = { name: 'Apartments', rooms: {
   main(K, rec, r) {
-    const { W, D } = intDims(rec, 22, 18); K.shell({ W, D, H: 4, floor: 0x5a4a3a, wall: 0xe8e0d0, trim: 0x2a2a2a, lamp: 0xffe8c8, lightI: 0.8 });
+    const { W, D } = intDims(rec, 16, 13); K.shell({ W, D, H: 4, floor: 0x5a4a3a, wall: 0xe8e0d0, trim: 0x2a2a2a, lamp: 0xffe8c8, lightI: 0.8 });
     K.counter(-2, K.z0 + 2.5, 2, K.z0 + 3.2, 0x3a2a20, 0xe8e4dc); intStaff(K, 0, K.z0 + 1.8, 0, 0x2a2a2a, { suit: true, role: 'concierge' });
     for (let k = 0; k < 14; k++) K.box(K.x0 + 0.02, 0.8 + (k % 7) * 0.22, K.z0 + 2 + ((k / 7) | 0) * 0.5, K.x0 + 0.15, 0.98 + (k % 7) * 0.22, K.z0 + 2.45 + ((k / 7) | 0) * 0.5, 0xb8a060);
-    K.sofa(K.x0 + 1.5, 1.5, Math.PI / 2, 2.4, 0x6a4a3a); K.plant(K.x1 - 1, K.z1 - 1, 1.2); K.rug(-2, 0, 2, K.z1 - 1, 0x2a3a5a, 0x3a4a6a); K.sign(rec.name.toUpperCase(), 0, 3.3, K.z0 + 0.03, Math.min(W - 2, 8), 0.7, 0, { fg: '#c8a050' });
+    K.sofa(K.x0 + 1.5, 1.5, Math.PI / 2, 2.4, 0x6a4a3a); K.plant(K.x1 - 1, K.z1 - 1, 1.2); K.plant(K.x0 + 1, K.z1 - 1, 1.2); K.plant(K.x0 + 1, K.z0 + 1, 1.1); K.table(K.x0 + 2.6, 1.5, 0.7, 1.4, 0x2a2a2a, 0.42); K.lamp(K.x0 + 0.6, -0.4);
+    for (let k = 0; k < 3; k++) K.pic(K.x0 + 0.02, 1.9, K.z1 - 3 - k * 2.2, Math.PI / 2, 1.2, 0.9, [0x8a5a3a, 0x3a6a8a, 0x6a8a4a][k]); K.pic(K.x1 - 0.02, 1.9, K.z1 - 3, -Math.PI / 2, 1.6, 1.0, 0xa86a4a); K.person({ x: K.x0 + 1.6, z: 1.0, yaw: Math.PI / 2, kind: 'sit', phone: true }); K.rug(-2, 0, 2, K.z1 - 1, 0x2a3a5a, 0x3a4a6a); K.sign(rec.name.toUpperCase(), 0, 3.3, K.z0 + 0.03, Math.min(W - 2, 8), 0.7, 0, { fg: '#c8a050' });
     for (let k = 0; k < 2; k++) { const z = -1 + k * 2.6; K.box(K.x1 - 0.12, 0, z - 0.8, K.x1, 2.5, z + 0.8, 0xa8acb2); K.box(K.x1 - 0.14, 0, z - 0.02, K.x1 - 0.12, 2.5, z + 0.02, 0x5a5e64); }
     K.spawn('lift', K.x1 - 1.4, 0.3, -Math.PI / 2);
     const floors = Math.max(3, Math.min(12, Math.round(rec.h / 3.4)));
@@ -112,7 +113,7 @@ function intWardrobe(rec, own) {
   } });
 }
 INT_KINDS.clothes = { name: 'Clothing', rooms: { main(K, rec, r) {
-  const { W, D } = intDims(rec, 22, 18), R = REG[rec.ti % 7]; K.shell({ W, D, floor: 0xd8d0c4, wall: 0xf4f0ea, trim: 0x1a1a1a, lamp: 0xfff8f0, lightI: 1 });
+  const { W, D } = intDims(rec, 16, 13), R = REG[rec.ti % 7]; K.shell({ W, D, floor: 0xd8d0c4, wall: 0xf4f0ea, trim: 0x1a1a1a, lamp: 0xfff8f0, lightI: 1 });
   const pal = [0xd82a4a, 0x1a1a1a, 0xf2f2f2, 0x2a4a8a, 0xc8a050, 0x3a6a4a, 0xd8a8b8, 0x8a5a3a, R.col];
   const pts = []; for (let z = K.z0 + 3; z < K.z1 - 3; z += 2.6) for (const x of [K.x0 + 2.5, 0, K.x1 - 2.5]) if (Math.abs(x) > 0.1 || z > K.z0 + 6) { K.rack(x - 1.2, z, x + 1.2, r, pal); pts.push([x, z + 1.2]); }
   K.shelf(K.x0 + 0.05, K.z0 + 1, K.x0 + 0.5, K.z1 - 2, 2.2, 5, r, pal, 0xf2f2f2);
@@ -137,30 +138,33 @@ function intWorkout(name, gain, cost) {
     cancel() { Int.busy = null; } };
 }
 INT_KINDS.gym = { name: 'Gym', rooms: { main(K, rec, r) {
-  const { W, D } = intDims(rec, 26, 22); K.shell({ W, D, H: 4.5, floor: 0x2a2c30, wall: 0xd8d8dc, trim: 0xff6a1a, lamp: 0xf4f8ff, lightI: 1 });
+  const { W, D } = intDims(rec, 20, 16); K.shell({ W, D, H: 4.5, floor: 0x2a2c30, wall: 0xd8d8dc, trim: 0xff6a1a, lamp: 0xf4f8ff, lightI: 1 });
   K.rug(K.x0 + 0.5, K.z0 + 0.5, K.x1 - 0.5, K.z0 + 6, 0x1a1a1a); K.glow(K.x0 + 0.5, 0.4, K.z0 + 0.02, K.x1 - 0.5, 2.4, K.z0 + 0.03, 0xb8c4cc, 0.8);
   /* free weights: a dumbbell rack, benches, a squat rack */
   K.box(K.x0 + 1, 0, K.z0 + 0.6, K.x0 + 4, 0.8, K.z0 + 1.1, 0x3a3a3a, true); for (let k = 0; k < 10; k++) K.cyl(K.x0 + 1.15 + k * 0.28, 0.8, K.z0 + 0.85, 0.08, 0.12, 0x1a1a1a);
   const st = [[K.x0 + 2, K.z0 + 3, 'press'], [K.x0 + 5, K.z0 + 3, 'curl'], [K.x0 + 8, K.z0 + 3.2, 'squat']];
   for (const [x, z, m] of st) { if (m === 'squat') { K.box(x - 1, 0, z - 0.6, x - 0.9, 2.4, z - 0.5, 0x1a1a1a, true); K.box(x + 0.9, 0, z - 0.6, x + 1, 2.4, z - 0.5, 0x1a1a1a, true); K.box(x - 1.2, 1.55, z - 0.6, x + 1.2, 1.6, z - 0.5, 0xb0b0b0); } else if (m === 'press') { K.box(x - 0.2, 0, z - 0.8, x + 0.2, 0.45, z + 0.8, 0x1a1a1a, true); } K.person({ x, z: m === 'squat' ? z : z + 0.4, yaw: 0, kind: 'lift', move: m, sport: [0xff6a1a, 0x2a8ad8, 0x3ab04a][st.findIndex((q) => q[2] === m)] }); }
   /* treadmills along the window wall, runners on them */
-  for (let k = 0; k < 4; k++) { const x = K.x1 - 1.4, z = K.z0 + 2 + k * 2.2; K.box(x - 0.4, 0, z - 0.9, x + 0.4, 0.2, z + 0.9, 0x2a2a2a, true); K.box(x - 0.4, 0, z - 1.0, x + 0.4, 1.3, z - 0.9, 0x3a3a3a); K.glow(x - 0.25, 1.2, z - 0.89, x + 0.25, 1.35, z - 0.88, 0x3ad8ff, 1.2); if (k < 2) { const n = K.person({ x, z, y: 0.2, yaw: Math.PI, sport: [0xd82a4a, 0x8a3ad8][k] }); if (n) n.kind = 'treadmill'; } }
+  for (let k = 0; k < 4; k++) { const x = K.x1 - 1.4, z = K.z0 + 2 + k * 2.2; K.box(x - 0.4, 0, z - 0.9, x + 0.4, 0.2, z + 0.9, 0x2a2a2a); K.col(x - 0.4, z - 1.0, x + 0.4, z + 0.9).h = 1.3; K.box(x - 0.4, 0, z - 1.0, x + 0.4, 1.3, z - 0.9, 0x3a3a3a); K.glow(x - 0.25, 1.2, z - 0.89, x + 0.25, 1.35, z - 0.88, 0x3ad8ff, 1.2); if (k < 2) { const n = K.person({ x, z, y: 0.2, yaw: Math.PI, sport: [0xd82a4a, 0x8a3ad8][k] }); if (n) n.kind = 'treadmill'; } }
   /* a punch bag */
   K.cyl(K.x0 + 2, 0.4, K.z1 - 3, 0.3, 1.2, 0x8a1a1a, true); K.cyl(K.x0 + 2, 1.6, K.z1 - 3, 0.02, 1.6, 0x9a9a9a);
-  K.counter(-2, K.z1 - 3, 2, K.z1 - 2.3, 0xff6a1a, 0x1a1a1a); intStaff(K, 0, K.z1 - 3.6, 0, 0xff6a1a, { sport: 0xff6a1a });
+  for (let k = 0; k < 5; k++) { const x = 1.6 + k * 1.3, z = 1.5; K.box(x - 0.15, 0, z - 0.5, x + 0.15, 0.7, z + 0.5, 0x2a2a2a, true); K.box(x - 0.2, 0.7, z + 0.2, x + 0.2, 0.78, z + 0.5, 0x1a1a1a); K.box(x - 0.05, 0.7, z - 0.55, x + 0.05, 1.15, z - 0.45, 0x5a5a5a); K.cyl(x, 0.15, z - 0.2, 0.25, 0.05, 0xff6a1a, false, 0.05); if (k % 2 === 0) K.person({ x, z: z + 0.25, y: 0.1, yaw: Math.PI, kind: 'treadmill', sport: [0x2a8ad8, 0xd8c81e, 0x3ab04a][k / 2] }); }
+  for (let k = 0; k < 8; k++) K.cyl(K.x0 + 1.2 + k * 0.5, 0, K.z1 - 1.0, 0.12, 0.3, 0x1a1a1a);
+  K.rug(K.x0 + 4, K.z1 - 4.5, K.x0 + 9, K.z1 - 2, 0x2a6a8a); K.person({ x: K.x0 + 6.5, z: K.z1 - 3.2, yaw: 0, kind: 'lift', move: 'squat', sport: 0xd82a8a, fem: true });
+  K.counter(K.x1 - 6, K.z1 - 3, K.x1 - 3, K.z1 - 2.3, 0xff6a1a, 0x1a1a1a); intStaff(K, K.x1 - 4.5, K.z1 - 3.6, 0, 0xff6a1a, { sport: 0xff6a1a });
   K.sign(rec.name.toUpperCase(), 0, 3.6, K.z0 + 0.04, Math.min(W - 3, 9), 0.8, 0, { fg: '#ff6a1a' });
   const pass = 50;
   K.act(K.x0 + 3.4, K.z0 + 3.6, 1.5, 'Bench press', () => intWorkout('Bench press', 0.55, pass), { cost: intSave().gymMem ? 0 : pass });
   K.act(K.x0 + 6.5, K.z0 + 3.6, 1.5, 'Dumbbell curls', () => intWorkout('Curls', 0.45, pass), { cost: intSave().gymMem ? 0 : pass });
   K.act(K.x1 - 1.4, K.z0 + 2 + 2 * 2.2 + 1.3, 1.5, 'Run on the treadmill', () => intWorkout('Treadmill', 0.5, pass), { cost: intSave().gymMem ? 0 : pass });
   K.act(K.x0 + 2, K.z1 - 2.2, 1.5, 'Hit the punch bag', () => intWorkout('Punch bag', 0.5, pass), { cost: intSave().gymMem ? 0 : pass });
-  K.act(0, K.z1 - 1.6, 1.6, () => (intSave().gymMem ? 'Your gym pass · fitness ' + Math.round(intSave().fit || 0) : 'Buy a gym pass'), () => { if (intSave().gymMem) { Int.say('Fitness ' + Math.round(intSave().fit || 0) + ' / 100 · ' + (intSave().gym || 0) + ' workouts', 3); return; } intBuy(pass, 'a gym pass', () => { intSave().gymMem = 1; }, 'Gym pass. Every gym on the island is yours to use.'); });
+  K.act(K.x1 - 4.5, K.z1 - 1.6, 1.6, () => (intSave().gymMem ? 'Your gym pass · fitness ' + Math.round(intSave().fit || 0) : 'Buy a gym pass'), () => { if (intSave().gymMem) { Int.say('Fitness ' + Math.round(intSave().fit || 0) + ' / 100 · ' + (intSave().gym || 0) + ' workouts', 3); return; } intBuy(pass, 'a gym pass', () => { intSave().gymMem = 1; }, 'Gym pass. Every gym on the island is yours to use.'); });
 } }, key(code) { if (Int.busy && Int.busy.press && (code === 'Space')) Int.busy.press(); } };
 
 /* ---------- indoor pool ---------- */
 INT_KINDS.pool = { name: 'Indoor pool', rooms: { main(K, rec, r) {
-  const { W, D } = intDims(rec, 32, 26); K.shell({ W, D, H: 7, floor: 0xe8f0f2, tiles: 0xb8d0d8, wall: 0xdaeef2, trim: 0x2a8ab0, lamp: 0xf4fbff, lightI: 1, sky: 0xe8f8ff, winH: [1.5, 6] });
-  const px0 = K.x0 + 2.5, px1 = K.x1 - 2.5, pz0 = K.z0 + 2.5, pz1 = Math.min(K.z1 - 5, pz0 + 25), wy = -0.25, bot = -1.7;
+  const { W, D } = intDims(rec, 30, 24), px0 = -W / 2 + 2.5, px1 = W / 2 - 2.5, pz0 = -D / 2 + 2.5, pz1 = Math.min(D / 2 - 5, pz0 + 25), wy = -0.25, bot = -1.7;
+  K.shell({ W, D, H: 7, floor: 0xe8f0f2, wall: 0xdaeef2, trim: 0x2a8ab0, lamp: 0xf4fbff, lightI: 1, sky: 0xe8f8ff, winH: [1.5, 6], hole: [px0, pz0, px1, pz1] });
   /* the basin: blue tile walls down to the floor, lane ropes, the water */
   K.box(px0, bot, pz0, px1, bot + 0.02, pz1, 0x3ab0d8); for (const [a, b, c, d] of [[px0, pz0, px1, pz0 + 0.05], [px0, pz1 - 0.05, px1, pz1], [px0, pz0, px0 + 0.05, pz1], [px1 - 0.05, pz0, px1, pz1]]) K.box(a, bot, b, c, 0, d, 0x5ac0e0);
   K.box(px0 - 0.5, -0.2, pz0 - 0.5, px1 + 0.5, 0.0, pz0, 0xffffff); K.box(px0 - 0.5, -0.2, pz1, px1 + 0.5, 0.0, pz1 + 0.5, 0xffffff);
@@ -213,7 +217,7 @@ function intBuyCar(d, rec) {
   UI.banner('SOLD', 'The ' + d.name + ' is yours · it is waiting outside'); Int.say('The keys are yours. Your new ' + d.name + ' is parked out front.', 4);
 }
 INT_KINDS.dealer = { name: 'Car dealership', rooms: { main(K, rec, r) {
-  const { W, D } = intDims(rec, 30, 26), col = (rec.ti === 1 ? INT_DEALER[1] : rec.ti === 6 ? INT_DEALER[2] : INT_DEALER[0]).col;
+  const { W, D } = intDims(rec, 26, 22), col = (rec.ti === 1 ? INT_DEALER[1] : rec.ti === 6 ? INT_DEALER[2] : INT_DEALER[0]).col;
   K.shell({ W, D, H: 6, floor: 0xf2f2f2, tiles: 0xd8d8d8, wall: 0xeef0f2, trim: 0x1a1a1a, lamp: 0xffffff, lightI: 1.1, winH: [0.3, 5.6], hemi: 0.9 });
   K.sign(rec.name.toUpperCase(), 0, 4.8, K.z0 + 0.04, Math.min(W - 4, 12), 1, 0, { fg: _hexCss(col) });
   const cars = intDealerCars(rec), spots = []; for (let z = K.z0 + 4; z < K.z1 - 4; z += 6.2) for (const x of [K.x0 + 4.5, 0, K.x1 - 4.5]) spots.push([x, z]);
@@ -255,12 +259,13 @@ Jail.release = function () {
 };
 INT_KINDS.jail = { name: 'County jail', rooms: {
   main(K, rec, r) {   /* the police front desk: open to visitors */
-    const { W, D } = intDims(rec, 22, 18); K.shell({ W, D, floor: 0x8a8c90, tiles: 0x7a7c80, wall: 0xc8ccd0, trim: 0x1a2a4a, lamp: 0xf4f8ff, lightI: 0.95 });
+    const { W, D } = intDims(rec, 16, 13); K.shell({ W, D, floor: 0x8a8c90, tiles: 0x7a7c80, wall: 0xc8ccd0, trim: 0x1a2a4a, lamp: 0xf4f8ff, lightI: 0.95 });
     K.counter(-3, K.z0 + 3, 3, K.z0 + 3.8, 0x1a2a4a, 0xd8d8d8, 1.15); K.glass(-3, 1.15, K.z0 + 3.3, 3, 2.4, K.z0 + 3.35); intStaff(K, 0, K.z0 + 2.3, 0, 0x1a2a4a, { hat: { k: 'cap', c: lc(0x1a2a4a), bc: null }, role: 'cop' });
     K.sign('ISLAND COUNTY POLICE', 0, 3.0, K.z0 + 0.03, 6, 0.6, 0, { fg: '#d8d8d8', bg: '#1a2a4a' });
     for (let k = 0; k < 5; k++) K.pic(K.x0 + 0.02, 1.7, K.z0 + 2 + k * 1.1, Math.PI / 2, 0.6, 0.8, 0xe8e0c8);
     K.sign('WANTED', K.x0 + 0.04, 2.35, K.z0 + 4.2, 2.4, 0.35, Math.PI / 2, { fg: '#c8302a', bg: '#e8e0c8' });
     for (let k = 0; k < 4; k++) K.chair(K.x1 - 1, K.z1 - 2 - k * 0.8, -Math.PI / 2, 0x3a3c40); intSeat(K, K.x1 - 1, K.z1 - 3.6, -Math.PI / 2, { phone: true });
+    K.box(K.x0 + 0.6, 0, -1, K.x0 + 1.1, 0.45, 2.5, 0x6a6c70, true); K.box(-0.5, 0, K.z0 + 6, 0.5, 2.2, K.z0 + 6.15, 0x9a9aa0, true); K.plant(K.x0 + 1, K.z1 - 1, 1);
     K.box(K.x0 + 4, 0, K.z0, K.x0 + 6, 2.4, K.z0 + 0.1, 0x5a5c60); K.sign('CELLS · STAFF ONLY', K.x0 + 5, 2.65, K.z0 + 0.12, 2, 0.3, 0, { fg: '#fff', bg: '#c8302a' });
     K.act(0, K.z0 + 4.6, 1.8, () => (Wanted.stars > 0 ? 'Turn yourself in' : 'Talk to the desk sergeant'), () => {
       if (Wanted.stars > 0) { const h = 2 + Wanted.stars * 2; Int.panel({ title: 'Turn yourself in?', sub: Wanted.stars + ' star' + (Wanted.stars > 1 ? 's' : ''), body: '<p>Hand yourself over and do ' + h + ' hours in the cells. The charges are dropped, no fine, and your car waits in the impound lot by the door.</p>', btns: [['Do ' + h + ' hours', () => { Int.panel(null); Police.clearAll && Police.clearAll(); Wanted.stars = 0; Wanted.esc = Wanted.cool = Wanted.bust = 0; Int.hook = { allowHeat: true, left: () => Jail.release() }; Jail.on = true; Jail.hrs = Jail.left = h; Jail.t = 0; Int.go('cells', 'bunk'); }, true]] }); }
@@ -291,7 +296,6 @@ INT_KINDS.jail = { name: 'County jail', rooms: {
     K.act(3.55, K.z1 - 1.9, 1.4, 'Pull-ups (fitness)', () => intWorkout('Pull-ups', 0.5, 0));
     K.act(-3.5, K.z1 - 2.1, 1.4, 'Mop the floor (an hour off your time, $5)', () => { if (!Jail.on) { Int.say('You are not doing time.'); return; } Jail.left = Math.max(0, Jail.left - 1); save.money += 5; Jail.work++; writeSave(); Snd.beep(600, 0.05); Int.say('You mop the day room. An hour off, and $5 in your account.', 2.6); });
     K.act(0, K.z1 - 0.6, 1.6, () => (Jail.left > 0.01 ? 'The door is locked (' + Math.ceil(Jail.left) + 'h left)' : 'Walk out a free person'), () => { if (Jail.on && Jail.left > 0.01) { Int.say('The guard shakes his head. ' + Math.ceil(Jail.left) + ' more hours.'); return; } Int.leave(); }, { wide: true });
-    K.act(0, K.z1 - 0.9, 0.1, '', () => {}, { off: true });
     K.act(0.1, K.z1 - 0.2, 1.2, 'Make a phone call', () => Int.say('You call your mechanic. “Your car’s fine. Don’t drop the soap.”', 3.5));
   } },
   tick(dt) { if (Int.room === 'cells' && Jail.on && Jail.left > 0) { Jail.left = Math.max(0, Jail.left - dt / 10); App.tod = (App.tod + dt / 10) % 24; if (Jail.left <= 0) Int.say('“Time’s up. You’re free to go.” The door buzzes open.', 4); } },

@@ -25,11 +25,11 @@ class IntKit {
     this.night = env.lampOn > 0.5;
   }
   /* ---- primitives ---- */
-  box(x0, y0, z0, x1, y1, z1, c, solid, k) { const C = ikCol(c), q = k == null ? 1 : k, a = Math.min(x0, x1), b = Math.min(y0, y1), d = Math.min(z0, z1), e = Math.max(x0, x1), f = Math.max(y0, y1), g = Math.max(z0, z1); this.gb.box(a, b, d, e, f, g, C.r * q, C.g * q, C.b * q); if (b > 0.01) this.gb.quadA([a, b, d, 0, 0], [e, b, d, 0, 0], [e, b, g, 0, 0], [a, b, g, 0, 0], 0, -1, 0, C.r * q * 0.8, C.g * q * 0.8, C.b * q * 0.8); if (solid && Math.min(y0, y1) < 1.6 && Math.max(y0, y1) > 0.25) this.col(x0, z0, x1, z1); return this; }
+  box(x0, y0, z0, x1, y1, z1, c, solid, k) { const C = ikCol(c), q = k == null ? 1 : k, a = Math.min(x0, x1), b = Math.min(y0, y1), d = Math.min(z0, z1), e = Math.max(x0, x1), f = Math.max(y0, y1), g = Math.max(z0, z1); this.gb.box(a, b, d, e, f, g, C.r * q, C.g * q, C.b * q); if (b > 0.01) this.gb.quadA([a, b, d, 0, 0], [e, b, d, 0, 0], [e, b, g, 0, 0], [a, b, g, 0, 0], 0, -1, 0, C.r * q * 0.8, C.g * q * 0.8, C.b * q * 0.8); if (solid && b < 1.6 && f > 0.25) this.col(x0, z0, x1, z1).h = f; return this; }
   glow(x0, y0, z0, x1, y1, z1, c, k) { const C = ikCol(c), q = k == null ? 1 : k; this.gl.box(Math.min(x0, x1), Math.min(y0, y1), Math.min(z0, z1), Math.max(x0, x1), Math.max(y0, y1), Math.max(z0, z1), C.r * q, C.g * q, C.b * q); return this; }
   glass(x0, y0, z0, x1, y1, z1, c) { const C = ikCol(c == null ? 0x9ec8dc : c); this.gs.box(Math.min(x0, x1), Math.min(y0, y1), Math.min(z0, z1), Math.max(x0, x1), Math.max(y0, y1), Math.max(z0, z1), C.r, C.g, C.b); return this; }
   water(x0, z0, x1, z1, y, c) { const C = ikCol(c == null ? 0x2a8fc0 : c); (this.gw || (this.gw = new GB(0, 0, false))).box(x0, y - 0.04, z0, x1, y, z1, C.r, C.g, C.b); return this; }
-  cyl(x, y, z, r, h, c, solid, rz) { const C = ikCol(c); cylAt(this.gb, x, y, z, r, h, rz == null ? r : rz, C.r, C.g, C.b); if (solid && y < 1.6 && y + h > 0.25) this.col(x - r * 0.8, z - r * 0.8, x + r * 0.8, z + r * 0.8); return this; }
+  cyl(x, y, z, r, h, c, solid, rz) { const C = ikCol(c); cylAt(this.gb, x, y, z, r, h, rz == null ? r : rz, C.r, C.g, C.b); if (solid && y < 1.6 && y + h > 0.25) this.col(x - r * 0.8, z - r * 0.8, x + r * 0.8, z + r * 0.8).h = y + h; return this; }
   col(x0, z0, x1, z1) { const c = [Math.min(x0, x1), Math.min(z0, z1), Math.max(x0, x1), Math.max(z0, z1)]; this.cols.push(c); return c; }
   /* a box given in a local frame turned by a quarter-turn yaw (0, PI/2, PI, -PI/2) about (x, z) */
   rb(x, z, yaw, a, c, solid, k) {
@@ -50,7 +50,8 @@ class IntKit {
   shell(o) {
     const W = o.W, D = o.D, H = o.H || 3.6, x0 = -W / 2, x1 = W / 2, z0 = -D / 2, z1 = D / 2, T = 0.25; this.W = W; this.D = D; this.H = H; this.x0 = x0; this.x1 = x1; this.z0 = z0; this.z1 = z1;
     const fl = o.floor == null ? 0x8a7a68 : o.floor, wa = o.wall == null ? 0xd8d2c6 : o.wall, ce = o.ceil == null ? 0xe8e6e0 : o.ceil, tr = o.trim == null ? 0x3a3530 : o.trim;
-    this.box(x0, -0.2, z0, x1, 0, z1, fl);
+    if (o.hole) { const h = o.hole; this.box(x0, -0.2, z0, x1, 0, h[1], fl); this.box(x0, -0.2, h[3], x1, 0, z1, fl); this.box(x0, -0.2, h[1], h[0], 0, h[3], fl); this.box(h[2], -0.2, h[1], x1, 0, h[3], fl); }
+    else this.box(x0, -0.2, z0, x1, 0, z1, fl);
     if (o.tiles) { const tc = ikCol(o.tiles); for (let x = Math.ceil(x0); x < x1; x += 2) this.box(x - 0.01, 0, z0, x + 0.01, 0.003, z1, tc); for (let z = Math.ceil(z0); z < z1; z += 2) this.box(x0, 0, z - 0.01, x1, 0.003, z + 0.01, tc); }
     this.box(x0, H, z0, x1, H + 0.2, z1, ce);
     const dx = this.dx = o.door == null ? 0 : o.door === false ? null : o.door, dw = o.dw || 2.2;
@@ -99,6 +100,7 @@ class IntKit {
   }
   chair(x, z, yaw, c, stool) {
     const C = c == null ? 0x3a2a20 : c;
+    this.col(x - 0.2, z - 0.2, x + 0.2, z + 0.2).h = stool ? 0.78 : 0.95;
     if (stool) { this.cyl(x, 0, z, 0.04, 0.72, 0x3a3a3a); this.cyl(x, 0.72, z, 0.2, 0.06, C); return this; }
     this.rb(x, z, yaw, [-0.22, 0.42, -0.22, 0.22, 0.47, 0.22], C); this.rb(x, z, yaw, [-0.22, 0.47, -0.24, 0.22, 0.95, -0.2], C, false, 0.9);
     for (const [a, b] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) this.rb(x, z, yaw, [a * 0.19 - 0.02, 0, b * 0.19 - 0.02, a * 0.19 + 0.02, 0.42, b * 0.19 + 0.02], 0x2a2a2a);
