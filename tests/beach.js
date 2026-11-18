@@ -25,7 +25,7 @@ const OUT = process.env.OUT || __dirname;
   });
   console.log('shore found in', shores.length, 'of 8 directions');
   ok(shores.length >= 6, 'open beach all round the island (' + shores.length + '/8 compass directions reach a beach)');
-  const kinds = {}, poses = {}; let people = 0, barefoot = 0, dressed = 0, lying = 0, wading = 0, hit = null;
+  const kinds = {}, poses = {}; let stray = 0, people = 0, barefoot = 0, dressed = 0, lying = 0, wading = 0, hit = null;
   for (let si = 0; si < shores.length; si++) {
     const s = shores[si];
     const r = await page.evaluate(([x, z, a]) => {
@@ -33,18 +33,20 @@ const OUT = process.env.OUT || __dirname;
       for (let i = 0; i < 90; i++) { window.__now += 1000 / 30; g.frame(window.__now); c.vx = c.vz = 0; c.speed = 0; }
       const B = g.Beach, live = B.live, kinds = {}, poses = {}; let ppl = 0, bare = 0, dressed = 0, lying = 0, wading = 0;
       for (const sp of live) { kinds[sp.kind] = (kinds[sp.kind] || 0) + 1; for (const p of sp.ppl) { poses[p.pose] = (poses[p.pose] || 0) + 1; if (!p.hu || p.hu.dead) continue; ppl++;
-        const a = p.app; if (a.shoe === a.skin) bare++; if (a.swim && a.shorts && !a.coat && !a.sleeve && (a.fem || a.shirt === a.skin)) dressed++;
+        const a = p.app; if (a.shoe === a.skin) bare++; if (a.swim && a.shorts && !a.coat && !a.sleeve && (a.fem ? !!a.pants : a.shirt === a.skin)) dressed++;
         const R = p.hu.root; if ((p.pose === 'lie' || p.pose === 'prone') && Math.abs(Math.abs(R.rotation.x) - Math.PI / 2) < 0.01) lying++; if (p.pose === 'swim' && p.y < -0.3) wading++; } }
+      let stray = 0; for (const p of g.Peds.list) if (p.hu && !p.hu.dead && p.state !== 'gone' && B.site(p.x, p.z) === 1 && !(p.app && p.app.swim)) stray++;   /* townsfolk in street clothes on the sand */
       const shot = g.renderer.domElement.toDataURL('image/jpeg', 0.85);
-      return { spots: live.length, meshes: live.filter((s) => s.mesh).length, kinds, poses, ppl, bare, dressed, lying, wading, posed: B.ppl, shot };
+      return { stray, spots: live.length, meshes: live.filter((s) => s.mesh).length, kinds, poses, ppl, bare, dressed, lying, wading, posed: B.ppl, shot };
     }, [s.x, s.z, s.a]);
     fs.writeFileSync(path.join(OUT, 'beach_' + si + '.jpg'), Buffer.from(r.shot.split(',')[1], 'base64'));
     console.log('  shore', si, 'at r=' + s.r + ' m:', r.spots, 'spots,', r.meshes, 'built,', r.ppl, 'people drawn', JSON.stringify(r.kinds), JSON.stringify(r.poses));
     for (const k in r.kinds) kinds[k] = (kinds[k] || 0) + r.kinds[k]; for (const k in r.poses) poses[k] = (poses[k] || 0) + r.poses[k];
-    people += r.ppl; barefoot += r.bare; dressed += r.dressed; lying += r.lying; wading += r.wading;
+    stray += r.stray; people += r.ppl; barefoot += r.bare; dressed += r.dressed; lying += r.lying; wading += r.wading;
   }
   ok(Object.keys(kinds).length >= 7, 'the beaches have umbrellas and towels, loungers, strollers, groups of friends, volleyball, lifeguard towers and swimmers (' + JSON.stringify(kinds) + ')');
   ok(people > 70, people + ' beachgoers drawn near the camera across the stops');
+  ok(stray === 0, 'nobody in street clothes on the sand (' + stray + ')');
   ok(barefoot === people && dressed === people, 'all of them in swimwear (bare legs and feet): ' + barefoot + ' barefoot, ' + dressed + ' in swim trunks or a swimsuit');
   ok(lying > 3, lying + ' people lying flat on their towels');
   ok((poses.swim || 0) === 0 || wading > 0, wading + ' people standing in the sea');
