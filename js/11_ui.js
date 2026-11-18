@@ -42,6 +42,14 @@ const DEV_PLACES = [
   ['dune', 'Dune Dash', () => { const S = Dunes.s; return S ? [S.ox, S.oz, Math.atan2(S.tx[S.start], S.tz[S.start])] : null; }],
   ['surf', 'Surf Club', () => { const B = Surf.beaches.find((b) => b.surf); return B && B.ox != null ? [B.ox - B.ix * 6, B.oz - B.iz * 6, Math.atan2(-B.ix, -B.iz)] : null; }]
 ];
+/* dev: straight into the nearest building of a kind (the specials, the terminal, the boathouse) */
+UI.devInside = function (kind) {
+  if (App.mode !== 'play') return; Bld.prep(); let rec = null;
+  const fx = Bld.prepFixed().find((r) => r.kind === kind); if (fx) rec = fx;
+  else { const S = Bld.nearest(kind, Pl.x, Pl.z); if (!S) { UI.toast('No ' + kind + ' on the island', 'bad'); return; } if (kind === 'jail') rec = Jail.rec(); else { loadAround(S.x, S.z, 40); rec = Bld.lots.get(S.key); } }
+  if (!rec) { UI.toast('Could not find it', 'bad'); return; }
+  const d = rec.door; loadAround(d.ox, d.oz, 30); spawnAt(d.ox + d.nz * 5 + d.nx * 5, d.oz + d.nz * 5, 0); Int.enter(rec);
+};
 /* the train heists, for testing: pick which one (Gold, Silver or Ruby Rush), put its open wagon at its ramp, skip the jump, skip to the escape, reset it,
    change the trains' speed */
 UI.devHeist = function (k) {
@@ -89,6 +97,9 @@ UI.devAct = function (id) {
   else if (id === 'unboats') { for (const k of BIDS) save.boat.own[k] = true; Boat.tags(); UI.toast('All boats unlocked', 'good'); }
   else if (id === 'unplanes') { for (const k in PSPEC) save.air.own[k] = true; Fly.tags(); UI.toast('All planes unlocked', 'good'); }
   else if (id.startsWith('pl:')) { const P = DEV_PLACES.find((q) => q[0] === id.slice(3)), p = P && P[2](); if (p) { close(); devPlace(p[0], p[1], p[2], P[1]); } }
+  else if (id.startsWith('in:')) { close(); UI.devInside(id.slice(3)); }
+  else if (id === 'jail4') { close(); Jail.serve(4, 'dev mode'); }
+  else if (id === 'fit100') { intSave().fit = 100; writeSave(); UI.toast('Fitness 100', 'good'); }
   else if (id.startsWith('bch')) { const b = Surf.beaches[+id.slice(3)]; if (b) { close(); devPlace(b.px, b.pz, Math.atan2(-b.ix, -b.iz), b.name); } }
   else if (id.startsWith('hz:')) { if (!id.startsWith('hz:pick')) close(); UI.devHeist(id.slice(3)); }
   else if (id.startsWith('tp')) { const t = towns[+id.slice(2)]; if (t) { close(); devTeleport(t.cx, t.cz, t.name); } }
@@ -153,6 +164,7 @@ UI.footPrompt = function () {
   if (Wk.near && !p && !Talk.on && !Shop.near) parts.push(TouchIn.on ? '<em>BUILD</em> Workshop' : '<em>E</em> Workshop \u00b7 build and fly planes and rockets');
   if (Shop.near && !p && !Talk.on) parts.push(TouchIn.on ? '<em>SHOP</em> Customs · ' + esc(Shop.near.R.name) : '<em>E</em> Customs · ' + esc(Shop.near.R.name));
   if (Ven.near && !p && !Talk.on) parts.push(TouchIn.on ? '<em>ENTER</em> ' + esc(Ven.near.D.name) : '<em>E</em> ' + esc(Ven.near.D.name) + ' · ' + esc(Ven.near.D.sub));
+  if (Bld.near && !p && !Talk.on && !Ven.near && !Shop.near) parts.push((TouchIn.on ? '<em>ENTER</em> ' : '<em>E</em> Go into ') + esc(Bld.near.name) + ' · ' + esc(Bld.near.sub));
   if (VM.near && !p && !Talk.on) parts.push(TouchIn.on ? '<em>JOBS</em> ' + esc(VM.near.title) : '<em>E</em> ' + esc(VM.near.title) + ' · ' + esc(VM.near.sub));
   if (VM.armed && !Talk.on && !parts.length) parts.push('Job accepted: <em>' + esc(VM.armed.title) + '</em> · ' + (VMK[VM.armed.kind].veh === 'plane' ? 'board a plane (F)' : 'take a boat out (F)'));
   if (Fly.near && !Talk.on) { const q = Fly.near.spec, own = Fly.owned(q.id), lab = own ? 'Fly the ' + q.name + ' · ' + q.role : 'Buy the ' + q.name + ' · ' + money(q.cost); parts.push(TouchIn.on ? '<em>' + (own ? 'FLY' : 'BUY') + '</em> ' + esc(lab.replace(/^(Fly|Buy) /, '')) : '<em>F</em> ' + esc(lab)); }
@@ -188,6 +200,7 @@ UI.update = function (dt) {
   else if (Race.near && !Mi) { const h = TouchIn.on ? '<em>RACE</em> ' + esc(Track.name) : '<em>E</em> ' + esc(Track.name) + ' · race the field'; if (pr._h !== h) { pr._h = h; pr.innerHTML = h; } pr.hidden = false; }
   else if (Ven.near && !Mi && !Shop.near) { const h = TouchIn.on ? '<em>ENTER</em> ' + esc(Ven.near.D.name) : '<em>E</em> ' + esc(Ven.near.D.name) + ' · ' + esc(Ven.near.D.sub); if (pr._h !== h) { pr._h = h; pr.innerHTML = h; } pr.hidden = false; }
   else if (Wk.near && !Mi && !Shop.near) { const h = TouchIn.on ? '<em>BUILD</em> Workshop' : '<em>E</em> Workshop \u00b7 build and fly planes and rockets'; if (pr._h !== h) { pr._h = h; pr.innerHTML = h; } pr.hidden = false; }
+  else if (Bld.near && !Mi && !Shop.near && !Ven.near) { const h = (TouchIn.on ? '<em>ENTER</em> ' : '<em>E</em> Park and go into ') + esc(Bld.near.name) + ' · ' + esc(Bld.near.sub); if (pr._h !== h) { pr._h = h; pr.innerHTML = h; } pr.hidden = false; }
   else if (Shop.near && !Mi) { const h = TouchIn.on ? '<em>SHOP</em> Customs · ' + esc(Shop.near.R.name) : '<em>E</em> Customs · ' + esc(Shop.near.R.name) + ' · paint, wheels, body kits, outfits'; if (pr._h !== h) { pr._h = h; pr.innerHTML = h; } pr.hidden = false; }
   else if (!near && GAR.inside && !Mi && !GAR.edit) { const h = TouchIn.on ? '<em>STYLE</em> to customise your garage' : '<em>G</em> Customise garage'; if (pr._h !== h) { pr._h = h; pr.innerHTML = h; } pr.hidden = false; }
   else if (near) {
@@ -195,7 +208,7 @@ UI.update = function (dt) {
     const h = '<em>' + (TouchIn.on ? 'TAP' : 'E') + '</em> ' + esc(t.name) + ' · ' + esc(near.title.replace(/^[^:]+: /, '')) + ' · ' + money(near.reward) + (done ? ' · ' + '★'.repeat(done.stars) : '');
     if (pr._h !== h) { pr._h = h; pr.innerHTML = h; } pr.hidden = false;
   } else if (!pr.hidden) pr.hidden = true;
-  { const act = GAR.edit || Fly.on || Boat.on ? null : Jack.canStash() ? ['STASH', 'KeyE'] : Foot.on && Jack.tgt && !Talk.on ? ['JACK', 'KeyF'] : Race.near && !Foot.on ? ['RACE', 'KeyE'] : Wk.near && !Talk.on && !(Foot.on && Foot.target) ? ['BUILD', 'KeyE'] : Shop.near && !Talk.on && !(Foot.on && Foot.target) ? ['SHOP', 'KeyE'] : Ven.near && !Talk.on && !(Foot.on && Foot.target) ? ['ENTER', 'KeyE'] : Foot.on && VM.near && !Talk.on && !Foot.target ? ['JOBS', 'KeyE'] : Foot.on ? (Foot.target && !Talk.on ? ['TALK', 'KeyE'] : GAR.inside && !Talk.on ? ['STYLE', 'KeyG'] : null) : near ? ['GO', 'KeyE'] : GAR.inside && !Mi ? ['STYLE', 'KeyG'] : null;
+  { const act = GAR.edit || Fly.on || Boat.on ? null : Jack.canStash() ? ['STASH', 'KeyE'] : Foot.on && Jack.tgt && !Talk.on ? ['JACK', 'KeyF'] : Race.near && !Foot.on ? ['RACE', 'KeyE'] : Wk.near && !Talk.on && !(Foot.on && Foot.target) ? ['BUILD', 'KeyE'] : Shop.near && !Talk.on && !(Foot.on && Foot.target) ? ['SHOP', 'KeyE'] : Ven.near && !Talk.on && !(Foot.on && Foot.target) ? ['ENTER', 'KeyE'] : Bld.near && !Talk.on && !(Foot.on && Foot.target) ? ['ENTER', 'KeyE'] : Foot.on && VM.near && !Talk.on && !Foot.target ? ['JOBS', 'KeyE'] : Foot.on ? (Foot.target && !Talk.on ? ['TALK', 'KeyE'] : GAR.inside && !Talk.on ? ['STYLE', 'KeyG'] : null) : near ? ['GO', 'KeyE'] : GAR.inside && !Mi ? ['STYLE', 'KeyG'] : null;
     E.tAct.style.display = act ? '' : 'none'; if (act) { if (E.tAct.textContent !== act[0]) E.tAct.textContent = act[0]; E.tAct.dataset.k = act[1]; } }
   E.tFoot.style.display = (Fly.on ? Fly.canExit && Fly.p && Fly.p.st === 'flying' : Boat.on ? Boat.canExit && Boat.p && Boat.p.st === 'driving' : Foot.on ? (Fly.near || Boat.near || (Foot.carNear && !Jack.tgt) || GAR.nearId) && !Talk.on && !Jack.busy : !Mi && Math.abs(car.speed) < 3 && car.wrecked <= 0) ? '' : 'none';
   if (Foot.on) { const l = Fly.near ? (Fly.owned(Fly.near.id) ? 'FLY' : 'BUY') : Boat.near ? (Boat.owned(Boat.near.id) ? 'BOAT' : 'BUY') : Foot.carNear ? 'CAR' : 'DRIVE'; if (E.tFoot.textContent !== l) E.tFoot.textContent = l; }
@@ -259,11 +272,11 @@ UI.drawOverlay = function (dt) {
 /* ---------- screens ---------- */
 UI.setMode = function (m) {
   App.mode = m;
-  E.loading.hidden = m !== 'load'; E.title.hidden = m !== 'title'; E.menu.hidden = m !== 'pause'; E.court.hidden = m !== 'court'; E.bust.hidden = !Bust.on; E.shop.hidden = m !== 'shop'; E.vmp.hidden = m !== 'vm'; E.ven.hidden = m !== 'venue'; E.rl.hidden = m !== 'rlobby'; E.mech.hidden = m !== 'mech'; E.wk.hidden = m !== 'wk';
-  E.hud.classList.toggle('off', m === 'title' || m === 'load' || m === 'court' || m === 'bust' || m === 'shop' || m === 'vm' || m === 'venue' || m === 'rlobby' || m === 'mech' || m === 'wk' || !save.set.hud);
+  E.loading.hidden = m !== 'load'; E.title.hidden = m !== 'title'; E.menu.hidden = m !== 'pause'; E.court.hidden = m !== 'court'; E.bust.hidden = !Bust.on; E.shop.hidden = m !== 'shop'; E.vmp.hidden = m !== 'vm'; E.ven.hidden = m !== 'venue'; E.int.hidden = m !== 'int'; E.rl.hidden = m !== 'rlobby'; E.mech.hidden = m !== 'mech'; E.wk.hidden = m !== 'wk';
+  E.hud.classList.toggle('off', m === 'title' || m === 'load' || m === 'court' || m === 'bust' || m === 'shop' || m === 'vm' || m === 'venue' || m === 'int' || m === 'rlobby' || m === 'mech' || m === 'wk' || !save.set.hud);
   if (m !== 'play' && E.dbg) E.dbg.hidden = true;
   if (m !== 'play') { try { if (document.pointerLockElement) document.exitPointerLock(); } catch (er) { /* ignore */ } }
-  E.touch.hidden = !(TouchIn.on && m === 'play'); document.body.classList.toggle('touch', TouchIn.on);
+  E.touch.hidden = !(TouchIn.on && (m === 'play' || m === 'int')); document.body.classList.toggle('touch', TouchIn.on);
 };
 UI.progress = function (f, msg) { E.loadfill.style.width = (f * 100).toFixed(0) + '%'; if (msg) E.loadmsg.textContent = msg; };
 UI.openMenu = function (tab) { if (App.mode !== 'play') return; Home.closeEdit(); UI.setMode('pause'); UI.tabTo(tab || App.tab); for (const k in Keys) Keys[k] = false; };
@@ -302,7 +315,7 @@ UI.renderPane = function () {
       return '<div class="carc' + (cur ? ' cur' : '') + (own ? '' : ' locked') + '"><div class="cimg">' + (img ? '<img alt="' + d.name + '" src="' + img + '">' : '') + '</div>' +
         '<div class="chead"><h4>' + d.name + '</h4><small>' + d.cls + (d.stolen ? ' · stolen' : '') + '</small></div><p>' + d.blurb + '</p>' +
         '<div class="cstats">' + bar('Speed', d.stats.spd) + bar('Accel', d.stats.acc) + bar('Handling', d.stats.hdl) + bar('Off-road', d.stats.off) + '</div>' +
-        '<div class="cact">' + (cur ? '<span class="tag">Driving</span>' : own ? '<button class="btn sm" type="button" data-act="drive" data-id="' + d.id + '">Drive</button>' : '<button class="btn sm" type="button" data-act="buycar" data-id="' + d.id + '"' + (save.money < d.price ? ' disabled' : '') + '>Buy ' + money(d.price) + '</button>') +
+        '<div class="cact">' + (cur ? '<span class="tag">Driving</span>' : own ? '<button class="btn sm" type="button" data-act="drive" data-id="' + d.id + '">Drive</button>' : d.price > 0 ? '<button class="btn sm" type="button" data-act="dealer" data-id="' + d.id + '" title="Cars are sold at the dealerships">' + money(d.price) + ' · GPS to a dealer</button>' : '') +
         (d.stolen && !cur ? '<button class="btn sm" type="button" data-act="sellk" data-id="' + d.id + '">' + (Jack.conf === 'sellk:' + d.id ? 'Sure? ' : 'Sell ') + money(Jack.worth(d.id)) + '</button><button class="btn sm" type="button" data-act="scrapk" data-id="' + d.id + '">' + (Jack.conf === 'scrapk:' + d.id ? 'Sure? ' : 'Scrap ') + '+' + save.stolen[d.id].tok + '</button>' : '') + '</div></div>';
     }).join('') + '</div>';
     h += '<div class="sect">Paint · ' + CUR.name + '</div><div class="swatches">' + PAINTS.map((hx, i) => '<button class="sw" type="button" data-act="paint" data-i="' + i + '" aria-pressed="' + (curPaint() === i) + '" aria-label="Paint ' + (i + 1) + '" style="background:#' + hx.toString(16).padStart(6, '0') + '"></button>').join('') + '</div>';
@@ -326,7 +339,7 @@ UI.renderPane = function () {
     h += '<div class="sect">Cheats</div>' + row('God mode', dseg('god', Dev.god)) + row('Infinite nitro', dseg('nit', Dev.nit)) +
       row('Cash', grp(btn('cash1', '+$1k'), btn('cash10', '+$10k'), btn('cash100', '+$100k'))) + row('Garage', grp(btn('unlock', 'Unlock all cars'), btn('maxup', 'Max upgrades'), btn('repair', 'Repair'), btn('unplanes', 'Unlock planes'), btn('unboats', 'Unlock boats')));
     h += '<div class="sect">Vehicle &amp; time</div>' + row('Engine power', sl('dPow', 'dpower', 0.25, 4, 0.05, Dev.power), 'dpower') + row('Tyre grip', sl('dGrip', 'dgrip', 0.4, 2.5, 0.05, Dev.grip), 'dgrip') + row('Time scale', sl('dTs', 'dts', 0.1, 2, 0.05, Dev.ts), 'dts');
-    h += '<div class="sect">World</div>' + row('Teleport: towns', grp(...towns.map((t, i) => btn('tp' + i, t.name)), btn('tpwp', 'Waypoint', !Waypoint.on))) + row('Teleport: places', grp(btn('tpair', 'Airport'), btn('tpdock', 'Marina'), ...DEV_PLACES.map((p) => btn('pl:' + p[0], p[1], !p[2]())))) + row('Teleport: beaches', grp(...Surf.beaches.map((b, i) => btn('bch' + i, b.name)))) + row('Teleport: trains', grp(...(Rail.trains || []).map((tr) => btn('hz:train' + tr.k, 'Behind the ' + tr.name)))) + row('Planets: orbit', grp(...WK.BODIES.map((B) => btn('wk:orbit:' + B.id, B.name)))) + row('Planets: surface', grp(...WK.BODIES.filter((B) => B !== WK.SUN && !B.crush && B !== WK.HOME).map((B) => btn('wk:land:' + B.id, B.name)))) + row('Time of day', grp(btn('tod6', 'Dawn'), btn('tod12', 'Noon'), btn('tod18.5', 'Dusk'), btn('tod23', 'Night'))) + row('Traffic', grp(btn('traf', 'Spawn 10 cars'))) + row('Lawsuit', grp(btn('lawsuit', 'Get sued now'))) + row('Mishaps', grp(btn('tow', 'Wreck car (tow truck)'), btn('cops', 'Call the police'))) + row('Wanted level', grp(btn('wl1', '1★'), btn('wl2', '2★'), btn('wl3', '3★'), btn('wl4', '4★'), btn('wl5', '5★'), btn('wl0', 'Clear'), btn('bustme', 'Get busted')));
+    h += '<div class="sect">World</div>' + row('Teleport: towns', grp(...towns.map((t, i) => btn('tp' + i, t.name)), btn('tpwp', 'Waypoint', !Waypoint.on))) + row('Teleport: places', grp(btn('tpair', 'Airport'), btn('tpdock', 'Marina'), ...DEV_PLACES.map((p) => btn('pl:' + p[0], p[1], !p[2]())))) + row('Go inside', grp(...[['bank', 'A bank'], ['reserve', 'Island Reserve'], ['apts', 'Apartments'], ['gym', 'Gym'], ['pool', 'Indoor pool'], ['resto', 'Restaurant'], ['clothes', 'Clothing'], ['dealer', 'Dealership'], ['jail', 'Jail'], ['terminal', 'Airport terminal'], ['boathouse', 'Boathouse']].map((q) => btn('in:' + q[0], q[1])), btn('jail4', 'Do 4 hours'), btn('fit100', 'Fitness 100'))) + row('Teleport: beaches', grp(...Surf.beaches.map((b, i) => btn('bch' + i, b.name)))) + row('Teleport: trains', grp(...(Rail.trains || []).map((tr) => btn('hz:train' + tr.k, 'Behind the ' + tr.name)))) + row('Planets: orbit', grp(...WK.BODIES.map((B) => btn('wk:orbit:' + B.id, B.name)))) + row('Planets: surface', grp(...WK.BODIES.filter((B) => B !== WK.SUN && !B.crush && B !== WK.HOME).map((B) => btn('wk:land:' + B.id, B.name)))) + row('Time of day', grp(btn('tod6', 'Dawn'), btn('tod12', 'Noon'), btn('tod18.5', 'Dusk'), btn('tod23', 'Night'))) + row('Traffic', grp(btn('traf', 'Spawn 10 cars'))) + row('Lawsuit', grp(btn('lawsuit', 'Get sued now'))) + row('Mishaps', grp(btn('tow', 'Wreck car (tow truck)'), btn('cops', 'Call the police'))) + row('Wanted level', grp(btn('wl1', '1★'), btn('wl2', '2★'), btn('wl3', '3★'), btn('wl4', '4★'), btn('wl5', '5★'), btn('wl0', 'Clear'), btn('bustme', 'Get busted')));
     const HP = Heist.P(), HN = heistName(Heist.k);
     h += '<div class="sect">Train heists</div>' + row('Which heist', grp(...Heist.sites.map((q, k) => btn('hz:pick' + k, (k === Heist.k ? '● ' : '') + heistName(k) + (save.owned[HEIST_PRIZES[k].id] ? ' ✓' : ''))))) +
       row(HN + ': ' + (save.owned[HP.id] ? 'done · ' + HP.short + ' owned' : Heist.phase), grp(btn('hz:start', 'Start at the ramp'), btn('hz:cue', 'Bring the wagon round', Heist.phase !== 'armed'), btn('hz:board', 'Skip the jump (into the wagon)'), btn('hz:take', 'Take the ' + HP.short), btn('hz:home', 'Skip to the garage', Heist.phase !== 'escape' && Heist.phase !== 'ride'))) +
@@ -380,6 +393,7 @@ function bindUI() {
     else if (a === 'dev') { const k = b.dataset.k, v = b.dataset.v === 'true'; if (k === 'free') UI.devFree(v); else Dev[k] = v; UI.renderPane(); }
     else if (a === 'dact') UI.devAct(b.dataset.id);
     else if (a === 'drive') { if (App.setCar(b.dataset.id)) { UI.toast(CUR.name + ' ready', 'info'); UI.renderPane(); } }
+    else if (a === 'dealer') { const S = Bld.nearest('dealer', Pl.x, Pl.z); if (S) { UI.setWaypoint(S.x, S.z); UI.toast('GPS set: ' + S.name + ' · cars are bought at the dealerships', 'info'); UI.closeMenu(); } }
     else if (a === 'buycar') { const d = CAR_BY_ID[b.dataset.id]; if (d && !save.owned[d.id] && save.money >= d.price) { save.money -= d.price; save.owned[d.id] = true; Snd.beep(900, 0.12); if (!Mi) { App.setCar(d.id); car.health = 100; } writeSave(); UI.toast('Bought ' + d.name, 'good'); UI.renderPane(); } }
     else if (a === 'tupre') { Setup.preset(b.dataset.id); Snd.beep(700, 0.06); UI.renderPane(); }
     else if (a === 'buytok') { if (Jack.buyTok(b.dataset.k)) UI.renderPane(); }
@@ -438,6 +452,7 @@ function onKey(code) {
   if (App.mode === 'shop') { Shop.key(code); return; }
   if (App.mode === 'vm') { VM.key(code); return; }
   if (App.mode === 'venue') { Ven.key(code); return; }
+  if (App.mode === 'int') { Int.key(code); return; }
   if (App.mode === 'rlobby') { Race.key(code); return; }
   if (App.mode === 'mech') { Mech.key(code); return; }
   if (App.mode === 'wk') { Wk.key(code); return; }
@@ -463,7 +478,7 @@ function onKey(code) {
     case 'KeyV': if (save.set.dev) UI.devFree(!Dev.free); break;
     case 'KeyY': if (save.set.dev) { Dev.hbox = !Dev.hbox; UI.toast('Hitboxes ' + (Dev.hbox ? 'shown' : 'hidden'), 'info'); } break;
     case 'Digit1': if (Fly.on) { Fly.view = 0; save.air.view = 0; Fly.snapCam = true; } else if (Boat.on) { Boat.view = 0; save.boat.view = 0; Boat.snapCam = true; } else if (Foot.on) Foot.tp = false; else UI.setView(0, true); break; case 'Digit2': if (Fly.on) { Fly.view = 1; save.air.view = 1; Fly.snapCam = true; } else if (Boat.on) { Boat.view = 1; save.boat.view = 1; Boat.snapCam = true; } else if (Foot.on) Foot.tp = true; else UI.setView(2, true); break; case 'Digit3': if (Fly.on) { Fly.view = 2; save.air.view = 2; Fly.snapCam = true; } else if (Boat.on) { Boat.view = 2; save.boat.view = 2; Boat.snapCam = true; } else if (!Foot.on) UI.setView(1, true); break;
-    case 'KeyE': case 'Enter': if (Jack.canStash() && code === 'KeyE') Jack.openPanel(); else if (Fly.on || Boat.on) { if (code === 'Enter' && !E.result.hidden) UI.hideResult(); } else if (!E.result.hidden) UI.hideResult(); else if (Wk.near && !(Foot.on && Foot.target)) Wk.open(); else if (Shop.near && !(Foot.on && Foot.target)) Shop.open(); else if (Ven.near && !(Foot.on && Foot.target)) Ven.open(); else if (Race.near) Race.open(); else if (VM.near && Foot.on && !Foot.target) VM.open(); else if (Foot.on) { if (Foot.target) Talk.open(Foot.target); } else if (!Mi && Mission.nearby) { if (Fare.phase === 'ride') UI.toast('Drop off your passenger first', 'bad'); else startMission(Mission.nearby); } break;
+    case 'KeyE': case 'Enter': if (Jack.canStash() && code === 'KeyE') Jack.openPanel(); else if (Fly.on || Boat.on) { if (code === 'Enter' && !E.result.hidden) UI.hideResult(); } else if (!E.result.hidden) UI.hideResult(); else if (Wk.near && !(Foot.on && Foot.target)) Wk.open(); else if (Shop.near && !(Foot.on && Foot.target)) Shop.open(); else if (Ven.near && !(Foot.on && Foot.target)) { const vr = Bld.venueRec(Ven.near); if (vr) Int.enter(vr); else Ven.open(); } else if (Bld.near && !(Foot.on && Foot.target)) Bld.enter(); else if (Race.near) Race.open(); else if (VM.near && Foot.on && !Foot.target) VM.open(); else if (Foot.on) { if (Foot.target) Talk.open(Foot.target); } else if (!Mi && Mission.nearby) { if (Fare.phase === 'ride') UI.toast('Drop off your passenger first', 'bad'); else startMission(Mission.nearby); } break;
     case 'KeyR': if (Race.on) Race.reset(); else if (Fly.on) Fly.reset(); else if (Boat.on) Boat.reset(); else if (Foot.on) Foot.toCar(); else if (Tow.on || car.wrecked > 0) Tow.skip(); else App.respawn(true); break;
     case 'KeyT': save.set.hud = !save.set.hud; UI.setMode('play'); break;
     default:

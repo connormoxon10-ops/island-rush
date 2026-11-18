@@ -150,7 +150,7 @@ Foot.step = function (dt) {
   /* walking */
   const s = Math.sin(F.yaw), c = Math.cos(F.yaw);
   let mx = s * I.f - c * I.r, mz = c * I.f + s * I.r; const ml = Math.hypot(mx, mz); if (ml > 1) { mx /= ml; mz /= ml; }
-  const run = I.run && I.f > -0.2 && ml > 0.1, vmax = (run ? 5.6 : 2.4) * (I.f < -0.3 && !I.r ? 0.6 : 1);
+  const run = I.run && I.f > -0.2 && ml > 0.1, vmax = (run ? 5.6 * intRunK() : 2.4) * (I.f < -0.3 && !I.r ? 0.6 : 1);
   const acc = F.air ? 1.6 : 10; F.vx += (mx * vmax - F.vx) * Math.min(1, dt * acc); F.vz += (mz * vmax - F.vz) * Math.min(1, dt * acc);
   const sp = Math.hypot(F.vx, F.vz), dist = sp * dt, n = Math.max(1, Math.ceil(dist / 0.22)), hx = F.vx * dt / n, hz = F.vz * dt / n;
   for (let i = 0; i < n; i++) {
