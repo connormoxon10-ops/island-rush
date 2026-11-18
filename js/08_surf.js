@@ -24,7 +24,7 @@ Surf.plan = function () {
     /* the nearest road point */
     const px = x0 + ix * 55, pz = z0 + iz * 55; let best = null, bd = 1e18;
     for (const rd of roads) for (const p of rd.pts) { const d = (p.x - px) ** 2 + (p.z - pz) ** 2; if (d < bd) { bd = d; best = p; } }
-    if (!best) continue; const dist = Math.sqrt(bd); if (dist < 90 || dist > 1100) continue;
+    if (!best) continue; const dist = Math.sqrt(bd); if (dist < 90 || dist > 1700) continue;
     cands.push({ a, x: x0, z: z0, ix, iz, px, pz, to: best, dist, c: Math.abs(h30 - 2) + h60 * 0.15 + dist / 900 });
   }
   cands.sort((p, q) => p.c - q.c);
