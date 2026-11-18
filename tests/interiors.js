@@ -32,7 +32,7 @@ const OUT = process.env.OUT || __dirname, ONLY = process.env.ONLY || '';
   });
   console.log('buildings', gen.n, JSON.stringify(gen.kinds));
   ok(gen.n > 400 && gen.doors, 'every town building is registered with a name and a street door (' + gen.n + ')');
-  const want = ['office', 'cafe', 'store', 'pharmacy', 'books', 'barber', 'bakery', 'electronics', 'florist', 'hardware', 'laundry', 'bar', 'diner', 'home', 'warehouse', 'barn', 'bank', 'reserve', 'apts', 'gym', 'pool', 'resto', 'clothes', 'dealer', 'jail', 'terminal', 'boathouse', 'venue', 'club'];
+  const want = ['office', 'cafe', 'store', 'pharmacy', 'books', 'barber', 'bakery', 'electronics', 'florist', 'hardware', 'laundry', 'bar', 'diner', 'home', 'warehouse', 'barn', 'bank', 'reserve', 'apts', 'gym', 'pool', 'resto', 'clothes', 'dealer', 'kitlab', 'jail', 'terminal', 'boathouse', 'venue', 'club'];
   for (const k of want) if (!ONLY || ONLY.split(',').includes(k)) ok(!!gen.keys[k], 'there is a ' + k);
   for (const k of want) {
     if (ONLY && !ONLY.split(',').includes(k)) continue; const key = gen.keys[k]; if (!key) continue;

@@ -67,6 +67,7 @@ function loadSave() {
         save.int = { apts: ap, fit: clamp(+q.fit || 0, 0, 100), gym: q.gym | 0, meals: q.meals | 0, swims: q.swims | 0, jail: q.jail | 0, nights: q.nights | 0, rooms: Object.keys(ap).length, banks: bk, acct: Math.max(0, Math.round(+q.acct || 0)), gymMem: q.gymMem ? 1 : 0, flowers: q.flowers | 0, buzz: 0, delivery: q.delivery && CAR_BY_ID[q.delivery.id] ? { id: q.delivery.id, key: String(q.delivery.key || '') } : null }; }
       if (s.surf && typeof s.surf === 'object') save.surf = { best: +s.surf.best || 0, sessions: s.surf.sessions | 0 };
       if (s.dune && typeof s.dune === 'object') save.dune = { races: s.dune.races | 0, wins: s.dune.wins | 0, best: +s.dune.best || 0 };
+      KIT.load(s.kit);
       save.car = (s.car && (save.owned[s.car] || (save.jack && save.jack.id === s.car))) ? s.car : save.heist.prev && save.owned[save.heist.prev] ? save.heist.prev : 'rook'; }
   } catch (e) { /* storage unavailable */ }
 }

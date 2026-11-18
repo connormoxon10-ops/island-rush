@@ -202,7 +202,7 @@ INT_KINDS.resto = { name: 'Restaurant', rooms: { main(K, rec, r) { const th = Ob
 /* ---------- car dealership: the only place to buy a car ---------- */
 const INT_DEALER = [{ max: 6000, cls: null, col: 0x2a6ad8 }, { max: 1e9, cls: /truck|off|buggy|4x4|rally|pickup|suv|van/i, col: 0xd86a1a }, { min: 4000, max: 1e9, cls: null, col: 0xc8a050 }];
 function intDealerCars(rec) {
-  const all = CARS.filter((d) => !d.stolen && !d.prize && d.price > 0), t = rec.ti === 1 ? INT_DEALER[1] : rec.ti === 6 ? INT_DEALER[2] : INT_DEALER[0];
+  const all = CARS.filter((d) => !d.stolen && !d.prize && !d.kit && d.price > 0), t = rec.ti === 1 ? INT_DEALER[1] : rec.ti === 6 ? INT_DEALER[2] : INT_DEALER[0];
   let L = all.filter((d) => d.price <= t.max && (!t.min || d.price >= t.min) && (!t.cls || t.cls.test(d.cls + ' ' + d.name)));
   if (L.length < 4) L = all.slice().sort((a, b) => a.price - b.price); return L;
 }
@@ -231,7 +231,7 @@ INT_KINDS.dealer = { name: 'Car dealership', rooms: { main(K, rec, r) {
   });
   K.counter(K.x1 - 5, K.z1 - 3.4, K.x1 - 1.4, K.z1 - 2.6, 0x1a1a1a, 0xf2f2f2); K.desk(K.x1 - 3.2, K.z1 - 3.0, 0); intStaff(K, K.x1 - 3.2, K.z1 - 3.9, 0, 0x1a1a1a, { suit: true });
   K.person({ x: -2, z: K.z0 + 7, kind: 'walk', suit: true, shirt: 0x2a2a3a, pants: 0x2a2a3a, path: spots.slice(0, 4).map((p) => [p[0] + 2.6, p[1] + 2.6, 4]) });
-  K.act(K.x1 - 3.2, K.z1 - 1.8, 1.8, 'Talk to the salesperson (the full catalogue)', () => Int.panel({ title: rec.name, sub: 'Every car we can get you · ' + money(save.money), body: '<div class="vsl"><div>' + CARS.filter((d) => !d.stolen && !d.prize && d.price > 0).sort((a, b) => a.price - b.price).map((d) => '<button type="button" class="vstk' + (save.owned[d.id] ? ' on' : '') + '" data-ia="' + d.id + '">' + esc(d.name) + ' · ' + (save.owned[d.id] ? 'owned' : money(d.price)) + '</button>').join('') + '</div></div>', btns: [], pick: (id) => intCarPanel(CAR_BY_ID[id], rec) }), { wide: true });
+  K.act(K.x1 - 3.2, K.z1 - 1.8, 1.8, 'Talk to the salesperson (the full catalogue)', () => Int.panel({ title: rec.name, sub: 'Every car we can get you · ' + money(save.money), body: '<div class="vsl"><div>' + CARS.filter((d) => !d.stolen && !d.prize && !d.kit && d.price > 0).sort((a, b) => a.price - b.price).map((d) => '<button type="button" class="vstk' + (save.owned[d.id] ? ' on' : '') + '" data-ia="' + d.id + '">' + esc(d.name) + ' · ' + (save.owned[d.id] ? 'owned' : money(d.price)) + '</button>').join('') + '</div></div>', btns: [], pick: (id) => intCarPanel(CAR_BY_ID[id], rec) }), { wide: true });
   intShoppers(K, r, 2, spots.map((p) => [p[0] - 2.8, p[1]]));
 } }, leave(rec) {
   const s = intSave(), dl = s.delivery; if (!dl || dl.key !== rec.key) return;

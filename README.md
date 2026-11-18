@@ -66,6 +66,11 @@ Run `bash build.sh`, then open `dist/island-rush.html` in a desktop browser. thr
     - **The Island County Jail.**
   - **Airport, marina and venues:** the airport terminal (check-in, departures, a café, and through to the planes) and the marina boathouse. Every venue and dance club is a bar or club you walk into, then play.
   - Code: `js/08_int_*.js`.
+- **Custom Car Works** (Fairhaven Custom Works, Redstone Hot Rods, Lakeshore Kit Cars; 🔧 on the map): build your own car from parts at the design station.
+  - **Parts:** a shell (13: the road cars' bodies and the traffic bodies), any car's engine and gearbox, rear-, front- or all-wheel drive, suspension (street, lowered, rally, off-road lift, slammed), tyres (street, sport, semi-slick, all-terrain, mud, drag radials), wheels (16" to 33" off-road, six styles), brakes, aero (lip, GT wing, big wing, rally wing), body-kit pieces, paint and a name.
+  - **While you design:** the car on the turntable is rebuilt as you pick, and the top speed, 0–100, grip, weight and power shown come from the Tuning tab's estimator.
+  - **After you build:** you pay for the parts and the car is parked at the door, then it is in your garage like any other. Come back to change parts (you pay only for the new ones) or scrap a build (40 % back). You can keep up to eight builds.
+  - Code: `js/08_int_kitcar.js`.
 - **Bank jobs:** any of the five banks can be robbed.
   - **Planning:** case the bank in the day at its staff door, then do it that night.
   - **Security:** guards walk set rounds with torch cones, cameras sweep, and the Island Reserve has lasers across the vault corridor.
@@ -111,6 +116,7 @@ node tests/swimwear.js      # beachwear: men and boys in swim trunks, women in b
 node tests/interiors.js     # every building has a door and an interior: one of every kind entered on foot, walked about, furniture, people, things to use, out again (env ONLY=kind)
 node tests/interior_use.js   # the special buildings in use: buy a flat and sleep, buy a car at a dealer (the garage menu sends you there), gym, pool, bank account, restaurant, clothes, doing time in jail
 node tests/bankjob.js       # bank robberies: case the job, guards' sight (behind them unseen, in front the alarm goes), the vault dial, the cash, out clean for three stars, caught means jail
+node tests/kitcar.js        # build your own car: the parts catalogue, every engine in every shell drives, parts change the numbers, design/build/drive/reload/rebuild/scrap in the workshop
 node tests/rally_hazards.js  # mud pits, loose hay-bale slaloms and fallen logs on every stage: grip, drag, bump height, bale lanes
 node tests/train.js         # the island railway: a closed loop round the island on a viaduct, three full-size freight trains a third of the loop apart, each in its own livery, solid piers
 node tests/heist.js         # the train heists: three ramps, three trains, three prize cars (gold Aurum Spectre, chrome Argent Wraith, ruby Rubis 440): jump into each open wagon, steal it, drive it out the back and home
