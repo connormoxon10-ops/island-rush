@@ -18777,8 +18777,8 @@ Cut.frame = function (dt) {
     else { camera.position.set(n.x + ux * 0.5 + px * 0.55 * side, ny + 0.05, n.z + uz * 0.5 + pz * 0.55 * side); camera.position.lerp(_cutP.set(me.x, my, me.z), 0.12 * k); _cutV.set(me.x, my, me.z); }
     camera.lookAt(_cutV);
   } else if (shot === 'rival' && R) {
-    R.h.b.head.getWorldPosition(_cutH); const ox = rt.x * R.side, oz = rt.z * R.side;
-    camera.position.set(car.x + fw.x * (0.6 + 0.6 * k) - ox * 0.2, _cutH.y + 0.1, car.z + fw.z * (0.6 + 0.6 * k) - oz * 0.2); _cutV.copy(_cutH); camera.lookAt(_cutV);
+    R.h.b.head.getWorldPosition(_cutH); const dx = car.x - R.mesh.position.x, dz = car.z - R.mesh.position.z, dl = Math.hypot(dx, dz) || 1;   /* out in the gap between the cars, at his head height, facing him */
+    camera.position.set(_cutH.x + dx / dl * 1.7 + fw.x * (0.7 + 0.4 * k), _cutH.y + 0.12, _cutH.z + dz / dl * 1.7 + fw.z * (0.7 + 0.4 * k)); _cutV.copy(_cutH); camera.lookAt(_cutV);
   } else if (shot === 'line') {
     const cx = R ? (car.x + R.mesh.position.x) / 2 : car.x, cz = R ? (car.z + R.mesh.position.z) / 2 : car.z, D = 11 + 4 * k;
     camera.position.set(cx + fw.x * D + rt.x * 2.5 * Math.sin(k * 1.5), car.y + 0.7, cz + fw.z * D + rt.z * 2.5 * Math.sin(k * 1.5)); _cutV.set(cx, car.y + 0.9, cz); camera.lookAt(_cutV);
