@@ -45,23 +45,23 @@ const OUT = process.env.OUT || __dirname;
     if (e.key !== 'main') g.Story.trackSet(e.key);
     window.__run(3); r.hud = hud();
     if (st.t === 'talk' && st.inside) {
-      const P = g.Story.place(st.at), S2 = P.site; r.who = st.who; r.inside = true; g.loadAround(S2.x, S2.z, 30); const rec = g.Bld.lots.get(S2.key); r.rec = !!rec; if (!rec) return r;
+      const P = g.Story.place(st.at), S2 = P.site; r.who = st.who; r.inside = true; g.loadAround(S2.x, S2.z, 12); const rec = g.Bld.lots.get(S2.key); r.rec = !!rec; if (!rec) return r;
       if (g.Foot.on) g.Foot.board(true); g.spawnAt(rec.door.ox + rec.door.nx * 6, rec.door.oz + rec.door.nz * 6, 0); window.__run(3); g.key('KeyF', true); g.key('KeyF', false); window.__run(3);
       r.entered = g.Int.enter(rec); window.__run(6); const a = g.Int.acts.find((q) => /^Sit down with/.test(q.label)); r.vis = !!a && !!g.Story.inScene; r.near = !!a;
       if (a) { g.Int.x = a.x; g.Int.z = a.z; window.__run(2); g.Int.use(a); window.__run(3); r.cut = g.Cut.on && g.Cut.inInt; g.key('Space', true); g.key('Space', false); window.__run(24); r.pic = g.renderer.domElement.toDataURL('image/jpeg', 0.8); }
       return r;
     }
     if (st.t === 'talk') {
-      const n = g.Story.npcs['n:' + e.key]; r.who = st.who; r.vis = !!(n && n.h.root.visible); if (!n) return r; g.loadAround(n.x, n.z, 24);
+      const n = g.Story.npcs['n:' + e.key]; r.who = st.who; r.vis = !!(n && n.h.root.visible); if (!n) return r; g.loadAround(n.x, n.z, 6);
       if (!g.Foot.on) { const q = {}; g.findNearestRoadPoint(n.x, n.z, q); g.spawnAt(q.x, q.z, Math.atan2(q.tx, q.tz)); window.__run(3); g.key('KeyF', true); g.key('KeyF', false); window.__run(4); }
       r.foot = g.Foot.on; g.Foot.x = n.x + 2.2; g.Foot.z = n.z + 0.4; window.__run(4); r.near = !!(g.Story.near && g.Story.near.n === n); r.hud = hud();
       g.key('KeyE', true); g.key('KeyE', false); window.__run(3); r.cut = g.Cut.on;
       if (r.cut) { g.key('Space', true); g.key('Space', false); window.__run(8); r.pic = g.renderer.domElement.toDataURL('image/jpeg', 0.75); }
     } else if (st.t === 'cut') { window.__run(40); r.cut = g.Cut.on; }
-    else if (st.t === 'call') { let k = 0, onPhone = false, inBox = false; while (k++ < 900 && g.Story.entries().some((x) => x.key === e.key && x.i === e.i)) { window.__run(1); const P = document.getElementById('phone'), B = document.getElementById('storyComm'); if (g.Phone.inc && !P.hidden && P.querySelector('.ph-chat p')) onPhone = true; if (B && !B.hidden && /📱/.test(B.textContent)) inBox = true; } r.calls = g.Story.comm.log.length; r.took = k; r.onPhone = onPhone; r.inBox = inBox; window.__run(80); r.closed = document.getElementById('phone').hidden; }
-    else if (st.t === 'goto') { const P = g.Story.place(st.at); g.loadAround(P.x, P.z, 20); if (g.Foot.on) g.Foot.board(true); g.spawnAt(P.x + 3, P.z + 3, 0); window.__run(5); }
+    else if (st.t === 'call') { let k = 0, onPhone = false, inBox = false; while (k++ < 900 && g.Story.entries().some((x) => x.key === e.key && x.i === e.i)) { g.App.time += 0.25; g.Story.commTick(0.25); g.Phone.tick(); if (k % 20 === 0) window.__run(1);   /* the call plays out without drawing every moment of it */ const P = document.getElementById('phone'), B = document.getElementById('storyComm'); if (g.Phone.inc && !P.hidden && P.querySelector('.ph-chat p')) onPhone = true; if (B && !B.hidden && /📱/.test(B.textContent)) inBox = true; } r.calls = g.Story.comm.log.length; r.took = k; r.onPhone = onPhone; r.inBox = inBox; for (let j = 0; j < 30; j++) { g.App.time += 0.25; g.Phone.tick(); } window.__run(2); r.closed = document.getElementById('phone').hidden; }
+    else if (st.t === 'goto') { const P = g.Story.place(st.at); g.loadAround(P.x, P.z, 3); if (g.Foot.on) g.Foot.board(true); g.spawnAt(P.x + 3, P.z + 3, 0); window.__run(5); }
     else if (st.t === 'run') {
-      const m = g.Story.def(st.id); r.m = m.id; g.loadAround(m.x, m.z, 30); if (g.Foot.on) g.Foot.board(true); g.spawnAt(m.x + 4, m.z + 4, 0); window.__run(4); r.near = !!(g.Story.near && g.Story.near.what === 'run');
+      const m = g.Story.def(st.id); r.m = m.id; g.loadAround(m.x, m.z, 6); if (g.Foot.on) g.Foot.board(true); g.spawnAt(m.x + 4, m.z + 4, 0); window.__run(4); r.near = !!(g.Story.near && g.Story.near.what === 'run');
       g.key('KeyE', true); g.key('KeyE', false); window.__run(2); r.cut = g.Cut.on; r.mi = !!g.Mi; r.rival = !!g.Story.rivalH;
       if (g.Story.rivalH) { let k = 0; while (g.Cut.on && k++ < 40 && g.Cut.lines[g.Cut.i][2] !== 'rival') { if (g.Cut.choosing) { g.key('Digit1', true); g.key('Digit1', false); } else { g.key('Space', true); g.key('Space', false); } window.__run(0); } window.__run(10); r.pic = g.renderer.domElement.toDataURL('image/jpeg', 0.8); }
     }
