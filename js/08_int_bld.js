@@ -8,24 +8,25 @@ const Bld = { lots: new Map(), plans: new Map(), near: null, sites: [], sigMat: 
 /* specials by town (order follows REG: harbor, desert, farm, tropic, alpine, lake, city) */
 const BLD_SPECIAL = [
   ['bank', 'apts', 'gym', 'dealer', 'resto', 'resto', 'clothes'],
-  ['bank', 'apts', 'dealer', 'resto', 'clothes'],
+  ['bank', 'apts', 'dealer', 'kitlab', 'resto', 'clothes'],
   ['apts', 'resto', 'clothes'],
   ['apts', 'gym', 'pool', 'resto', 'resto', 'clothes'],
   ['apts', 'pool', 'resto', 'clothes'],
-  ['bank', 'apts', 'gym', 'pool', 'resto', 'clothes'],
-  ['reserve', 'bank', 'jail', 'apts', 'apts', 'gym', 'pool', 'dealer', 'resto', 'resto', 'clothes', 'clothes']
+  ['bank', 'apts', 'gym', 'pool', 'kitlab', 'resto', 'clothes'],
+  ['reserve', 'bank', 'jail', 'apts', 'apts', 'gym', 'pool', 'dealer', 'kitlab', 'resto', 'resto', 'clothes', 'clothes']
 ];
 const BLD_NAMES = {
   bank: ['Harbor Trust Bank', 'Mesa Savings & Loan', '', '', '', 'Lakeshore Credit Union', 'First Fairhaven Bank'], reserve: ['', '', '', '', '', '', 'Island Reserve Bank'],
   apts: [['Quayside Apartments'], ['Red Rock Lofts'], ['Old Mill Flats'], ['Palm Court Residences'], ['Snowline Chalets'], ['Pinewater Apartments'], ['The Meridian Tower', 'Parkview Residences']],
   gym: ['Iron Harbor Gym', '', '', 'Palm Fitness', '', 'Lakeside Athletic Club', 'Pulse Fitness'],
   pool: ['', '', '', 'Cape Harlow Aquatic Centre', 'Summit Spa & Pool', 'Lakeshore Swim Centre', 'Fairhaven Natatorium'],
+  kitlab: ['', 'Redstone Hot Rods', '', '', '', 'Lakeshore Kit Cars', 'Fairhaven Custom Works'],
   dealer: ['Marlow Motors', 'Redstone Auto Ranch', '', '', '', '', 'Fairhaven Prestige Motors'], jail: ['', '', '', '', '', '', 'Island County Jail'],
   resto: [['The Salty Crab', 'Dockside Fish & Chips'], ['Cantina Roja'], ['Harvest Table'], ['Tiki Shack', 'Coral Grill'], ['Fondue Haus'], ['Lakeside Grill'], ['Kaito Sushi', 'Bistro Lumière']],
   clothes: [['Deckhand Outfitters'], ['Trail & Turquoise'], ['Barnyard Threads'], ['Sun & Sand Boutique'], ['Peak Outfitters'], ['Timberline Wear'], ['Maison Fairhaven', 'Uptown Threads']]
 };
-const BLD_ICO = { bank: ['🏦', 0x3fbf6a], reserve: ['🏦', 0xffd23a], apts: ['🏢', 0x8aa8ff], gym: ['🏋', 0xff7a3a], pool: ['🏊', 0x3ac8ff], dealer: ['🚗', 0xff4a6a], jail: ['⛓', 0x9a9aa6], resto: ['🍽', 0xffb23a], clothes: ['👕', 0xd07aff] };
-const BLD_SUB = { bank: 'Bank', reserve: 'Bank · the island’s main vault', apts: 'Apartments · rooms for sale', gym: 'Gym', pool: 'Indoor pool', dealer: 'Car dealership', jail: 'County jail & police', resto: 'Restaurant', clothes: 'Clothing' };
+const BLD_ICO = { bank: ['🏦', 0x3fbf6a], reserve: ['🏦', 0xffd23a], apts: ['🏢', 0x8aa8ff], gym: ['🏋', 0xff7a3a], pool: ['🏊', 0x3ac8ff], dealer: ['🚗', 0xff4a6a], kitlab: ['🔧', 0x4be08a], jail: ['⛓', 0x9a9aa6], resto: ['🍽', 0xffb23a], clothes: ['👕', 0xd07aff] };
+const BLD_SUB = { bank: 'Bank', reserve: 'Bank · the island’s main vault', apts: 'Apartments · rooms for sale', gym: 'Gym', pool: 'Indoor pool', dealer: 'Car dealership', kitlab: 'Custom car workshop · build your own car', jail: 'County jail & police', resto: 'Restaurant', clothes: 'Clothing' };
 /* generic kinds: name lists, signs */
 const BLD_GEN = {
   office: { names: ['Harbourview House', 'Atlas Building', 'One Market Place', 'Sterling Tower', 'Northgate Plaza', 'Corwin & Vale', 'The Exchange', 'Pinnacle House'], sub: 'Offices', sign: false },
