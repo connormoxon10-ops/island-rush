@@ -645,7 +645,7 @@ Story.ui = function () {
   const cm = Story.comm.el = document.createElement('div'); cm.id = 'storyComm'; cm.hidden = true; document.body.appendChild(cm);
 };
 /* ---------- the title screen: free roam or the story, each its own save ---------- */
-Story.switchTo = function (mode) { try { writeSave(); localStorage.setItem(MODE_KEY, mode); localStorage.setItem('island-rush-go', String(Date.now())); } catch (e) { /* ignore */ } location.reload(); };
+Story.switchTo = function (mode) { try { writeSave(); localStorage.setItem(MODE_KEY, mode); } catch (e) { /* ignore */ } location.hash = 'mode=' + mode + '&go=' + Date.now(); location.reload(); };
 Story.initTitle = function () {
   const b = document.getElementById('btnStart'); if (!b || document.getElementById('btnStory')) return;
   let has = false, ch = 0; try { const o = JSON.parse(localStorage.getItem(STORY_KEY) || 'null'); has = !!(o && o.story); ch = has ? (o.story.ch | 0) : 0; } catch (e) { /* ignore */ }
@@ -655,8 +655,8 @@ Story.initTitle = function () {
   b.after(s);
   b.onclick = () => { if (PLAY_MODE === 'sandbox') App.start(); else Story.switchTo('sandbox'); };
   s.onclick = () => { if (PLAY_MODE === 'story') App.start(); else Story.switchTo('story'); };
-  const mh = document.getElementById('menuHead'); if (mh && !document.getElementById('btnTitle')) { const t = document.createElement('button'); t.className = 'btn sm'; t.id = 'btnTitle'; t.type = 'button'; t.textContent = '⏏ Title screen'; t.title = 'Back to the title: switch between free roam and the story'; t.onclick = () => { writeSave(); location.reload(); }; mh.appendChild(t); }
+  const mh = document.getElementById('menuHead'); if (mh && !document.getElementById('btnTitle')) { const t = document.createElement('button'); t.className = 'btn sm'; t.id = 'btnTitle'; t.type = 'button'; t.textContent = '⏏ Title screen'; t.title = 'Back to the title: switch between free roam and the story'; t.onclick = () => { writeSave(); location.hash = 'mode=' + PLAY_MODE; location.reload(); }; mh.appendChild(t); }
   if (PLAY_MODE === 'story') { const tg = document.getElementById('tagline'); if (tg) tg.textContent = 'Story mode: ' + (has ? 'chapter ' + Math.min(ch + 1, STORY.length) + ' of ' + STORY.length : 'a new life on the island') + '. Free roam keeps its own save.'; }
 };
 /* straight into the game after a switch (the page reloads into the other save): a note left just before the reload, good for 20 s */
-Story.autoStart = function () { let go = false; try { const t = +localStorage.getItem('island-rush-go') || 0; go = Date.now() - t < 20000; localStorage.removeItem('island-rush-go'); } catch (e) { /* ignore */ } if (go) setTimeout(() => App.start(), 60); };
+Story.autoStart = function () { let go = false; try { const m = /(?:^|[#&])go=(\d+)/.exec(location.hash); go = !!m && Date.now() - +m[1] < 30000; if (location.hash) history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* ignore */ } if (go) setTimeout(() => App.start(), 60); };

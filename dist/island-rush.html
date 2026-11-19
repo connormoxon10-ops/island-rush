@@ -779,7 +779,8 @@ const lc = (hex) => new THREE.Color(hex).convertSRGBToLinear();
 /* two games in one browser, each with its own save: the sandbox (free roam, the original save) and Story Mode. Which one this page is playing was
    chosen on the title screen (switching reloads the page into the other one); the settings are shared between them */
 const MODE_KEY = 'island-rush-mode', SANDBOX_KEY = 'island-rush-v1', STORY_KEY = 'island-rush-story-v1';
-const PLAY_MODE = (() => { try { return localStorage.getItem(MODE_KEY) === 'story' ? 'story' : 'sandbox'; } catch (e) { return 'sandbox'; } })();
+/* a switch carries the choice in the address (#mode=story) across the reload, so it cannot be lost to a storage write that has not landed yet */
+const PLAY_MODE = (() => { try { const h = /(?:^|[#&])mode=(story|sandbox)/.exec(location.hash); if (h) { localStorage.setItem(MODE_KEY, h[1]); return h[1]; } return localStorage.getItem(MODE_KEY) === 'story' ? 'story' : 'sandbox'; } catch (e) { return 'sandbox'; } })();
 const SAVE_KEY = PLAY_MODE === 'story' ? STORY_KEY : SANDBOX_KEY;
 const save = { money: 600, rep: 0, law: { won: 0, part: 0, lost: 0, settled: 0, paid: 0 }, done: {}, up: { eng: 0, tire: 0, nit: 0, arm: 0 }, color: 0, car: 'rook', owned: { rook: true }, cc: {}, cos: { own: {}, car: {}, out: {} }, rel: {}, gar: { wall: 0, ext: 1, trim: 0, floor: 0, light: 0, neon: 3, sign: 'HOME GARAGE', bays: 4, decor: { posters: 1, tools: 1, tyres: 1, rug: 1, trophies: 1, plants: 1 }, slots: {} },
   air: { own: { sparrow: true }, hrs: 0, ldg: 0, best: 0, view: 1 }, boat: { own: {}, hrs: 0, view: 1 }, vm: { done: {}, kills: 0, rings: 0 }, ven: { rec: {}, souv: {} }, col: { got: {}, n: 0, fish: {}, prize: {} }, race: { races: 0, wins: 0, podiums: 0, bestLap: 0, earned: 0, best: {} }, rally: { runs: 0, best: 0, splits: [], gates: 0, jump: 0, tod: 2, earned: 0 }, drag: { runs: 0, wins: 0, earned: 0, bestRt: 0, tier: 1, best: {} }, setup: {},
@@ -18944,7 +18945,7 @@ Story.ui = function () {
   const cm = Story.comm.el = document.createElement('div'); cm.id = 'storyComm'; cm.hidden = true; document.body.appendChild(cm);
 };
 /* ---------- the title screen: free roam or the story, each its own save ---------- */
-Story.switchTo = function (mode) { try { writeSave(); localStorage.setItem(MODE_KEY, mode); localStorage.setItem('island-rush-go', String(Date.now())); } catch (e) { /* ignore */ } location.reload(); };
+Story.switchTo = function (mode) { try { writeSave(); localStorage.setItem(MODE_KEY, mode); } catch (e) { /* ignore */ } location.hash = 'mode=' + mode + '&go=' + Date.now(); location.reload(); };
 Story.initTitle = function () {
   const b = document.getElementById('btnStart'); if (!b || document.getElementById('btnStory')) return;
   let has = false, ch = 0; try { const o = JSON.parse(localStorage.getItem(STORY_KEY) || 'null'); has = !!(o && o.story); ch = has ? (o.story.ch | 0) : 0; } catch (e) { /* ignore */ }
@@ -18954,11 +18955,11 @@ Story.initTitle = function () {
   b.after(s);
   b.onclick = () => { if (PLAY_MODE === 'sandbox') App.start(); else Story.switchTo('sandbox'); };
   s.onclick = () => { if (PLAY_MODE === 'story') App.start(); else Story.switchTo('story'); };
-  const mh = document.getElementById('menuHead'); if (mh && !document.getElementById('btnTitle')) { const t = document.createElement('button'); t.className = 'btn sm'; t.id = 'btnTitle'; t.type = 'button'; t.textContent = '⏏ Title screen'; t.title = 'Back to the title: switch between free roam and the story'; t.onclick = () => { writeSave(); location.reload(); }; mh.appendChild(t); }
+  const mh = document.getElementById('menuHead'); if (mh && !document.getElementById('btnTitle')) { const t = document.createElement('button'); t.className = 'btn sm'; t.id = 'btnTitle'; t.type = 'button'; t.textContent = '⏏ Title screen'; t.title = 'Back to the title: switch between free roam and the story'; t.onclick = () => { writeSave(); location.hash = 'mode=' + PLAY_MODE; location.reload(); }; mh.appendChild(t); }
   if (PLAY_MODE === 'story') { const tg = document.getElementById('tagline'); if (tg) tg.textContent = 'Story mode: ' + (has ? 'chapter ' + Math.min(ch + 1, STORY.length) + ' of ' + STORY.length : 'a new life on the island') + '. Free roam keeps its own save.'; }
 };
 /* straight into the game after a switch (the page reloads into the other save): a note left just before the reload, good for 20 s */
-Story.autoStart = function () { let go = false; try { const t = +localStorage.getItem('island-rush-go') || 0; go = Date.now() - t < 20000; localStorage.removeItem('island-rush-go'); } catch (e) { /* ignore */ } if (go) setTimeout(() => App.start(), 60); };
+Story.autoStart = function () { let go = false; try { const m = /(?:^|[#&])go=(\d+)/.exec(location.hash); go = !!m && Date.now() - +m[1] < 30000; if (location.hash) history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* ignore */ } if (go) setTimeout(() => App.start(), 60); };
 
 /* ---- js/08_surf.js ---- */
 /* ================= NAMED BEACHES, BEACH ROADS AND THE SURF CLUB =================

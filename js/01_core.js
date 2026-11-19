@@ -29,7 +29,8 @@ const lc = (hex) => new THREE.Color(hex).convertSRGBToLinear();
 /* two games in one browser, each with its own save: the sandbox (free roam, the original save) and Story Mode. Which one this page is playing was
    chosen on the title screen (switching reloads the page into the other one); the settings are shared between them */
 const MODE_KEY = 'island-rush-mode', SANDBOX_KEY = 'island-rush-v1', STORY_KEY = 'island-rush-story-v1';
-const PLAY_MODE = (() => { try { return localStorage.getItem(MODE_KEY) === 'story' ? 'story' : 'sandbox'; } catch (e) { return 'sandbox'; } })();
+/* a switch carries the choice in the address (#mode=story) across the reload, so it cannot be lost to a storage write that has not landed yet */
+const PLAY_MODE = (() => { try { const h = /(?:^|[#&])mode=(story|sandbox)/.exec(location.hash); if (h) { localStorage.setItem(MODE_KEY, h[1]); return h[1]; } return localStorage.getItem(MODE_KEY) === 'story' ? 'story' : 'sandbox'; } catch (e) { return 'sandbox'; } })();
 const SAVE_KEY = PLAY_MODE === 'story' ? STORY_KEY : SANDBOX_KEY;
 const save = { money: 600, rep: 0, law: { won: 0, part: 0, lost: 0, settled: 0, paid: 0 }, done: {}, up: { eng: 0, tire: 0, nit: 0, arm: 0 }, color: 0, car: 'rook', owned: { rook: true }, cc: {}, cos: { own: {}, car: {}, out: {} }, rel: {}, gar: { wall: 0, ext: 1, trim: 0, floor: 0, light: 0, neon: 3, sign: 'HOME GARAGE', bays: 4, decor: { posters: 1, tools: 1, tyres: 1, rug: 1, trophies: 1, plants: 1 }, slots: {} },
   air: { own: { sparrow: true }, hrs: 0, ldg: 0, best: 0, view: 1 }, boat: { own: {}, hrs: 0, view: 1 }, vm: { done: {}, kills: 0, rings: 0 }, ven: { rec: {}, souv: {} }, col: { got: {}, n: 0, fish: {}, prize: {} }, race: { races: 0, wins: 0, podiums: 0, bestLap: 0, earned: 0, best: {} }, rally: { runs: 0, best: 0, splits: [], gates: 0, jump: 0, tod: 2, earned: 0 }, drag: { runs: 0, wins: 0, earned: 0, bestRt: 0, tier: 1, best: {} }, setup: {},
