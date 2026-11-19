@@ -52,7 +52,7 @@ function genTownRing(r, d0, d1, upto, sectors) {
 }
 
 function terrainNoRoad(x, z) {
-  let h = Biome.shape(x, z, rawHeight(x, z));
+  let h = volcLift(x, z, Biome.shape(x, z, rawHeight(x, z)));
   for (let k = 0; k < towns.length; k++) {
     const T = towns[k]; const dx = x - T.cx, dz = z - T.cz;
     if (Math.abs(dx) > T.R2 || Math.abs(dz) > T.R2) continue;

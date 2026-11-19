@@ -183,10 +183,8 @@ const SHAPE = {
     const r = sstep(430, 680, d) * v, ch = 1 - Math.abs(noise2(x * 0.0042 + 31, z * 0.0042 - 7)) * 2.6, wet = sstep(0.0, 0.45, ch);
     const t = 2.2 + fbm(x * 0.008, z * 0.008, 2) * 1.4 - wet * 5.5; return lerp(h, t, 0.93 * r);
   },
-  volcano(x, z, h, v, d, T) {   /* a cone with a crater a little way out of town, lava fields round its foot */
-    const a = T.id * 2.39, vx = T.cx + Math.cos(a) * 760, vz = T.cz + Math.sin(a) * 760, dc = Math.hypot(x - vx, z - vz), r = sstep(430, 760, d) * v;
-    const cone = Math.pow(Math.max(0, 1 - dc / 620), 1.55) * 260 - sstep(95, 40, dc) * 70 + fbm(x * 0.01, z * 0.01, 3) * 6 * (1 - sstep(0, 620, dc));
-    const t = T.baseH - 3 + fbm(x * 0.006 + 4, z * 0.006, 2) * 5; return lerp(h, t, 0.8 * r) + cone * v;
+  volcano(x, z, h, v, d, T) {   /* a low plain of old lava flows under Mount Cinder (02_volcano.js) */
+    const r = sstep(430, 760, d) * v, t = T.baseH - 3 + fbm(x * 0.006 + 4, z * 0.006, 2) * 5; return lerp(h, t, 0.8 * r);
   },
   savanna(x, z, h, v, d, T) { const r = sstep(440, 780, d) * v, t = T.baseH - 2 + fbm(x * 0.0022 + 8, z * 0.0022, 2) * 5 + sstep(0.35, 0.5, noise2(x * 0.006, z * 0.006)) * 14; return lerp(h, t, 0.9 * r); },
   vineyard(x, z, h, v, d, T) { const r = sstep(440, 760, d) * v, t = T.baseH + 4 + fbm(x * 0.0035 + 1, z * 0.0035 + 6, 3) * 26; return lerp(h, t, 0.85 * r); },
@@ -223,7 +221,7 @@ Biome.tint = function (x, z, h, slope, c) {
     else if (key === 'harbor') { if (ihash(Math.floor(x / 60), Math.floor(z / 60), 33) < 0.3) c.lerp(t.conc, 0.75 * v * flat); }
     else if (key === 'lake') { c.lerp(t.moss, sstep(0.1, 0.5, noise2(x * 0.01, z * 0.01)) * 0.35 * v * flat); }
     else if (key === 'swamp') { c.lerp(t.mud, (0.5 + 0.5 * noise2(x * 0.02, z * 0.02)) * 0.45 * v * flat); c.lerp(t.moss, sstep(0.1, 0.5, noise2(x * 0.013 + 3, z * 0.013)) * 0.4 * v); }
-    else if (key === 'volcano') { const T = towns[i], a = T.id * 2.39, dc = Math.hypot(x - T.cx - Math.cos(a) * 760, z - T.cz - Math.sin(a) * 760); c.lerp(t.ash, (0.4 + 0.5 * sstep(620, 260, dc)) * v); c.lerp(t.lava, sstep(140, 70, dc) * 0.9 * v); if (dc > 300 && dc < 700 && noise2(x * 0.012, z * 0.012) > 0.32) c.lerp(t.lava2, 0.6 * v * flat); }
+    else if (key === 'volcano') { c.lerp(t.ash, 0.55 * v); if (noise2(x * 0.012, z * 0.012) > 0.32) c.lerp(t.lava2, 0.6 * v * flat); }
     else if (key === 'savanna') { c.lerp(t.gold, (0.5 + 0.5 * noise2(x * 0.004, z * 0.004)) * 0.5 * v * flat); }
     else if (key === 'vineyard') { const row = 0.5 + 0.5 * Math.sin((x * 0.8 + z * 0.33) * 0.9), plot = ihash(Math.floor(x / 110), Math.floor(z / 90), 57) < 0.55; if (plot) c.lerp(row > 0.55 ? t.vine : t.soil, 0.7 * v * flat * (1 - sstep(70, 95, h))); }
     else if (key === 'tundra') { c.lerp(t.frost, (0.55 + 0.45 * noise2(x * 0.01, z * 0.01)) * 0.6 * v); }
