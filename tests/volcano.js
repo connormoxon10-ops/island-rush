@@ -23,7 +23,7 @@ const OUT = process.env.OUT || __dirname;
     const g = window.__game; g.App.start(); window.requestAnimationFrame = () => 0; window.__now = performance.now();
     window.__run = (n, f) => { for (let i = 0; i < n; i++) { if (f && f(i) === false) return i; window.__now += 1000 / 30; g.frame(window.__now); } return n; };
     window.__res = []; const r0 = g.UI.result; g.UI.result = function (ok, title) { window.__res.push({ ok, title }); return r0.apply(this, arguments); };
-    window.__fired = 0; const f0 = g.Volc.fire; g.Volc.fire = function () { window.__fired++; return f0.apply(this, arguments); };
+    window.__fired = 0; const f0 = g.Volc.fire; g.Volc.fire = function () { if (window.__noBombs) return; window.__fired++; return f0.apply(this, arguments); };
   });
   /* the shape */
   const sh = await page.evaluate(() => {
@@ -60,16 +60,16 @@ const OUT = process.env.OUT || __dirname;
   });
   /* the mission: sit still and the lava gets you (and a bomb on the car hurts) */
   const still = await page.evaluate(() => {
-    const g = window.__game, c = g.car, def = g.missions.find((m) => m.id === 'mvolc'), V = g.VOLC, res = {}; window.__res.length = 0; c.health = 100; g.save.set.dev = true; g.Dev.god = true;   /* only the lava can end this one */
+    const g = window.__game, c = g.car, def = g.missions.find((m) => m.id === 'mvolc'), V = g.VOLC, res = {}; window.__res.length = 0; c.health = 100;
     g.startMission(def); res.atPad = Math.hypot(c.x - V.px, c.z - V.pz) < 3; res.started = !!g.Mi;
     window.__run(200, () => g.Mi && g.Mi.phase === 'countdown'); res.run = g.Mi && g.Mi.phase === 'run';
     window.__run(20); res.front = g.Volc.front.visible && g.Volc.fMat.uniforms.uFront.value > V.RIM - 20;
-    const b = g.Volc.bombs[0]; g.Volc.fire(); b.on = true; b.x1 = c.x + 1; b.z1 = c.z; b.y1 = g.terrainHeight(b.x1, b.z1); const hp = c.health; g.Volc.land(b); res.bombHp = hp - c.health; res.hits = g.Mi && g.Mi.vol.hits; c.health = 100;
+    const b = g.Volc.bombs[0]; g.Volc.fire(); b.on = true; b.x1 = c.x + 1; b.z1 = c.z; b.y1 = g.terrainHeight(b.x1, b.z1); const hp = c.health; g.Volc.land(b); res.bombHp = hp - c.health; res.hits = g.Mi && g.Mi.vol.hits; c.health = 100; g.save.set.dev = true; g.Dev.god = true; window.__noBombs = true;   /* from here only the lava can end it: no damage, and no bombs to knock the car out of its path */
     window.__run(60); res.shotT = 1;
     return res;
   });
   await shot('erupting');
-  const still2 = await page.evaluate(() => { const g = window.__game; const n = window.__run(1500, () => !!g.Mi); g.Dev.god = false; g.save.set.dev = false; return { n, res: window.__res.slice(), done: !!g.save.done.mvolc, health: g.car.health }; });
+  const still2 = await page.evaluate(() => { const g = window.__game; const n = window.__run(1500, () => !!g.Mi); g.Dev.god = false; g.save.set.dev = false; window.__noBombs = false; const left = !!g.Mi; if (g.Mi) g.abortMission(); window.__run(2); return { left, n, res: window.__res.slice(), done: !!g.save.done.mvolc, health: g.car.health }; });
   console.log(JSON.stringify(still), JSON.stringify(still2));
   ok(still.started && still.atPad && still.run, 'start it at base camp: you are up at the observatory, and after the countdown it erupts');
   ok(still.front, 'a lava flow pours over the rim');

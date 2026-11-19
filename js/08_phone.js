@@ -43,7 +43,7 @@ Phone.topics = function (id) {
   T.push(['Any advice?', () => ({ say: [{ mara: 'Next thing you’re doing is ' + obj + '. Do it carefully. For me.', rico: 'Advice? Brake late, lie later. And for ' + obj + '? Don’t blink.', nina: 'For ' + obj + '? Be the most boring person in the room. Nobody remembers boring.', sal: 'Whatever ' + obj + ' is, son, do it before dark if you can.', jax: 'Don’t trust anything Dex says about ' + obj + '.', hal: 'Check your tyres. That’s my advice for everything.', dex: 'My advice is ' + obj + '. Chop chop.' }[id]] })]);
   if (id === 'mara') {
     if (!f.maraLove && v >= 3) T.push(['I miss you when I’m not at the garage.', () => v >= 4 ? { say: ['…Yeah?', 'Me too. A bit. A lot. Get back here soon.'], eff: { mara: 1, maraHint: 1 } } : { say: ['That’s sweet. Don’t get weird on me.'] }]);
-    if (f.maraLove) T.push(['I love you.', () => ({ say: ['Say it in person, idiot.', '…I love you too.'] })]);
+    if (f.maraLove) T.push(['I love you.', () => ({ say: ['Say it in person, idiot. I’m at the garage.', '…I love you too.'], eff: { maraLovePhone: 1 } })]);
     if (!((S.sq.pier || {}).done) && !f.pierAsk && S.ch >= 3) T.push(['Want to get dinner some time?', () => v >= 1 ? { say: ['…Like a date?', 'Okay. The pier. I’ll book a table, you wear a shirt.'], eff: { pierAsk: 1 } } : { say: ['Ha. Ask me again when you’ve earned it.'], eff: { mara: 0 } }]);
     if (S.ch >= 4 && !f.maraDex) T.push(['What do you know about Dex?', () => ({ say: ['Enough to stay away. He finds people when they’re broke and keeps them that way.', 'Please tell me you’re not working for him.'], eff: { maraDex: 1 } })]);
   } else if (id === 'rico') {
@@ -86,14 +86,14 @@ Phone.say = function (k) {
 };
 /* a call or text coming in (the story's calls): the phone opens on it, the lines appear as they are said, and it puts itself away after */
 Phone.incoming = function (c, n) {
-  const nm = c.who.replace(/\s*\((phone|text)\)/, ''), txt = /\(text\)/.test(c.who);
-  let I = Phone.inc; if (!I || I.nm !== nm) { I = Phone.inc = { nm, txt, log: [], auto: !Phone.open, last: null }; if (!Phone.open) { Phone.open = true; Phone.app = 'home'; Phone.el.hidden = false; } Snd.beep(1100, 0.06); }
+  const me = /^you\b/i.test(c.who), nm = me && Phone.inc ? Phone.inc.nm : c.who.replace(/\s*\((phone|text)\)/, ''), txt = /\(text\)/.test(c.who);   /* your own lines belong to the call you are on */
+  let I = Phone.inc; if (!I || (I.nm !== nm && !me)) { I = Phone.inc = { nm, txt, log: I ? I.log : [], auto: I ? I.auto : !Phone.open, last: null }; if (!Phone.open) { Phone.open = true; Phone.app = 'home'; Phone.el.hidden = false; } Snd.beep(1100, 0.06); }
   if (I.last !== c) { I.last = c; I.log.push([c.who === 'you (phone)' ? 'you' : 'them', c.text]); }
   I.n = n; I.t = App.time; Phone.render();
 };
 Phone.incTick = function () {
   const I = Phone.inc; if (!I) return; const C = Story.comm, next = C.cur || C.q[0];
-  if (next && next.who && /\((phone|text)\)/.test(next.who) && next.who.replace(/\s*\((phone|text)\)/, '') === I.nm) return;
+  if (next && next.who && /\((phone|text)\)/.test(next.who)) return;   /* more of the call (or the next call) is coming */
   if (App.time - I.t > 2.2) { const auto = I.auto; Phone.inc = null; if (auto && !Phone.call) Phone.toggle(false); else Phone.render(); }
 };
 Phone.hang = function () { if (Phone.call && Phone.call.spam < 3) Phone.spamHit = null; const C = Phone.call; if (!C) return; if (C.st === 'talk') C.log.push(['', 'Call ended']); Phone.call = null; Snd.beep(420, 0.05); Phone.render(); };

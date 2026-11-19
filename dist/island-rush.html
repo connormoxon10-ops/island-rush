@@ -779,7 +779,8 @@ const lc = (hex) => new THREE.Color(hex).convertSRGBToLinear();
 /* two games in one browser, each with its own save: the sandbox (free roam, the original save) and Story Mode. Which one this page is playing was
    chosen on the title screen (switching reloads the page into the other one); the settings are shared between them */
 const MODE_KEY = 'island-rush-mode', SANDBOX_KEY = 'island-rush-v1', STORY_KEY = 'island-rush-story-v1';
-const PLAY_MODE = (() => { try { return localStorage.getItem(MODE_KEY) === 'story' ? 'story' : 'sandbox'; } catch (e) { return 'sandbox'; } })();
+/* a switch carries the choice in the address (#mode=story) across the reload, so it cannot be lost to a storage write that has not landed yet */
+const PLAY_MODE = (() => { try { const h = /(?:^|[#&])mode=(story|sandbox)/.exec(location.hash); if (h) { localStorage.setItem(MODE_KEY, h[1]); return h[1]; } return localStorage.getItem(MODE_KEY) === 'story' ? 'story' : 'sandbox'; } catch (e) { return 'sandbox'; } })();
 const SAVE_KEY = PLAY_MODE === 'story' ? STORY_KEY : SANDBOX_KEY;
 const save = { money: 600, rep: 0, law: { won: 0, part: 0, lost: 0, settled: 0, paid: 0 }, done: {}, up: { eng: 0, tire: 0, nit: 0, arm: 0 }, color: 0, car: 'rook', owned: { rook: true }, cc: {}, cos: { own: {}, car: {}, out: {} }, rel: {}, gar: { wall: 0, ext: 1, trim: 0, floor: 0, light: 0, neon: 3, sign: 'HOME GARAGE', bays: 4, decor: { posters: 1, tools: 1, tyres: 1, rug: 1, trophies: 1, plants: 1 }, slots: {} },
   air: { own: { sparrow: true }, hrs: 0, ldg: 0, best: 0, view: 1 }, boat: { own: {}, hrs: 0, view: 1 }, vm: { done: {}, kills: 0, rings: 0 }, ven: { rec: {}, souv: {} }, col: { got: {}, n: 0, fish: {}, prize: {} }, race: { races: 0, wins: 0, podiums: 0, bestLap: 0, earned: 0, best: {} }, rally: { runs: 0, best: 0, splits: [], gates: 0, jump: 0, tod: 2, earned: 0 }, drag: { runs: 0, wins: 0, earned: 0, bestRt: 0, tier: 1, best: {} }, setup: {},
@@ -3295,42 +3296,101 @@ function stepCar(dt, c0, P0, T0, circ0) {
 const Cockpit = {};
 const EYE = new THREE.Vector3(-0.35, 1.13, 0.12);
 function sm(hex, rough, metal, extra) { return new THREE.MeshStandardMaterial(Object.assign({ color: lc(hex), roughness: rough, metalness: metal || 0 }, extra || {})); }
+/* the cabin you see from the driver's seat: one for every car, sculpted rather than boxy (a moulded dash with an arched gauge hood, round vents
+   and a centre screen; curved pillars and roof rail; padded doors with armrests; a contoured passenger seat with bolsters; a console with a gear
+   knob and handbrake; a thick-rimmed wheel; a crowned bonnet ahead), dressed per car by Cockpit.theme: sport, classic, rugged or modern */
+const CK_THEME = {
+  sport: { dash: 0x16171b, soft: 0x0e0e10, seat: 0x121214, trim: 0x50545c, accent: 0xc0202a, door: 0x18191d },
+  classic: { dash: 0x2a1e18, soft: 0x3a2618, seat: 0x8a5a36, trim: 0xc8ccd2, accent: 0x6a3e20, door: 0x34241a },
+  rugged: { dash: 0x2a2c2e, soft: 0x1e2022, seat: 0x3a3c40, trim: 0x7a7e86, accent: 0xd0702a, door: 0x2c2e31 },
+  modern: { dash: 0x1b1e24, soft: 0x101114, seat: 0x1a1c22, trim: 0x8a909b, accent: 0x3a7bd5, door: 0x1a1c21 }
+};
+function ckThemeOf(d) {
+  const c = String((d && d.cls) || '');
+  if (/Super|Hyper|Drag|Open-wheel|Go-kart|Rally car|Rally hatch|Hot hatch/.test(c)) return 'sport';
+  if (/Muscle|Hot rod|Lowrider|Roadster|Retro|Surf/.test(c)) return 'classic';
+  if (/Pickup|4x4|Monster|truck|buggy|Sand rail/i.test(c)) return 'rugged';
+  return 'modern';
+}
+/* a rectangle with rounded corners, and a box made from it with soft edges */
+function ckRect(w, h, r) { const s = new THREE.Shape(), x = -w / 2, y = -h / 2; r = Math.max(0.001, Math.min(r, w / 2, h / 2)); s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r); s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h); s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r); s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y); return s; }
+function ckRBox(w, h, d, r) { const b = Math.max(0.002, Math.min(r, d / 2 - 0.002, w / 2 - 0.002, h / 2 - 0.002)), geo = new THREE.ExtrudeGeometry(ckRect(w - 2 * b, h - 2 * b, b * 0.9), { depth: Math.max(0.001, d - 2 * b), bevelEnabled: true, bevelThickness: b, bevelSize: b, bevelSegments: 3, curveSegments: 5 }); geo.translate(0, 0, -(d - 2 * b) / 2); geo.computeVertexNormals(); return geo; }
 function buildCockpit() {
-  const g = new THREE.Group();
-  const mDark = sm(0x14161a, 0.6, 0.05), mDash = sm(0x1b1e24, 0.5, 0.1), mTrim = sm(0x8a909b, 0.35, 0.8), mRoof = sm(0x3b3e45, 0.95, 0), mLeather = sm(0x101114, 0.7, 0), mDoor = sm(0x1a1c21, 0.65, 0.05);
-  const box = (w, h, d, x, y, z, m, rx, ry, rz) => { const me = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); me.position.set(x, y, z); me.rotation.set(rx || 0, ry || 0, rz || 0); g.add(me); return me; };
-  const beam = (p0, p1, t, m) => { const a = new THREE.Vector3(...p0), b = new THREE.Vector3(...p1); const len = a.distanceTo(b); const me = new THREE.Mesh(new THREE.BoxGeometry(t, t, len), m); me.position.copy(a).add(b).multiplyScalar(0.5); me.lookAt(b); g.add(me); return me; };
-  /* dash: top at y=0.93, driver-facing face at z=0.8 */
-  box(1.95, 0.3, 0.55, 0, 0.78, 1.075, mDash); box(1.95, 0.03, 0.5, 0, 0.945, 1.1, mLeather, 0.05);
-  box(1.9, 0.02, 0.02, 0, 0.66, 0.795, mTrim); box(0.5, 0.12, 0.03, 0.42, 0.8, 0.795, mDark);
-  box(0.28, 0.22, 1.1, 0.12, 0.49, 0.28, mDark); box(0.06, 0.14, 0.06, 0.12, 0.66, 0.5, mTrim);
-  box(0.12, 0.45, 1.4, 0.96, 0.7, 0.3, mDoor); box(0.12, 0.45, 1.4, -0.96, 0.7, 0.3, mDoor);
-  box(0.14, 0.06, 1.0, 0.94, 0.94, 0.55, mLeather); box(0.14, 0.06, 1.0, -0.94, 0.94, 0.55, mLeather);
-  beam([0.88, 0.93, 1.15], [0.7, 1.42, 0.98], 0.075, mRoof); beam([-0.88, 0.93, 1.15], [-0.7, 1.42, 0.98], 0.075, mRoof);
-  box(1.5, 0.06, 0.2, 0, 1.42, 1.0, mRoof); box(1.7, 0.03, 1.3, 0, 1.455, 0.3, mRoof);
-  /* side mirrors sit outside the windows */
-  box(0.12, 0.1, 0.16, 1.04, 1.0, 1.02, MAT.paintPlayer, 0, 0.2, 0); box(0.12, 0.1, 0.16, -1.04, 1.0, 1.02, MAT.paintPlayer, 0, -0.2, 0);
-  box(0.03, 0.07, 0.03, 0, 1.38, 0.98, mDark);
-  const mir = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.075), MAT.mirror); mir.position.set(0, 1.325, 0.925); mir.lookAt(EYE.x, EYE.y, EYE.z); g.add(mir); Cockpit.mirror = mir;
-  box(0.27, 0.095, 0.04, 0, 1.325, 0.97, mDark).lookAt(EYE.x, EYE.y, EYE.z);
-  /* hood */
-  box(1.74, 0.07, 1.4, 0, 0.9, 1.88, MAT.paintPlayer, 0.05, 0, 0); box(0.55, 0.05, 0.9, 0, 0.955, 1.95, MAT.paintPlayer, 0.05, 0, 0);
-  box(0.34, 0.12, 1.3, 0.83, 0.92, 1.85, MAT.paintPlayer, 0.04, 0, 0); box(0.34, 0.12, 1.3, -0.83, 0.92, 1.85, MAT.paintPlayer, 0.04, 0, 0);
-  { const hd = new THREE.Group(); hd.position.z = 1.18; const n = g.children.length; for (const m of g.children.slice(n - 4)) { g.remove(m); m.position.z -= 1.18; hd.add(m); } g.add(hd); Cockpit.hood = hd; }
-  /* steering wheel */
+  const g = new THREE.Group(), T = CK_THEME.modern;
+  const M = Cockpit.mats = { dash: sm(T.dash, 0.55, 0.05), soft: sm(T.soft, 0.75, 0), seat: sm(T.seat, 0.8, 0), trim: sm(T.trim, 0.3, 0.85), accent: sm(T.accent, 0.5, 0.1), door: sm(T.door, 0.65, 0.05), dark: sm(0x0c0d10, 0.6, 0.05), roof: sm(0x3b3e45, 0.95, 0, { side: THREE.DoubleSide }), screen: new THREE.MeshBasicMaterial({ color: lc(0x10233a) }) };
+  const put = (geo, m, x, y, z, rx, ry, rz, par) => { const me = new THREE.Mesh(geo, m); me.position.set(x, y, z); me.rotation.set(rx || 0, ry || 0, rz || 0); (par || g).add(me); return me; };
+  const rb = (w, h, d, r, m, x, y, z, rx, ry, rz, par) => put(ckRBox(w, h, d, r), m, x, y, z, rx, ry, rz, par);
+  const tube = (pts, r, m) => put(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map((p) => new THREE.Vector3(...p))), 16, r, 10, false), m, 0, 0, 0);
+  /* the dash: a moulded profile (side view: windscreen base, the top falling to a rounded lip over the driver's knees) swept across the car */
+  { const s = new THREE.Shape(); s.moveTo(1.36, 0.6); s.lineTo(1.3, 0.9); s.quadraticCurveTo(1.18, 0.95, 1.0, 0.95); s.quadraticCurveTo(0.84, 0.95, 0.8, 0.88); s.quadraticCurveTo(0.76, 0.8, 0.79, 0.72); s.quadraticCurveTo(0.83, 0.62, 0.95, 0.6); s.lineTo(1.36, 0.6);
+    const geo = new THREE.ExtrudeGeometry(s, { depth: 1.86, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.025, bevelSegments: 3, curveSegments: 10 }); geo.translate(0, 0, -0.93); geo.rotateY(-Math.PI / 2); geo.computeVertexNormals(); put(geo, M.dash, 0, 0, 0); }
+  /* a soft-touch strip and a trim line across the dash face */
+  put(new THREE.CylinderGeometry(0.012, 0.012, 1.84, 10), M.trim, 0, 0.705, 0.765, 0, 0, Math.PI / 2);
+  rb(1.0, 0.07, 0.05, 0.025, M.accent, 0.42, 0.79, 0.765, -0.25);
+  /* the arched hood over the gauges */
+  { const s = new THREE.Shape(); s.absellipse(0, 0, 0.3, 0.13, 0, Math.PI, false); s.lineTo(-0.27, 0); s.absellipse(0, 0, 0.27, 0.105, Math.PI, 0, true); s.lineTo(0.3, 0);
+    const geo = new THREE.ExtrudeGeometry(s, { depth: 0.2, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.01, bevelSegments: 2, curveSegments: 14 }); geo.computeVertexNormals(); put(geo, M.soft, -0.35, 0.83, 0.705, -0.15); }
+  /* round air vents: two in the middle, one at each end */
+  for (const x of [-0.86, -0.13, 0.13, 0.86]) { const v = put(new THREE.TorusGeometry(0.045, 0.012, 8, 20), M.trim, x, 0.84, 0.755, -0.25); put(new THREE.CircleGeometry(0.045, 16), M.dark, 0, 0, -0.005, 0, Math.PI, 0, v); for (const a of [0, Math.PI / 2]) put(new THREE.BoxGeometry(0.08, 0.006, 0.006), M.trim, 0, 0, 0.002, 0, 0, a, v); }
+  /* the centre screen */
+  { const sc = rb(0.3, 0.17, 0.025, 0.012, M.dark, 0, 0.8, 0.755, -0.3); put(new THREE.PlaneGeometry(0.27, 0.145), M.screen, 0, 0, -0.014, 0, Math.PI, 0, sc); Cockpit.screen = M.screen; }
+  /* the console between the seats: a soft lid, the gear knob, the handbrake, cup holders */
+  rb(0.28, 0.24, 1.0, 0.06, M.dash, 0, 0.47, 0.32); rb(0.24, 0.05, 0.42, 0.025, M.soft, 0, 0.6, 0.0);
+  put(new THREE.CylinderGeometry(0.012, 0.016, 0.13, 10), M.trim, 0, 0.65, 0.5, 0.25); put(new THREE.SphereGeometry(0.032, 16, 12), M.soft, 0, 0.72, 0.52);
+  put(new THREE.CylinderGeometry(0.06, 0.07, 0.02, 20), M.accent, 0, 0.595, 0.5);
+  rb(0.04, 0.03, 0.26, 0.014, M.soft, 0.06, 0.62, 0.18, 0.35);
+  for (const z of [0.29, 0.37]) put(new THREE.CylinderGeometry(0.035, 0.035, 0.02, 16), M.dark, 0, 0.59, z);
+  /* the doors: padded cards, a sill, an armrest, a handle and a speaker */
+  for (const sd of [-1, 1]) {
+    rb(0.1, 0.5, 1.4, 0.045, M.door, sd * 0.96, 0.68, 0.3); rb(0.14, 0.07, 1.05, 0.03, M.soft, sd * 0.94, 0.94, 0.55);
+    rb(0.11, 0.06, 0.42, 0.028, M.soft, sd * 0.89, 0.66, 0.25); rb(0.025, 0.035, 0.12, 0.012, M.trim, sd * 0.905, 0.79, 0.52);
+    put(new THREE.TorusGeometry(0.065, 0.01, 6, 20), M.trim, sd * 0.905, 0.5, 0.62, 0, Math.PI / 2, 0); put(new THREE.CircleGeometry(0.065, 18), M.dark, sd * 0.908, 0.5, 0.62, 0, -sd * Math.PI / 2, 0);
+    rb(0.02, 0.03, 0.9, 0.01, M.accent, sd * 0.905, 0.86, 0.45);
+  }
+  /* pillars and roof: curved tubes, a header rail, a soft headliner */
+  for (const sd of [-1, 1]) tube([[sd * 0.9, 0.92, 1.18], [sd * 0.82, 1.2, 1.08], [sd * 0.7, 1.43, 0.96]], 0.045, M.roof);
+  tube([[-0.72, 1.43, 0.97], [0, 1.455, 1.02], [0.72, 1.43, 0.97]], 0.04, M.roof);
+  { const geo = new THREE.CylinderGeometry(2.4, 2.4, 1.3, 24, 1, true, -0.34, 0.68); geo.rotateX(Math.PI / 2); put(geo, M.roof, 0, 1.46 - 2.4 + 0.02, 0.3, 0, 0, Math.PI); }
+  /* side mirrors outside the windows, the rear-view mirror */
+  for (const sd of [-1, 1]) { const mm = rb(0.13, 0.1, 0.17, 0.04, MAT.paintPlayer, sd * 1.04, 1.0, 1.02, 0, sd * 0.2, 0); put(new THREE.PlaneGeometry(0.1, 0.07), MAT.mirror, 0, 0, -0.087, 0, Math.PI, 0, mm); }
+  put(new THREE.CylinderGeometry(0.012, 0.012, 0.07, 8), M.dark, 0, 1.4, 0.98);
+  rb(0.28, 0.095, 0.04, 0.03, M.dark, 0, 1.325, 0.97).lookAt(EYE.x, EYE.y, EYE.z);
+  const mir = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.075), MAT.mirror); mir.position.set(0, 1.325, 0.945); mir.lookAt(EYE.x, EYE.y, EYE.z); g.add(mir); Cockpit.mirror = mir;
+  /* the passenger seat, contoured: cushion, backrest, side bolsters, headrest, a stripe down the middle */
+  { const st = new THREE.Group(); st.position.set(0.42, 0, 0.15); g.add(st);
+    rb(0.5, 0.13, 0.5, 0.05, M.seat, 0, 0.45, 0.05, 0, 0, 0, st); rb(0.5, 0.64, 0.13, 0.055, M.seat, 0, 0.82, -0.22, -0.18, 0, 0, st);
+    for (const sd of [-1, 1]) { rb(0.09, 0.16, 0.5, 0.04, M.seat, sd * 0.22, 0.53, 0.05, 0, 0, sd * -0.15, st); rb(0.1, 0.5, 0.15, 0.045, M.seat, sd * 0.22, 0.8, -0.2, -0.18, 0, sd * -0.2, st); }
+    rb(0.1, 0.5, 0.012, 0.005, M.accent, 0, 0.83, -0.155, -0.18, 0, 0, st); rb(0.26, 0.17, 0.1, 0.045, M.seat, 0, 1.24, -0.29, -0.18, 0, 0, st); put(new THREE.CylinderGeometry(0.008, 0.008, 0.1, 6), M.trim, 0.07, 1.13, -0.27, -0.18, 0, 0, st); put(new THREE.CylinderGeometry(0.008, 0.008, 0.1, 6), M.trim, -0.07, 1.13, -0.27, -0.18, 0, 0, st); }
+  /* the driver's seat, just its edges where you can see them */
+  for (const sd of [-1, 1]) rb(0.09, 0.16, 0.5, 0.04, M.seat, -0.35 + sd * 0.22, 0.53, 0.2, 0, 0, sd * -0.15);
+  /* the bonnet ahead: a crowned panel with rounded wings (scaled to each car's width and nose) */
+  { const hd = new THREE.Group(); hd.position.z = 1.18; g.add(hd); Cockpit.hood = hd;
+    const pg = new THREE.PlaneGeometry(1.74, 1.4, 16, 8); pg.rotateX(-Math.PI / 2); const pp = pg.attributes.position; for (let k = 0; k < pp.count; k++) { const x = pp.getX(k), z = pp.getZ(k); pp.setY(k, 0.035 * (1 - (x / 0.87) ** 2) - 0.02 * (z / 0.7)); } pg.computeVertexNormals();
+    put(pg, MAT.paintPlayer, 0, 0.93, 0.7, 0.05, 0, 0, hd);
+    for (const sd of [-1, 1]) rb(0.32, 0.12, 1.3, 0.055, MAT.paintPlayer, sd * 0.83, 0.92, 0.67, 0.04, 0, 0, hd);
+    rb(0.5, 0.04, 0.8, 0.02, MAT.paintPlayer, 0, 0.965, 0.77, 0.05, 0, 0, hd); }
+  /* the steering wheel: a thick rim with thumb grips, a rounded hub, flat spokes, a tapered column */
   const wm = new THREE.Group(); wm.position.set(-0.35, 0.74, 0.58); wm.rotation.x = 0.5; g.add(wm);
   const wheel = new THREE.Group(); wm.add(wheel);
-  wheel.add(new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.017, 8, 36), mLeather));
-  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.055, 0.045, 16), mTrim); hub.rotation.x = Math.PI / 2; wheel.add(hub);
-  for (const a of [Math.PI / 2, Math.PI * 1.17, Math.PI * 1.83]) { const sp = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.026, 0.012), mDark); sp.position.set(Math.cos(a) * 0.09, Math.sin(a) * 0.09, 0); sp.rotation.z = a; wheel.add(sp); }
-  box(0.09, 0.09, 0.2, -0.35, 0.7, 0.66, mDark, 0.5, 0, 0);
+  wheel.add(new THREE.Mesh(new THREE.TorusGeometry(0.165, 0.021, 12, 48), M.soft));
+  for (const a of [0.15, Math.PI - 0.15]) { const gp = new THREE.Mesh(new THREE.TorusGeometry(0.165, 0.025, 10, 10, 0.5), M.soft); gp.rotation.z = a - 0.25; wheel.add(gp); }
+  { const hub = new THREE.Mesh(new THREE.SphereGeometry(0.065, 20, 12), M.soft); hub.scale.set(1.15, 0.9, 0.42); wheel.add(hub); const badge = new THREE.Mesh(new THREE.CircleGeometry(0.018, 16), M.trim); badge.position.z = -0.028; badge.rotation.y = Math.PI; wheel.add(badge); }
+  for (const a of [Math.PI * 1.5, Math.PI * 0.17, Math.PI * 0.83]) { const sp = new THREE.Mesh(ckRBox(0.11, 0.035, 0.016, 0.007), M.dark); sp.position.set(Math.cos(a) * 0.1, Math.sin(a) * 0.1, 0); sp.rotation.z = a; wheel.add(sp); }
+  rb(0.022, 0.012, 0.03, 0.005, M.accent, 0, 0.165, 0, 0, 0, 0, wheel);
+  put(new THREE.CylinderGeometry(0.045, 0.06, 0.24, 16), M.dark, -0.35, 0.7, 0.68, Math.PI / 2 + 0.5);
   Cockpit.wheel = wheel;
   /* gauges */
   const gc = mkCanvas(512, 200); Cockpit.gc = gc; Cockpit.gx = gc.getContext('2d'); Cockpit.gtex = new THREE.CanvasTexture(gc); Cockpit.gtex.encoding = THREE.sRGBEncoding; Cockpit.gtex.anisotropy = maxAniso;
   const gm = new THREE.MeshBasicMaterial({ map: Cockpit.gtex, toneMapped: false }); Cockpit.gm = gm;
-  const gp = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.195), gm); gp.position.set(-0.35, 0.83, 0.765); gp.rotation.set(-0.2, Math.PI, 0, 'YXZ'); g.add(gp);
-  Cockpit.group = g; return g;
+  const gp = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.195), gm); gp.position.set(-0.35, 0.83, 0.725);   /* clear of the dash's rounded edge */ gp.rotation.set(-0.2, Math.PI, 0, 'YXZ'); g.add(gp);
+  Cockpit.group = g; if (typeof CUR !== 'undefined' && CUR) Cockpit.theme(CUR); return g;
 }
+/* dress the cabin for a car: sport (carbon and red), classic (tan leather, wood and chrome), rugged (grey and orange) or modern (graphite and blue) */
+Cockpit.theme = function (d) {
+  const k = ckThemeOf(d), T = CK_THEME[k], M = Cockpit.mats; if (!M) return; Cockpit.style = k;
+  for (const n of ['dash', 'soft', 'seat', 'trim', 'accent', 'door']) M[n].color.copy(lc(T[n]));
+  M.seat.roughness = k === 'classic' ? 0.55 : k === 'rugged' ? 0.95 : 0.8; M.accent.metalness = k === 'classic' ? 0 : 0.1; M.accent.roughness = k === 'classic' ? 0.35 : 0.5;
+};
 function drawGauges(kmh, rpm, gear, nitro, health, mph, lampOn, rev) {
   const g = Cockpit.gx; g.clearRect(0, 0, 512, 200);
   g.fillStyle = '#07090c'; g.fillRect(0, 0, 512, 200);
@@ -5287,6 +5347,7 @@ function applyCar(id, rebuildMesh) {
   d.bumpY = (d.body.y0 != null ? d.body.y0 : 0.36) + 0.19; d.bumpZ = hl + 0.2;
   EYE.y = 1.13 + d.dy; if (Cockpit.group) Cockpit.group.position.y = d.dy;
   if (Cockpit.hood) { Cockpit.hood.scale.set(d.body.W / 1.82, 1, clamp((hl + 0.43 - 1.18) / 1.4, 0.6, 1.7)); }
+  if (Cockpit.theme) Cockpit.theme(d);
   if (rebuildMesh && car.body) {
     const old = car.ext; car.body.remove(old);
     disposeCar(old);
@@ -14851,7 +14912,7 @@ Int.go = function (room, spawn) {
   const rec = Int.rec, D = Int.kind, fn = D.rooms[room]; if (!fn) return;
   Int.clear(); Int.room = room;
   const K = new IntKit(rec, room), r = mulberry32((ihash(rec.seed | 0, room.length * 131 + room.charCodeAt(0), 3) * 4294967296) >>> 0);
-  fn(K, rec, r); K.done(); Int.sc = K.sc; Int.cols = K.cols; Int.acts = K.acts; Int.npcs = K.npcs; Int.ticks = K.ticks; Int.swim = K.swim; Int.bounds = K.bounds; Int.K = K;
+  fn(K, rec, r); if (typeof Story !== 'undefined' && Story.intRoom) Story.intRoom(K, rec, room); K.done(); Int.sc = K.sc; Int.cols = K.cols; Int.acts = K.acts; Int.npcs = K.npcs; Int.ticks = K.ticks; Int.swim = K.swim; Int.bounds = K.bounds; Int.K = K;
   const s = (spawn && K.spawns[spawn]) || K.spawns.door || [0, 0, Math.PI]; Int.x = s[0]; Int.z = s[1]; Int.yaw = s[2]; Int.pitch = 0; Int.vx = Int.vz = 0; Int.y = 0;
   if (Int.tp) Int.mkPed();
   Int.hudH = Int.botH = ''; Int.near = null; if (D.onRoom) D.onRoom(room, K);
@@ -14967,6 +15028,7 @@ function intResolve(x, z, R, cols, B) {
   return o;
 }
 Int.frame = function (dt) {
+  if (Cut.on && Cut.inInt) { Cut.frameInt(dt); return; }   /* a story scene at a table (08_story.js) */
   App.time += dt; Int.t += dt; if (Snd.ok) Snd.update(car, dt, true);
   App.tod = (App.tod + dt * (save.set.cycle ? 24 / 1440 : 0)) % 24;
   if (Int.msgT > 0) Int.msgT -= dt;
@@ -16940,7 +17002,7 @@ Phone.topics = function (id) {
   T.push(['Any advice?', () => ({ say: [{ mara: 'Next thing you’re doing is ' + obj + '. Do it carefully. For me.', rico: 'Advice? Brake late, lie later. And for ' + obj + '? Don’t blink.', nina: 'For ' + obj + '? Be the most boring person in the room. Nobody remembers boring.', sal: 'Whatever ' + obj + ' is, son, do it before dark if you can.', jax: 'Don’t trust anything Dex says about ' + obj + '.', hal: 'Check your tyres. That’s my advice for everything.', dex: 'My advice is ' + obj + '. Chop chop.' }[id]] })]);
   if (id === 'mara') {
     if (!f.maraLove && v >= 3) T.push(['I miss you when I’m not at the garage.', () => v >= 4 ? { say: ['…Yeah?', 'Me too. A bit. A lot. Get back here soon.'], eff: { mara: 1, maraHint: 1 } } : { say: ['That’s sweet. Don’t get weird on me.'] }]);
-    if (f.maraLove) T.push(['I love you.', () => ({ say: ['Say it in person, idiot.', '…I love you too.'] })]);
+    if (f.maraLove) T.push(['I love you.', () => ({ say: ['Say it in person, idiot. I’m at the garage.', '…I love you too.'], eff: { maraLovePhone: 1 } })]);
     if (!((S.sq.pier || {}).done) && !f.pierAsk && S.ch >= 3) T.push(['Want to get dinner some time?', () => v >= 1 ? { say: ['…Like a date?', 'Okay. The pier. I’ll book a table, you wear a shirt.'], eff: { pierAsk: 1 } } : { say: ['Ha. Ask me again when you’ve earned it.'], eff: { mara: 0 } }]);
     if (S.ch >= 4 && !f.maraDex) T.push(['What do you know about Dex?', () => ({ say: ['Enough to stay away. He finds people when they’re broke and keeps them that way.', 'Please tell me you’re not working for him.'], eff: { maraDex: 1 } })]);
   } else if (id === 'rico') {
@@ -16983,14 +17045,14 @@ Phone.say = function (k) {
 };
 /* a call or text coming in (the story's calls): the phone opens on it, the lines appear as they are said, and it puts itself away after */
 Phone.incoming = function (c, n) {
-  const nm = c.who.replace(/\s*\((phone|text)\)/, ''), txt = /\(text\)/.test(c.who);
-  let I = Phone.inc; if (!I || I.nm !== nm) { I = Phone.inc = { nm, txt, log: [], auto: !Phone.open, last: null }; if (!Phone.open) { Phone.open = true; Phone.app = 'home'; Phone.el.hidden = false; } Snd.beep(1100, 0.06); }
+  const me = /^you\b/i.test(c.who), nm = me && Phone.inc ? Phone.inc.nm : c.who.replace(/\s*\((phone|text)\)/, ''), txt = /\(text\)/.test(c.who);   /* your own lines belong to the call you are on */
+  let I = Phone.inc; if (!I || (I.nm !== nm && !me)) { I = Phone.inc = { nm, txt, log: I ? I.log : [], auto: I ? I.auto : !Phone.open, last: null }; if (!Phone.open) { Phone.open = true; Phone.app = 'home'; Phone.el.hidden = false; } Snd.beep(1100, 0.06); }
   if (I.last !== c) { I.last = c; I.log.push([c.who === 'you (phone)' ? 'you' : 'them', c.text]); }
   I.n = n; I.t = App.time; Phone.render();
 };
 Phone.incTick = function () {
   const I = Phone.inc; if (!I) return; const C = Story.comm, next = C.cur || C.q[0];
-  if (next && next.who && /\((phone|text)\)/.test(next.who) && next.who.replace(/\s*\((phone|text)\)/, '') === I.nm) return;
+  if (next && next.who && /\((phone|text)\)/.test(next.who)) return;   /* more of the call (or the next call) is coming */
   if (App.time - I.t > 2.2) { const auto = I.auto; Phone.inc = null; if (auto && !Phone.call) Phone.toggle(false); else Phone.render(); }
 };
 Phone.hang = function () { if (Phone.call && Phone.call.spam < 3) Phone.spamHit = null; const C = Phone.call; if (!C) return; if (C.st === 'talk') C.log.push(['', 'Call ended']); Phone.call = null; Snd.beep(420, 0.05); Phone.render(); };
@@ -18328,11 +18390,11 @@ function storyCurb(x, z, side) { findNearestRoadPoint(x, z, _stNp); const s = si
 function storySite(pred) { Bld.prep(); return Bld.sites.find(pred); }
 Story.place = function (k) {
   let o = {};
-  if (k === 'garage') { o.x = GAR.ox + 6; o.z = GAR.oz + 7; o.yaw = Math.PI; o.label = 'Mara’s garage, ' + (GAR.town || towns[0].name); }
-  else if (k === 'dex') { const S = storySite((s) => (s.kind === 'resto' || s.kind === 'club') && REG[s.ti % REG.length].key === 'city') || storySite((s) => s.kind === 'resto'); o.x = S.x + 2; o.z = S.z + (S.b ? 3.5 : -3.5); o.yaw = S.b ? 0 : Math.PI; o.label = S.name + ', ' + S.T.name; o.town = S.T.name; }
+  if (k === 'garage') { o.x = GAR.ox + 3.6; o.z = GAR.oz - 3.5; o.yaw = 0; o.label = 'Mara’s garage, ' + (GAR.town || towns[0].name); }   /* just inside the door, beside the drive-in lane, facing out */
+  else if (k === 'dex') { const S = storySite((s) => (s.kind === 'resto' || s.kind === 'club') && REG[s.ti % REG.length].key === 'city') || storySite((s) => s.kind === 'resto'); o.x = S.x + 2; o.z = S.z + (S.b ? 3.5 : -3.5); o.yaw = S.b ? 0 : Math.PI; o.label = S.name + ', ' + S.T.name; o.town = S.T.name; o.site = S; }
   else if (k === 'bank') { const S = storySite((s) => s.kind === 'bank' && BJ_TIER[s.ti] === 0) || storySite((s) => s.kind === 'bank'); o.x = S.x; o.z = S.z + (S.b ? 4 : -4); o.label = S.name + ', ' + S.T.name; o.town = S.T.name; o.ti = S.ti; }
-  else if (k === 'nina') { const B = Story.place('bank'), S = storySite((s) => s.ti === B.ti && (s.kind === 'clothes' || s.kind === 'resto' || s.kind === 'gym')) || storySite((s) => s.kind === 'clothes'); o.x = S.x - 2; o.z = S.z + (S.b ? 3.5 : -3.5); o.yaw = S.b ? 0 : Math.PI; o.label = 'outside ' + S.name + ', ' + S.T.name; o.town = S.T.name; }
-  else if (k === 'pier') { const S = storySite((s) => s.kind === 'resto' && s.ti === 0) || storySite((s) => s.kind === 'resto'); o.x = S.x + 3; o.z = S.z + (S.b ? 3.5 : -3.5); o.yaw = S.b ? 0 : Math.PI; o.label = S.name + ', ' + S.T.name; o.town = S.T.name; }
+  else if (k === 'nina') { const B = Story.place('bank'), S = storySite((s) => s.ti === B.ti && (s.kind === 'clothes' || s.kind === 'resto' || s.kind === 'gym')) || storySite((s) => s.kind === 'clothes'); o.x = S.x - 2; o.z = S.z + (S.b ? 3.5 : -3.5); o.yaw = S.b ? 0 : Math.PI; o.label = S.name + ', ' + S.T.name; o.town = S.T.name; o.site = S; }
+  else if (k === 'pier') { const S = storySite((s) => s.kind === 'resto' && s.ti === 0) || storySite((s) => s.kind === 'resto'); o.x = S.x + 3; o.z = S.z + (S.b ? 3.5 : -3.5); o.yaw = S.b ? 0 : Math.PI; o.label = S.name + ', ' + S.T.name; o.town = S.T.name; o.site = S; }
   else if (k === 'sal') { const S = Heist.sites[0]; o.x = S.sx + S.rz * 9; o.z = S.sz - S.rx * 9; o.yaw = Math.atan2(S.sx - o.x, S.sz - o.z); o.label = 'the old line'; }
   else if (k === 'camp') { const m = missions.find((q) => q.id === 'mvolc'); o.x = m.x + 7; o.z = m.z; o.yaw = -Math.PI / 2; o.label = 'Mount Cinder base camp'; }
   else if (k === 'evac') { const m = missions.find((q) => q.id === 'mvolc'), f = m.cps[m.cps.length - 1]; o.x = f.x + 6; o.z = f.z + 4; o.yaw = 0; o.label = 'Ashfall'; }
@@ -18439,7 +18501,7 @@ const STORY = [
       ['you', 'How did you get this number?', 'mecar'], ['Dex (phone)', 'Everybody gets my number eventually. One o’clock.', 'phone']] }
   ] },
   { title: 'The Fixer', tod: 13, sum: 'Dex Calloway offered you a bank job, and introduced you to his inside contact, Nina.', steps: [
-    { t: 'talk', who: 'dex', at: 'dex', obj: 'Meet Dex for lunch', lines: () => [['', '13:00 · ' + (Story.town('dex') || '').toUpperCase(), 'card'], ['dex', 'There you are. Sit, sit. You hungry? No? Straight to business. I like that.', 'npc'],
+    { t: 'talk', who: 'dex', at: 'dex', inside: true, obj: 'Meet Dex for lunch inside', lines: () => [['', '13:00 · ' + (Story.town('dex') || '').toUpperCase(), 'card'], ['dex', 'There you are. Sit, sit. You hungry? No? Straight to business. I like that.', 'npc'],
       ['dex', F().ricoS === 'shamed' ? 'I hear you made Rico cry in front of half the town. Cold. I like cold.' : 'I hear you shook Rico’s hand after. Sweet. Don’t make a habit of sweet.', 'two'],
       ['dex', 'Banks on this island lock the front and forget the back. A staff door, a vault, two old guards walking the same loop since nineteen-ninety.', 'npc'], ['you', 'You want me to rob a bank.', 'me'],
       ['dex', 'I want you to make a withdrawal after hours. Case it in daylight, go back after dark, stay out of the torchlight. You keep half.', 'npc'],
@@ -18448,7 +18510,7 @@ const STORY = [
         ['“Seventy. I take the risk, I take the money.”', { cut: 70, dex: -1 }, [['you', 'Seventy. I am the one in the torchlight. I take the money.', 'me'], ['dex', '…Seventy. Fine. I will remember that you asked.', 'npc']]],
         ['“No. I’m not a thief.”', { cut: 'out', mara: 1 }, [['you', 'No. I came here to fix cars, not to rob banks.', 'me'], ['dex', 'Shame. Mara’s garage is all old wood and paint thinner, you know. Terrible fire risk.', 'npc'], ['you', '…Are you threatening her?', 'me'], ['dex', 'I am telling you the bank is easier. Half.', 'npc']]]]],
       ['dex', 'You will need the guard rota. My friend Nina works the counter at ' + Story.place('bank').label + '. She will meet you at three.', 'npc']] },
-    { t: 'talk', who: 'nina', at: 'nina', obj: 'Meet Nina, the inside contact', tod: 15, lines: () => [['', '15:00 · ' + (Story.town('nina') || '').toUpperCase(), 'card'], ['nina', 'You’re Dex’s new driver. You look less like a criminal than the last one.', 'npc'],
+    { t: 'talk', who: 'nina', at: 'nina', inside: true, obj: 'Meet Nina, the inside contact', tod: 15, lines: () => [['', '15:00 · ' + (Story.town('nina') || '').toUpperCase(), 'card'], ['nina', 'You’re Dex’s new driver. You look less like a criminal than the last one.', 'npc'],
       ['nina', 'Two guards. Old Pete walks the hall every four minutes, Danny sits by the vault with his radio. Pete has a bad knee. Danny falls asleep after midnight.', 'two'],
       ['', 'What do you say?', 'me', [
         ['“Why are you helping Dex?”', { nina: 1 }, [['you', 'Why are you helping Dex?', 'me'], ['nina', 'My mother needs medicine the island clinic does not stock. Dex pays for the boat that brings it. I do not like him. I like my mother.', 'npc']]],
@@ -18534,13 +18596,13 @@ const SIDE = [
       { t: 'call', lines: () => Story.F().ricoS === 'shamed' ? [['Rico (phone)', '…Fine. FINE. We are even. Don’t tell anyone I said that.']] : [['Rico (phone)', 'Dinner’s on me. Again. You know you are the only one who ever beat me? Twice now. Jerk. Friend. Same thing.']], done: () => { const f = Story.F(); if (f.ricoS === 'shamed') f.ricoS = 'even'; } }] },
   { id: 'pier', title: 'Dinner at the Pier', who: 'mara', desc: 'Mara has a table booked. Just the two of you.', reward: 0, aff: { mara: 1 }, avail: (S) => (S.ch >= 4 && (Story.F().mara | 0) >= 2) || (S.ch >= 3 && !!Story.F().pierAsk),
     steps: [{ t: 'call', lines: [['Mara (phone)', 'Hey. So. I booked a table. At the pier, eight o’clock. It is not a big deal. Wear a shirt.']] },
-      { t: 'talk', who: 'mara', at: 'pier', obj: 'Meet Mara for dinner at eight', tod: 20, lines: () => [['', '20:00 · THE PIER', 'card'], ['mara', 'You wore a shirt. I am impressed.', 'npc'], ['mara', 'I used to watch the ferries from here, my first year. Every one of them, I thought, maybe somebody I know is on it.', 'two'], ['mara', 'Nobody ever was. Until you.', 'npc'],
+      { t: 'talk', who: 'mara', at: 'pier', inside: true, obj: 'Meet Mara inside for dinner at eight', tod: 20, lines: () => [['', '20:00 · THE PIER', 'card'], ['mara', 'You wore a shirt. I am impressed.', 'npc'], ['mara', 'I used to watch the ferries from here, my first year. Every one of them, I thought, maybe somebody I know is on it.', 'two'], ['mara', 'Nobody ever was. Until you.', 'npc'],
         ['', 'What do you say?', 'me', [
           ['“I should have come years ago.”', { mara: 2, maraLove: 1 }, [['you', 'I should have come years ago. I thought about it every day.', 'me'], ['mara', '…Every day?', 'npc'], ['you', 'Every day.', 'me'], ['', 'She takes your hand across the table, and neither of you says anything for a long time.', 'two']]],
           ['“I’m glad it was me.”', { mara: 1 }, [['you', 'I am glad it was me.', 'me'], ['mara', 'Me too. Now eat your fish before the gulls do.', 'npc']]],
           ['“You’re the best friend I’ve ever had.”', { mara: 1, maraFriend: 1 }, [['you', 'You are the best friend I have ever had, Mara.', 'me'], ['mara', '…Yeah. You too. Best friends. Eat your fish.', 'npc']]]]]] }] },
   { id: 'nina', title: 'Nina’s Favour', who: 'nina', desc: 'Nina’s mother’s medicine came in on the boat, and the clinic closes in an hour.', reward: 2500, aff: { nina: 2 }, avail: (S) => S.ch >= 5 && (Story.F().nina | 0) >= 1,
-    steps: [{ t: 'talk', who: 'nina', at: 'nina', obj: 'Nina wants to see you', lines: () => [['nina', 'I did not think I would ask you for anything. But the medicine came in, and my car will not start, and the clinic in ' + towns[6].name + ' closes at six.', 'npc'], ['you', 'Give me the box.', 'me'], ['nina', 'Thank you. Truly.', 'npc']] },
+    steps: [{ t: 'talk', who: 'nina', at: 'nina', inside: true, obj: 'Nina wants to see you', lines: () => [['nina', 'I did not think I would ask you for anything. But the medicine came in, and my car will not start, and the clinic in ' + towns[6].name + ' closes at six.', 'npc'], ['you', 'Give me the box.', 'me'], ['nina', 'Thank you. Truly.', 'npc']] },
       { t: 'run', id: 'sm_nina', obj: 'Get the medicine to the clinic before it closes', intro: () => [['nina', 'Keep it upright. And please, do not crash.', 'two']], npc: 'nina', at: 'nina' },
       { t: 'call', lines: () => [['Nina (phone)', 'Mum has it. She says to thank “the fast one”. ' + (Story.F().ninaF ? 'So do I. Dinner some time? Somewhere that is not a bank.' : 'So do I. I owe you one.')]] }] },
   { id: 'jax', title: 'Jax’s Envelope', who: 'jax', desc: 'Jax has an envelope for his sister, and does not trust anyone else with it.', reward: 1500, aff: { jax: 2 }, avail: (S) => S.ch >= 6 && !!Story.F().jaxA,
@@ -18584,7 +18646,7 @@ Story.dropNpc = function (key) { const n = Story.npcs[key]; if (n) { Human.dispo
 /* a rival leaning out of the driver's window of their car (a pivot at the hips, tipped out over the sill) */
 Story.rival = function (who, mesh, side) {
   Story.dropRival(); const h = Human.make(STORY_CAST[who].o()), pv = new THREE.Group();
-  pv.position.set(side * 0.42, 0.52, 0.2); pv.rotation.y = side * Math.PI / 2; pv.rotateX(0.95); h.root.position.y = -0.95; pv.add(h.root); mesh.add(pv);
+  pv.position.set(side * 0.42, 0.7, 0.2);   /* hips on the seat, high enough that the shoulders clear the sill */ pv.rotation.y = side * Math.PI / 2; pv.rotateX(0.95); h.root.position.y = -0.95; pv.add(h.root); mesh.add(pv);
   Story.rivalH = { who, h, pv, mesh, side }; return Story.rivalH;
 };
 Story.dropRival = function () { const R = Story.rivalH; if (!R) return; R.pv.parent && R.pv.parent.remove(R.pv); Human.dispose(R.h); Story.rivalH = null; };
@@ -18609,7 +18671,8 @@ Story.setup = function (E) {
   const st = E.st, S = Story.S(), main = E.key === 'main', nk = 'n:' + E.key;
   if (main) { const C = STORY[S.ch], tod = st.tod != null ? st.tod : S.st === 0 ? C.tod : null; if (tod != null) App.tod = tod; }
   else if (st.tod != null) App.tod = st.tod;
-  if (st.t === 'talk') { const P = Story.place(st.at); Story.npc(nk, st.who, P); S.met[st.who] = 1; }
+  if (st.t === 'talk' && st.inside) { Story.dropNpc(nk); }   /* waiting inside, at a table (Story.intRoom) */
+  else if (st.t === 'talk') { const P = Story.place(st.at); Story.npc(nk, st.who, P); S.met[st.who] = 1; }
   else if (st.t === 'run' && st.npc) { const P = Story.place(st.at); Story.npc(nk, st.npc, P); }
   else Story.dropNpc(nk);
   if (main && st.t === 'bank') S.base.bank = Object.values(intSave().banks || {}).reduce((s, r) => s + (r.n | 0), 0);
@@ -18621,6 +18684,7 @@ Story.setup = function (E) {
 /* where a step wants you to go */
 Story.target = function (E) {
   const st = E.st; if (!st) return null;
+  if (st.t === 'talk' && st.inside) { const P = Story.place(st.at); return { x: P.site.x, z: P.site.z, label: 'Go inside ' + P.label }; }
   if (st.t === 'talk') { const n = Story.npcs['n:' + E.key]; return n ? { x: n.x, z: n.z, label: STORY_CAST[st.who].name } : null; }
   if (st.t === 'run') { if (Mi && Mi.def === Story.def(st.id)) return null; const m = Story.def(st.id); return { x: m.x, z: m.z, label: m.title }; }
   if (st.t === 'goto') { const P = Story.place(st.at); return { x: P.x, z: P.z, label: P.label }; }
@@ -18668,6 +18732,7 @@ Story.tick = function (dt) {
     else if (st.t === 'heist') { const P = HEIST_PRIZES[st.k]; if (P && save.owned[P.id] && Heist.phase === 'idle') Story.advance(e.key, e.i); }
     else if (st.t === 'clean') { if (Wanted.stars === 0) Story.advance(e.key, e.i); }
   }
+  Story.hangTick();
   /* the GPS follows the quest you are tracking (the main story unless you picked a side quest) */
   const tr = E.find((e) => e.key === S.track) || E.find((e) => e.key === 'main') || E[0]; Story.tg = tr ? Story.target(tr) : null; Story.trk = tr || null;
   /* people you walk or drive past say something now and then */
@@ -18677,6 +18742,7 @@ const STORY_BARK = { mara: ['Over here! Engine running, brain off, as usual.', '
 Story.key = function (code) {
   if (!Story.on || code !== 'KeyE' || !Story.near || Story.near.what === 'car' || Story.near.what === 'foot') return false;
   const N = Story.near; if (N.what === 'run') { Story.startRun(N.e); return true; }
+  if (N.hang) { Story.hangout(N.n); return true; }
   Story.playCut(N.e, N.n); return true;
 };
 /* a story run: line up at the start, play its intro (the rival in the next lane for a race), then go */
@@ -18711,8 +18777,8 @@ Story.playCut = function (E, npc) {
 Cut.play = function (lines, npc, done) {
   Story.ui(); Cut.on = true; Cut.lines = lines; Cut.i = -1; Cut.npc = npc; Cut.done = done; Cut.ca = 0; Cut.choosing = false;
   for (const k in Keys) Keys[k] = false; car.thr = car.brk = 0;
-  if (npc && Foot.on) { Foot.yaw = Math.atan2(npc.x - Foot.x, npc.z - Foot.z); npc.h.root.rotation.y = Math.atan2(Foot.x - npc.x, Foot.z - npc.z); }
-  UI.setMode('cut'); Cut.el.hidden = false; Cut.next();
+  if (npc && !npc.seated && Foot.on) { Foot.yaw = Math.atan2(npc.x - Foot.x, npc.z - Foot.z); npc.h.root.rotation.y = Math.atan2(Foot.x - npc.x, Foot.z - npc.z); }
+  Cut.inInt = !!Int.on; if (!Cut.inInt) UI.setMode('cut'); Cut.el.hidden = false; Cut.next();
 };
 Cut.next = function () {
   if (Cut.i >= 0 && Cut.typed < Cut.lines[Cut.i][1].length) { Cut.typed = 1e9; return; }   /* the first press finishes the line, the next one moves on */
@@ -18727,7 +18793,7 @@ Cut.choose = function (k) {
   const L = Cut.lines[Cut.i], o = L && L[3] && L[3][k]; if (!o || !Cut.choosing) return; Snd.beep(760, 0.06);
   Story.applyEff(o[1]); (Story.S().said || (Story.S().said = [])).push(o[0]); Cut.choosing = false; Cut.opts.hidden = true; Cut.lines = Cut.lines.slice(0, Cut.i + 1).concat(o[2] || [], Cut.lines.slice(Cut.i + 1)); Cut.typed = 1e9; Cut.next();
 };
-Cut.end = function () { Cut.choosing = false; if (Cut.opts) Cut.opts.hidden = true; Cut.on = false; Cut.el.hidden = true; Cut.el.classList.remove('card'); UI.setMode('play'); const d = Cut.done; Cut.done = null; if (d) d(); };
+Cut.end = function () { Cut.choosing = false; if (Cut.opts) Cut.opts.hidden = true; Cut.on = false; Cut.el.hidden = true; Cut.el.classList.remove('card'); if (Cut.inInt) { Cut.inInt = false; if (Story.inScene) Story.standUp(); } else UI.setMode('play'); const d = Cut.done; Cut.done = null; if (d) d(); };
 Cut.key = function (code) {
   if (Cut.choosing && /^Digit[1-9]$/.test(code)) { Cut.choose(+code.slice(5) - 1); return; }
   if (code === 'Escape') { for (let i = Math.max(0, Cut.i); i < Cut.lines.length; i++) if (Cut.lines[i][3] && !(i === Cut.i && !Cut.choosing)) Story.applyEff(Cut.lines[i][3][0][1]); Cut.i = Cut.lines.length; Cut.typed = 0; Cut.end(); return; }   /* skipping takes the first answer to each choice */
@@ -18744,17 +18810,22 @@ Cut.gesture = function (h, talk, t, seed) {
   b.jaw.rotation.x = talk ? 0.06 + 0.07 * Math.abs(Math.sin(t * 13 + seed)) : 0.02;
 };
 /* where the camera is for each kind of shot; k (0..1) runs over the line so the camera drifts within a shot */
-Cut.frame = function (dt) {
-  if (!Cut.on) { titleCamera(dt); return; }
-  const L = Cut.lines[Cut.i]; if (!L) return; Cut.t += dt; Cut.typed = Math.min(L[1].length, Cut.typed + dt * 46);
+/* the words: type the line out, move on when it has been up long enough, and say which shot it wants */
+Cut.lineTick = function (dt) {
+  const L = Cut.lines[Cut.i]; if (!L) return null; Cut.t += dt; Cut.typed = Math.min(L[1].length, Cut.typed + dt * 46);
   const shot = L[2] || (Cut.npc ? 'two' : 'car'), auto = (shot === 'card' ? 2.2 : 2.6) + L[1].length * 0.055; if (Cut.typed >= L[1].length && Cut.t > auto && !Cut.choosing) Cut.next();
   const sp = Cut.el.querySelector('b'), tx = Cut.el.querySelector('p'); sp.textContent = Cut.whoName(L[0]); sp.hidden = !L[0]; tx.textContent = L[1].slice(0, Math.floor(Cut.typed));
   Cut.el.classList.toggle('card', shot === 'card'); Cut.el.classList.toggle('phone', /\((phone|text)\)/.test(L[0]));
-  const k = clamp(Cut.t / Math.max(3, auto), 0, 1), t = App.time, me = Foot.on ? { x: Foot.x, y: Foot.y, z: Foot.z } : { x: car.x, y: car.y, z: car.z }, n = Cut.npc, R = Story.rivalH;
+  return { L, shot, k: clamp(Cut.t / Math.max(3, auto), 0, 1) };
+};
+Cut.frame = function (dt) {
+  if (!Cut.on) { titleCamera(dt); return; }
+  const LT = Cut.lineTick(dt); if (!LT || !Cut.on) return; const L = LT.L, shot = LT.shot;
+  const k = LT.k, t = App.time, me = Foot.on ? { x: Foot.x, y: Foot.y, z: Foot.z } : { x: car.x, y: car.y, z: car.z }, n = Cut.npc, R = Story.rivalH;
   const fw = { x: Math.sin(car.yaw), z: Math.cos(car.yaw) }, rt = { x: Math.cos(car.yaw), z: -Math.sin(car.yaw) };
   if (n) Cut.gesture(n.h, L[0] === n.id && Cut.typed < L[1].length + 8, t, n.h.id);
   if (R) {
-    const b = R.h.b, talk = L[0] === R.who; b.armR.rotation.x = talk ? -2.3 + 0.35 * Math.sin(t * 7) : -1.1; b.elR.rotation.x = talk ? -0.5 : -1.3; b.armL.rotation.x = -0.9; b.elL.rotation.x = -1.2;
+    const b = R.h.b, talk = L[0] === R.who; b.armR.rotation.x = talk ? -2.3 + 0.35 * Math.sin(t * 7) : -1.1; b.elR.rotation.x = talk ? -0.5 : -1.3; b.armL.rotation.set(-1.25, 0, 0.35); b.elL.rotation.x = -1.5;   /* the other arm folded on the sill */
     b.head.rotation.x = -0.75 + (talk ? 0.05 * Math.sin(t * 4) : 0); b.head.rotation.y = 0.25 * Math.sin(t * 0.8); b.jaw.rotation.x = talk && Cut.typed < L[1].length ? 0.06 + 0.08 * Math.abs(Math.sin(t * 14)) : 0.02;
     Human.alive(R.h, dt, t, 1.3);
   }
@@ -18766,8 +18837,8 @@ Cut.frame = function (dt) {
     else { camera.position.set(n.x + ux * 0.5 + px * 0.55 * side, ny + 0.05, n.z + uz * 0.5 + pz * 0.55 * side); camera.position.lerp(_cutP.set(me.x, my, me.z), 0.12 * k); _cutV.set(me.x, my, me.z); }
     camera.lookAt(_cutV);
   } else if (shot === 'rival' && R) {
-    R.h.b.head.getWorldPosition(_cutH); const ox = rt.x * R.side, oz = rt.z * R.side;
-    camera.position.set(car.x + fw.x * (0.6 + 0.6 * k) - ox * 0.2, _cutH.y + 0.1, car.z + fw.z * (0.6 + 0.6 * k) - oz * 0.2); _cutV.copy(_cutH); camera.lookAt(_cutV);
+    R.h.b.head.getWorldPosition(_cutH); const dx = car.x - R.mesh.position.x, dz = car.z - R.mesh.position.z, dl = Math.hypot(dx, dz) || 1;   /* out in the gap between the cars, at his head height, facing him */
+    camera.position.set(_cutH.x + dx / dl * 1.05 + fw.x * (0.6 + 0.3 * k), _cutH.y + 0.08, _cutH.z + dz / dl * 1.05 + fw.z * (0.6 + 0.3 * k)); _cutV.copy(_cutH); camera.lookAt(_cutV);
   } else if (shot === 'line') {
     const cx = R ? (car.x + R.mesh.position.x) / 2 : car.x, cz = R ? (car.z + R.mesh.position.z) / 2 : car.z, D = 11 + 4 * k;
     camera.position.set(cx + fw.x * D + rt.x * 2.5 * Math.sin(k * 1.5), car.y + 0.7, cz + fw.z * D + rt.z * 2.5 * Math.sin(k * 1.5)); _cutV.set(cx, car.y + 0.9, cz); camera.lookAt(_cutV);
@@ -18779,9 +18850,104 @@ Cut.frame = function (dt) {
   } else {
     const a = car.yaw + Cut.ca * 0.12 + 0.6, D = 9.5; camera.position.set(me.x + Math.sin(a) * D, me.y + 2.6, me.z + Math.cos(a) * D); _cutV.set(me.x, me.y + 1, me.z); camera.lookAt(_cutV);
   }
-  Cut.ca += dt; placeBody(); car.ext.visible = true;
+  Cut.ca += dt; placeBody(); car.ext.visible = shot !== 'rival'; if (Cockpit.group) Cockpit.group.visible = false;   /* (the close-up on your rival is shot from beside your car, so your car is out of it) */   /* the outside of your car in a cutscene, never the first-person cockpit */
   if (Math.abs(camera.fov - 44) > 0.1) { camera.fov = 44; camera.updateProjectionMatrix(); }
 };
+/* ---------- scenes inside buildings: a table set for two, them already sitting, a waiter going round ----------
+   When a conversation is to happen inside (lunch with Dex, coffee with Nina, dinner with Mara), they are not on the pavement: walk in through
+   the door and they are at a table. "Sit down" plays the scene there, both of you seated, with its own camera; you stand up when it ends. */
+Story.intRoom = function (K, rec, room) {
+  Story.inScene = null; if (!Story.on || room !== 'main') return;
+  const e = Story.entries().find((x) => x.st.t === 'talk' && x.st.inside && (Story.place(x.st.at).site || {}).key === rec.key); if (!e) return;
+  /* a clear patch of floor for a table and two chairs, as near the middle as there is */
+  const free = (x, z) => x - 1.3 > K.x0 + 0.4 && x + 1.3 < K.x1 - 0.4 && z - 1.6 > K.z0 + 0.4 && z + 1.6 < K.z1 - 0.4 && !K.cols.some((c) => x + 1.0 > c[0] && x - 1.0 < c[2] && z + 1.4 > c[1] && z - 1.4 < c[3]);
+  let best = null, bd = 1e9; for (let x = K.x0 + 1.6; x <= K.x1 - 1.6; x += 0.5) for (let z = K.z0 + 1.9; z <= K.z1 - 1.9; z += 0.5) if (free(x, z)) { const d = Math.hypot(x, z - (K.z0 + K.z1) / 2); if (d < bd) { bd = d; best = [x, z]; } }
+  if (!best) best = [(K.x0 + K.x1) / 2, (K.z0 + K.z1) / 2];
+  const [cx, cz] = best, st = e.st, id = st.who;
+  K.table(cx, cz, 0.95, 0.95, 0x6a4430, 0.76, true); K.chair(cx, cz - 0.78, 0, 0x3a2a20); K.chair(cx, cz + 0.78, Math.PI, 0x3a2a20);
+  for (const sd of [-1, 1]) { K.cyl(cx, 0.76, cz + sd * 0.24, 0.13, 0.012, 0xf2f0ea); K.cyl(cx + 0.22, 0.76, cz + sd * 0.2, 0.03, 0.14, 0xd8e4ec); }
+  K.cyl(cx - 0.12, 0.76, cz, 0.022, 0.12, 0xf4ecd8); K.light(cx - 0.12, 1.05, cz, 0xffb060, 0.7, 5);
+  const h = Human.make(STORY_CAST[id].o()); K.sc.add(h.root); const npc = { id, h, x: cx, z: cz + 0.78, y: 0, yaw: Math.PI, seated: true };
+  Story.sitPose(h, npc.x, 0, npc.z, npc.yaw, 0);
+  if (rec.kind === 'resto' || rec.kind === 'club') K.person({ x: K.x0 + 1, z: K.z0 + 1.2, kind: 'walk', vt: 1.1, path: [[K.x0 + 1, K.z0 + 1.2, 2], [cx + 0.8, cz, 2.5], [K.x1 - 1.2, (K.z0 + K.z1) / 2, 3], [cx - 0.9, cz + 0.4, 2]], shirt: 0xf2f2f2, pants: 0x15151a });
+  K.act(cx, cz - 0.9, 1.9, 'Sit down with ' + STORY_CAST[id].name.split(' ')[0], () => Story.sitDown(), { wide: true });
+  K.ticks.push((dt, t) => { if (!Cut.on) { Story.sitPose(h, npc.x, 0, npc.z, npc.yaw, t); Human.alive(h, dt, t, 2.1); } });
+  Story.inScene = { e, npc, cx, cz, K };
+  Story.S().met[id] = 1;
+};
+/* seated: hips on the chair, thighs forward, shins down, hands on the table */
+Story.sitPose = function (h, x, y, z, yaw, t) {
+  const b = h.b, R = h.root; R.position.set(x, y, z); R.rotation.set(0, yaw, 0);
+  b.hips.position.set(0, 0.47, 0); b.hips.rotation.set(0, 0, 0); b.tor.rotation.set(-0.08, 0, 0); b.chest.rotation.set(0.02 + 0.02 * Math.sin(t * 1.6), 0, 0);
+  b.legL.rotation.set(-1.5, 0, -0.06); b.knL.rotation.set(1.5, 0, 0); b.legR.rotation.set(-1.5, 0, 0.06); b.knR.rotation.set(1.5, 0, 0);
+  b.armL.rotation.set(-0.5, 0, -0.1); b.armR.rotation.set(-0.5, 0, 0.1); b.elL.rotation.set(-1.0, 0, 0); b.elR.rotation.set(-1.0, 0, 0);
+};
+Story.sitDown = function () {
+  const I = Story.inScene; if (!I || Cut.on) return; const e = I.e;
+  if (!Int.ped || !Int.ped.hu) Int.mkPed(); Int.ped.hu.root.visible = true; I.wasTp = Int.tp;
+  Cut.play(STORY_LINES(e.st.lines), I.npc, () => Story.advance(e.key, e.i));
+};
+Story.standUp = function () {
+  const I = Story.inScene; if (!I) return; Int.x = I.cx; Int.z = I.cz - 1.35; Int.yaw = 0; Int.pitch = -0.1;
+  if (Int.ped && Int.ped.hu) Int.ped.hu.root.visible = Int.tp; I.npc.h.root.visible = false; for (const a of Int.acts) if (/^Sit down with/.test(a.label)) a.off = true;
+  Int.say(STORY_CAST[I.npc.id].name.split(' ')[0] + ' has gone. Esc to leave', 3);
+};
+/* a cutscene inside: the people seated and talking, the waiter on his rounds, a camera round the table, drawn into the interior's scene */
+const _cutI = new THREE.Vector3();
+Cut.frameInt = function (dt) {
+  App.time += dt; Int.t += dt; const LT = Cut.lineTick(dt), I = Story.inScene; if (!Cut.on || !LT || !I) return;
+  const L = LT.L, shot = LT.shot, k = LT.k, t = App.time, n = I.npc, P = Int.ped && Int.ped.hu;
+  Story.sitPose(n.h, n.x, 0, n.z, n.yaw, t); Cut.gesture(n.h, L[0] === n.id && Cut.typed < L[1].length + 8, t, 2.1); Human.alive(n.h, dt, t, 2.1);
+  if (P) { Story.sitPose(P, I.cx, 0, I.cz - 0.78, 0, t); Cut.gesture(P, L[0] === 'you' && Cut.typed < L[1].length + 8, t, 4.7); Human.alive(P, dt, t, 4.7); }
+  const px = Pl.x, pz = Pl.z; Pl.x = I.cx; Pl.z = I.cz - 0.78; HU.frame = (HU.frame || 0) + 1; try { for (const q of Int.npcs) intNpc(q, dt); } finally { Pl.x = px; Pl.z = pz; }
+  const cam = Int.cam; cam.aspect = innerWidth / innerHeight; cam.fov = 46; cam.updateProjectionMatrix();
+  const cx = I.cx, cz = I.cz, side = Cut.i % 2 ? 1 : -1, hy = 1.22;
+  if (shot === 'card') { cam.position.set(cx, 30, cz); _cutI.set(cx, 0, cz + 0.1); }
+  else if (shot === 'npc') { cam.position.set(cx + 0.45 * side, hy + 0.12, cz - 1.35 + 0.15 * k); _cutI.set(n.x, hy + 0.05, n.z); }
+  else if (shot === 'me') { cam.position.set(cx - 0.45 * side, hy + 0.12, cz + 1.35 - 0.15 * k); _cutI.set(cx, hy + 0.05, cz - 0.78); }
+  else if (shot === 'wide') { const a = 0.7 + k * 0.4; cam.position.set(cx + Math.cos(a) * 3.4, 2.3, cz + Math.sin(a) * 3.4 - 0.5); _cutI.set(cx, 0.9, cz); }
+  else { cam.position.set(cx + side * (2.1 - 0.3 * k), 1.45, cz + 0.2 * side); _cutI.set(cx, 1.0, cz); }
+  cam.lookAt(_cutI);
+  const s0 = scene, c0 = camera, e0 = env.exposure; scene = Int.sc; camera = cam; env.exposure = Int.K.expo || Int.expo;
+  try { renderFrame(Int.fx, App.time); } finally { env.exposure = e0; scene = s0; camera = c0; }
+};
+
+/* ---------- Mara at her garage: spend time with her, and the scenes grow as you grow closer ---------- */
+const MARA_HANG = [
+  { id: 'van', when: (f, S) => S.ch >= 1, lines: () => [['mara', 'Hand me the 13 mil. No, the other 13 mil. That is a 10.', 'two'], ['mara', 'This van has been dying since before I bought it. I keep telling it not yet.', 'npc'],
+    ['', 'What do you do?', 'me', [['Get under the van and help', { mara: 1 }, [['you', 'Move over. Two of us, it dies twice as slow.', 'me'], ['', 'You spend an hour on your backs on the cold floor, passing tools and arguing about torque.', 'two'], ['mara', 'Okay. I missed this. Don’t tell anyone.', 'npc']]],
+      ['Tease her about the van', {}, [['you', 'Have you considered a horse?', 'me'], ['mara', 'Have you considered walking home?', 'npc']]]]]] },
+  { id: 'photo', when: (f, S) => S.ch >= 2 && (f.mara | 0) >= 1, lines: () => [['mara', 'Look what I found in the office drawer.', 'npc'], ['', 'A faded photo: two kids on one bicycle, both grinning, both missing front teeth.', 'two'], ['mara', 'You crashed that bike into the Hendersons’ hedge about four seconds after this.', 'npc'],
+    ['', 'What do you say?', 'me', [['“You were steering.”', { mara: 1 }, [['you', 'You were steering.', 'me'], ['mara', 'I was eight! You were the one pedalling like a maniac.', 'npc'], ['mara', '…I kept this the whole eight years, you know.', 'npc']]], ['“Can I keep it?”', { mara: 1 }, [['you', 'Can I keep it?', 'me'], ['mara', 'No. Get your own.', 'npc'], ['mara', '…Fine. Bring it back.', 'npc']]]]]] },
+  { id: 'after', when: (f) => !!f.maraLove, lines: () => [['', 'THE MORNING AFTER THE PIER', 'card'], ['mara', 'So. Last night.', 'npc'], ['you', 'Last night.', 'me'], ['mara', 'Was that… a date? I need to know what to tell Hal. He asks about everything.', 'two'],
+    ['', 'What do you say?', 'me', [['“It was a date.”', { mara: 1 }, [['you', 'It was a date. A good one.', 'me'], ['mara', 'Okay. Good. Good. I am going to go and hit something with a hammer now, for no reason.', 'npc']]], ['“Tell Hal it was fish.”', {}, [['you', 'Tell Hal it was fish.', 'me'], ['mara', 'It was very good fish.', 'npc'], ['mara', '…It was a date.', 'npc']]]]]] },
+  { id: 'roof', when: (f) => !!f.maraLove && (f.mara | 0) >= 5, tod: 19.2, lines: () => [['', 'SUNSET · THE GARAGE ROOF', 'card'], ['mara', 'Come on, up the ladder. Best view on the island, and nobody knows about it.', 'two'], ['', 'The sun goes down into the sea. The whole town turns orange.', 'wide'], ['mara', 'I used to sit up here and wish someone from home would turn up. Anyone.', 'npc'],
+    ['', 'What do you do?', 'me', [['Kiss her', { mara: 1, maraKiss: 1 }, [['', 'You lean over. She meets you halfway.', 'two'], ['mara', '…Took you long enough.', 'npc']]], ['Hold her hand', { mara: 1 }, [['', 'You take her hand. She doesn’t let go until it is dark.', 'two']]]]]] },
+  { id: 'love', when: (f) => !!f.maraLovePhone, lines: () => [['mara', 'You said it on the phone. I told you to say it in person.', 'npc'], ['you', 'I love you, Mara.', 'me'], ['mara', '…Okay. Yeah. Me too. Idiot.', 'two']] },
+  { id: 'future', when: (f, S) => !!f.maraLove && S.ch >= 6, lines: () => [['mara', 'When this is over. Dex, the police, all of it. What then?', 'npc'], ['', 'What do you tell her?', 'me', [['“Then I stay. Here. With you.”', { mara: 1 }, [['you', 'Then I stay. Here. With you.', 'me'], ['mara', 'Good answer.', 'npc']]], ['“I don’t know yet.”', {}, [['you', 'I don’t know yet. Ask me when it’s over.', 'me'], ['mara', 'I will. I’ll hold you to it.', 'npc']]]]]] },
+  { id: 'home', when: (f, S) => S.fin && (f.mara | 0) >= 3 && !f.lie, lines: () => [['mara', 'Two names over the door. I still look at it every morning.', 'two'], ['mara', 'Hal has three more jobs for us this week. You drive, I fix?', 'npc'], ['you', 'You drive. I fix. I’ve been practising.', 'me'], ['mara', 'Heaven help the customers.', 'npc']] }
+];
+const MARA_IDLE = (f) => f.maraLove ? [['Hey, you.', 'Come here. Five minutes. Then back to work.'], ['You smell like engine oil.', 'You love it.'], ['I saved you the good coffee.', 'The good coffee is the same as the bad coffee, but I saved it.']]
+  : (f.mara | 0) >= 2 ? [['Grab a spanner, or grab a coffee. Either way, stay a bit.'], ['Hal called again. That man loves his gearbox more than his wife.'], ['If you’re hungry there’s half a sandwich. It’s mine. Have it.']]
+    : [['Busy. Hand me that rag?'], ['Don’t touch anything that’s hot. Which is everything.']];
+/* is Mara free to be at home? (not in a scene somewhere else, and still on the island) */
+Story.maraHome = function () {
+  const S = Story.S(), f = Story.F(); if (!Story.on || S.ch < 1 || (S.fin && ((f.mara | 0) < 3 || f.lie))) return false;
+  return !Story.entries().some((e) => e.st.who === 'mara' || e.st.npc === 'mara');
+};
+Story.hangTick = function () {
+  const on = Story.maraHome(); if (!on) { if (Story.npcs['n:home']) Story.dropNpc('n:home'); return; }
+  const P = Story.place('garage'); if (!Story.npcs['n:home']) Story.npc('n:home', 'mara', P);
+  const n = Story.npcs['n:home'], d = Math.hypot(Pl.x - n.x, Pl.z - n.z); if (!Story.near) { if (d < 3.2 && Foot.on) Story.near = { e: { key: 'home', st: { t: 'hang', who: 'mara' } }, n, hang: true }; else if (d < 12 && !Foot.on) Story.near = { e: { key: 'home', st: { t: 'hang', who: 'mara' } }, what: 'car', n }; }
+};
+Story.hangout = function (n) {
+  const S = Story.S(), f = Story.F(), done = S.hang || (S.hang = {}), sc = MARA_HANG.find((h) => !done[h.id] && h.when(f, S));
+  if (sc) { if (sc.tod != null) App.tod = sc.tod; Cut.play(STORY_LINES(sc.lines), n, () => { done[sc.id] = 1; writeSave(); }); return; }
+  const pool = MARA_IDLE(f), L = pool[Math.floor(Math.random() * pool.length)], up = !(S.calls && S.calls['mara:visit:' + S.ch]);
+  if (up) { (S.calls || (S.calls = {}))['mara:visit:' + S.ch] = 1; Story.applyEff({ mara: 1 }); }
+  Cut.play(L.map((t, i) => [i % 2 && L.length > 2 ? 'you' : 'mara', t, i ? 'two' : 'npc']), n, () => writeSave());
+};
+
 /* ---------- what is on screen ---------- */
 Story.setBeam = function (key, tg) {
   let b = Story.beams[key]; if (!tg) { if (b) b.visible = false; return; }
@@ -18797,6 +18963,7 @@ Story.visual = function (dt) {
   const main = tr.key === 'main', tx = Mi && Mi.def && Mi.def.story ? Mi.def.title : st.obj || (st.t === 'call' ? 'Incoming call…' : st.t === 'talk' ? 'Talk to ' + STORY_CAST[st.who].name : ''); let hint = '';
   const N = Story.near;
   if (N && N.what === 'car') hint = 'Get out (F) to talk to ' + STORY_CAST[N.n.id].name.split(' ')[0];
+  else if (N && N.hang) hint = (TouchIn.on ? 'Tap TALK' : 'E') + ' · Spend time with Mara';
   else if (N && N.n) hint = (TouchIn.on ? 'Tap TALK' : 'E') + ' · Talk to ' + STORY_CAST[N.n.id].name.split(' ')[0];
   else if (N && N.what === 'run') hint = (TouchIn.on ? 'Tap GO' : 'E') + ' · Start';
   else if (N && N.what === 'foot') hint = 'Get in your car (F) to start';
@@ -18826,7 +18993,7 @@ Story.ui = function () {
     '#cut .sub{position:absolute;left:50%;bottom:14vh;transform:translateX(-50%);width:min(860px,92vw);text-align:center;font:600 20px/1.35 Rajdhani,system-ui,sans-serif;color:#fff;text-shadow:0 2px 6px #000;white-space:pre-line}' +
     '#cut .sub b{display:block;color:#ffd34d;font-size:15px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px}#cut .sub p{margin:0;min-height:2.7em}#cut .skip{position:absolute;right:18px;bottom:3.5vh;color:#aaa;font:500 13px Rajdhani,system-ui,sans-serif;z-index:2}' +
     '#cut.phone .sub b::before{content:"📱 "}#cut.card{background:#000}#cut.card .sub{bottom:auto;top:50%;transform:translate(-50%,-50%);font-size:30px;letter-spacing:.18em;color:#f2e6c8}' +
-    '#cutOpts{position:absolute;left:50%;bottom:calc(14vh + 72px);transform:translateX(-50%);display:flex;flex-direction:column;gap:7px;width:min(620px,92vw);z-index:3}#cutOpts button{font:600 17px Rajdhani,system-ui,sans-serif;color:#fff;background:rgba(10,14,24,.86);border:1px solid rgba(255,211,77,.5);border-radius:9px;padding:9px 14px;text-align:left;cursor:pointer}#cutOpts button:hover{background:rgba(60,48,12,.9)}#cutOpts kbd{display:inline-block;min-width:1.4em;text-align:center;color:#ffd34d;font:700 14px Rajdhani,system-ui,sans-serif;margin-right:6px}' +
+    '#cutOpts[hidden]{display:none!important}#cutOpts{position:absolute;left:50%;bottom:calc(14vh + 72px);transform:translateX(-50%);display:flex;flex-direction:column;gap:7px;width:min(620px,92vw);z-index:3}#cutOpts button{font:600 17px Rajdhani,system-ui,sans-serif;color:#fff;background:rgba(10,14,24,.86);border:1px solid rgba(255,211,77,.5);border-radius:9px;padding:9px 14px;text-align:left;cursor:pointer}#cutOpts button:hover{background:rgba(60,48,12,.9)}#cutOpts kbd{display:inline-block;min-width:1.4em;text-align:center;color:#ffd34d;font:700 14px Rajdhani,system-ui,sans-serif;margin-right:6px}' +
     '#storyObj{position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:30;background:rgba(8,12,20,.72);border:1px solid rgba(255,211,77,.45);border-radius:10px;padding:7px 16px 8px;text-align:center;font-family:Rajdhani,system-ui,sans-serif;color:#fff;pointer-events:none;max-width:88vw}' +
     '#storyObj small{display:block;color:#ffd34d;font-size:11px;letter-spacing:.14em}#storyObj b{display:block;font-size:17px;font-weight:600}#storyObj i{display:block;font-style:normal;font-size:13px;color:#cfd6e4}#storyObj em{display:block;font-style:normal;font-size:11px;color:#8fb8e0;margin-top:2px}' +
     '#storyComm{position:fixed;left:16px;bottom:180px;z-index:31;max-width:min(420px,80vw);background:rgba(8,12,20,.82);border-left:3px solid #4ab8ff;border-radius:8px;padding:8px 12px;font:500 15px/1.3 Rajdhani,system-ui,sans-serif;color:#fff;pointer-events:none}#storyComm b{display:block;color:#8fd0ff;font-size:12px;letter-spacing:.08em;text-transform:uppercase}';
@@ -18838,7 +19005,7 @@ Story.ui = function () {
   const cm = Story.comm.el = document.createElement('div'); cm.id = 'storyComm'; cm.hidden = true; document.body.appendChild(cm);
 };
 /* ---------- the title screen: free roam or the story, each its own save ---------- */
-Story.switchTo = function (mode) { try { writeSave(); localStorage.setItem(MODE_KEY, mode); localStorage.setItem('island-rush-go', String(Date.now())); } catch (e) { /* ignore */ } location.reload(); };
+Story.switchTo = function (mode) { try { writeSave(); localStorage.setItem(MODE_KEY, mode); } catch (e) { /* ignore */ } location.hash = 'mode=' + mode + '&go=' + Date.now(); location.reload(); };
 Story.initTitle = function () {
   const b = document.getElementById('btnStart'); if (!b || document.getElementById('btnStory')) return;
   let has = false, ch = 0; try { const o = JSON.parse(localStorage.getItem(STORY_KEY) || 'null'); has = !!(o && o.story); ch = has ? (o.story.ch | 0) : 0; } catch (e) { /* ignore */ }
@@ -18848,11 +19015,11 @@ Story.initTitle = function () {
   b.after(s);
   b.onclick = () => { if (PLAY_MODE === 'sandbox') App.start(); else Story.switchTo('sandbox'); };
   s.onclick = () => { if (PLAY_MODE === 'story') App.start(); else Story.switchTo('story'); };
-  const mh = document.getElementById('menuHead'); if (mh && !document.getElementById('btnTitle')) { const t = document.createElement('button'); t.className = 'btn sm'; t.id = 'btnTitle'; t.type = 'button'; t.textContent = '⏏ Title screen'; t.title = 'Back to the title: switch between free roam and the story'; t.onclick = () => { writeSave(); location.reload(); }; mh.appendChild(t); }
+  const mh = document.getElementById('menuHead'); if (mh && !document.getElementById('btnTitle')) { const t = document.createElement('button'); t.className = 'btn sm'; t.id = 'btnTitle'; t.type = 'button'; t.textContent = '⏏ Title screen'; t.title = 'Back to the title: switch between free roam and the story'; t.onclick = () => { writeSave(); location.hash = 'mode=' + PLAY_MODE; location.reload(); }; mh.appendChild(t); }
   if (PLAY_MODE === 'story') { const tg = document.getElementById('tagline'); if (tg) tg.textContent = 'Story mode: ' + (has ? 'chapter ' + Math.min(ch + 1, STORY.length) + ' of ' + STORY.length : 'a new life on the island') + '. Free roam keeps its own save.'; }
 };
 /* straight into the game after a switch (the page reloads into the other save): a note left just before the reload, good for 20 s */
-Story.autoStart = function () { let go = false; try { const t = +localStorage.getItem('island-rush-go') || 0; go = Date.now() - t < 20000; localStorage.removeItem('island-rush-go'); } catch (e) { /* ignore */ } if (go) setTimeout(() => App.start(), 60); };
+Story.autoStart = function () { let go = false; try { const m = /(?:^|[#&])go=(\d+)/.exec(location.hash); go = !!m && Date.now() - +m[1] < 30000; if (location.hash) history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* ignore */ } if (go) setTimeout(() => App.start(), 60); };
 
 /* ---- js/08_surf.js ---- */
 /* ================= NAMED BEACHES, BEACH ROADS AND THE SURF CLUB =================
@@ -25902,7 +26069,7 @@ DevCode.tap = function () { const t = performance.now(); DevCode.taps = DevCode.
 function onKey(code) {
   DevCode.feed(code);
   if (App.mode === 'title') { if (code === 'Enter' || code === 'Space') App.start(); return; }
-  if (App.mode === 'cut') { Cut.key(code); return; }
+  if (App.mode === 'cut' || Cut.on) { Cut.key(code); return; }
   if (App.mode === 'court') { Court.key(code); return; }
   if (App.mode === 'shop') { Shop.key(code); return; }
   if (App.mode === 'vm') { VM.key(code); return; }
@@ -29168,7 +29335,7 @@ function frame(now) {
   c.lights = env.lampOn > 0.4;
   updateEnvironment(App.tod, Fly.on ? Fly.focus : Boat.on ? Boat.focus : c, App.time); Fly.fog(); Env.update(dt); updateWheels(dt);
   const k = 0.45 + 0.85 * env.lampOn;   /* lens glow: warm and bright, but kept under white so it doesn't bloom into a blob */
-  MAT.carHead.color.setRGB(0.62 * k, 0.57 * k, 0.48 * k); MAT.carTail.color.setRGB(0.5 + 1.6 * env.lampOn, 0.025, 0.025); Cosm.tick();
+  MAT.carHead.color.setRGB(0.62 * k, 0.57 * k, 0.48 * k); if (Cockpit.screen) Cockpit.screen.color.setRGB(0.05 + 0.12 * env.lampOn, 0.12 + 0.3 * env.lampOn, 0.2 + 0.5 * env.lampOn);   /* the cabin's centre screen glows at night */ MAT.carTail.color.setRGB(0.5 + 1.6 * env.lampOn, 0.025, 0.025); Cosm.tick();
   L.head.intensity += ((c.lights && App.mode === 'play' && !Foot.on && !Fly.on && !Boat.on ? (GAR.inside ? 0.25 : GAR.ok && GAR.dist < 80 ? 7 - 5.2 * Math.min(1, (80 - GAR.dist) / 34) : 7) : 0) - L.head.intensity) * Math.min(1, dt * 6);
   if (Rally.on || Drag.on || Derby.on) { /* no streaming on the stage, the strip or in the bowl */ } else if (devOn('free')) Chunks.update(Dev.fx, Dev.fz, 1); else Chunks.update(Pl.x, Pl.z, Fly.on || (Boat.on && Boat.p && Boat.p.speed > 14) ? 2 : 1);
   HB.update();
@@ -29225,7 +29392,7 @@ async function boot() {
     console.error(err); E.loadmsg.textContent = 'Could not start the 3D view: ' + (err && err.message ? err.message : err); window.__bootError = String(err && err.stack || err);
   }
 }
-window.__game = { get scene() { return scene; }, Story, STORY, SIDE, Phone, Cut, PLAY_MODE, endMission, Volc, VOLC, VOL, volcLift, volcLakeY, DEV_PLACES, Int, Bld, INT_KINDS, Jail, intSave, BankJob, KIT, kitDef, kitParts, kitDefault, HEIST_PRIZES, Part, L, Surf, Dunes, Rail, Beach, Heist, Wanted, GAR, terrainHeight, NR, Derby, DD, applyCar, buildCarModel, CAR_BY_ID, Env, get renderer() { return renderer; }, writePeds, Cam, Human, HU, Peds, Foot, Setup, TU, TU_PRESETS, CARS, CARP, tune, Drag, DG, DG_TIERS, Rally, RR, RY, RY_STAGES, RYG, RW, RY_FEATS, WK, Wk, WkF, WKSim, WKG, WKS, WkE, qfromAxes3, Dmg, Mech, RACE_DIFF, Wreck, Jack, JACK_MODELS, Race, Bots, Crash, newCarState, Track, TRK, Col, COLK, Ven, VDEF, CDEF, venSave, VM, VMD, VMK, towns, roads, Dock, MARINA, Boat, Boats, BSPEC, HB, solidHit, TREE, Air, AIR, Fly, Planes, PSPEC, Rel, REL_ROSTER, Shop, COS, Cosm, Biome, Weather, REG, Bust, CR, Fight, Police, Wanted, WANT, footBlockedAt, findNearestRoadPoint, Tow, GAR, Home, GP, Foot, Talk, Fare, Pl, pedHit, getMoney: () => save.money, get save() { return save; }, getLaw: () => save.law, Court, CR, Peds, pedSpawn, Dyn, abortMission, stepSim: step, frame, Env, Wheels, updateWheels, updateCamera, groundAt, buildCarModel, carSpec, TRAFFIC_DEFS, secAt, disposeCar, THREE_: THREE, TREE, GB, addTree, addGrass, terrainHeight, fbm, noise2, sstep, Dev, devReset, CARS, CAR_BY_ID, applyCar, stepCar, CARP, roads, loadAround, carThumb, car, App, UI, Chunks, Post, Cam, Keys, missions, towns, spawnAt, get Mi() { return Mi; }, startMission, applyQuality, get renderer() { return renderer; }, get scene() { return scene; }, get camera() { return camera; }, Snd, WorldMap, MView, Mirror, MAT, Cockpit, Q: () => Q, hasPost: () => hasPost, key(code, down) { Keys[code] = down; if (down) onKey(code); }, tune };
+window.__game = { get scene() { return scene; }, Cockpit, ckThemeOf, Story, STORY, SIDE, Phone, Cut, PLAY_MODE, endMission, Volc, VOLC, VOL, volcLift, volcLakeY, DEV_PLACES, Int, Bld, INT_KINDS, Jail, intSave, BankJob, KIT, kitDef, kitParts, kitDefault, HEIST_PRIZES, Part, L, Surf, Dunes, Rail, Beach, Heist, Wanted, GAR, terrainHeight, NR, Derby, DD, applyCar, buildCarModel, CAR_BY_ID, Env, get renderer() { return renderer; }, writePeds, Cam, Human, HU, Peds, Foot, Setup, TU, TU_PRESETS, CARS, CARP, tune, Drag, DG, DG_TIERS, Rally, RR, RY, RY_STAGES, RYG, RW, RY_FEATS, WK, Wk, WkF, WKSim, WKG, WKS, WkE, qfromAxes3, Dmg, Mech, RACE_DIFF, Wreck, Jack, JACK_MODELS, Race, Bots, Crash, newCarState, Track, TRK, Col, COLK, Ven, VDEF, CDEF, venSave, VM, VMD, VMK, towns, roads, Dock, MARINA, Boat, Boats, BSPEC, HB, solidHit, TREE, Air, AIR, Fly, Planes, PSPEC, Rel, REL_ROSTER, Shop, COS, Cosm, Biome, Weather, REG, Bust, CR, Fight, Police, Wanted, WANT, footBlockedAt, findNearestRoadPoint, Tow, GAR, Home, GP, Foot, Talk, Fare, Pl, pedHit, getMoney: () => save.money, get save() { return save; }, getLaw: () => save.law, Court, CR, Peds, pedSpawn, Dyn, abortMission, stepSim: step, frame, Env, Wheels, updateWheels, updateCamera, groundAt, buildCarModel, carSpec, TRAFFIC_DEFS, secAt, disposeCar, THREE_: THREE, TREE, GB, addTree, addGrass, terrainHeight, fbm, noise2, sstep, Dev, devReset, CARS, CAR_BY_ID, applyCar, stepCar, CARP, roads, loadAround, carThumb, car, App, UI, Chunks, Post, Cam, Keys, missions, towns, spawnAt, get Mi() { return Mi; }, startMission, applyQuality, get renderer() { return renderer; }, get scene() { return scene; }, get camera() { return camera; }, Snd, WorldMap, MView, Mirror, MAT, Cockpit, Q: () => Q, hasPost: () => hasPost, key(code, down) { Keys[code] = down; if (down) onKey(code); }, tune };
 boot();
 
 })();
