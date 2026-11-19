@@ -93,7 +93,7 @@ const OUT = process.env.OUT || __dirname;
   const mainSeen = seen.filter((s) => s.indexOf('main:') === 0), sideDone = Object.keys(end.sq || {}).filter((k) => end.sq[k].done);
   ok(end.n >= 9 && mainSeen.filter((s) => /talk/.test(s)).length >= 9 && mainSeen.some((s) => /bank/.test(s)) && mainSeen.some((s) => /heist/.test(s)) && mainSeen.some((s) => /mvolc/.test(s)), end.n + ' chapters, ' + mainSeen.length + ' main steps: conversations, calls, a bank job, the train heist and the volcano');
   ok(sideDone.length === end.nSide, 'every side quest offered and finished (' + sideDone.join(', ') + ')');
-  ok(calls >= 8 && callsOnPhone === calls && callsInBox === 0 && callsOpen === 0, 'story calls and texts come in on the phone screen, not over the game, and the phone puts itself away after (' + callsOnPhone + ' of ' + calls + ')');
+  ok(calls >= 8 && callsOnPhone === calls && callsInBox === 0 && callsOpen === 0, 'story calls and texts come in on the phone screen, not over the game, and the phone puts itself away after (' + callsOnPhone + ' of ' + calls + ' on the phone, ' + callsInBox + ' in the box, ' + callsOpen + ' left open)');
   ok(insideN >= 4 && insideOk, 'lunch with Dex, coffee with Nina, dinner with Mara: walk in through the door, they are at a table, sit down, and the scene plays inside (' + insideN + ')');
   ok(talkOk, 'every conversation: the person is there, you walk up, E starts it as a cutscene');
   ok(runOk && ['sm_parts', 'sm_race1', 'sm_race2', 'sm_rico2', 'sm_nina'].every((id) => seen.some((x) => x.indexOf(id) >= 0)), 'the story’s own runs: E at the start plays the intro (rivals leaning out of the window), then the countdown');

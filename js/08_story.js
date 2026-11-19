@@ -490,7 +490,7 @@ Cut.frame = function (dt) {
   } else {
     const a = car.yaw + Cut.ca * 0.12 + 0.6, D = 9.5; camera.position.set(me.x + Math.sin(a) * D, me.y + 2.6, me.z + Math.cos(a) * D); _cutV.set(me.x, me.y + 1, me.z); camera.lookAt(_cutV);
   }
-  Cut.ca += dt; placeBody(); car.ext.visible = true;
+  Cut.ca += dt; placeBody(); car.ext.visible = true; if (Cockpit.group) Cockpit.group.visible = false;   /* the outside of your car in a cutscene, never the first-person cockpit */
   if (Math.abs(camera.fov - 44) > 0.1) { camera.fov = 44; camera.updateProjectionMatrix(); }
 };
 /* ---------- scenes inside buildings: a table set for two, them already sitting, a waiter going round ----------
