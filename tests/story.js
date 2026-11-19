@@ -53,8 +53,8 @@ const OUT = process.env.OUT || __dirname;
     }
     if (st.t === 'talk') {
       const n = g.Story.npcs['n:' + e.key]; r.who = st.who; r.vis = !!(n && n.h.root.visible); if (!n) return r; g.loadAround(n.x, n.z, 24);
-      if (!g.Foot.on) { g.spawnAt(n.x + 8, n.z, 0); window.__run(3); g.key('KeyF', true); g.key('KeyF', false); window.__run(4); }
-      g.Foot.x = n.x + 2.2; g.Foot.z = n.z + 0.4; window.__run(4); r.near = !!(g.Story.near && g.Story.near.n === n); r.hud = hud();
+      if (!g.Foot.on) { const q = {}; g.findNearestRoadPoint(n.x, n.z, q); g.spawnAt(q.x, q.z, Math.atan2(q.tx, q.tz)); window.__run(3); g.key('KeyF', true); g.key('KeyF', false); window.__run(4); }
+      r.foot = g.Foot.on; g.Foot.x = n.x + 2.2; g.Foot.z = n.z + 0.4; window.__run(4); r.near = !!(g.Story.near && g.Story.near.n === n); r.hud = hud();
       g.key('KeyE', true); g.key('KeyE', false); window.__run(3); r.cut = g.Cut.on;
       if (r.cut) { g.key('Space', true); g.key('Space', false); window.__run(20); r.pic = g.renderer.domElement.toDataURL('image/jpeg', 0.75); }
     } else if (st.t === 'cut') { window.__run(40); r.cut = g.Cut.on; }
@@ -131,7 +131,7 @@ const OUT = process.env.OUT || __dirname;
   /* Mara at her garage: spend time with her, a new scene each visit while there are new ones */
   const hang = await page.evaluate(async () => { const g = window.__game, S = g.save.story, r = { scenes: [], shots: [] };
     for (let i = 0; i < 7; i++) {
-      window.__run(2); const n = g.Story.npcs['n:home']; if (!n) { r.noMara = i; break; } g.loadAround(n.x, n.z, 20); if (!g.Foot.on) { g.spawnAt(n.x + 8, n.z, 0); window.__run(3); g.key('KeyF', true); g.key('KeyF', false); window.__run(3); }
+      window.__run(2); const n = g.Story.npcs['n:home']; if (!n) { r.noMara = i; break; } g.loadAround(n.x, n.z, 20); if (!g.Foot.on) { const q = {}; g.findNearestRoadPoint(n.x, n.z, q); g.spawnAt(q.x, q.z, Math.atan2(q.tx, q.tz)); window.__run(3); g.key('KeyF', true); g.key('KeyF', false); window.__run(3); }
       g.Foot.x = n.x + 2; g.Foot.z = n.z + 0.3; window.__run(3); const before = Object.keys(S.hang || {}).length; g.key('KeyE', true); g.key('KeyE', false); window.__run(3); r.cut = (r.cut || 0) + (g.Cut.on ? 1 : 0);
       if (i === 2) { window.__run(20); r.shots.push(g.renderer.domElement.toDataURL('image/jpeg', 0.8)); }
       let k = 0; while (g.Cut.on && k++ < 60) { if (g.Cut.choosing) { g.key('Digit1', true); g.key('Digit1', false); } else { g.key('Space', true); g.key('Space', false); } window.__run(2); }

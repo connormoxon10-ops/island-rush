@@ -18330,7 +18330,7 @@ function storyCurb(x, z, side) { findNearestRoadPoint(x, z, _stNp); const s = si
 function storySite(pred) { Bld.prep(); return Bld.sites.find(pred); }
 Story.place = function (k) {
   let o = {};
-  if (k === 'garage') { o.x = GAR.ox + 5; o.z = GAR.oz - 9; o.yaw = 0; o.label = 'Mara’s garage, ' + (GAR.town || towns[0].name); }   /* inside, by the workbench, facing the door */
+  if (k === 'garage') { o.x = GAR.ox + 3.6; o.z = GAR.oz - 3.5; o.yaw = 0; o.label = 'Mara’s garage, ' + (GAR.town || towns[0].name); }   /* just inside the door, beside the drive-in lane, facing out */
   else if (k === 'dex') { const S = storySite((s) => (s.kind === 'resto' || s.kind === 'club') && REG[s.ti % REG.length].key === 'city') || storySite((s) => s.kind === 'resto'); o.x = S.x + 2; o.z = S.z + (S.b ? 3.5 : -3.5); o.yaw = S.b ? 0 : Math.PI; o.label = S.name + ', ' + S.T.name; o.town = S.T.name; o.site = S; }
   else if (k === 'bank') { const S = storySite((s) => s.kind === 'bank' && BJ_TIER[s.ti] === 0) || storySite((s) => s.kind === 'bank'); o.x = S.x; o.z = S.z + (S.b ? 4 : -4); o.label = S.name + ', ' + S.T.name; o.town = S.T.name; o.ti = S.ti; }
   else if (k === 'nina') { const B = Story.place('bank'), S = storySite((s) => s.ti === B.ti && (s.kind === 'clothes' || s.kind === 'resto' || s.kind === 'gym')) || storySite((s) => s.kind === 'clothes'); o.x = S.x - 2; o.z = S.z + (S.b ? 3.5 : -3.5); o.yaw = S.b ? 0 : Math.PI; o.label = S.name + ', ' + S.T.name; o.town = S.T.name; o.site = S; }
