@@ -43,7 +43,7 @@ const OUT = process.env.OUT || __dirname;
     const g = window.__game, S = g.save.story, E = g.Story.entries(), e = E.find((x) => x.key !== 'main') || E.find((x) => x.key === 'main'); if (!e) return { none: true };
     const st = e.st, r = { key: e.key, i: e.i, t: st.t, obj: st.obj }, hud = () => { const h = document.getElementById('storyObj'); return h && !h.hidden ? h.textContent : ''; };
     if (e.key !== 'main') g.Story.trackSet(e.key);
-    window.__run(3); r.hud = hud();
+    window.__run(3); if (g.Cut.on) r.busy = 1; r.hud = hud();   /* (a story cutscene that started by itself hides the objective while it plays) */
     if (st.t === 'talk' && st.inside) {
       const P = g.Story.place(st.at), S2 = P.site; r.who = st.who; r.inside = true; g.loadAround(S2.x, S2.z, 12); const rec = g.Bld.lots.get(S2.key); r.rec = !!rec; if (!rec) return r;
       if (g.Foot.on) g.Foot.board(true); g.spawnAt(rec.door.ox + rec.door.nx * 6, rec.door.oz + rec.door.nz * 6, 0); window.__run(3); g.key('KeyF', true); g.key('KeyF', false); window.__run(3);
@@ -58,7 +58,7 @@ const OUT = process.env.OUT || __dirname;
       g.key('KeyE', true); g.key('KeyE', false); window.__run(3); r.cut = g.Cut.on;
       if (r.cut) { g.key('Space', true); g.key('Space', false); window.__run(8); r.pic = g.renderer.domElement.toDataURL('image/jpeg', 0.75); }
     } else if (st.t === 'cut') { window.__run(40); r.cut = g.Cut.on; }
-    else if (st.t === 'call') { let k = 0, onPhone = false, inBox = false; while (k++ < 900 && g.Story.entries().some((x) => x.key === e.key && x.i === e.i)) { g.App.time += 0.25; g.Story.commTick(0.25); g.Phone.tick(); if (k % 20 === 0) window.__run(1);   /* the call plays out without drawing every moment of it */ const P = document.getElementById('phone'), B = document.getElementById('storyComm'); if (g.Phone.inc && !P.hidden && P.querySelector('.ph-chat p')) onPhone = true; if (B && !B.hidden && /📱/.test(B.textContent)) inBox = true; } r.calls = g.Story.comm.log.length; r.took = k; r.onPhone = onPhone; r.inBox = inBox; for (let j = 0; j < 30; j++) { g.App.time += 0.25; g.Phone.tick(); } window.__run(2); r.closed = document.getElementById('phone').hidden; }
+    else if (st.t === 'call') { const LL = typeof st.lines === 'function' ? st.lines() : st.lines; r.phoneCall = LL.some((l) => /\((phone|text)\)/.test(l[0])); let k = 0, onPhone = false, inBox = false; while (k++ < 900 && g.Story.entries().some((x) => x.key === e.key && x.i === e.i)) { g.App.time += 0.25; g.Story.commTick(0.25); g.Phone.tick(); if (k % 20 === 0) window.__run(1);   /* the call plays out without drawing every moment of it */ const P = document.getElementById('phone'), B = document.getElementById('storyComm'); if (g.Phone.inc && !P.hidden && P.querySelector('.ph-chat p')) onPhone = true; if (B && !B.hidden && /📱/.test(B.textContent)) inBox = true; } r.calls = g.Story.comm.log.length; r.took = k; r.onPhone = onPhone; r.inBox = inBox; for (let j = 0; j < 30; j++) { g.App.time += 0.25; g.Phone.tick(); } window.__run(2); r.closed = document.getElementById('phone').hidden; }
     else if (st.t === 'goto') { const P = g.Story.place(st.at); g.loadAround(P.x, P.z, 3); if (g.Foot.on) g.Foot.board(true); g.spawnAt(P.x + 3, P.z + 3, 0); window.__run(5); }
     else if (st.t === 'run') {
       const m = g.Story.def(st.id); r.m = m.id; g.loadAround(m.x, m.z, 6); if (g.Foot.on) g.Foot.board(true); g.spawnAt(m.x + 4, m.z + 4, 0); window.__run(4); r.near = !!(g.Story.near && g.Story.near.what === 'run');
@@ -75,14 +75,14 @@ const OUT = process.env.OUT || __dirname;
   while (guard++ < 140) {
     const fin = await page.evaluate(() => window.__game.save.story.fin && !window.__game.Story.entries().length); if (fin) break;
     const t0s = Date.now(); const r = await doStep(); console.log('  step ' + guard + ' ' + r.key + ' ' + r.t + (r.who ? '(' + r.who + ')' : '') + (r.m ? '[' + r.m + ']' : '') + ' ' + Math.round((Date.now() - t0s) / 1000) + 's' + (r.t === 'run' ? ' near=' + r.near + ' cut=' + r.cut + ' mi=' + r.mi : '')); if (r.none) break; seen.push(r.key + ':' + r.t + (r.who ? '(' + r.who + ')' : '') + (r.m ? '[' + r.m + ']' : ''));
-    if (r.t !== 'cut' && r.t !== 'call' && !/CHAPTER|SIDE QUEST/.test(r.hud)) { hudOk = false; console.log('  hud', r.key, r.t, JSON.stringify(r.hud)); }
+    if (r.t !== 'cut' && r.t !== 'call' && !r.busy && !/CHAPTER|SIDE QUEST/.test(r.hud)) { hudOk = false; console.log('  hud', r.key, r.t, JSON.stringify(r.hud)); }
     if (r.t === 'run') {
       await finishCut();
       const q = await page.evaluate(() => { const g = window.__game, M = g.Mi; const o = { phase: M && M.phase, cd: M && M.cd, story: !!(M && M.def.story) }; if (M) { M.phase = 'run'; M.idx = M.cps.length - 1; for (let i = 0; i < 6; i++) window.__run(1); o.ev = Object.keys(g.Story.ev).length; g.endMission(true, 'YOU WON', [], 100); } window.__run(4); return o; });
       events += q.ev || 0; if (!(r.near && r.cut && r.mi && q.story && q.cd < 5 && (!/race|rico2/.test(r.m) || r.rival))) { runOk = false; console.log('  run', JSON.stringify(Object.assign({}, r, { pic: !!r.pic }))); }
       if (r.pic) fs.writeFileSync(path.join(OUT, 'story_' + r.m + '_intro.jpg'), Buffer.from(r.pic.split(',')[1], 'base64'));
     }
-    if (r.t === 'call') { calls++; if (r.onPhone) callsOnPhone++; if (r.inBox) callsInBox++; if (r.onPhone && !r.closed) callsOpen++; }
+    if (r.t === 'call' && r.phoneCall) { calls++; if (r.onPhone) callsOnPhone++; if (r.inBox) callsInBox++; if (r.onPhone && !r.closed) callsOpen++; }
     if (r.inside) { await finishCut(); const o = await page.evaluate(() => { const g = window.__game, r = { inInt: g.Int.on, opts: document.getElementById('cutOpts').hidden }; if (g.Int.on) g.Int.leave(true); window.__run(4); return r; }); insideN++; if (!(r.rec && r.entered && r.vis && r.cut && o.inInt)) { insideOk = false; console.log('  inside', JSON.stringify(Object.assign({}, r, { pic: !!r.pic }), o)); } if (r.pic) fs.writeFileSync(path.join(OUT, 'story_inside_' + r.who + '_' + insideN + '.jpg'), Buffer.from(r.pic.split(',')[1], 'base64')); continue; }
     if (r.t === 'talk') { if (!(r.vis && r.near && r.cut)) { talkOk = false; console.log('  talk', JSON.stringify(Object.assign({}, r, { pic: !!r.pic }))); } if (r.pic && !pics[r.who]) { pics[r.who] = 1; fs.writeFileSync(path.join(OUT, 'story_talk_' + r.who + '.jpg'), Buffer.from(r.pic.split(',')[1], 'base64')); } }
     await finishCut();
