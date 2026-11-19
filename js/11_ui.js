@@ -274,7 +274,7 @@ UI.drawOverlay = function (dt) {
 UI.setMode = function (m) {
   App.mode = m;
   E.loading.hidden = m !== 'load'; E.title.hidden = m !== 'title'; E.menu.hidden = m !== 'pause'; E.court.hidden = m !== 'court'; E.bust.hidden = !Bust.on; E.shop.hidden = m !== 'shop'; E.vmp.hidden = m !== 'vm'; E.ven.hidden = m !== 'venue'; E.int.hidden = m !== 'int'; E.rl.hidden = m !== 'rlobby'; E.mech.hidden = m !== 'mech'; E.wk.hidden = m !== 'wk';
-  E.hud.classList.toggle('off', m === 'title' || m === 'load' || m === 'court' || m === 'bust' || m === 'shop' || m === 'vm' || m === 'venue' || m === 'int' || m === 'rlobby' || m === 'mech' || m === 'wk' || !save.set.hud);
+  E.hud.classList.toggle('off', m === 'title' || m === 'cut' || m === 'load' || m === 'court' || m === 'bust' || m === 'shop' || m === 'vm' || m === 'venue' || m === 'int' || m === 'rlobby' || m === 'mech' || m === 'wk' || !save.set.hud);
   if (m !== 'play' && E.dbg) E.dbg.hidden = true;
   if (m !== 'play') { try { if (document.pointerLockElement) document.exitPointerLock(); } catch (er) { /* ignore */ } }
   E.touch.hidden = !(TouchIn.on && (m === 'play' || m === 'int')); document.body.classList.toggle('touch', TouchIn.on);
@@ -407,7 +407,7 @@ function bindUI() {
     /* the file is handed straight to localStorage and the page reloads, so loadSave() does every bit of the validation */
     else if (a === 'savei') { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'application/json,.json'; inp.onchange = () => { const f = inp.files && inp.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => { try { const o = JSON.parse(String(rd.result)); if (!o || typeof o !== 'object' || Array.isArray(o) || (typeof o.money !== 'number' && !o.set && !o.owned)) { UI.toast('That is not an Island Rush save', 'bad'); return; } localStorage.setItem(SAVE_KEY, JSON.stringify(o)); location.reload(); } catch (er) { UI.toast('Could not read that save file', 'bad'); } }; rd.onerror = () => UI.toast('Could not read that file', 'bad'); rd.readAsText(f); }; inp.click(); }
     else if (a === 'reset') { b.textContent = 'Click again to confirm'; b.dataset.act = 'reset2'; }
-    else if (a === 'reset2') { try { localStorage.removeItem(SAVE_KEY); } catch (er) { /* ignore */ } save.money = 600; save.rep = 0; save.done = {}; save.up = { eng: 0, tire: 0, nit: 0, arm: 0 }; save.color = 0; save.car = 'rook'; save.owned = { rook: true }; save.cc = {}; save.tokens = 0; save.stolen = {}; save.jack = null; save.jn = 0; save.cos = { own: {}, car: {}, out: {} }; save.air = { own: { sparrow: true }, hrs: 0, ldg: 0, best: 0, view: 1 }; save.boat = { own: {}, hrs: 0, view: 1 }; save.vm = { done: {}, kills: 0, rings: 0 }; save.ven = { rec: {}, souv: {} }; save.col = { got: {}, n: 0, fish: {}, prize: {} }; if (typeof Col !== 'undefined' && Col.reset) Col.reset(); Fly.tags(); Boat.tags(); Rel.reset(); Object.assign(save.law, { won: 0, part: 0, lost: 0, settled: 0, paid: 0 }); Thumb.cache = Object.create(null); applyCar('rook', true); App.applyPaint(); UI.renderPane(); UI.toast('Progress erased', 'bad'); }
+    else if (a === 'reset2') { try { localStorage.removeItem(SAVE_KEY); } catch (er) { /* ignore */ } save.money = 600; save.rep = 0; save.done = {}; save.story = { ch: 0, st: 0, base: {}, fin: 0 }; save.up = { eng: 0, tire: 0, nit: 0, arm: 0 }; save.color = 0; save.car = 'rook'; save.owned = { rook: true }; save.cc = {}; save.tokens = 0; save.stolen = {}; save.jack = null; save.jn = 0; save.cos = { own: {}, car: {}, out: {} }; save.air = { own: { sparrow: true }, hrs: 0, ldg: 0, best: 0, view: 1 }; save.boat = { own: {}, hrs: 0, view: 1 }; save.vm = { done: {}, kills: 0, rings: 0 }; save.ven = { rec: {}, souv: {} }; save.col = { got: {}, n: 0, fish: {}, prize: {} }; if (typeof Col !== 'undefined' && Col.reset) Col.reset(); Fly.tags(); Boat.tags(); Rel.reset(); Object.assign(save.law, { won: 0, part: 0, lost: 0, settled: 0, paid: 0 }); Thumb.cache = Object.create(null); applyCar('rook', true); App.applyPaint(); UI.renderPane(); UI.toast('Progress erased', 'bad'); }
     else if (a === 'zin') { FM.zoom = Math.min(10, FM.zoom * 1.6); UI.mapDraw(); }
     else if (a === 'zout') { FM.zoom = Math.max(1, FM.zoom / 1.6); UI.mapDraw(); }
     else if (a === 'center') { FM.cx = car.x; FM.cz = car.z; UI.mapDraw(); }
@@ -449,6 +449,7 @@ const TouchIn = { on: false, l: 0, r: 0, gas: 0, brk: 0, nit: 0, hand: 0, fire: 
 const padPrev = [];
 function onKey(code) {
   if (App.mode === 'title') { if (code === 'Enter' || code === 'Space') App.start(); return; }
+  if (App.mode === 'cut') { Cut.key(code); return; }
   if (App.mode === 'court') { Court.key(code); return; }
   if (App.mode === 'shop') { Shop.key(code); return; }
   if (App.mode === 'vm') { VM.key(code); return; }
@@ -460,6 +461,7 @@ function onKey(code) {
   if (App.mode === 'pause') { if (code === 'Escape' || code === 'KeyP' || (code === 'KeyM' && App.tab === 'map')) UI.closeMenu(); return; }
   if (App.mode !== 'play') return;
   if (GAR.edit) { Home.key(code); return; }
+  if (Story.key(code)) return;
   if (Talk.on) { Talk.key(code); return; }
   if (Derby.on && /^(KeyE|Enter|KeyF|KeyG|KeyM|KeyQ|KeyH|KeyR)$/.test(code)) return;
   if (Drag.on) { if (code === 'KeyR') { Drag.again(); return; } if (/^(KeyE|Enter|KeyF|KeyG|KeyM|KeyQ|KeyH)$/.test(code)) return; }
