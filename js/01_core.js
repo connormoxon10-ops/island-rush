@@ -26,7 +26,11 @@ function fbm(x, y, o) { let s = 0, a = 1, f = 1, n = 0; for (let i = 0; i < o; i
 const lc = (hex) => new THREE.Color(hex).convertSRGBToLinear();
 
 /* ================= SAVE ================= */
-const SAVE_KEY = 'island-rush-v1';
+/* two games in one browser, each with its own save: the sandbox (free roam, the original save) and Story Mode. Which one this page is playing was
+   chosen on the title screen (switching reloads the page into the other one); the settings are shared between them */
+const MODE_KEY = 'island-rush-mode', SANDBOX_KEY = 'island-rush-v1', STORY_KEY = 'island-rush-story-v1';
+const PLAY_MODE = (() => { try { return localStorage.getItem(MODE_KEY) === 'story' ? 'story' : 'sandbox'; } catch (e) { return 'sandbox'; } })();
+const SAVE_KEY = PLAY_MODE === 'story' ? STORY_KEY : SANDBOX_KEY;
 const save = { money: 600, rep: 0, law: { won: 0, part: 0, lost: 0, settled: 0, paid: 0 }, done: {}, up: { eng: 0, tire: 0, nit: 0, arm: 0 }, color: 0, car: 'rook', owned: { rook: true }, cc: {}, cos: { own: {}, car: {}, out: {} }, rel: {}, gar: { wall: 0, ext: 1, trim: 0, floor: 0, light: 0, neon: 3, sign: 'HOME GARAGE', bays: 4, decor: { posters: 1, tools: 1, tyres: 1, rug: 1, trophies: 1, plants: 1 }, slots: {} },
   air: { own: { sparrow: true }, hrs: 0, ldg: 0, best: 0, view: 1 }, boat: { own: {}, hrs: 0, view: 1 }, vm: { done: {}, kills: 0, rings: 0 }, ven: { rec: {}, souv: {} }, col: { got: {}, n: 0, fish: {}, prize: {} }, race: { races: 0, wins: 0, podiums: 0, bestLap: 0, earned: 0, best: {} }, rally: { runs: 0, best: 0, splits: [], gates: 0, jump: 0, tod: 2, earned: 0 }, drag: { runs: 0, wins: 0, earned: 0, bestRt: 0, tier: 1, best: {} }, setup: {},
   tokens: 0, stolen: {}, jack: null, jn: 0, heist: { prev: null, done: 0 }, int: { apts: {}, fit: 0, gym: 0, meals: 0, swims: 0, jail: 0, nights: 0, rooms: 0, banks: {}, acct: 0 }, surf: { best: 0, sessions: 0 }, dune: { races: 0, wins: 0, best: 0 }, mech: { jobs: 0, sum: 0, rush: 0, best: 0, saved: 0 }, wk: { slots: [null, null, null], cur: null, flights: 0, done: {}, best: { alt: 0, spd: 0 } },
@@ -34,6 +38,7 @@ const save = { money: 600, rep: 0, law: { won: 0, part: 0, lost: 0, settled: 0, 
 /* developer mode: session-only cheat/debug state (only active while save.set.dev is on) */
 const Dev = { god: false, nit: false, power: 1, grip: 1, ts: 1, hud: false, hbox: false, free: false, fx: 0, fy: 0, fz: 0, fyaw: 0, fpitch: 0, ema: 0.016, t: 0 };
 const devOn = (k) => !!(save.set.dev && Dev[k]);
+save.story = { ch: 0, st: 0, base: {}, fin: 0 };   /* Story Mode's progress (only used in the story save) */
 function loadSave() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
@@ -68,7 +73,14 @@ function loadSave() {
       if (s.surf && typeof s.surf === 'object') save.surf = { best: +s.surf.best || 0, sessions: s.surf.sessions | 0 };
       if (s.dune && typeof s.dune === 'object') save.dune = { races: s.dune.races | 0, wins: s.dune.wins | 0, best: +s.dune.best || 0 };
       KIT.load(s.kit);
-      save.car = (s.car && (save.owned[s.car] || (save.jack && save.jack.id === s.car))) ? s.car : save.heist.prev && save.owned[save.heist.prev] ? save.heist.prev : 'rook'; }
+      save.car = (s.car && (save.owned[s.car] || (save.jack && save.jack.id === s.car))) ? s.car : save.heist.prev && save.owned[save.heist.prev] ? save.heist.prev : 'rook';
+      if (s.story && typeof s.story === 'object') save.story = { ch: clamp(s.story.ch | 0, 0, 99), st: clamp(s.story.st | 0, 0, 99), base: Object.assign({}, s.story.base || {}), fin: s.story.fin ? 1 : 0 }; }
+    if (PLAY_MODE === 'story') { const o = JSON.parse(localStorage.getItem(SANDBOX_KEY) || 'null'); if (o && o.set) Object.assign(save.set, o.set); }   /* the settings are the sandbox's */
   } catch (e) { /* storage unavailable */ }
 }
-function writeSave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* ignore */ } }
+function writeSave() {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+    if (PLAY_MODE === 'story') { const o = JSON.parse(localStorage.getItem(SANDBOX_KEY) || 'null') || { money: 600 }; o.set = save.set; localStorage.setItem(SANDBOX_KEY, JSON.stringify(o)); }   /* settings changed in the story reach the sandbox too */
+  } catch (e) { /* ignore */ }
+}
