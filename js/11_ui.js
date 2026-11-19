@@ -358,7 +358,7 @@ UI.renderPane = function () {
     h += '<div class="sect">Flying</div>' + row('Flight assist (levels the wings, holds your climb)', seg('fassist', [[true, 'On'], [false, 'Off']], s.fassist !== false)) + row('Invert pitch', seg('finv', [[true, 'On'], [false, 'Off']], !!s.finv)) + row('Flight log', '<span class="val">' + (save.air.hrs * 60).toFixed(0) + ' min airborne · ' + save.air.ldg + ' landings · best landing ' + money(save.air.best) + '</span>');
     h += '<div class="sect">Boating</div>' + row('Boat log', '<span class="val">' + (save.boat.hrs * 60).toFixed(0) + ' min under way · ' + BIDS.filter((k) => save.boat.own[k]).length + ' of ' + BIDS.length + ' boats owned</span>');
     h += '<div class="sect">Sound &amp; units</div>' + row('Music', seg('music', [[true, 'On'], [false, 'Off']], s.music)) + row('Master volume', '<input id="sVol" type="range" min="0" max="1" step="0.05" value="' + s.vol + '" data-slider="vol">', 'vol') + row('Speed units', seg('units', [['kmh', 'km/h'], ['mph', 'mph']], s.units));
-    h += '<div class="sect">Developer</div>' + row('Developer mode (cheats, debug tools)', seg('dev', [[true, 'On'], [false, 'Off']], !!s.dev));
+    /* (developer mode has no switch here: it is a secret, see DevCode) */
     const LW = save.law; h += '<div class="sect">Save</div>' + row('Court record', '<span class="val">' + LW.won + ' won · ' + LW.part + ' partly · ' + LW.lost + ' lost · ' + LW.settled + ' settled · ' + money(LW.paid) + ' paid</span>') +
       row('Build', '<span class="val">' + esc(IR_VERSION) + '</span>') +
       row('Back up or move your progress', '<div class="btnrow"><button class="btn sm" type="button" data-act="savex">Download save</button><button class="btn sm" type="button" data-act="savei">Load save file</button></div>') +
@@ -427,6 +427,7 @@ function bindUI() {
   E.btnPause.onclick = () => UI.openMenu('missions');
   E.btnCam.onclick = () => UI.cycleView();
   E.btnStart.onclick = () => App.start();
+  { const mk = E.title.querySelector('.mark'); if (mk) mk.addEventListener('pointerdown', () => DevCode.tap()); }
   E.btnTitleCtl.onclick = () => { App.start(); UI.openMenu('controls'); };
   E.prompt.onclick = () => { if (!Mi && Mission.nearby) startMission(Mission.nearby); };
   /* full-map interaction */
@@ -447,7 +448,18 @@ function bindUI() {
 const Keys = Object.create(null);
 const TouchIn = { on: false, l: 0, r: 0, gas: 0, brk: 0, nit: 0, hand: 0, fire: 0 };
 const padPrev = [];
+/* developer mode is hidden: it is off every time the game starts, and the only way on is a secret. On the title screen or in the pause menu type
+   up, up, down, down, left, right, left, right, B, A (again to turn it off); on a touch screen tap the Island Rush logo on the title seven times quickly */
+const DevCode = { seq: ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'], i: 0, taps: [] };
+DevCode.toggle = function () { save.set.dev = !save.set.dev; Snd.beep(save.set.dev ? 1200 : 400, 0.12); if (save.set.dev) Snd.beep(1600, 0.1); App.onSetting('dev'); if (!save.set.dev) UI.toast('Developer mode off', 'info'); writeSave(); if (App.mode === 'pause') UI.renderPane(); };
+DevCode.feed = function (code) {
+  if (App.mode !== 'title' && App.mode !== 'pause') { DevCode.i = 0; return; }
+  if (code === DevCode.seq[DevCode.i]) { DevCode.i++; if (DevCode.i === DevCode.seq.length) { DevCode.i = 0; DevCode.toggle(); } }
+  else DevCode.i = code === DevCode.seq[0] ? 1 : 0;
+};
+DevCode.tap = function () { const t = performance.now(); DevCode.taps = DevCode.taps.filter((q) => t - q < 2500); DevCode.taps.push(t); if (DevCode.taps.length >= 7) { DevCode.taps = []; DevCode.toggle(); } };
 function onKey(code) {
+  DevCode.feed(code);
   if (App.mode === 'title') { if (code === 'Enter' || code === 'Space') App.start(); return; }
   if (App.mode === 'cut') { Cut.key(code); return; }
   if (App.mode === 'court') { Court.key(code); return; }

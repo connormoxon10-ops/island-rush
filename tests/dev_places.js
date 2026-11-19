@@ -13,6 +13,15 @@ const { chromium } = require('playwright'); const path = require('path');
   await page.goto('file://' + path.resolve(__dirname, '../dist/test.html'));
   await page.waitForFunction(() => window.__ready || window.__bootError, null, { timeout: 170000 });
   let fails = 0; const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console.log('ok  ', m); };
+  /* developer mode is a secret: off at the start even though the save says on, no switch in Settings, and the code on the title turns it on */
+  const sec = await page.evaluate(() => {
+    const g = window.__game, r = { off0: !g.save.set.dev, title: g.App.mode === 'title' }; g.UI.tabTo('settings'); r.noSwitch = !/Developer mode/.test(document.getElementById('pane').innerHTML);
+    const code = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
+    for (const k of code.slice(0, 9).concat(['KeyX'])) { g.key(k, true); g.key(k, false); } r.wrong = !g.save.set.dev;
+    for (const k of code) { g.key(k, true); g.key(k, false); } r.on = g.save.set.dev; return r;
+  });
+  ok(sec.off0 && sec.title && sec.noSwitch, 'developer mode starts off (even with it saved on) and has no switch in Settings');
+  ok(sec.wrong && sec.on, 'a wrong code does nothing; up up down down left right left right B A turns it on');
   const r = await page.evaluate(() => {
     const g = window.__game, UI = g.UI, c = g.car; g.App.start(); window.requestAnimationFrame = () => 0; window.__now = performance.now();
     const run = (n) => { for (let i = 0; i < n; i++) { window.__now += 1000 / 30; g.frame(window.__now); } };
