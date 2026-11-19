@@ -164,7 +164,7 @@ function startMission(def) {
   if (def.type === 'race') {
     const m = def; routePos(m, m.s0 - 25, _mp);
     const d = { kind: 'rival', road: m.road, dir: m.dir, lane: -1.2, s: m.dir > 0 ? m.s0 - 25 : m.road.len - (m.s0 - 25), v: 0, vt: 0, rs: m.s0 - 25, x: _mp.x, z: _mp.z };
-    d.mesh = buildCarMesh(0xd62828, 0); d.hl = 2; scene.add(d.mesh); placeDyn(d); Dyn.extra.push(d); Mi.rival = d;
+    d.mesh = def.rivalCar && CAR_BY_ID[def.rivalCar] ? buildCarModel(CAR_BY_ID[def.rivalCar], def.rivalCol, { lod: 1 }) : buildCarMesh(0xd62828, 0); d.hl = 2; scene.add(d.mesh); placeDyn(d); Dyn.extra.push(d); Mi.rival = d;
   }
   UI.banner(MT[def.type].name.toUpperCase(), def.title.replace(/^[^:]+: /, ''));
   if (def.type === 'erupt') Volc.start(Mi);

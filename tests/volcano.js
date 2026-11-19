@@ -60,7 +60,7 @@ const OUT = process.env.OUT || __dirname;
   });
   /* the mission: sit still and the lava gets you (and a bomb on the car hurts) */
   const still = await page.evaluate(() => {
-    const g = window.__game, c = g.car, def = g.missions.find((m) => m.id === 'mvolc'), V = g.VOLC, res = {}; window.__res.length = 0; c.health = 100;
+    const g = window.__game, c = g.car, def = g.missions.find((m) => m.id === 'mvolc'), V = g.VOLC, res = {}; window.__res.length = 0; c.health = 100; g.save.set.dev = true; g.Dev.god = true;   /* only the lava can end this one */
     g.startMission(def); res.atPad = Math.hypot(c.x - V.px, c.z - V.pz) < 3; res.started = !!g.Mi;
     window.__run(200, () => g.Mi && g.Mi.phase === 'countdown'); res.run = g.Mi && g.Mi.phase === 'run';
     window.__run(20); res.front = g.Volc.front.visible && g.Volc.fMat.uniforms.uFront.value > V.RIM - 20;
@@ -69,7 +69,7 @@ const OUT = process.env.OUT || __dirname;
     return res;
   });
   await shot('erupting');
-  const still2 = await page.evaluate(() => { const g = window.__game; const n = window.__run(1500, () => !!g.Mi); return { n, res: window.__res.slice(), done: !!g.save.done.mvolc, health: g.car.health }; });
+  const still2 = await page.evaluate(() => { const g = window.__game; const n = window.__run(1500, () => !!g.Mi); g.Dev.god = false; g.save.set.dev = false; return { n, res: window.__res.slice(), done: !!g.save.done.mvolc, health: g.car.health }; });
   console.log(JSON.stringify(still), JSON.stringify(still2));
   ok(still.started && still.atPad && still.run, 'start it at base camp: you are up at the observatory, and after the countdown it erupts');
   ok(still.front, 'a lava flow pours over the rim');
@@ -85,10 +85,11 @@ const OUT = process.env.OUT || __dirname;
       const cp = M.cps[M.idx]; const want = Math.atan2(cp.x - c.x, cp.z - c.z); let e = want - c.yaw; e -= Math.round(e / (2 * Math.PI)) * 2 * Math.PI;
       pad.axes[0] = Math.max(-1, Math.min(1, e * 2.2)) * sgn; const v = Math.abs(c.speed); pad.buttons[7].value = v < 24 ? 1 : 0; pad.buttons[6].value = v > 30 ? 0.6 : 0;
       const V = g.VOLC, s = (c.x - V.x) * V.ux + (c.z - V.z) * V.uz; maxGap = Math.min(maxGap, s - g.Volc.fMat.uniforms.uFront.value); rings = Math.max(rings, g.Volc.bombs.filter((b) => b.on).length);
+      if (i % 90 === 0) (window.__tr || (window.__tr = [])).push([Math.round(M.t), Math.round(s), Math.round(g.Volc.fMat.uniforms.uFront.value), Math.round(Math.abs(c.speed)), M.idx]);
       if (!pic && M.t > 12) { pic = 1; window.__pic = g.renderer.domElement.toDataURL('image/jpeg', 0.85); }
     });
     pad.buttons[7].value = 0; pad.buttons[6].value = 0; pad.axes[0] = 0; g.Dev.god = false; g.save.set.dev = false;
-    return { n, res: window.__res.slice(), done: g.save.done.mvolc, fired: window.__fired, maxGap: Math.round(maxGap), rings, mi: !!g.Mi };
+    return { n, res: window.__res.slice(), done: g.save.done.mvolc, fired: window.__fired, maxGap: Math.round(maxGap), rings, mi: !!g.Mi, tr: window.__tr };
   }, sgn);
   { const u = await page.evaluate(() => window.__pic); if (u) fs.writeFileSync(path.join(OUT, 'volcano_escape.jpg'), Buffer.from(u.split(',')[1], 'base64')); }
   await shot('escaped');

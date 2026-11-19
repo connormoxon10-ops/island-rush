@@ -151,7 +151,7 @@ Volc.update = function (dt) {
       sparks(V.x, volcLakeY() + 8, V.z, 120, 60); UI.banner('IT’S ERUPTING!', 'Get down the mountain, ahead of the lava'); R.front = V.RIM - 10; Volc.front.visible = true;
     }
     const s = (c.x - V.x) * V.ux + (c.z - V.z) * V.uz, l = Math.abs(-(c.x - V.x) * V.uz + (c.z - V.z) * V.ux);
-    const v = Math.min(23, 9 + M.t * 0.42); R.front = Math.min(VOL.LAVA_END, Math.max(R.front + v * dt, s - 170)); Volc.fMat.uniforms.uFront.value = R.front;
+    const v = Math.min(19, 8 + M.t * 0.3); R.front = Math.min(VOL.LAVA_END, Math.max(R.front + v * dt, s - 190));   /* quick enough to chase, slow enough to outrun on a clean line */ Volc.fMat.uniforms.uFront.value = R.front;
     Cam.shake = Math.max(Cam.shake, 0.22);
     if (!Foot.on && s < R.front - 1 && s > V.RIM && l < volcFrontW(s) / 2 * 0.9) return endMission(false, 'ENGULFED', ['The lava caught you on the slope.', 'Bombs dodged ' + R.dodged], 0);
     R.bombT -= dt; if (R.bombT <= 0) { Volc.fire(); R.bombT = Math.max(0.42, 1.0 - M.t * 0.012) * (0.75 + Math.random() * 0.5); }
