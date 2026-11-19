@@ -36,7 +36,7 @@ const venRec = (game) => { const v = venSave(); return v.rec[game] || (v.rec[gam
 
 /* ---------- sites ---------- */
 Ven.setup = function () {
-  Ven.sites = towns.map((T, ti) => {
+  Ven.sites = towns.slice(0, VDEF.length).map((T, ti) => {   /* the seven original towns each have their venue (the outer ring has none) */
     const R = REG[ti % REG.length], D = VDEF[ti % VDEF.length], bs = T.cell - 14, bx0 = T.x0 + VEN_I * T.cell + 7, bz0 = T.z0 + VEN_J * T.cell + 7;
     const lx0 = bx0 + 1.5, lz0 = bz0 + 1.5, ls = bs / 2 - 3;
     return { ti, T, R, D, lx0, lz0, ls, x: lx0 + ls / 2, z: lz0 + 6.5, y: T.baseH, bx: lx0 + 4, bz: lz0 + 13, bw: 24, bd: 15, tex: null, mat: null, mk: null };
@@ -49,8 +49,8 @@ Ven.setup = function () {
   Ven.all = Ven.sites.concat(Ven.clubs);
   Ven.ready = true;
 };
-Ven.lot = function (T, i, j, a, b) { return Ven.ready && i === VEN_I && j === VEN_J && a === 0 && b === 0; };
-Ven.clubLot = function (T, i, j, a, b) { return Ven.ready && i === VEN_I && j === VEN_J && a === 1 && b === 0; };
+Ven.lot = function (T, i, j, a, b) { return Ven.ready && towns.indexOf(T) < Ven.sites.length && i === VEN_I && j === VEN_J && a === 0 && b === 0; };
+Ven.clubLot = function (T, i, j, a, b) { return Ven.ready && towns.indexOf(T) < Ven.sites.length && i === VEN_I && j === VEN_J && a === 1 && b === 0; };
 
 /* ---------- forecourt markers ---------- */
 Ven.initMarkers = function () {

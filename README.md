@@ -32,7 +32,17 @@ Run `bash build.sh`, then open `dist/island-rush.html` in a desktop browser. thr
 
 ## What's in it
 
-- **The island:** a procedurally generated island with towns, highways, biomes, day/night and weather, traffic, pedestrians and a coastal marina.
+- **The island:** a procedurally generated island about 9.5 km across, with fourteen towns, highways, biomes, day/night and weather, traffic, pedestrians and a coastal marina.
+  - **The middle:** the seven original towns.
+  - **The outer ring:** seven newer towns, each in its own region with its own ground, plants, buildings, sky, weather, traffic colours and driving grip:
+    - **Bayou Hollow:** a cypress swamp cut by bayous, with fog and mud.
+    - **Ashfall:** a volcanic coast with a 260 m volcano, a crater and black lava fields.
+    - **Sundown Plains:** a golden savanna.
+    - **Vellano:** hillside vineyards in rows, with cypress lanes.
+    - **Frostholm:** tundra and taiga with icy roads.
+    - **Verdance:** a rainforest river town with downpours.
+    - **Neo Haven:** a neon megacity bigger than Fairhaven, with towers up to 240 m, gridlock and the biggest fines.
+  - **What every new town has:** a Customs shop, its own special buildings (banks, flats, gyms, pools, restaurants, clothing, a dealership or workshop) and the highway links.
 - **Driving:** a roster of cars with a garage, upgrades and cosmetics, damage and explosions, a race track with bot drivers that get faster than you.
 - **Basilisk DR:** an original drag-built twin-turbo all-wheel-drive coupe ($32,000) on tall rally tyres with wheelie bars and a parachute pack. 8.3 s quarter mile and about 445 km/h flat out, against 9.6 s and 325 km/h for the Phantom R; it holds about half the Rook GT's cornering grip. `node tests/car_basilisk.js` measures all three.
 - **Sandviper:** an original lifted dune buggy ($9,500): an open painted tube frame with a roll cage, bucket seats, a flat-four out back with upswept pipes, long-travel coilovers, a roof light bar and a spare tyre, on knobby tyres and beadlock wheels. 0-100 km/h in about 6 s. Pick it as your car in the rally lobby (**Car** row) to drive any stage in it.
@@ -111,6 +121,7 @@ node tests/car_buggy.js   # the Sandviper: model, performance, and as the rally 
 node tests/cars_custom.js   # the hand-built cars: models, front/rear tyres, performance, stability (browser)
 node tests/cutscenes.js   # every court venue, the arrest and the booking room: their people animate on screen (browser)
 node tests/rally_stages.js   # every rally stage as a model: builds, never crosses itself, drivable grades, gates on straights, surfaces
+node tests/island.js        # the bigger island: 14 towns in 14 regions, the coast all round, highways to every town, the volcano and bayous, every new town builds and drives
 node tests/beach.js         # beaches all round the island: sand, umbrellas, loungers, lifeguard towers, people in swimwear lying, sitting, wading; cars knock them over
 node tests/swimwear.js      # beachwear: men and boys in swim trunks, women in bikinis, girls in a swimsuit (checks which parts are cloth and which skin)
 node tests/interiors.js     # every building has a door and an interior: one of every kind entered on foot, walked about, furniture, people, things to use, out again (env ONLY=kind)
