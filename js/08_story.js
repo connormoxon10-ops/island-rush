@@ -538,7 +538,7 @@ Story.ui = function () {
   const cm = Story.comm.el = document.createElement('div'); cm.id = 'storyComm'; cm.hidden = true; document.body.appendChild(cm);
 };
 /* ---------- the title screen: free roam or the story, each its own save ---------- */
-Story.switchTo = function (mode) { try { writeSave(); localStorage.setItem(MODE_KEY, mode); sessionStorage.setItem('island-rush-go', '1'); } catch (e) { /* ignore */ } location.reload(); };
+Story.switchTo = function (mode) { try { writeSave(); localStorage.setItem(MODE_KEY, mode); localStorage.setItem('island-rush-go', String(Date.now())); } catch (e) { /* ignore */ } location.reload(); };
 Story.initTitle = function () {
   const b = document.getElementById('btnStart'); if (!b || document.getElementById('btnStory')) return;
   let has = false, ch = 0; try { const o = JSON.parse(localStorage.getItem(STORY_KEY) || 'null'); has = !!(o && o.story); ch = has ? (o.story.ch | 0) : 0; } catch (e) { /* ignore */ }
@@ -551,4 +551,5 @@ Story.initTitle = function () {
   const mh = document.getElementById('menuHead'); if (mh && !document.getElementById('btnTitle')) { const t = document.createElement('button'); t.className = 'btn sm'; t.id = 'btnTitle'; t.type = 'button'; t.textContent = '⏏ Title screen'; t.title = 'Back to the title: switch between free roam and the story'; t.onclick = () => { writeSave(); location.reload(); }; mh.appendChild(t); }
   if (PLAY_MODE === 'story') { const tg = document.getElementById('tagline'); if (tg) tg.textContent = 'Story mode: ' + (has ? 'chapter ' + Math.min(ch + 1, STORY.length) + ' of ' + STORY.length : 'a new life on the island') + '. Free roam keeps its own save.'; }
 };
-Story.autoStart = function () { let go = false; try { go = sessionStorage.getItem('island-rush-go') === '1'; sessionStorage.removeItem('island-rush-go'); } catch (e) { /* ignore */ } if (go) setTimeout(() => App.start(), 60); };
+/* straight into the game after a switch (the page reloads into the other save): a note left just before the reload, good for 20 s */
+Story.autoStart = function () { let go = false; try { const t = +localStorage.getItem('island-rush-go') || 0; go = Date.now() - t < 20000; localStorage.removeItem('island-rush-go'); } catch (e) { /* ignore */ } if (go) setTimeout(() => App.start(), 60); };
