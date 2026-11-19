@@ -399,6 +399,8 @@ Story.commTick = function (dt) {
   if (!C.cur && C.q.length) { C.cur = C.q.shift(); if (C.cur.done) { const d = C.cur.done; C.cur = null; d(); return; } C.t = 0; C.log.push(C.cur); if (C.log.length > 80) C.log.shift(); Snd.beep(/phone|text/.test(C.cur.who) ? 980 : 640, 0.05); }
   const c = C.cur; if (!c) { el.hidden = true; return; }
   C.t += dt; const n = Math.min(c.text.length, Math.floor(C.t * 50)), who = STORY_CAST[c.who] ? STORY_CAST[c.who].name : c.who;
+  /* a phone call or a text comes in on the phone itself (it opens, and shows the conversation); radio, scanner and passers-by stay in the box */
+  if (/\((phone|text)\)/.test(c.who) && typeof Phone !== 'undefined' && Phone.el) { el.hidden = true; Phone.incoming(c, n); if (C.t > 2.6 + c.text.length * 0.045) C.cur = null; return; }
   el.hidden = false; el.innerHTML = (who ? '<b>' + (/phone|text/.test(who) ? '📱 ' : /radio|scanner/i.test(who) ? '📻 ' : '') + who + '</b>' : '') + '<span>' + c.text.slice(0, n) + '</span>';
   if (C.t > 2.6 + c.text.length * 0.045) C.cur = null;
 };

@@ -84,6 +84,18 @@ Phone.say = function (k) {
   if (r.eff) Story.applyEff(r.eff); Phone.hear(C.id, r.say || []); if (r.note) C.log.push(['', r.note]); if (r.end) { C.st = 'ended'; setTimeout(() => { if (Phone.call === C) { Phone.call = null; Phone.render(); } }, 1600); }
   writeSave(); Phone.render();
 };
+/* a call or text coming in (the story's calls): the phone opens on it, the lines appear as they are said, and it puts itself away after */
+Phone.incoming = function (c, n) {
+  const nm = c.who.replace(/\s*\((phone|text)\)/, ''), txt = /\(text\)/.test(c.who);
+  let I = Phone.inc; if (!I || I.nm !== nm) { I = Phone.inc = { nm, txt, log: [], auto: !Phone.open, last: null }; if (!Phone.open) { Phone.open = true; Phone.app = 'home'; Phone.el.hidden = false; } Snd.beep(1100, 0.06); }
+  if (I.last !== c) { I.last = c; I.log.push([c.who === 'you (phone)' ? 'you' : 'them', c.text]); }
+  I.n = n; I.t = App.time; Phone.render();
+};
+Phone.incTick = function () {
+  const I = Phone.inc; if (!I) return; const C = Story.comm, next = C.cur || C.q[0];
+  if (next && next.who && /\((phone|text)\)/.test(next.who) && next.who.replace(/\s*\((phone|text)\)/, '') === I.nm) return;
+  if (App.time - I.t > 2.2) { const auto = I.auto; Phone.inc = null; if (auto && !Phone.call) Phone.toggle(false); else Phone.render(); }
+};
 Phone.hang = function () { if (Phone.call && Phone.call.spam < 3) Phone.spamHit = null; const C = Phone.call; if (!C) return; if (C.st === 'talk') C.log.push(['', 'Call ended']); Phone.call = null; Snd.beep(420, 0.05); Phone.render(); };
 /* free roam services */
 Phone.service = function (k) {
@@ -94,7 +106,7 @@ Phone.service = function (k) {
 };
 /* ---------- the screen ---------- */
 Phone.toggle = function (on) {
-  Phone.open = on == null ? !Phone.open : !!on; if (!Phone.open && Phone.call) Phone.hang(); if (Phone.open) { Phone.app = 'home'; Phone.render(); Snd.beep(1200, 0.03); }
+  Phone.open = on == null ? !Phone.open : !!on; if (!Phone.open && Phone.call) Phone.hang(); if (!Phone.open) Phone.inc = null; if (Phone.open) { Phone.app = 'home'; Phone.render(); Snd.beep(1200, 0.03); }
   Phone.el.hidden = !Phone.open;
 };
 Phone.go = function (app) {
@@ -107,7 +119,10 @@ Phone.go = function (app) {
 Phone.render = function () {
   if (!Phone.el || !Phone.open) return; const scr = Phone.el.querySelector('.scr'), a = Phone.app; let h = '';
   const top = (t) => '<div class="ph-top"><button type="button" data-ph="home">‹</button><b>' + t + '</b><span></span></div>';
-  if (Phone.call) { const C = Phone.call, nm = STORY_CAST[C.id].name, sec = C.t0 ? Math.floor(App.time - C.t0) : 0;
+  if (!Phone.call && Phone.inc) { const I = Phone.inc;
+    h = '<div class="ph-call"><div class="ph-av s2">' + I.nm.charAt(0) + '</div><b>' + I.nm + '</b><small>' + (I.txt ? 'Message' : 'Incoming call · on speaker') + '</small></div><div class="ph-chat">' +
+      I.log.map((l, k) => '<p' + (l[0] === 'you' ? ' class="me"' : '') + '>' + (k === I.log.length - 1 ? l[1].slice(0, I.n) : l[1]) + '</p>').join('') + '</div>'; }
+  else if (Phone.call) { const C = Phone.call, nm = STORY_CAST[C.id].name, sec = C.t0 ? Math.floor(App.time - C.t0) : 0;
     h = '<div class="ph-call"><div class="ph-av s2">' + nm.charAt(0) + '</div><b>' + nm + '</b><small>' + (C.st === 'ring' ? 'Calling…' : C.st === 'none' ? 'No answer' : C.st === 'ended' ? 'Call ended' : 'On call · ' + Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0')) + '</small></div><div class="ph-chat">' +
       C.log.map((l) => (l[0] === 'you' ? '<p class="me">' + l[1] + '</p>' : l[0] ? '<p>' + l[1] + '</p>' : '<p class="sys">' + l[1] + '</p>')).join('') + '</div>' +
       (C.st === 'talk' ? '<div class="ph-opts">' + Phone.topics(C.id).filter((x) => !C.used[x[0]]).map((x, k) => '<button type="button" data-say="' + k + '">' + x[0] + '</button>').join('') + '</div>' : '') + '<button type="button" class="ph-hang" data-hang="1">' + (C.st === 'talk' || C.st === 'ring' ? 'Hang up' : 'Close') + '</button>'; }
@@ -148,7 +163,7 @@ Phone.init = function () {
 Phone.key = function (code) { if (code === 'KeyO') { Phone.toggle(); return true; } if (Phone.open && code === 'Escape') { Phone.toggle(false); return true; } return false; };
 /* every frame: the button shows in play, and moves below the run panel when one is up */
 Phone.tick = function () {
-  if (!Phone.btn) return; const on = App.mode === 'play'; Phone.btn.hidden = !on; if (!on && Phone.open) Phone.toggle(false);
+  if (!Phone.btn) return; Phone.incTick(); const on = App.mode === 'play'; Phone.btn.hidden = !on; if (!on && Phone.open) Phone.toggle(false);
   const mp = document.getElementById('mp'), r = mp && !mp.hidden && mp.offsetParent ? mp.getBoundingClientRect() : null, top = r && r.left < 80 ? r.bottom + 8 : 16;
   Phone.btn.style.top = top + 'px'; Phone.el.style.top = (top + 52) + 'px';
   if (Phone.open && (Phone.app === 'home' || (Phone.call && Phone.call.st === 'talk')) && ((Phone.rt = (Phone.rt || 0) + 1) % 30 === 0)) Phone.render();

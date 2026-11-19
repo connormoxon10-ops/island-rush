@@ -50,7 +50,7 @@ const OUT = process.env.OUT || __dirname;
       g.key('KeyE', true); g.key('KeyE', false); window.__run(3); r.cut = g.Cut.on;
       if (r.cut) { g.key('Space', true); g.key('Space', false); window.__run(20); r.pic = g.renderer.domElement.toDataURL('image/jpeg', 0.75); }
     } else if (st.t === 'cut') { window.__run(40); r.cut = g.Cut.on; }
-    else if (st.t === 'call') { let k = 0; while (k++ < 900 && g.Story.entries().some((x) => x.key === e.key && x.i === e.i)) window.__run(1); r.calls = g.Story.comm.log.length; r.took = k; }
+    else if (st.t === 'call') { let k = 0, onPhone = false, inBox = false; while (k++ < 900 && g.Story.entries().some((x) => x.key === e.key && x.i === e.i)) { window.__run(1); const P = document.getElementById('phone'), B = document.getElementById('storyComm'); if (g.Phone.inc && !P.hidden && P.querySelector('.ph-chat p')) onPhone = true; if (B && !B.hidden && /📱/.test(B.textContent)) inBox = true; } r.calls = g.Story.comm.log.length; r.took = k; r.onPhone = onPhone; r.inBox = inBox; window.__run(80); r.closed = document.getElementById('phone').hidden; }
     else if (st.t === 'goto') { const P = g.Story.place(st.at); g.loadAround(P.x, P.z, 20); if (g.Foot.on) g.Foot.board(true); g.spawnAt(P.x + 3, P.z + 3, 0); window.__run(5); }
     else if (st.t === 'run') {
       const m = g.Story.def(st.id); r.m = m.id; g.loadAround(m.x, m.z, 30); if (g.Foot.on) g.Foot.board(true); g.spawnAt(m.x + 4, m.z + 4, 0); window.__run(4); r.near = !!(g.Story.near && g.Story.near.what === 'run');
@@ -63,7 +63,7 @@ const OUT = process.env.OUT || __dirname;
     else if (st.t === 'clean') { g.Wanted.set && g.Wanted.set(0); if (g.Police && g.Police.reset) g.Police.reset(); window.__run(2); }
     return r;
   });
-  const seen = [], pics = {}; let guard = 0, talkOk = true, hudOk = true, runOk = true, events = 0;
+  const seen = [], pics = {}; let guard = 0, talkOk = true, hudOk = true, runOk = true, events = 0, calls = 0, callsOnPhone = 0, callsInBox = 0, callsOpen = 0;
   while (guard++ < 140) {
     const fin = await page.evaluate(() => window.__game.save.story.fin && !window.__game.Story.entries().length); if (fin) break;
     const r = await doStep(); if (r.none) break; seen.push(r.key + ':' + r.t + (r.who ? '(' + r.who + ')' : '') + (r.m ? '[' + r.m + ']' : ''));
@@ -74,6 +74,7 @@ const OUT = process.env.OUT || __dirname;
       events += q.ev || 0; if (!(r.near && r.cut && r.mi && q.story && q.cd < 5 && (!/race|rico2/.test(r.m) || r.rival))) { runOk = false; console.log('  run', JSON.stringify(Object.assign({}, r, { pic: !!r.pic }))); }
       if (r.pic) fs.writeFileSync(path.join(OUT, 'story_' + r.m + '_intro.jpg'), Buffer.from(r.pic.split(',')[1], 'base64'));
     }
+    if (r.t === 'call') { calls++; if (r.onPhone) callsOnPhone++; if (r.inBox) callsInBox++; if (r.onPhone && !r.closed) callsOpen++; }
     if (r.t === 'talk') { if (!(r.vis && r.near && r.cut)) { talkOk = false; console.log('  talk', JSON.stringify(Object.assign({}, r, { pic: !!r.pic }))); } if (r.pic && !pics[r.who]) { pics[r.who] = 1; fs.writeFileSync(path.join(OUT, 'story_talk_' + r.who + '.jpg'), Buffer.from(r.pic.split(',')[1], 'base64')); } }
     await finishCut();
   }
@@ -83,6 +84,7 @@ const OUT = process.env.OUT || __dirname;
   const mainSeen = seen.filter((s) => s.indexOf('main:') === 0), sideDone = Object.keys(end.sq || {}).filter((k) => end.sq[k].done);
   ok(end.n >= 9 && mainSeen.filter((s) => /talk/.test(s)).length >= 9 && mainSeen.some((s) => /bank/.test(s)) && mainSeen.some((s) => /heist/.test(s)) && mainSeen.some((s) => /mvolc/.test(s)), end.n + ' chapters, ' + mainSeen.length + ' main steps: conversations, calls, a bank job, the train heist and the volcano');
   ok(sideDone.length === end.nSide, 'every side quest offered and finished (' + sideDone.join(', ') + ')');
+  ok(calls >= 8 && callsOnPhone === calls && callsInBox === 0 && callsOpen === 0, 'story calls and texts come in on the phone screen, not over the game, and the phone puts itself away after (' + callsOnPhone + ' of ' + calls + ')');
   ok(talkOk, 'every conversation: the person is there, you walk up, E starts it as a cutscene');
   ok(runOk && ['sm_parts', 'sm_race1', 'sm_race2', 'sm_rico2', 'sm_nina'].every((id) => seen.some((x) => x.indexOf(id) >= 0)), 'the story’s own runs: E at the start plays the intro (rivals leaning out of the window), then the countdown');
   ok(events >= 8, 'during the races the radio chatter, nitro bursts and police fire (' + events + ' events)');
