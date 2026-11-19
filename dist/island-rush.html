@@ -883,7 +883,64 @@ const REG = [
     sky: { grey: 0.1, mist: 0.1, warm: 0, dust: 0, smog: 0.35 }, wx: {},
     arch: { bc: [0x9fb6cc, 0x7fa5c2, 0xb9c9d6, 0x6f8ca8, 0x4f6e86, 0xe1e9ef, 0x3f5a70], mc: [0xa9bdd0, 0x8fa9c0, 0xc4d0da, 0x7f98ac], hc: [0xe9eaec, 0xd5d9de, 0xb8c2cc, 0xf4f1ea], rc: [0x6a727a, 0x8a929a, 0x4a5058],
       roof: 'flat', hr: 0, dtH: [70, 190], midH: [28, 56], extra: 'glass' },
-    mod: { grip: 1.0, gripOff: 0.95, traffic: 1.5, peds: 1.3, heat: 1.4, fine: 1.4 }, look: 'suit' }
+    mod: { grip: 1.0, gripOff: 0.95, traffic: 1.5, peds: 1.3, heat: 1.4, fine: 1.4 }, look: 'suit' },
+  /* ---- the outer ring (added with the bigger island) ---- */
+  { key: 'swamp', name: 'Bayou Hollow', tag: 'Cypress swamp and bayous', traits: ['Murky bayous and hanging moss', 'Fog and warm rain', 'Soft, muddy ground'], col: 0x8ab04a,
+    pal: { grassA: 0x4a5f2c, grassB: 0x5d7034, dry: 0x6f6a3e, forest: 0x2a3c22, mead: 0x56682e, sand: 0x8a7a54, dirt: 0x4e4230, rock: 0x5e5f52, rockD: 0x3c3d34, gravel: 0x6a6450 },
+    pave: 0x6a6a5e, paveAmt: 0.55, snowLine: 170,
+    tree: { dens: 1.5, mix: [['cypress', 0.45], ['oak', 0.35], ['autumn', 0.2]], rocks: [4, 7, 0], bush: 0.55 },
+    sky: { grey: 0.35, mist: 0.85, warm: 0.15, dust: 0 }, wx: { rain: 0.3 },
+    arch: { bc: [0x7a6a52, 0x8a7a5e, 0x6a5a44, 0x9a8a6a], mc: [0x8a7a5e, 0x7a6a50, 0x9a8c70], hc: [0x8c7a5c, 0x7d9a8a, 0xa89a7a, 0x6a7a6a, 0xc4b89a], rc: [0x5a4a3a, 0x3a3f3a, 0x6a5040, 0x4a5a4a],
+      roof: 'pitch', hr: 2.6, dtH: [10, 20], midH: [6, 12], extra: 'stilts' },
+    mod: { grip: 0.95, gripOff: 0.74, traffic: 0.55, peds: 0.6, heat: 0.8, fine: 0.8 }, look: 'lake' },
+  { key: 'volcano', name: 'Ashfall', tag: 'Volcanic black-sand coast', traits: ['A smoking volcano', 'Black sand and ash', 'Lava fields'], col: 0xff5a2a,
+    pal: { grassA: 0x4e5a3a, grassB: 0x5f6a40, dry: 0x6a6052, forest: 0x2e3a2a, mead: 0x56603e, sand: 0x2e2c2c, dirt: 0x3a3330, rock: 0x2c2a2a, rockD: 0x1a1818, gravel: 0x4a4644 },
+    pave: 0x3e3c3c, paveAmt: 0.97, snowLine: 230,
+    tree: { dens: 0.35, mix: [['palm', 0.35], ['scrub', 0.65]], rocks: [8, 9, 1, 3], bush: 0.15, rockK: 1.6 },
+    sky: { grey: 0.4, mist: 0.1, warm: 0.35, dust: 0.3 }, wx: { dust: 0.25 },
+    arch: { bc: [0x3a3838, 0x4a4644, 0x5a5450, 0x2e2c2c, 0x6a625a], mc: [0x4a4644, 0x5a5450, 0x3e3a38], hc: [0x6a625a, 0x5a5450, 0x8a7a6a, 0xd8d0c4], rc: [0x2a2828, 0x3a3434, 0x8a3a2a],
+      roof: 'flat', hr: 0, dtH: [14, 34], midH: [8, 16], extra: 'tank' },
+    mod: { grip: 0.97, gripOff: 0.82, traffic: 0.7, peds: 0.6, heat: 1.0, fine: 1.0 }, look: 'worker' },
+  { key: 'savanna', name: 'Sundown Plains', tag: 'Golden savanna', traits: ['Endless golden grass', 'Long straight roads', 'Hot, dusty evenings'], col: 0xe8b040,
+    pal: { grassA: 0xb89a4a, grassB: 0xc8aa52, dry: 0xc89a54, forest: 0x7a7a3a, mead: 0xbca04e, sand: 0xd8bc84, dirt: 0xa66a3a, rock: 0x9a7a5a, rockD: 0x6a503a, gravel: 0xb49a70 },
+    pave: 0xb09a74, paveAmt: 0.85, snowLine: 230,
+    tree: { dens: 0.28, mix: [['oak', 0.35], ['scrub', 0.65]], rocks: [8, 1, 9], bush: 0.2, rockK: 1.3 },
+    sky: { grey: 0.02, mist: 0, warm: 0.55, dust: 0.25 }, wx: { dust: 0.2 },
+    arch: { bc: [0xd8a86a, 0xc8905a, 0xe0b880, 0xb87a4a], mc: [0xd0a06a, 0xe0bc88, 0xc08a58], hc: [0xe6c48c, 0xd8a870, 0xc89060, 0xf0dcb0], rc: [0x8a5a2a, 0xb07a3a, 0x6a4a2a],
+      roof: 'low', hr: 1.6, dtH: [10, 22], midH: [6, 12], extra: 'tank' },
+    mod: { grip: 1.0, gripOff: 0.9, traffic: 0.5, peds: 0.5, heat: 0.7, fine: 0.7 }, look: 'desert' },
+  { key: 'vineyard', name: 'Vellano', tag: 'Hillside vineyards', traits: ['Rows of vines on the hills', 'Cypress-lined lanes', 'Warm evenings'], col: 0xb04a7a,
+    pal: { grassA: 0x7a8a3e, grassB: 0x8e9a46, dry: 0xb0a058, forest: 0x4a5a2c, mead: 0x86943e, sand: 0xd8c49a, dirt: 0x9a5a3a, rock: 0xa8987a, rockD: 0x786a54, gravel: 0xc0aa88 },
+    pave: 0xc8b8a0, paveAmt: 0.8, snowLine: 170,
+    tree: { dens: 0.7, mix: [['cypress', 0.55], ['oak', 0.45]], rocks: [0, 1, 4], bush: 0.35 },
+    sky: { grey: 0.05, mist: 0.15, warm: 0.45, dust: 0 }, wx: {},
+    arch: { bc: [0xf0e0c0, 0xe8d0a8, 0xd8b88a, 0xf2e8d4], mc: [0xecd8b4, 0xe0c49a, 0xf4e8d0], hc: [0xf2e4c8, 0xe6cca4, 0xd8b088, 0xf8f0e0], rc: [0xc0603a, 0xb0502e, 0xd0704a],
+      roof: 'low', hr: 2.2, dtH: [10, 22], midH: [8, 14], extra: 'palms' },
+    mod: { grip: 1.0, gripOff: 0.92, traffic: 0.6, peds: 0.8, heat: 0.8, fine: 0.9 }, look: 'farm' },
+  { key: 'tundra', name: 'Frostholm', tag: 'Arctic tundra and taiga', traits: ['Permafrost and drifting snow', 'Northern lights', 'Icy roads'], col: 0xa8e8ff,
+    pal: { grassA: 0x8a9a88, grassB: 0x9aa898, dry: 0xa0a08a, forest: 0x2a3e34, mead: 0x92a090, sand: 0xc8ccc8, dirt: 0x6a6458, rock: 0x7a8088, rockD: 0x50565e, snow: 0xf4f8fc, gravel: 0xb0b6bc },
+    pave: 0xe4eaf0, paveAmt: 0.95, snowLine: 0,
+    tree: { dens: 0.7, mix: [['snowpine', 0.6], ['birch', 0.4]], rocks: [11, 3, 0], bush: 0.1, rockK: 1.2 },
+    sky: { grey: 0.3, mist: 0.25, warm: 0, dust: 0, cold: 0.7 }, wx: { snow: 0.7 },
+    arch: { bc: [0x9a3a2a, 0x2a4a6a, 0xd8b04a, 0x6a6a6a], mc: [0xa8402e, 0x3a5a7a, 0xe0c060], hc: [0xa8402e, 0x2e5a7a, 0xd8b450, 0x3a6a4a, 0xe8e0d0], rc: [0x2a2a2a, 0x3a3a3a, 0xf0f4f8],
+      roof: 'steep', hr: 4.2, dtH: [12, 24], midH: [8, 14], extra: 'snow' },
+    mod: { grip: 0.76, gripOff: 0.8, traffic: 0.45, peds: 0.5, heat: 1.0, fine: 1.0 }, look: 'alpine' },
+  { key: 'jungle', name: 'Verdance', tag: 'Rainforest river town', traits: ['Dense rainforest', 'Tropical downpours', 'Muddy tracks'], col: 0x2fbe62,
+    pal: { grassA: 0x3a7a2a, grassB: 0x4a8e30, dry: 0x6a8a3a, forest: 0x1a4a22, mead: 0x428a2c, sand: 0xc8b48a, dirt: 0x6a4a2a, rock: 0x5a6a5a, rockD: 0x3a463a, gravel: 0x7a7a5a },
+    pave: 0x8a8a7a, paveAmt: 0.55, snowLine: 230,
+    tree: { dens: 2.1, mix: [['palm', 0.45], ['oak', 0.45], ['scrub', 0.1]], rocks: [4, 7, 0], bush: 0.7 },
+    sky: { grey: 0.25, mist: 0.6, warm: 0.2, dust: 0 }, wx: { rain: 0.55 },
+    arch: { bc: [0xf2a0b0, 0xf2d060, 0x60c8c0, 0xf2f0e8, 0xe08050], mc: [0xf0b8a0, 0x80d0c8, 0xf0e090], hc: [0xf4c0c8, 0xf4dc80, 0x80d8d0, 0xf8f4ec, 0xe89a70], rc: [0x5a3a2a, 0x3a6a3a, 0xc0603a],
+      roof: 'low', hr: 2.4, dtH: [12, 26], midH: [8, 14], extra: 'palms' },
+    mod: { grip: 0.94, gripOff: 0.76, traffic: 0.6, peds: 0.8, heat: 0.8, fine: 0.8 }, look: 'beach' },
+  { key: 'metro', name: 'Neo Haven', tag: 'Neon megacity', traits: ['Megatowers and neon', 'Gridlock traffic', 'Strict police, biggest fines'], col: 0xd05aff,
+    pal: { grassA: 0x4a6a3a, grassB: 0x5a7a40, dry: 0x8a8a5a, forest: 0x2a4a30, mead: 0x527a3c, sand: 0xc8c0a8, dirt: 0x6a6050, rock: 0x6a6c72, rockD: 0x44464c, gravel: 0x8a8a8c },
+    pave: 0x6e7278, paveAmt: 0.99, snowLine: 170,
+    tree: { dens: 0.35, mix: [['cypress', 0.5], ['oak', 0.5]], rocks: [0, 2], bush: 0.2 },
+    sky: { grey: 0.15, mist: 0.15, warm: 0, dust: 0, smog: 0.55 }, wx: { rain: 0.15 },
+    arch: { bc: [0x2a3040, 0x3a3a5a, 0x1e2230, 0x4a3a6a, 0x2a4a5a, 0x5a6a80], mc: [0x3a4050, 0x4a4a6a, 0x2a3040, 0x5a5070], hc: [0xa8a8b8, 0x8a8aa0, 0xc8c8d4], rc: [0x2a2a30, 0x3a3a44, 0x1a1a20],
+      roof: 'flat', hr: 0, dtH: [90, 240], midH: [36, 72], extra: 'glass' },
+    mod: { grip: 1.0, gripOff: 0.95, traffic: 1.6, peds: 1.4, heat: 1.5, fine: 1.6 }, look: 'suit' }
 ];
 const Biome = { w: new Float32Array(16), w0: 1, top: -1, tw: 0, n: 0, ready: false, atm: { grey: 0, mist: 0, warm: 0, dust: 0, cold: 0, smog: 0, rain: 0, snow: 0, wdust: 0 } };
 const BIO_IN = 1000, BIO_OUT = 1900;
@@ -946,7 +1003,25 @@ const SHAPE = {
     const r = sstep(440, 740, d) * v, lk = sstep(-0.08, 0.14, noise2(x * 0.0055 + 21, z * 0.0055 - 17));
     const t = T.baseH - 14 + fbm(x * 0.004 + 9, z * 0.004 - 1, 3) * 10 - lk * 24; return lerp(h, t, 0.85 * r);
   },
-  city(x, z, h, v, d, T) { const r = sstep(440, 780, d) * v, t = T.baseH - 6 + fbm(x * 0.003, z * 0.003, 2) * 6; return lerp(h, t, 0.75 * r); }
+  city(x, z, h, v, d, T) { const r = sstep(440, 780, d) * v, t = T.baseH - 6 + fbm(x * 0.003, z * 0.003, 2) * 6; return lerp(h, t, 0.75 * r); },
+  /* the outer ring */
+  swamp(x, z, h, v, d, T) {   /* low and flat, cut by winding bayous of standing water */
+    const r = sstep(430, 680, d) * v, ch = 1 - Math.abs(noise2(x * 0.0042 + 31, z * 0.0042 - 7)) * 2.6, wet = sstep(0.0, 0.45, ch);
+    const t = 2.2 + fbm(x * 0.008, z * 0.008, 2) * 1.4 - wet * 5.5; return lerp(h, t, 0.93 * r);
+  },
+  volcano(x, z, h, v, d, T) {   /* a cone with a crater a little way out of town, lava fields round its foot */
+    const a = T.id * 2.39, vx = T.cx + Math.cos(a) * 760, vz = T.cz + Math.sin(a) * 760, dc = Math.hypot(x - vx, z - vz), r = sstep(430, 760, d) * v;
+    const cone = Math.pow(Math.max(0, 1 - dc / 620), 1.55) * 260 - sstep(95, 40, dc) * 70 + fbm(x * 0.01, z * 0.01, 3) * 6 * (1 - sstep(0, 620, dc));
+    const t = T.baseH - 3 + fbm(x * 0.006 + 4, z * 0.006, 2) * 5; return lerp(h, t, 0.8 * r) + cone * v;
+  },
+  savanna(x, z, h, v, d, T) { const r = sstep(440, 780, d) * v, t = T.baseH - 2 + fbm(x * 0.0022 + 8, z * 0.0022, 2) * 5 + sstep(0.35, 0.5, noise2(x * 0.006, z * 0.006)) * 14; return lerp(h, t, 0.9 * r); },
+  vineyard(x, z, h, v, d, T) { const r = sstep(440, 760, d) * v, t = T.baseH + 4 + fbm(x * 0.0035 + 1, z * 0.0035 + 6, 3) * 26; return lerp(h, t, 0.85 * r); },
+  tundra(x, z, h, v, d, T) { const r = sstep(440, 760, d) * v, t = T.baseH - 2 + fbm(x * 0.004 + 50, z * 0.004, 3) * 9 - sstep(0.2, 0.4, noise2(x * 0.007, z * 0.007)) * 9; return lerp(h, t, 0.85 * r); },
+  jungle(x, z, h, v, d, T) {   /* steep green hills with a broad river valley through them */
+    const r = sstep(440, 760, d) * v, riv = 1 - sstep(0.02, 0.12, Math.abs(noise2(x * 0.0026 + 70, z * 0.0026 - 30))), t = T.baseH + fbm(x * 0.006, z * 0.006, 3) * 34 + 18 - riv * (T.baseH + 22);
+    return lerp(h, t, 0.85 * r);
+  },
+  metro(x, z, h, v, d, T) { const r = sstep(520, 860, d) * v, t = T.baseH - 4 + fbm(x * 0.003 + 9, z * 0.003, 2) * 5; return lerp(h, t, 0.8 * r); }
 };
 Biome.shape = function (x, z, h) {
   this.at(x, z); if (this.w0 > 0.999) return h;
@@ -959,7 +1034,7 @@ Biome.shape = function (x, z, h) {
 
 /* ---------- ground colour extras (called from terrainColor after the base blend) ---------- */
 let _TC = null;
-function biomeTints() { return _TC || (_TC = { wheat: lc(0xcdb257), green: lc(0x6f9f3a), plow: lc(0x7a5a3a), pale: lc(0x9ab34e), band1: lc(0xb5683d), band2: lc(0x8a4a2e), ripple: lc(0xc9a56c), beach: lc(0xf2e6bc), conc: lc(0x6c6e70), moss: lc(0x3d6a30) }); }
+function biomeTints() { return _TC || (_TC = { wheat: lc(0xcdb257), green: lc(0x6f9f3a), plow: lc(0x7a5a3a), pale: lc(0x9ab34e), band1: lc(0xb5683d), band2: lc(0x8a4a2e), ripple: lc(0xc9a56c), beach: lc(0xf2e6bc), conc: lc(0x6c6e70), moss: lc(0x3d6a30), mud: lc(0x4a4030), ash: lc(0x2a2828), lava: lc(0xc0401a), lava2: lc(0x1a1414), gold: lc(0xd8b456), vine: lc(0x3e6a26), soil: lc(0x8a5434), frost: lc(0xe8eef2), deep: lc(0x1e5a24) }); }
 Biome.tint = function (x, z, h, slope, c) {
   if (this.w0 > 0.999) return; const t = biomeTints();
   for (let i = 0; i < this.n; i++) {
@@ -973,13 +1048,20 @@ Biome.tint = function (x, z, h, slope, c) {
     } else if (key === 'tropic') { c.lerp(t.beach, (1 - sstep(4.2, 8.5, h)) * v * 0.95 * (1 - sstep(0.25, 0.5, slope))); }
     else if (key === 'harbor') { if (ihash(Math.floor(x / 60), Math.floor(z / 60), 33) < 0.3) c.lerp(t.conc, 0.75 * v * flat); }
     else if (key === 'lake') { c.lerp(t.moss, sstep(0.1, 0.5, noise2(x * 0.01, z * 0.01)) * 0.35 * v * flat); }
+    else if (key === 'swamp') { c.lerp(t.mud, (0.5 + 0.5 * noise2(x * 0.02, z * 0.02)) * 0.45 * v * flat); c.lerp(t.moss, sstep(0.1, 0.5, noise2(x * 0.013 + 3, z * 0.013)) * 0.4 * v); }
+    else if (key === 'volcano') { const T = towns[i], a = T.id * 2.39, dc = Math.hypot(x - T.cx - Math.cos(a) * 760, z - T.cz - Math.sin(a) * 760); c.lerp(t.ash, (0.4 + 0.5 * sstep(620, 260, dc)) * v); c.lerp(t.lava, sstep(140, 70, dc) * 0.9 * v); if (dc > 300 && dc < 700 && noise2(x * 0.012, z * 0.012) > 0.32) c.lerp(t.lava2, 0.6 * v * flat); }
+    else if (key === 'savanna') { c.lerp(t.gold, (0.5 + 0.5 * noise2(x * 0.004, z * 0.004)) * 0.5 * v * flat); }
+    else if (key === 'vineyard') { const row = 0.5 + 0.5 * Math.sin((x * 0.8 + z * 0.33) * 0.9), plot = ihash(Math.floor(x / 110), Math.floor(z / 90), 57) < 0.55; if (plot) c.lerp(row > 0.55 ? t.vine : t.soil, 0.7 * v * flat * (1 - sstep(70, 95, h))); }
+    else if (key === 'tundra') { c.lerp(t.frost, (0.55 + 0.45 * noise2(x * 0.01, z * 0.01)) * 0.6 * v); }
+    else if (key === 'jungle') { c.lerp(t.deep, sstep(0.0, 0.4, noise2(x * 0.008, z * 0.008)) * 0.45 * v); }
   }
 };
 
 /* ---- js/02_world.js ---- */
 /* ================= WORLD DATA ================= */
-const CHUNK = 160, GRID = 32, WORLD_R = 3000, SEGC = 64;
-const TOWN_NAMES = ['Port Marlow', 'Redstone', 'Eastvale', 'Cape Harlow', 'Summit Ridge', 'Lakeshore', 'Fairhaven'];
+/* the island is about 9.5 km across (three times the area it had): the first seven towns sit in its middle, seven more round the outer ring */
+const CHUNK = 160, GRID = 32, WORLD_R = 5200, SEGC = 64, ISLE = { C0: 3450, C1: 4850, IN: 1900, R0: 2350, R1: 3650 };
+const TOWN_NAMES = ['Port Marlow', 'Redstone', 'Eastvale', 'Cape Harlow', 'Summit Ridge', 'Lakeshore', 'Fairhaven', 'Bayou Hollow', 'Ashfall', 'Sundown Plains', 'Vellano', 'Frostholm', 'Verdance', 'Neo Haven'];
 const towns = [], roads = [], segs = [], segHash = new Map(), roadsByChunk = new Map(), links = [];
 const NR = { seg: -1, d: 1e9, h: 0, t: 0, halfW: 0, flat: 0, infl: 0 };
 const ckey = (cx, cz) => (cx + 512) * 1024 + (cz + 512);
@@ -987,8 +1069,8 @@ const sk = (ix, iz) => (ix + 2048) * 4096 + (iz + 2048);
 
 function rawHeight(x, z) {
   const rr = Math.sqrt(x * x + z * z);
-  const warp = noise2(x * 0.0011 + 5.3, z * 0.0011 - 2.1) * 420 + noise2(x * 0.0045, z * 0.0045) * 70;
-  const edge = sstep(2000, 2800, rr + warp);
+  const warp = noise2(x * 0.0007 + 5.3, z * 0.0007 - 2.1) * 620 + noise2(x * 0.0045, z * 0.0045) * 70;
+  const edge = sstep(ISLE.C0, ISLE.C1, rr + warp);
   const n1 = fbm(x * 0.0009, z * 0.0009, 4);
   let h = 26 + n1 * 30;
   const mm = sstep(0.02, 0.42, fbm(x * 0.0007 + 11.7, z * 0.0007 - 4.2, 3) + 0.08);
@@ -1001,7 +1083,7 @@ function rawHeight(x, z) {
 }
 
 function makeTown(id, cx, cz) {
-  const N = 6, cell = 84, half = N * cell / 2;
+  const N = id === 13 ? 8 : 6, cell = 84, half = N * cell / 2;   /* Neo Haven, the megacity, is two blocks bigger each way */
   let hs = 0; for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) hs += rawHeight(cx + i * half * 0.5, cz + j * half * 0.5);
   const baseH = Math.max(6, hs / 25);
   const R1 = half * 1.42 + 14;
@@ -1009,9 +1091,13 @@ function makeTown(id, cx, cz) {
 }
 
 function genTowns() {
-  const r = mulberry32(20241);
-  for (let tries = 0; tries < 9000 && towns.length < 7; tries++) {
-    const a = r() * TAU, d = Math.sqrt(r()) * 1900;
+  genTownRing(mulberry32(20241), 0, ISLE.IN, 7);
+  genTownRing(mulberry32(77031), ISLE.R0, ISLE.R1, 14, 7);   /* the outer ring: seven new towns, one in each seventh of the circle */
+}
+function genTownRing(r, d0, d1, upto, sectors) {
+  const first = towns.length;
+  for (let tries = 0; tries < 12000 && towns.length < upto; tries++) {
+    const sec = sectors ? (towns.length - first + (tries > 6000 ? r() * sectors : 0)) : 0, a = sectors ? (sec + 0.15 + r() * 0.7) * TAU / sectors + 0.4 : r() * TAU, d = Math.sqrt(d0 * d0 + r() * (d1 * d1 - d0 * d0));
     const cx = Math.round(Math.cos(a) * d / 10) * 10, cz = Math.round(Math.sin(a) * d / 10) * 10;
     const relax = tries > 3500 ? 1 : 0;
     const h = rawHeight(cx, cz);
@@ -1019,7 +1105,7 @@ function genTowns() {
     let hmin = 1e9, hmax = -1e9;
     for (let k = 0; k < 12; k++) { const aa = k * TAU / 12, rr = k % 2 ? 230 : 330; const hh = rawHeight(cx + Math.cos(aa) * rr, cz + Math.sin(aa) * rr); hmin = Math.min(hmin, hh); hmax = Math.max(hmax, hh); }
     if (hmin < 3 || hmax - hmin > (relax ? 40 : 28)) continue;
-    let ok = true; for (const t of towns) if (Math.hypot(t.cx - cx, t.cz - cz) < (relax ? 800 : 1050)) { ok = false; break; }
+    let ok = true; for (const t of towns) if (Math.hypot(t.cx - cx, t.cz - cz) < (relax ? 800 : 1050) + (towns.length >= 12 ? 100 : 0)) { ok = false; break; }
     if (!ok) continue;
     towns.push(makeTown(towns.length, cx, cz));
   }
@@ -1182,7 +1268,7 @@ function genLinks() {
   for (const p of pairs) { if (find(p.a) !== find(p.b)) { uf[find(p.a)] = find(p.b); links.push(p); deg[p.a]++; deg[p.b]++; p.used = true; } }
   let extra = 0;
   for (const p of pairs) {
-    if (p.used || extra >= 3 || p.d > 1800 || deg[p.a] >= 3 || deg[p.b] >= 3) continue;
+    if (p.used || extra >= 6 || p.d > 2000 || deg[p.a] >= 3 || deg[p.b] >= 3) continue;
     let cross = false;
     for (const l of links) { if (l.a === p.a || l.a === p.b || l.b === p.a || l.b === p.b) continue; if (segIntersect(towns[p.a], towns[p.b], towns[l.a], towns[l.b])) { cross = true; break; } }
     if (!cross) { links.push(p); p.used = true; deg[p.a]++; deg[p.b]++; extra++; }
@@ -1910,7 +1996,7 @@ const Chunks = {
 const Far = { uCam: { value: new THREE.Vector2() }, uR0: { value: 400 }, group: null };
 
 function buildFarWorld() {
-  const N = 192, EXT = 3072, step = EXT * 2 / N, NV = N + 1;
+  const N = 256, EXT = 5376, step = EXT * 2 / N, NV = N + 1;
   const H = new Float32Array(NV * NV), pos = new Float32Array(NV * NV * 3), nor = new Float32Array(NV * NV * 3), col = new Float32Array(NV * NV * 3), uv = new Float32Array(NV * NV * 2), dep = new Float32Array(NV * NV);
   for (let j = 0; j < NV; j++) for (let i = 0; i < NV; i++) H[j * NV + i] = terrainNoRoad(-EXT + i * step, -EXT + j * step);
   for (let j = 0; j < NV; j++) for (let i = 0; i < NV; i++) {
@@ -2669,7 +2755,10 @@ const TCOL_BY = {
   harbor: [0xe0b020, 0xc9ccd1, 0x2f5d9e, 0x6a6e75, 0xd8d8d0, 0xb4452b], desert: [0xe6dcc0, 0xc9a574, 0xb4452b, 0xd8d8d0, 0x8a6a3a, 0xe0b020],
   farm: [0x3b6b4a, 0x8f1f1f, 0xd8d8d0, 0x2f5d9e, 0x6a6e75, 0xb9892f], tropic: [0xf0ede4, 0x2fc4c0, 0xf2b0a0, 0xf0d060, 0x8fd0e0, 0xe0e0e0],
   alpine: [0xd8d8d0, 0x2f5d9e, 0xb4452b, 0x2a2f36, 0xe0e4ea, 0x3b6b4a], lake: [0x3b6b4a, 0x2a2f36, 0x6a6e75, 0x8f1f1f, 0xd8d8d0, 0x4a3a2a],
-  city: [0x2a2f36, 0xc9ccd1, 0xf2f2f2, 0x1a1a1e, 0x6a6e75, 0x2f5d9e]
+  city: [0x2a2f36, 0xc9ccd1, 0xf2f2f2, 0x1a1a1e, 0x6a6e75, 0x2f5d9e],
+  swamp: [0x5a6a3a, 0x8a7a5a, 0x3b6b4a, 0xd8d8d0, 0x6a4a2a, 0x4a5a6a], volcano: [0x2a2f36, 0xb4452b, 0xd8d8d0, 0x6a6e75, 0x1a1a1e, 0xe0b020], savanna: [0xc9a574, 0xe0b020, 0xd8d8d0, 0x8a6a3a, 0xb4452b, 0x3b6b4a],
+  vineyard: [0xf0ede4, 0x8f1f1f, 0x3b6b4a, 0xd8d8d0, 0xe0b020, 0x2f5d9e], tundra: [0xd8d8d0, 0xb4452b, 0x2f5d9e, 0x2a2f36, 0xe0e4ea, 0xe0b020], jungle: [0x2fc4c0, 0xf0d060, 0xf2b0a0, 0x3b6b4a, 0xe0e0e0, 0xd8673a],
+  metro: [0x1a1a1e, 0x2a2f36, 0x7a3ff0, 0xc9ccd1, 0x2f5d9e, 0xd05aff]
 };
 function trafficColorAt(x, z) {
   Biome.at(x, z); const R = Biome.pick(Math.random());
@@ -7219,7 +7308,7 @@ const BEXTRA = {
   marlin: { lean: 0.6, fee: 160, thrUp: 2.6, thrDn: 3.4 },
   odyssey: { lean: 1.0, fee: 300, thrUp: 1.5, thrDn: 2.2 }
 };
-const BLIM = 3320;
+const BLIM = 5650;
 const Boat = { on: false, bill: 0, mechT: 0, p: null, boats: [], all: [], near: null, view: 1, zoom: 1, inited: false, cyaw: 0, focus: { x: 0, y: 0, z: 0 }, hudT: 0, warn: '', canExit: false, snapCam: true, tipT: 0, valetT: 0, trail: [], tm: 0, wakeMesh: null, foam: null, lastDrop: null };
 const _bY = new THREE.Vector3(0, 1, 0), _bq1 = new THREE.Quaternion(), _bq2 = new THREE.Quaternion(), _bl1 = new THREE.Vector3(), _be1 = new THREE.Euler();
 const _bIn = { st: 0, th: 0, br: 0, hand: 0, boost: false, analog: false }, _bz = { st: 0, th: 0, br: 1, hand: 1, boost: false, analog: false }, _bgr = { h: 0, mu: 1, rr: 0, rough: 0, road: false, water: false }, _bsp = { x: 0, z: 0, yaw: 0 };
@@ -7876,7 +7965,7 @@ Dock.pick = function () {
     let best = null;
     for (let deg = 0; deg < 360; deg += 2) {
       const an = deg * DEG, ca = Math.cos(an), sa = Math.sin(an); let rs = 0;
-      for (let r = 3300; r > 1000; r -= 6) if (terrainNoRoad(ca * r, sa * r) > 0.3) { rs = r; break; }
+      for (let r = 5650; r > 1000; r -= 6) if (terrainNoRoad(ca * r, sa * r) > 0.3) { rs = r; break; }
       if (!rs) continue;
       let Sx = 0, Sz = 0; if (Math.abs(ca) >= Math.abs(sa)) Sx = ca > 0 ? 1 : -1; else Sz = sa > 0 ? 1 : -1;
       const px = ca * rs, pz = sa * rs; let ox, oz;
@@ -10902,7 +10991,7 @@ const RAIL = { R0: 1650, N: 64, CLR: 7.3, DECK: 1.3, W: 5.2, GAUGE: 1.435, GRADE
 Rail.plan = function () {
   const N = RAIL.N, rad = new Float32Array(N), cost = (k, r) => {
     const a = k / N * TAU, x = Math.sin(a) * r, z = Math.cos(a) * r; let c = ((r - RAIL.R0) / 450) ** 2;
-    for (const T of towns) { const d = Math.hypot(x - T.cx, z - T.cz) - (T.half * 1.5 + 110); if (d < 0) c += 40 - d / 8; }
+    for (const T of towns) { const d = Math.hypot(x - T.cx, z - T.cz) - (T.half * 1.5 + 110); if (d < 0) c += 400 - d * 2; }   /* (never through a town: the outer ring's towns can reach in towards the line) */
     for (const S of [Air.s && { x: (Air.s.x0 + Air.s.x1) / 2, z: (Air.s.z0 + Air.s.z1) / 2, r: Math.hypot(Air.s.x1 - Air.s.x0, Air.s.z1 - Air.s.z0) / 2 + 260 }, Track.s && { x: (Track.s.x0 + Track.s.x1) / 2, z: (Track.s.z0 + Track.s.z1) / 2, r: Math.hypot(Track.s.x1 - Track.s.x0, Track.s.z1 - Track.s.z0) / 2 + 120 }, Dock.s && { x: Dock.s.ox, z: Dock.s.oz, r: 260 }]) {
       if (!S) continue; const d = Math.hypot(x - S.x, z - S.z) - S.r; if (d < 0) c += 40 - d / 8; }
     const h = terrainNoRoad(x, z); if (h < 2) c += 4; if (h > 60) c += (h - 60) / 8; return c;
@@ -12745,7 +12834,7 @@ Col.setup = function () {
   /* eight in the wilds, the first three up high */
   let high = 0;
   for (let n = 0; n < 8; n++) for (let a = 0; a < 6000; a++) {
-    const x = (R() * 2 - 1) * 2700, z = (R() * 2 - 1) * 2700; if (x * x + z * z > 2750 * 2750) continue;
+    const x = (R() * 2 - 1) * 4600, z = (R() * 2 - 1) * 4600; if (x * x + z * z > 4700 * 4700) continue;
     const h = terrainNoRoad(x, z); if (h < 3 || h > 260 || (n < 3 && h < 70 && a < 5000)) continue;
     if (townD(x, z) < 300 || !far(x, z, 's', 420)) continue; nearestRoad(x, z); if (NR.seg >= 0 && NR.d < 140) continue;
     if (Math.abs(terrainNoRoad(x + 12, z) - h) > 7 || Math.abs(terrainNoRoad(x, z + 12) - h) > 7) continue;
@@ -12753,7 +12842,7 @@ Col.setup = function () {
   }
   /* ten pearls out at sea */
   for (let n = 0; n < 10; n++) for (let a = 0; a < 4000; a++) {
-    const ang = R() * TAU, rad = 350 + R() * 2750, x = Math.cos(ang) * rad, z = Math.sin(ang) * rad;
+    const ang = R() * TAU, rad = 350 + R() * 5300, x = Math.cos(ang) * rad, z = Math.sin(ang) * rad;
     if (terrainNoRoad(x, z) > -7 || !far(x, z, 'p', 450)) continue; let deep = true; for (let k = 0; k < 4 && deep; k++) deep = terrainNoRoad(x + Math.cos(k * 1.57) * 80, z + Math.sin(k * 1.57) * 80) < -3; if (!deep) continue;
     add('p', x, 0.45, z, { hint: 'Floating at sea, ' + Col.where(x, z) }); break;
   }
@@ -12761,9 +12850,9 @@ Col.setup = function () {
   for (let n = 0; n < 10; n++) for (let a = 0; a < 4000; a++) {
     let x, z, y;
     if (n < 3) { const T = towns[(n * 2 + 1) % towns.length]; x = T.cx + (R() - 0.5) * 500; z = T.cz + (R() - 0.5) * 500; y = Math.max(0, terrainNoRoad(x, z)) + 150 + R() * 70; }
-    else if (n < 6) { x = (R() * 2 - 1) * 2600; z = (R() * 2 - 1) * 2600; const h = terrainNoRoad(x, z); if (h < 90) continue; y = h + 32; }
-    else { x = (R() * 2 - 1) * 2800; z = (R() * 2 - 1) * 2800; y = Math.max(0, terrainNoRoad(x, z)) + 70 + R() * 160; }
-    if (x * x + z * z > 3000 * 3000 || !far(x, z, 'k', 520)) continue; add('k', x, y, z, { hint: (n < 3 ? 'Above the rooftops, ' : n < 6 ? 'Hanging over a summit, ' : 'High in the sky, ') + Col.where(x, z) }); break;
+    else if (n < 6) { x = (R() * 2 - 1) * 4400; z = (R() * 2 - 1) * 4400; const h = terrainNoRoad(x, z); if (h < 90) continue; y = h + 32; }
+    else { x = (R() * 2 - 1) * 4700; z = (R() * 2 - 1) * 4700; y = Math.max(0, terrainNoRoad(x, z)) + 70 + R() * 160; }
+    if (x * x + z * z > 5000 * 5000 || !far(x, z, 'k', 520)) continue; add('k', x, y, z, { hint: (n < 3 ? 'Above the rooftops, ' : n < 6 ? 'Hanging over a summit, ' : 'High in the sky, ') + Col.where(x, z) }); break;
   }
   Col.items = out; Col.ready = true; Col.high = high; Col.build();
 };
@@ -14027,7 +14116,7 @@ const DUNE = { W: 360, D: 190, GS: 2, BLEND: 50, HW: 7, BASE: 1.6, CAR: 'buggy',
 Dunes.plan = function () {
   let best = null, bc = 1e9;
   for (let a = 0; a < TAU; a += 0.035) {
-    const sx = Math.sin(a), sz = Math.cos(a); let r = 2900; while (r > 1200 && terrainNoRoad(sx * r, sz * r) < 0.8) r -= 8; if (r <= 1200) continue;
+    const sx = Math.sin(a), sz = Math.cos(a); let r = 5600; while (r > 1200 && terrainNoRoad(sx * r, sz * r) < 0.8) r -= 8; if (r <= 1200) continue;
     /* inland is down the slope from the shore point; the site's middle sits 110 m in */
     const x0 = sx * r, z0 = sz * r, gx = terrainNoRoad(x0 + 4, z0) - terrainNoRoad(x0 - 4, z0), gz = terrainNoRoad(x0, z0 + 4) - terrainNoRoad(x0, z0 - 4), gl = Math.hypot(gx, gz) || 1;
     const vx = gx / gl, vz = gz / gl, ux = vz, uz = -vx, cx = x0 + vx * (DUNE.D / 2 + 20), cz = z0 + vz * (DUNE.D / 2 + 20);
@@ -14245,7 +14334,7 @@ Dunes.drawFull = function (g, k) {
      escape    get it into your garage. Do that and it is yours, with a big payday. Wreck it or get busted and it is gone (you can try again).
    Your own car stays behind in the wagon and is valet-parked back at your garage, as when you jack a car. */
 const Heist = { phase: 'idle', k: 0, sites: [], site: null, ride: null, built: false, group: null, markers: [], eta: 0, you: 0, tries: 0, msgT: 0, wasAir: false, prev: null, left: null, golds: [], lamps: [] };
-const HEIST = { LAT: 13, RL: 24, RW: 6.2, RUN: 70, V: 16, VN: 22, REWARD: 250000, ID: 'aurum', GOLD: 0xd8aa30 };
+const HEIST = { LAT: 13, RL: 24, RW: 6.2, RUN: 70, FOOT: 6, V: 16, VN: 22, REWARD: 250000, ID: 'aurum', GOLD: 0xd8aa30 };
 /* the three prize cars, one per train (train k, ramp k). fin: the finish all over the car (colour, metalness, roughness, clearcoat roughness) */
 const HEIST_PRIZES = [
   { id: 'aurum', base: 'hyper', name: 'Aurum Spectre', short: 'Aurum', cls: 'Gold hypercar', title: 'GOLD RUSH', col: 0xd8aa30, css: '#ffd23a', fin: [0.95, 0.2, 0.08], reward: 250000, snd: { f: 1.5, lp: 1.8 }, dial: 440,
@@ -14293,8 +14382,12 @@ Heist.plan = function () {
   /* the best site first (the Aurum's), then the best others that need a ramp of about the same height (so the jump times the same), each a sixth of the loop from the rest */
   cand.sort((a, b) => a.c - b.c); const sep = (a, b) => { const d = Math.abs(a.i - b.i); return Math.min(d, n - d) > n / 6; };
   Heist.sites = [];
-  for (const pass of [1.0, 2.0, 1e9]) for (const q of cand) { if (Heist.sites.length >= HEIST_PRIZES.length) break; if ((Heist.sites.length && q.fit > pass) || Heist.sites.includes(q) || !Heist.sites.every((o) => sep(o, q))) continue; Heist.sites.push(q); }
-  Heist.sites.forEach((S, k) => Heist.site1(S, k)); Heist.site = Heist.sites[0] || null; Heist.k = 0;
+  /* the best three sites that all take the usual ramp and are all well apart (the cheapest such trio); failing that, greedily */
+  const good = cand.filter((q) => q.fit < 1.0).slice(0, 60); let bestT = null, bc = 1e18;
+  for (let a = 0; a < good.length; a++) for (let b = a + 1; b < good.length; b++) { if (!sep(good[a], good[b])) continue; for (let c = b + 1; c < good.length; c++) { const C = good[a].c + good[b].c + good[c].c; if (C < bc && sep(good[a], good[c]) && sep(good[b], good[c])) { bc = C; bestT = [good[a], good[b], good[c]]; } } }
+  if (bestT && HEIST_PRIZES.length === 3) Heist.sites = bestT;
+  for (const pass of [1.0, 2.0, 1e9]) for (const q of cand) { if (Heist.sites.length >= HEIST_PRIZES.length) break; if (q.fit > pass || Heist.sites.includes(q) || !Heist.sites.every((o) => sep(o, q))) continue; Heist.sites.push(q); }
+  Heist.cand = cand; Heist.sites.forEach((S, k) => Heist.site1(S, k)); Heist.site = Heist.sites[0] || null; Heist.k = 0;
 };
 Heist.site1 = function (S, k) {
   const P = Rail.pts, i = S.i; S.k = k;
@@ -14312,7 +14405,11 @@ Heist.rampH = function (x, z, S) {
 };
 /* ground for the player's car: the ramp, and the viaduct deck once up on it */
 Heist.ground = function (x, z, c, o) {
-  if (!Heist.site) return; const h = Heist.rampH(x, z); if (h > o.h) { o.h = h; o.mu = 1.0; o.rr = 0.02; o.rough = 0.05; o.road = true; o.water = false; }
+  if (!Heist.site) return; let h = -1e9;
+  /* the ramp's foot sits at the ground's height under its middle; on a run-up that slopes across, that left a step on the low side, which kicked the car into the air
+     at the foot and, depending on the frame, over the lip. Its first few metres ease from the ground into the ramp instead */
+  for (const S of Heist.sites) { let q = Heist.rampH(x, z, S); if (q < -1e8) continue; const dx = x - S.bx, dz = z - S.bz, u = -(dx * S.rx + dz * S.rz); if (u < HEIST.FOOT) q = o.h + (q - o.h) * sstep(0, HEIST.FOOT, u); h = Math.max(h, q); }
+  if (h > o.h) { o.h = h; o.mu = 1.0; o.rr = 0.02; o.rough = 0.05; o.road = true; o.water = false; }
   Rail.deck(x, z, c.y, o);
 };
 /* no trees on the run-up and the ramp */
@@ -14504,8 +14601,18 @@ const BLD_SPECIAL = [
   ['apts', 'gym', 'pool', 'resto', 'resto', 'clothes'],
   ['apts', 'pool', 'resto', 'clothes'],
   ['bank', 'apts', 'gym', 'pool', 'kitlab', 'resto', 'clothes'],
-  ['reserve', 'bank', 'jail', 'apts', 'apts', 'gym', 'pool', 'dealer', 'kitlab', 'resto', 'resto', 'clothes', 'clothes']
+  ['reserve', 'bank', 'jail', 'apts', 'apts', 'gym', 'pool', 'dealer', 'kitlab', 'resto', 'resto', 'clothes', 'clothes'],
+  /* the outer ring: Bayou Hollow, Ashfall, Sundown Plains, Vellano, Frostholm, Verdance, Neo Haven */
+  ['apts', 'resto', 'clothes'],
+  ['bank', 'apts', 'gym', 'resto', 'clothes'],
+  ['apts', 'dealer', 'resto', 'clothes'],
+  ['bank', 'apts', 'resto', 'resto', 'clothes'],
+  ['apts', 'gym', 'pool', 'resto', 'clothes'],
+  ['apts', 'kitlab', 'resto', 'clothes'],
+  ['bank', 'bank', 'apts', 'apts', 'apts', 'gym', 'pool', 'dealer', 'kitlab', 'resto', 'resto', 'resto', 'clothes', 'clothes']
 ];
+/* names for the outer ring's specials: the town's name and a word */
+const BLD_TAIL = { bank: ['Savings Bank', 'Trust & Loan', 'Credit Bank'], apts: ['Residences', 'Heights', 'Lofts'], gym: ['Fitness'], pool: ['Swim Centre'], dealer: ['Motors'], kitlab: ['Custom Works'], resto: ['Grill', 'Kitchen', 'Diner'], clothes: ['Outfitters', 'Boutique'] };
 const BLD_NAMES = {
   bank: ['Harbor Trust Bank', 'Mesa Savings & Loan', '', '', '', 'Lakeshore Credit Union', 'First Fairhaven Bank'], reserve: ['', '', '', '', '', '', 'Island Reserve Bank'],
   apts: [['Quayside Apartments'], ['Red Rock Lofts'], ['Old Mill Flats'], ['Palm Court Residences'], ['Snowline Chalets'], ['Pinewater Apartments'], ['The Meridian Tower', 'Parkview Residences']],
@@ -14556,7 +14663,7 @@ Bld.plan = function (T) {
     if (want === 'down') { k = cand.findIndex((c, n) => n >= 0 && c.dn < 1 && !c.used); } else k = cand.findIndex((c) => !c.used && c.dn >= 1);
     if (k < 0) k = cand.findIndex((c) => !c.used); if (k < 0) break;
     const c = cand[k]; c.used = true; ci++;
-    const n = seen[kind] = (seen[kind] || 0); seen[kind]++; const nm = BLD_NAMES[kind] ? BLD_NAMES[kind][ti] : null, name = Array.isArray(nm) ? nm[n % nm.length] : nm || BLD_SUB[kind];
+    const n = seen[kind] = (seen[kind] || 0); seen[kind]++; const nm = BLD_NAMES[kind] ? BLD_NAMES[kind][ti] : null, tl = BLD_TAIL[kind], name = Array.isArray(nm) ? nm[n % nm.length] : nm || (tl ? T.name + ' ' + tl[n % tl.length] : BLD_SUB[kind]);
     const ls = (T.cell - 14) / 2 - 3, lx0 = T.x0 + c.i * T.cell + 7 + c.a * (T.cell - 14) / 2 + 1.5, lz0 = T.z0 + c.j * T.cell + 7 + c.b * (T.cell - 14) / 2 + 1.5;
     const S = { kind, name, ti, T, i: c.i, j: c.j, a: c.a, b: c.b, x: lx0 + ls / 2, z: c.b ? lz0 + ls + 1 : lz0 - 1, key: T.id + ':' + c.i + ':' + c.j + ':' + c.a + ':' + c.b, n };
     plan.set(S.key, S); Bld.sites.push(S);
@@ -15753,7 +15860,7 @@ INT_KINDS.resto = { name: 'Restaurant', rooms: { main(K, rec, r) { const th = Ob
 /* ---------- car dealership: the only place to buy a car ---------- */
 const INT_DEALER = [{ max: 6000, cls: null, col: 0x2a6ad8 }, { max: 1e9, cls: /truck|off|buggy|4x4|rally|pickup|suv|van/i, col: 0xd86a1a }, { min: 4000, max: 1e9, cls: null, col: 0xc8a050 }];
 function intDealerCars(rec) {
-  const all = CARS.filter((d) => !d.stolen && !d.prize && !d.kit && d.price > 0), t = rec.ti === 1 ? INT_DEALER[1] : rec.ti === 6 ? INT_DEALER[2] : INT_DEALER[0];
+  const all = CARS.filter((d) => !d.stolen && !d.prize && !d.kit && d.price > 0), t = rec.ti === 1 ? INT_DEALER[1] : rec.ti === 6 || rec.ti === 13 ? INT_DEALER[2] : INT_DEALER[0];
   let L = all.filter((d) => d.price <= t.max && (!t.min || d.price >= t.min) && (!t.cls || t.cls.test(d.cls + ' ' + d.name)));
   if (L.length < 4) L = all.slice().sort((a, b) => a.price - b.price); return L;
 }
@@ -15768,7 +15875,7 @@ function intBuyCar(d, rec) {
   UI.banner('SOLD', 'The ' + d.name + ' is yours · it is waiting outside'); Int.say('The keys are yours. Your new ' + d.name + ' is parked out front.', 4);
 }
 INT_KINDS.dealer = { name: 'Car dealership', rooms: { main(K, rec, r) {
-  const { W, D } = intDims(rec, 26, 22), col = (rec.ti === 1 ? INT_DEALER[1] : rec.ti === 6 ? INT_DEALER[2] : INT_DEALER[0]).col;
+  const { W, D } = intDims(rec, 26, 22), col = (rec.ti === 1 ? INT_DEALER[1] : rec.ti === 6 || rec.ti === 13 ? INT_DEALER[2] : INT_DEALER[0]).col;
   K.shell({ W, D, H: 6, floor: 0xf2f2f2, tiles: 0xd8d8d8, wall: 0xeef0f2, trim: 0x1a1a1a, lamp: 0xffffff, lightI: 1.1, winH: [0.3, 5.6], hemi: 0.9 });
   K.sign(rec.name.toUpperCase(), 0, 4.8, K.z0 + 0.04, Math.min(W - 4, 12), 1, 0, { fg: _hexCss(col) });
   const cars = intDealerCars(rec), spots = []; for (let z = K.z0 + 4; z < K.z1 - 4; z += 6.2) for (const x of [K.x0 + 4.5, 0, K.x1 - 4.5]) spots.push([x, z]);
@@ -15872,7 +15979,8 @@ const BANKJOB = [
   { g: 5, cams: 3, las: 3, cash: 30000, carts: 6, st: 5 }
 ];
 const BankJob = { on: false, rec: null, tier: 0, eye: 0, alarm: 0, loot: 0, guards: [], cams: [], lasers: [], vault: null, open: false, t: 0, seen: false, caught: false, camOff: 0, carts: [], msg: '' };
-BankJob.tierOf = function (rec) { if (rec.kind === 'reserve') return 4; return { 5: 0, 1: 1, 0: 2, 6: 3 }[rec.ti] != null ? { 5: 0, 1: 1, 0: 2, 6: 3 }[rec.ti] : 1; };
+const BJ_TIER = { 5: 0, 1: 1, 0: 2, 6: 3, 7: 0, 8: 1, 10: 1, 13: 3 };
+BankJob.tierOf = function (rec) { if (rec.kind === 'reserve') return 4; return BJ_TIER[rec.ti] != null ? BJ_TIER[rec.ti] : 1; };
 BankJob.record = function (key) { const s = intSave().banks[key]; return s || { n: 0, best: 0, stars: 0, t: 0 }; };
 /* the daytime bank: the staff door, where you case the job */
 BankJob.dress = function (K, rec) {
@@ -16517,7 +16625,7 @@ function genMissions() {
   /* rallies */
   const rr = mulberry32(8812); let made = 0;
   for (let tries = 0; tries < 1500 && made < 2; tries++) {
-    const a = rr() * TAU, d = Math.sqrt(rr()) * 1900, cx = Math.cos(a) * d, cz = Math.sin(a) * d, h0 = rawHeight(cx, cz);
+    const a = rr() * TAU, d = Math.sqrt(rr()) * 3300, cx = Math.cos(a) * d, cz = Math.sin(a) * d, h0 = rawHeight(cx, cz);
     if (h0 < 25 || h0 > 85) continue; if (towns.some((t) => Math.hypot(t.cx - cx, t.cz - cz) < 450)) continue;
     const R = 300 + rr() * 150, pts = []; let ok = true;
     for (let k = 0; k < 8; k++) { const aa = k * TAU / 8 + rr() * 0.3, x = cx + Math.cos(aa) * R * (0.8 + rr() * 0.4), z = cz + Math.sin(aa) * R * (0.8 + rr() * 0.4), h = terrainHeight(x, z); if (h < 4 || townAt(x, z, 80)) { ok = false; break; } nearestRoad(x, z); pts.push({ x, z, h }); }
@@ -17547,7 +17655,11 @@ const SHOP_STY = {
   tropic: { wall: 0xf4efe0, trim: 0x2fc4c0, roof: 0x2fc4c0, door: 0xff7a6a, glass: 0x123a44 },
   alpine: { wall: 0x8d6b48, trim: 0xd33a2a, roof: 0xf2f6fa, door: 0x5a4632, glass: 0x1a2630 },
   lake: { wall: 0x6a553f, trim: 0x3d6b3a, roof: 0x3e4a3a, door: 0x7a6650, glass: 0x142228 },
-  city: { wall: 0x252b35, trim: 0x7a3ff0, roof: 0x16191f, door: 0x303844, glass: 0x0c1824 }
+  city: { wall: 0x252b35, trim: 0x7a3ff0, roof: 0x16191f, door: 0x303844, glass: 0x0c1824 },
+  swamp: { wall: 0x7a6a52, trim: 0x8ab04a, roof: 0x4a3a2a, door: 0x6a5a44, glass: 0x142228 }, volcano: { wall: 0x3a3838, trim: 0xff5a2a, roof: 0x2a2828, door: 0x5a5450, glass: 0x101418 },
+  savanna: { wall: 0xd8a86a, trim: 0xe8b040, roof: 0x8a5a2a, door: 0xa8703a, glass: 0x1a2630 }, vineyard: { wall: 0xf0e0c0, trim: 0xb04a7a, roof: 0xc0603a, door: 0x6a3a2a, glass: 0x1a2630 },
+  tundra: { wall: 0x9a3a2a, trim: 0xa8e8ff, roof: 0x2a2a2a, door: 0xe8e0d0, glass: 0x1a2630 }, jungle: { wall: 0xf2d060, trim: 0x2fbe62, roof: 0x3a6a3a, door: 0xf2a0b0, glass: 0x123a44 },
+  metro: { wall: 0x1e2230, trim: 0xd05aff, roof: 0x14161c, door: 0x2a3040, glass: 0x0a1420 }
 };
 const SHOP_ICO = { wheel: '◎', kit: '▣' };
 const Shop = { sites: [], ready: false, on: false, near: null, S: null, tab: 'paint', drafts: {}, cur: null, rec: null, out: {}, carId: 'rook', az: 0.55, azIdle: 0, zoom: 1, sc: null, carMesh: null, av: null, focus: null, fc: { x: 0, y: 1, D: 8, el: 0.15 }, which: 'car', fx: { speed: 0, damage: 0, chroma: 0, expo: 1 }, expo: 0.95, drag: null, vkey: '', tvis: 0 };
@@ -17951,7 +18063,7 @@ const SURF = { WAVES: 3, WV: 4.2, A: 3.4, F: 10, D0: 105, D1: 22, BS: 5.2, U0: -
 Surf.plan = function () {
   const cands = [];
   for (let a = 0; a < TAU; a += 0.025) {
-    const sx = Math.sin(a), sz = Math.cos(a); let r = 2950; while (r > 1300 && terrainNoRoad(sx * r, sz * r) < 0.6) r -= 6; if (r <= 1300) continue;
+    const sx = Math.sin(a), sz = Math.cos(a); let r = 5600; while (r > 1300 && terrainNoRoad(sx * r, sz * r) < 0.6) r -= 6; if (r <= 1300) continue;
     const x0 = sx * r, z0 = sz * r, gx = terrainNoRoad(x0 + 5, z0) - terrainNoRoad(x0 - 5, z0), gz = terrainNoRoad(x0, z0 + 5) - terrainNoRoad(x0, z0 - 5), gl = Math.hypot(gx, gz) || 1, ix = gx / gl, iz = gz / gl;   /* inland */
     const h30 = terrainNoRoad(x0 + ix * 30, z0 + iz * 30), h60 = terrainNoRoad(x0 + ix * 60, z0 + iz * 60), hs = terrainNoRoad(x0 - ix * 40, z0 - iz * 40);
     if (h30 < 0.8 || h30 > 4.5 || h60 > 10 || hs > -0.8) continue;   /* a gentle beach with real sea in front of it */
@@ -17961,7 +18073,7 @@ Surf.plan = function () {
     /* the nearest road point */
     const px = x0 + ix * 55, pz = z0 + iz * 55; let best = null, bd = 1e18;
     for (const rd of roads) for (const p of rd.pts) { const d = (p.x - px) ** 2 + (p.z - pz) ** 2; if (d < bd) { bd = d; best = p; } }
-    if (!best) continue; const dist = Math.sqrt(bd); if (dist < 90 || dist > 1100) continue;
+    if (!best) continue; const dist = Math.sqrt(bd); if (dist < 90 || dist > 1700) continue;
     cands.push({ a, x: x0, z: z0, ix, iz, px, pz, to: best, dist, c: Math.abs(h30 - 2) + h60 * 0.15 + dist / 900 });
   }
   cands.sort((p, q) => p.c - q.c);
@@ -18177,7 +18289,7 @@ const venRec = (game) => { const v = venSave(); return v.rec[game] || (v.rec[gam
 
 /* ---------- sites ---------- */
 Ven.setup = function () {
-  Ven.sites = towns.map((T, ti) => {
+  Ven.sites = towns.slice(0, VDEF.length).map((T, ti) => {   /* the seven original towns each have their venue (the outer ring has none) */
     const R = REG[ti % REG.length], D = VDEF[ti % VDEF.length], bs = T.cell - 14, bx0 = T.x0 + VEN_I * T.cell + 7, bz0 = T.z0 + VEN_J * T.cell + 7;
     const lx0 = bx0 + 1.5, lz0 = bz0 + 1.5, ls = bs / 2 - 3;
     return { ti, T, R, D, lx0, lz0, ls, x: lx0 + ls / 2, z: lz0 + 6.5, y: T.baseH, bx: lx0 + 4, bz: lz0 + 13, bw: 24, bd: 15, tex: null, mat: null, mk: null };
@@ -18190,8 +18302,8 @@ Ven.setup = function () {
   Ven.all = Ven.sites.concat(Ven.clubs);
   Ven.ready = true;
 };
-Ven.lot = function (T, i, j, a, b) { return Ven.ready && i === VEN_I && j === VEN_J && a === 0 && b === 0; };
-Ven.clubLot = function (T, i, j, a, b) { return Ven.ready && i === VEN_I && j === VEN_J && a === 1 && b === 0; };
+Ven.lot = function (T, i, j, a, b) { return Ven.ready && towns.indexOf(T) < Ven.sites.length && i === VEN_I && j === VEN_J && a === 0 && b === 0; };
+Ven.clubLot = function (T, i, j, a, b) { return Ven.ready && towns.indexOf(T) < Ven.sites.length && i === VEN_I && j === VEN_J && a === 1 && b === 0; };
 
 /* ---------- forecourt markers ---------- */
 Ven.initMarkers = function () {
@@ -22528,7 +22640,7 @@ WK.predict = function (B, r0, v0, ut0, horizon, maxSteps) {
 
 /* ---- js/10_map.js ---- */
 /* ================= MAP: pre-rendered island, minimap, full map ================= */
-const WorldMap = { S: 420, EXT: 6400, base: null, g: null, H: null, row: 0, ready: false, stamp: 0 };
+const WorldMap = { S: 560, EXT: 10800, base: null, g: null, H: null, row: 0, ready: false, stamp: 0 };
 WorldMap.init = function () {
   const S = WorldMap.S; WorldMap.base = mkCanvas(S, S); WorldMap.g = WorldMap.base.getContext('2d'); WorldMap.H = new Float32Array(S * S); WorldMap.row = 0; WorldMap.ready = false;
 };
@@ -22625,7 +22737,7 @@ FM.fit = function (cv) {
   const r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
   const w = Math.max(50, Math.round(r.width * dpr)), h = Math.max(50, Math.round(r.height * dpr));
   if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
-  FM.w = w; FM.h = h; FM.dpr = dpr; FM.ppm = Math.min(w, h) / 5600 * FM.zoom;
+  FM.w = w; FM.h = h; FM.dpr = dpr; FM.ppm = Math.min(w, h) / 9800 * FM.zoom;
 };
 WorldMap.drawFull = function (cv) {
   FM.fit(cv); const g = cv.getContext('2d'), W = FM.w, H = FM.h, k = FM.dpr, c = Pl;

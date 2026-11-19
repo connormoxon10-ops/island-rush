@@ -1,6 +1,7 @@
 /* ================= WORLD DATA ================= */
-const CHUNK = 160, GRID = 32, WORLD_R = 3000, SEGC = 64;
-const TOWN_NAMES = ['Port Marlow', 'Redstone', 'Eastvale', 'Cape Harlow', 'Summit Ridge', 'Lakeshore', 'Fairhaven'];
+/* the island is about 9.5 km across (three times the area it had): the first seven towns sit in its middle, seven more round the outer ring */
+const CHUNK = 160, GRID = 32, WORLD_R = 5200, SEGC = 64, ISLE = { C0: 3450, C1: 4850, IN: 1900, R0: 2350, R1: 3650 };
+const TOWN_NAMES = ['Port Marlow', 'Redstone', 'Eastvale', 'Cape Harlow', 'Summit Ridge', 'Lakeshore', 'Fairhaven', 'Bayou Hollow', 'Ashfall', 'Sundown Plains', 'Vellano', 'Frostholm', 'Verdance', 'Neo Haven'];
 const towns = [], roads = [], segs = [], segHash = new Map(), roadsByChunk = new Map(), links = [];
 const NR = { seg: -1, d: 1e9, h: 0, t: 0, halfW: 0, flat: 0, infl: 0 };
 const ckey = (cx, cz) => (cx + 512) * 1024 + (cz + 512);
@@ -8,8 +9,8 @@ const sk = (ix, iz) => (ix + 2048) * 4096 + (iz + 2048);
 
 function rawHeight(x, z) {
   const rr = Math.sqrt(x * x + z * z);
-  const warp = noise2(x * 0.0011 + 5.3, z * 0.0011 - 2.1) * 420 + noise2(x * 0.0045, z * 0.0045) * 70;
-  const edge = sstep(2000, 2800, rr + warp);
+  const warp = noise2(x * 0.0007 + 5.3, z * 0.0007 - 2.1) * 620 + noise2(x * 0.0045, z * 0.0045) * 70;
+  const edge = sstep(ISLE.C0, ISLE.C1, rr + warp);
   const n1 = fbm(x * 0.0009, z * 0.0009, 4);
   let h = 26 + n1 * 30;
   const mm = sstep(0.02, 0.42, fbm(x * 0.0007 + 11.7, z * 0.0007 - 4.2, 3) + 0.08);
@@ -22,7 +23,7 @@ function rawHeight(x, z) {
 }
 
 function makeTown(id, cx, cz) {
-  const N = 6, cell = 84, half = N * cell / 2;
+  const N = id === 13 ? 8 : 6, cell = 84, half = N * cell / 2;   /* Neo Haven, the megacity, is two blocks bigger each way */
   let hs = 0; for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) hs += rawHeight(cx + i * half * 0.5, cz + j * half * 0.5);
   const baseH = Math.max(6, hs / 25);
   const R1 = half * 1.42 + 14;
@@ -30,9 +31,13 @@ function makeTown(id, cx, cz) {
 }
 
 function genTowns() {
-  const r = mulberry32(20241);
-  for (let tries = 0; tries < 9000 && towns.length < 7; tries++) {
-    const a = r() * TAU, d = Math.sqrt(r()) * 1900;
+  genTownRing(mulberry32(20241), 0, ISLE.IN, 7);
+  genTownRing(mulberry32(77031), ISLE.R0, ISLE.R1, 14, 7);   /* the outer ring: seven new towns, one in each seventh of the circle */
+}
+function genTownRing(r, d0, d1, upto, sectors) {
+  const first = towns.length;
+  for (let tries = 0; tries < 12000 && towns.length < upto; tries++) {
+    const sec = sectors ? (towns.length - first + (tries > 6000 ? r() * sectors : 0)) : 0, a = sectors ? (sec + 0.15 + r() * 0.7) * TAU / sectors + 0.4 : r() * TAU, d = Math.sqrt(d0 * d0 + r() * (d1 * d1 - d0 * d0));
     const cx = Math.round(Math.cos(a) * d / 10) * 10, cz = Math.round(Math.sin(a) * d / 10) * 10;
     const relax = tries > 3500 ? 1 : 0;
     const h = rawHeight(cx, cz);
@@ -40,7 +45,7 @@ function genTowns() {
     let hmin = 1e9, hmax = -1e9;
     for (let k = 0; k < 12; k++) { const aa = k * TAU / 12, rr = k % 2 ? 230 : 330; const hh = rawHeight(cx + Math.cos(aa) * rr, cz + Math.sin(aa) * rr); hmin = Math.min(hmin, hh); hmax = Math.max(hmax, hh); }
     if (hmin < 3 || hmax - hmin > (relax ? 40 : 28)) continue;
-    let ok = true; for (const t of towns) if (Math.hypot(t.cx - cx, t.cz - cz) < (relax ? 800 : 1050)) { ok = false; break; }
+    let ok = true; for (const t of towns) if (Math.hypot(t.cx - cx, t.cz - cz) < (relax ? 800 : 1050) + (towns.length >= 12 ? 100 : 0)) { ok = false; break; }
     if (!ok) continue;
     towns.push(makeTown(towns.length, cx, cz));
   }
@@ -203,7 +208,7 @@ function genLinks() {
   for (const p of pairs) { if (find(p.a) !== find(p.b)) { uf[find(p.a)] = find(p.b); links.push(p); deg[p.a]++; deg[p.b]++; p.used = true; } }
   let extra = 0;
   for (const p of pairs) {
-    if (p.used || extra >= 3 || p.d > 1800 || deg[p.a] >= 3 || deg[p.b] >= 3) continue;
+    if (p.used || extra >= 6 || p.d > 2000 || deg[p.a] >= 3 || deg[p.b] >= 3) continue;
     let cross = false;
     for (const l of links) { if (l.a === p.a || l.a === p.b || l.b === p.a || l.b === p.b) continue; if (segIntersect(towns[p.a], towns[p.b], towns[l.a], towns[l.b])) { cross = true; break; } }
     if (!cross) { links.push(p); p.used = true; deg[p.a]++; deg[p.b]++; extra++; }

@@ -12,7 +12,7 @@
      escape    get it into your garage. Do that and it is yours, with a big payday. Wreck it or get busted and it is gone (you can try again).
    Your own car stays behind in the wagon and is valet-parked back at your garage, as when you jack a car. */
 const Heist = { phase: 'idle', k: 0, sites: [], site: null, ride: null, built: false, group: null, markers: [], eta: 0, you: 0, tries: 0, msgT: 0, wasAir: false, prev: null, left: null, golds: [], lamps: [] };
-const HEIST = { LAT: 13, RL: 24, RW: 6.2, RUN: 70, V: 16, VN: 22, REWARD: 250000, ID: 'aurum', GOLD: 0xd8aa30 };
+const HEIST = { LAT: 13, RL: 24, RW: 6.2, RUN: 70, FOOT: 6, V: 16, VN: 22, REWARD: 250000, ID: 'aurum', GOLD: 0xd8aa30 };
 /* the three prize cars, one per train (train k, ramp k). fin: the finish all over the car (colour, metalness, roughness, clearcoat roughness) */
 const HEIST_PRIZES = [
   { id: 'aurum', base: 'hyper', name: 'Aurum Spectre', short: 'Aurum', cls: 'Gold hypercar', title: 'GOLD RUSH', col: 0xd8aa30, css: '#ffd23a', fin: [0.95, 0.2, 0.08], reward: 250000, snd: { f: 1.5, lp: 1.8 }, dial: 440,
@@ -60,8 +60,12 @@ Heist.plan = function () {
   /* the best site first (the Aurum's), then the best others that need a ramp of about the same height (so the jump times the same), each a sixth of the loop from the rest */
   cand.sort((a, b) => a.c - b.c); const sep = (a, b) => { const d = Math.abs(a.i - b.i); return Math.min(d, n - d) > n / 6; };
   Heist.sites = [];
-  for (const pass of [1.0, 2.0, 1e9]) for (const q of cand) { if (Heist.sites.length >= HEIST_PRIZES.length) break; if ((Heist.sites.length && q.fit > pass) || Heist.sites.includes(q) || !Heist.sites.every((o) => sep(o, q))) continue; Heist.sites.push(q); }
-  Heist.sites.forEach((S, k) => Heist.site1(S, k)); Heist.site = Heist.sites[0] || null; Heist.k = 0;
+  /* the best three sites that all take the usual ramp and are all well apart (the cheapest such trio); failing that, greedily */
+  const good = cand.filter((q) => q.fit < 1.0).slice(0, 60); let bestT = null, bc = 1e18;
+  for (let a = 0; a < good.length; a++) for (let b = a + 1; b < good.length; b++) { if (!sep(good[a], good[b])) continue; for (let c = b + 1; c < good.length; c++) { const C = good[a].c + good[b].c + good[c].c; if (C < bc && sep(good[a], good[c]) && sep(good[b], good[c])) { bc = C; bestT = [good[a], good[b], good[c]]; } } }
+  if (bestT && HEIST_PRIZES.length === 3) Heist.sites = bestT;
+  for (const pass of [1.0, 2.0, 1e9]) for (const q of cand) { if (Heist.sites.length >= HEIST_PRIZES.length) break; if (q.fit > pass || Heist.sites.includes(q) || !Heist.sites.every((o) => sep(o, q))) continue; Heist.sites.push(q); }
+  Heist.cand = cand; Heist.sites.forEach((S, k) => Heist.site1(S, k)); Heist.site = Heist.sites[0] || null; Heist.k = 0;
 };
 Heist.site1 = function (S, k) {
   const P = Rail.pts, i = S.i; S.k = k;
@@ -79,7 +83,11 @@ Heist.rampH = function (x, z, S) {
 };
 /* ground for the player's car: the ramp, and the viaduct deck once up on it */
 Heist.ground = function (x, z, c, o) {
-  if (!Heist.site) return; const h = Heist.rampH(x, z); if (h > o.h) { o.h = h; o.mu = 1.0; o.rr = 0.02; o.rough = 0.05; o.road = true; o.water = false; }
+  if (!Heist.site) return; let h = -1e9;
+  /* the ramp's foot sits at the ground's height under its middle; on a run-up that slopes across, that left a step on the low side, which kicked the car into the air
+     at the foot and, depending on the frame, over the lip. Its first few metres ease from the ground into the ramp instead */
+  for (const S of Heist.sites) { let q = Heist.rampH(x, z, S); if (q < -1e8) continue; const dx = x - S.bx, dz = z - S.bz, u = -(dx * S.rx + dz * S.rz); if (u < HEIST.FOOT) q = o.h + (q - o.h) * sstep(0, HEIST.FOOT, u); h = Math.max(h, q); }
+  if (h > o.h) { o.h = h; o.mu = 1.0; o.rr = 0.02; o.rough = 0.05; o.road = true; o.water = false; }
   Rail.deck(x, z, c.y, o);
 };
 /* no trees on the run-up and the ramp */
