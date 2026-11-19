@@ -29,7 +29,7 @@ Int.go = function (room, spawn) {
   const rec = Int.rec, D = Int.kind, fn = D.rooms[room]; if (!fn) return;
   Int.clear(); Int.room = room;
   const K = new IntKit(rec, room), r = mulberry32((ihash(rec.seed | 0, room.length * 131 + room.charCodeAt(0), 3) * 4294967296) >>> 0);
-  fn(K, rec, r); K.done(); Int.sc = K.sc; Int.cols = K.cols; Int.acts = K.acts; Int.npcs = K.npcs; Int.ticks = K.ticks; Int.swim = K.swim; Int.bounds = K.bounds; Int.K = K;
+  fn(K, rec, r); if (typeof Story !== 'undefined' && Story.intRoom) Story.intRoom(K, rec, room); K.done(); Int.sc = K.sc; Int.cols = K.cols; Int.acts = K.acts; Int.npcs = K.npcs; Int.ticks = K.ticks; Int.swim = K.swim; Int.bounds = K.bounds; Int.K = K;
   const s = (spawn && K.spawns[spawn]) || K.spawns.door || [0, 0, Math.PI]; Int.x = s[0]; Int.z = s[1]; Int.yaw = s[2]; Int.pitch = 0; Int.vx = Int.vz = 0; Int.y = 0;
   if (Int.tp) Int.mkPed();
   Int.hudH = Int.botH = ''; Int.near = null; if (D.onRoom) D.onRoom(room, K);
@@ -145,6 +145,7 @@ function intResolve(x, z, R, cols, B) {
   return o;
 }
 Int.frame = function (dt) {
+  if (Cut.on && Cut.inInt) { Cut.frameInt(dt); return; }   /* a story scene at a table (08_story.js) */
   App.time += dt; Int.t += dt; if (Snd.ok) Snd.update(car, dt, true);
   App.tod = (App.tod + dt * (save.set.cycle ? 24 / 1440 : 0)) % 24;
   if (Int.msgT > 0) Int.msgT -= dt;

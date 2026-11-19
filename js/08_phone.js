@@ -43,7 +43,7 @@ Phone.topics = function (id) {
   T.push(['Any advice?', () => ({ say: [{ mara: 'Next thing you’re doing is ' + obj + '. Do it carefully. For me.', rico: 'Advice? Brake late, lie later. And for ' + obj + '? Don’t blink.', nina: 'For ' + obj + '? Be the most boring person in the room. Nobody remembers boring.', sal: 'Whatever ' + obj + ' is, son, do it before dark if you can.', jax: 'Don’t trust anything Dex says about ' + obj + '.', hal: 'Check your tyres. That’s my advice for everything.', dex: 'My advice is ' + obj + '. Chop chop.' }[id]] })]);
   if (id === 'mara') {
     if (!f.maraLove && v >= 3) T.push(['I miss you when I’m not at the garage.', () => v >= 4 ? { say: ['…Yeah?', 'Me too. A bit. A lot. Get back here soon.'], eff: { mara: 1, maraHint: 1 } } : { say: ['That’s sweet. Don’t get weird on me.'] }]);
-    if (f.maraLove) T.push(['I love you.', () => ({ say: ['Say it in person, idiot.', '…I love you too.'] })]);
+    if (f.maraLove) T.push(['I love you.', () => ({ say: ['Say it in person, idiot. I’m at the garage.', '…I love you too.'], eff: { maraLovePhone: 1 } })]);
     if (!((S.sq.pier || {}).done) && !f.pierAsk && S.ch >= 3) T.push(['Want to get dinner some time?', () => v >= 1 ? { say: ['…Like a date?', 'Okay. The pier. I’ll book a table, you wear a shirt.'], eff: { pierAsk: 1 } } : { say: ['Ha. Ask me again when you’ve earned it.'], eff: { mara: 0 } }]);
     if (S.ch >= 4 && !f.maraDex) T.push(['What do you know about Dex?', () => ({ say: ['Enough to stay away. He finds people when they’re broke and keeps them that way.', 'Please tell me you’re not working for him.'], eff: { maraDex: 1 } })]);
   } else if (id === 'rico') {

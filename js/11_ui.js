@@ -462,7 +462,7 @@ DevCode.tap = function () { const t = performance.now(); DevCode.taps = DevCode.
 function onKey(code) {
   DevCode.feed(code);
   if (App.mode === 'title') { if (code === 'Enter' || code === 'Space') App.start(); return; }
-  if (App.mode === 'cut') { Cut.key(code); return; }
+  if (App.mode === 'cut' || Cut.on) { Cut.key(code); return; }
   if (App.mode === 'court') { Court.key(code); return; }
   if (App.mode === 'shop') { Shop.key(code); return; }
   if (App.mode === 'vm') { VM.key(code); return; }

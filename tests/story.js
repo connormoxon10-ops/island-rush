@@ -33,7 +33,7 @@ const OUT = process.env.OUT || __dirname;
   /* the answers this run gives (by the words in the choice's prompt line; anything else takes the first answer) */
   const PLAN = [['Tell her…', 1], ['crowd is watching', 1], ['Your answer', 2], ['Ask Sal', 2], ['What do you do', 2], ['Talk back', 3], ['What do you tell her', 2], ['What do you ask', 3]];
   const finishCut = () => page.evaluate((PLAN) => { const g = window.__game, C = g.Cut; let n = 0; window.__chose = window.__chose || [];
-    while (C.on && n < 90) { if (C.choosing) { const L = C.lines[C.i], p = PLAN.find((q) => L[1].indexOf(q[0]) >= 0), k = p ? Math.min(p[1], L[3].length) : 1; window.__chose.push(L[1] + ' → ' + L[3][k - 1][0]); g.key('Digit' + k, true); g.key('Digit' + k, false); } else { g.key('Space', true); g.key('Space', false); } window.__run(2); n++; }
+    while (C.on && n < 90) { if (C.choosing) { const L = C.lines[C.i], p = PLAN.find((q) => L[1].indexOf(q[0]) >= 0), k = p ? Math.min(p[1], L[3].length) : 1; window.__chose.push(L[1] + ' → ' + L[3][k - 1][0]); g.key('Digit' + k, true); g.key('Digit' + k, false); const op = document.getElementById('cutOpts'); if (op && getComputedStyle(op).display !== 'none') window.__optStuck = (window.__optStuck || 0) + 1; } else { g.key('Space', true); g.key('Space', false); } window.__run(2); n++; }
     window.__run(3); return n; }, PLAN);
   const n0 = await finishCut(); const after0 = await page.evaluate(() => ({ app: window.__game.App.mode, st: window.__game.save.story.st }));
   ok(after0.app === 'play' && after0.st === 1, 'Space moves through the lines; at the end you are driving and the next step is up (' + n0 + ' presses)');
@@ -43,6 +43,13 @@ const OUT = process.env.OUT || __dirname;
     const st = e.st, r = { key: e.key, i: e.i, t: st.t, obj: st.obj }, hud = () => { const h = document.getElementById('storyObj'); return h && !h.hidden ? h.textContent : ''; };
     if (e.key !== 'main') g.Story.trackSet(e.key);
     window.__run(3); r.hud = hud();
+    if (st.t === 'talk' && st.inside) {
+      const P = g.Story.place(st.at), S2 = P.site; r.who = st.who; r.inside = true; g.loadAround(S2.x, S2.z, 30); const rec = g.Bld.lots.get(S2.key); r.rec = !!rec; if (!rec) return r;
+      if (g.Foot.on) g.Foot.board(true); g.spawnAt(rec.door.ox + rec.door.nx * 6, rec.door.oz + rec.door.nz * 6, 0); window.__run(3); g.key('KeyF', true); g.key('KeyF', false); window.__run(3);
+      r.entered = g.Int.enter(rec); window.__run(6); const a = g.Int.acts.find((q) => /^Sit down with/.test(q.label)); r.vis = !!a && !!g.Story.inScene; r.near = !!a;
+      if (a) { g.Int.x = a.x; g.Int.z = a.z; window.__run(2); g.Int.use(a); window.__run(3); r.cut = g.Cut.on && g.Cut.inInt; g.key('Space', true); g.key('Space', false); window.__run(24); r.pic = g.renderer.domElement.toDataURL('image/jpeg', 0.8); }
+      return r;
+    }
     if (st.t === 'talk') {
       const n = g.Story.npcs['n:' + e.key]; r.who = st.who; r.vis = !!(n && n.h.root.visible); if (!n) return r; g.loadAround(n.x, n.z, 24);
       if (!g.Foot.on) { g.spawnAt(n.x + 8, n.z, 0); window.__run(3); g.key('KeyF', true); g.key('KeyF', false); window.__run(4); }
@@ -63,7 +70,7 @@ const OUT = process.env.OUT || __dirname;
     else if (st.t === 'clean') { g.Wanted.set && g.Wanted.set(0); if (g.Police && g.Police.reset) g.Police.reset(); window.__run(2); }
     return r;
   });
-  const seen = [], pics = {}; let guard = 0, talkOk = true, hudOk = true, runOk = true, events = 0, calls = 0, callsOnPhone = 0, callsInBox = 0, callsOpen = 0;
+  const seen = [], pics = {}; let guard = 0, talkOk = true, hudOk = true, runOk = true, events = 0, calls = 0, callsOnPhone = 0, callsInBox = 0, callsOpen = 0, insideN = 0, insideOk = true;
   while (guard++ < 140) {
     const fin = await page.evaluate(() => window.__game.save.story.fin && !window.__game.Story.entries().length); if (fin) break;
     const r = await doStep(); if (r.none) break; seen.push(r.key + ':' + r.t + (r.who ? '(' + r.who + ')' : '') + (r.m ? '[' + r.m + ']' : ''));
@@ -75,6 +82,7 @@ const OUT = process.env.OUT || __dirname;
       if (r.pic) fs.writeFileSync(path.join(OUT, 'story_' + r.m + '_intro.jpg'), Buffer.from(r.pic.split(',')[1], 'base64'));
     }
     if (r.t === 'call') { calls++; if (r.onPhone) callsOnPhone++; if (r.inBox) callsInBox++; if (r.onPhone && !r.closed) callsOpen++; }
+    if (r.inside) { await finishCut(); const o = await page.evaluate(() => { const g = window.__game, r = { inInt: g.Int.on, opts: document.getElementById('cutOpts').hidden }; if (g.Int.on) g.Int.leave(true); window.__run(4); return r; }); insideN++; if (!(r.rec && r.entered && r.vis && r.cut && o.inInt)) { insideOk = false; console.log('  inside', JSON.stringify(Object.assign({}, r, { pic: !!r.pic }), o)); } if (r.pic) fs.writeFileSync(path.join(OUT, 'story_inside_' + r.who + '_' + insideN + '.jpg'), Buffer.from(r.pic.split(',')[1], 'base64')); continue; }
     if (r.t === 'talk') { if (!(r.vis && r.near && r.cut)) { talkOk = false; console.log('  talk', JSON.stringify(Object.assign({}, r, { pic: !!r.pic }))); } if (r.pic && !pics[r.who]) { pics[r.who] = 1; fs.writeFileSync(path.join(OUT, 'story_talk_' + r.who + '.jpg'), Buffer.from(r.pic.split(',')[1], 'base64')); } }
     await finishCut();
   }
@@ -85,10 +93,12 @@ const OUT = process.env.OUT || __dirname;
   ok(end.n >= 9 && mainSeen.filter((s) => /talk/.test(s)).length >= 9 && mainSeen.some((s) => /bank/.test(s)) && mainSeen.some((s) => /heist/.test(s)) && mainSeen.some((s) => /mvolc/.test(s)), end.n + ' chapters, ' + mainSeen.length + ' main steps: conversations, calls, a bank job, the train heist and the volcano');
   ok(sideDone.length === end.nSide, 'every side quest offered and finished (' + sideDone.join(', ') + ')');
   ok(calls >= 8 && callsOnPhone === calls && callsInBox === 0 && callsOpen === 0, 'story calls and texts come in on the phone screen, not over the game, and the phone puts itself away after (' + callsOnPhone + ' of ' + calls + ')');
+  ok(insideN >= 4 && insideOk, 'lunch with Dex, coffee with Nina, dinner with Mara: walk in through the door, they are at a table, sit down, and the scene plays inside (' + insideN + ')');
   ok(talkOk, 'every conversation: the person is there, you walk up, E starts it as a cutscene');
   ok(runOk && ['sm_parts', 'sm_race1', 'sm_race2', 'sm_rico2', 'sm_nina'].every((id) => seen.some((x) => x.indexOf(id) >= 0)), 'the story’s own runs: E at the start plays the intro (rivals leaning out of the window), then the countdown');
   ok(events >= 8, 'during the races the radio chatter, nitro bursts and police fire (' + events + ' events)');
   ok(hudOk, 'the objective (chapter or side quest) is on screen for every step');
+  const stuck = await page.evaluate(() => window.__optStuck || 0); ok(stuck === 0, 'once you pick a dialogue option the options go away (' + stuck + ' stayed)');
   ok((end.chose || []).length >= 12, 'dialogue choices all through the story (' + (end.chose || []).length + ' made)');
   ok(end.f && end.f.ricoS === 'ally' && end.f.cut === 70 && end.f.aurum === 'kept' && end.f.salA && end.f.maraLove && end.f.maraR && end.f.mara >= 5 && end.aurum, 'the choices stick: Rico a friend, a seventy percent cut, Sal asked, the Aurum kept, and Mara (' + (end.f && end.f.mara) + ') more than a friend');
   ok(end.fin && end.saved.fin && end.sum.includes('Mara: together') && end.money >= 56000, 'the ending follows: Mara and you together (' + end.sum.join(' · ') + ')');
@@ -117,6 +127,19 @@ const OUT = process.env.OUT || __dirname;
   ok(ph.spam && ph.spam[1].st === 'talk' && /again|Miss me/i.test((ph.spam[1].first || [])[1]) && ph.spam[2].opts <= 2 && ph.spam[3].st === 'none', 'call Rico over and over: a normal answer, then “again?”, then irritated (only sorry or bye), then voicemail');
   ok(ph.msgs >= 10 && ph.log, 'Messages keeps every call and radio line (' + ph.msgs + '); the Quests app shows the chapters, side quests and people');
   ok(ph.tab, 'the pause menu’s Story tab: chapters, and Mara “More than friends”');
+  /* Mara at her garage: spend time with her, a new scene each visit while there are new ones */
+  const hang = await page.evaluate(async () => { const g = window.__game, S = g.save.story, r = { scenes: [], shots: [] };
+    for (let i = 0; i < 7; i++) {
+      window.__run(2); const n = g.Story.npcs['n:home']; if (!n) { r.noMara = i; break; } g.loadAround(n.x, n.z, 20); if (!g.Foot.on) { g.spawnAt(n.x + 8, n.z, 0); window.__run(3); g.key('KeyF', true); g.key('KeyF', false); window.__run(3); }
+      g.Foot.x = n.x + 2; g.Foot.z = n.z + 0.3; window.__run(3); const before = Object.keys(S.hang || {}).length; g.key('KeyE', true); g.key('KeyE', false); window.__run(3); r.cut = (r.cut || 0) + (g.Cut.on ? 1 : 0);
+      if (i === 2) { window.__run(20); r.shots.push(g.renderer.domElement.toDataURL('image/jpeg', 0.8)); }
+      let k = 0; while (g.Cut.on && k++ < 60) { if (g.Cut.choosing) { g.key('Digit1', true); g.key('Digit1', false); } else { g.key('Space', true); g.key('Space', false); } window.__run(2); }
+      r.scenes.push(Object.keys(S.hang || {}).length > before ? Object.keys(S.hang).slice(-1)[0] : 'idle');
+    }
+    return r; });
+  console.log('  Mara at the garage: ' + hang.scenes.join(', '));
+  if (hang.shots[0]) fs.writeFileSync(path.join(OUT, 'story_mara_garage.jpg'), Buffer.from(hang.shots[0].split(',')[1], 'base64'));
+  ok(!hang.noMara && hang.cut === 7 && hang.scenes.filter((x) => x !== 'idle').length >= 5 && hang.scenes.includes('roof') && hang.scenes[6] === 'idle', 'Mara lives at her garage: walk up, E, and spend time with her; new scenes as you grow closer (' + hang.scenes.join(', ') + '), then everyday moments');
   /* the other roads */
   const alt = await page.evaluate(() => { const g = window.__game, f = g.save.story.f, keep = JSON.parse(JSON.stringify(f)), r = {}; f.ricoS = 'shamed'; g.Wanted.set && g.Wanted.set(0); g.STORY[5].steps[0].enter(); r.stars = g.Wanted.stars;
     g.Wanted.set && g.Wanted.set(0); if (g.Police && g.Police.reset) g.Police.reset(); f.aurum = 'given'; f.mara = 1; f.lie = true; const A = g.HEIST_PRIZES[0].id; g.save.owned[A] = true; const pay = g.Story.finish(); r.gone = !g.save.owned[A]; r.pay = pay; r.sum = g.Story.summary(); g.save.story.f = keep; g.save.owned[A] = true; return r; });
