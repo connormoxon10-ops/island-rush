@@ -85,10 +85,11 @@ const OUT = process.env.OUT || __dirname;
       const cp = M.cps[M.idx]; const want = Math.atan2(cp.x - c.x, cp.z - c.z); let e = want - c.yaw; e -= Math.round(e / (2 * Math.PI)) * 2 * Math.PI;
       pad.axes[0] = Math.max(-1, Math.min(1, e * 2.2)) * sgn; const v = Math.abs(c.speed); pad.buttons[7].value = v < 24 ? 1 : 0; pad.buttons[6].value = v > 30 ? 0.6 : 0;
       const V = g.VOLC, s = (c.x - V.x) * V.ux + (c.z - V.z) * V.uz; maxGap = Math.min(maxGap, s - g.Volc.fMat.uniforms.uFront.value); rings = Math.max(rings, g.Volc.bombs.filter((b) => b.on).length);
+      if (i % 90 === 0) (window.__tr || (window.__tr = [])).push([Math.round(M.t), Math.round(s), Math.round(g.Volc.fMat.uniforms.uFront.value), Math.round(Math.abs(c.speed)), M.idx]);
       if (!pic && M.t > 12) { pic = 1; window.__pic = g.renderer.domElement.toDataURL('image/jpeg', 0.85); }
     });
     pad.buttons[7].value = 0; pad.buttons[6].value = 0; pad.axes[0] = 0; g.Dev.god = false; g.save.set.dev = false;
-    return { n, res: window.__res.slice(), done: g.save.done.mvolc, fired: window.__fired, maxGap: Math.round(maxGap), rings, mi: !!g.Mi };
+    return { n, res: window.__res.slice(), done: g.save.done.mvolc, fired: window.__fired, maxGap: Math.round(maxGap), rings, mi: !!g.Mi, tr: window.__tr };
   }, sgn);
   { const u = await page.evaluate(() => window.__pic); if (u) fs.writeFileSync(path.join(OUT, 'volcano_escape.jpg'), Buffer.from(u.split(',')[1], 'base64')); }
   await shot('escaped');
