@@ -283,7 +283,7 @@ UI.progress = function (f, msg) { E.loadfill.style.width = (f * 100).toFixed(0) 
 UI.openMenu = function (tab) { if (App.mode !== 'play') return; Home.closeEdit(); UI.setMode('pause'); UI.tabTo(tab || App.tab); for (const k in Keys) Keys[k] = false; };
 UI.closeMenu = function () { if (App.mode !== 'pause') return; UI.setMode('play'); writeSave(); };
 UI.tabTo = function (name) {
-  App.tab = name; const tabs = [['missions', 'Missions'], ['map', 'Map'], ['garage', 'Garage'], ['tuning', 'Tuning'], ['people', 'People'], ['collection', 'Collection'], ['settings', 'Settings'], ['controls', 'Controls']]; if (save.set.dev) tabs.push(['dev', 'Dev']);
+  App.tab = name; const tabs = [['missions', 'Missions'], ['map', 'Map'], ['garage', 'Garage'], ['tuning', 'Tuning'], ['people', 'People'], ['collection', 'Collection'], ['settings', 'Settings'], ['controls', 'Controls']]; if (Story.on) tabs.unshift(['quests', 'Story']); if (save.set.dev) tabs.push(['dev', 'Dev']);
   E.tabs.innerHTML = tabs.map((t) => '<button type="button" role="tab" data-tab="' + t[0] + '" aria-selected="' + (t[0] === name) + '">' + t[1] + '</button>').join('');
   UI.renderPane();
 };
@@ -293,7 +293,7 @@ const seg = (key, opts, cur) => '<div class="seg" role="group">' + opts.map((o) 
 UI.renderPane = function () {
   E.menuCash.textContent = money(save.money); const p = E.pane, s = save.set, c = car;
   E.btnAbort.hidden = !(Mi || VM.m || Rally.on || Drag.on || Derby.on); let h = '';
-  if (App.tab === 'missions') {
+  if (App.tab === 'quests') { h += Story.logHtml(); } else if (App.tab === 'missions') {
     const list = missions.map((m) => ({ m, d: Math.hypot(m.x - c.x, m.z - c.z) })).sort((a, b) => a.d - b.d);
     const done = missions.filter((m) => save.done[m.id]).length;
     h += '<div class="sect">' + done + ' of ' + missions.length + ' runs completed · reputation ' + save.rep + '</div><div class="grid">';
@@ -386,7 +386,8 @@ function bindUI() {
   E.titleVer.textContent = IR_VERSION;
   E.pane.addEventListener('click', (e) => {
     const b = e.target.closest('[data-act]'); if (!b || b.disabled) return; const a = b.dataset.act; if (a !== 'sellk' && a !== 'scrapk') Jack.conf = '';
-    if (a === 'gps') { const m = missions.find((q) => q.id === b.dataset.id); UI.setWaypoint(m.x, m.z); UI.closeMenu(); }
+    if (a === 'sqt') { Story.trackSet(b.dataset.id); UI.closeMenu(); }
+    else if (a === 'gps') { const m = missions.find((q) => q.id === b.dataset.id); UI.setWaypoint(m.x, m.z); UI.closeMenu(); }
     else if (a === 'hgps') { UI.setWaypoint(GAR.ox, GAR.oz + 12); UI.closeMenu(); }
     else if (a === 'hwarp') { UI.closeMenu(); Home.warp(); }
     else if (a === 'warp') { const m = missions.find((q) => q.id === b.dataset.id); UI.closeMenu(); App.warp(m); }
@@ -473,6 +474,7 @@ function onKey(code) {
   if (App.mode === 'pause') { if (code === 'Escape' || code === 'KeyP' || (code === 'KeyM' && App.tab === 'map')) UI.closeMenu(); return; }
   if (App.mode !== 'play') return;
   if (GAR.edit) { Home.key(code); return; }
+  if (Phone.key(code)) return;
   if (Story.key(code)) return;
   if (Talk.on) { Talk.key(code); return; }
   if (Derby.on && /^(KeyE|Enter|KeyF|KeyG|KeyM|KeyQ|KeyH|KeyR)$/.test(code)) return;
