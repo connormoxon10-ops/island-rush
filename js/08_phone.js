@@ -158,6 +158,7 @@ Phone.init = function () {
     const t = e.target.closest('button'); if (!t) return;
     if (t.dataset.say) Phone.say(+t.dataset.say); else if (t.dataset.hang) Phone.hang(); else if (t.dataset.ph) { if (Phone.call) Phone.hang(); Phone.go(t.dataset.ph); } else if (t.dataset.call) Phone.dial(t.dataset.call); else if (t.dataset.svc) Phone.service(t.dataset.svc);
     else if (t.dataset.act === 'sqt') { Story.trackSet(t.dataset.id); Phone.render(); }
+    else if (t.dataset.act === 'sqreset' || t.dataset.act === 'sqreset2') Story.resetClick(t);
   });
 };
 Phone.key = function (code) { if (code === 'KeyO') { Phone.toggle(); return true; } if (Phone.open && code === 'Escape') { Phone.toggle(false); return true; } return false; };

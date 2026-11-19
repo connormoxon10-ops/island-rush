@@ -134,6 +134,10 @@ node tests/heist.js         # the train heists: three ramps, three trains, three
 node tests/surf.js          # named beaches with roads, signs and map labels; the Surf Club: three waves, airs, the curl, wipeouts, prize money
 node tests/nitro.js         # nitro: a small flame on each of the model's exhaust tips, a faint glow, stops with the nitro
 node tests/dunes.js         # Dune Dash: the beach dune track (on the map), a race against five dune buggies, prize money
+node tests/story.js         # Story Mode: its own save, the whole story and side quests, choices and endings, indoor scenes, the phone and calls
+node tests/story_reset.js   # Story Mode: Reset story (title and quest log) erases the story save and starts over; free roam untouched
+node tests/volcano.js       # Mount Cinder and the Eruption Escape
+node tests/cockpit.js       # the car cabin: sculpted, one of four looks per car
 ```
 
 The browser tests drive the built game in headless Chromium with software GL (slow, 1-7 fps), using step lists of `{js}`, `{wait}` and `{shot}`:

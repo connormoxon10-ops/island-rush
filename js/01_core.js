@@ -81,6 +81,7 @@ function loadSave() {
   save.set.dev = false;   /* developer mode never carries over: it is off at every start (11_ui.js: DevCode) */
 }
 function writeSave() {
+  if (PLAY_MODE === 'story' && typeof Story !== 'undefined' && Story.wiping) return;   /* a story reset is on its way: nothing writes the old story back */
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(save));
     if (PLAY_MODE === 'story') { const o = JSON.parse(localStorage.getItem(SANDBOX_KEY) || 'null') || { money: 600 }; o.set = save.set; localStorage.setItem(SANDBOX_KEY, JSON.stringify(o)); }   /* settings changed in the story reach the sandbox too */

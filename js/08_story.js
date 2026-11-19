@@ -624,6 +624,7 @@ Story.logHtml = function () {
   h += '<div class="sect">People</div>';
   for (const id of ['mara', 'rico', 'nina', 'sal', 'jax', 'hal', 'dex']) { if (!S.met[id]) continue; const v = clamp((f[id] | 0) + 3, 0, 10); h += '<div class="row"><div><b>' + STORY_CAST[id].name + '</b> <small>· ' + STORY_CAST[id].role + '</small><br><small>' + Story.relLabel(id) + '</small></div><div style="min-width:110px;height:8px;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden"><i style="display:block;height:100%;width:' + v * 10 + '%;background:' + (id === 'mara' && f.maraLove ? '#ff6a8a' : '#ffd34d') + '"></i></div></div>'; }
   if ((S.said || []).length) h += '<div class="sect">What you said</div>' + S.said.slice(-8).map((s) => '<p><small>' + s + '</small></p>').join('');
+  h += '<div class="sect">Start over</div><p><small>Erases this story (its progress, money, cars, choices and relationships). Free roam is not touched.</small></p>' + storyResetBtn('btn sm');
   return h;
 };
 Story.ui = function () {
@@ -644,6 +645,18 @@ Story.ui = function () {
   const h = Story.hudEl = document.createElement('div'); h.id = 'storyObj'; h.hidden = true; document.body.appendChild(h);
   const cm = Story.comm.el = document.createElement('div'); cm.id = 'storyComm'; cm.hidden = true; document.body.appendChild(cm);
 };
+/* ---------- start the story over: its save (progress, money, cars, choices, relationships) is erased; free roam's is not touched ---------- */
+Story.reset = function () {
+  Story.wiping = true; try { localStorage.removeItem(STORY_KEY); localStorage.setItem(MODE_KEY, 'story'); } catch (e) { /* ignore */ }
+  location.hash = 'mode=story'; location.reload();
+};
+/* a button that asks twice before it erases anything */
+function storyResetBtn(cls, label) { return '<button type="button" class="' + cls + '" data-act="sqreset">' + (label || 'Reset story…') + '</button>'; }
+Story.resetClick = function (b) {
+  if (b.dataset.act === 'sqreset') { b.dataset.act = 'sqreset2'; b.textContent = 'Click again to erase your story and start over'; b.style.background = '#c0392b'; b.style.color = '#fff'; setTimeout(() => { if (b.dataset.act === 'sqreset2') { b.dataset.act = 'sqreset'; b.textContent = 'Reset story…'; b.style.background = ''; b.style.color = ''; } }, 4000); return true; }
+  if (b.dataset.act === 'sqreset2') { Story.reset(); return true; }
+  return false;
+};
 /* ---------- the title screen: free roam or the story, each its own save ---------- */
 Story.switchTo = function (mode) { try { writeSave(); localStorage.setItem(MODE_KEY, mode); } catch (e) { /* ignore */ } location.hash = 'mode=' + mode + '&go=' + Date.now(); location.reload(); };
 Story.initTitle = function () {
@@ -653,6 +666,7 @@ Story.initTitle = function () {
   const s = document.createElement('button'); s.className = 'btn primary'; s.id = 'btnStory'; s.type = 'button';
   s.innerHTML = 'Story mode<small style="display:block;font-size:11px;opacity:.75;font-weight:500">' + (has ? (ch >= STORY.length ? 'Complete · replay from the end' : 'Continue · Chapter ' + (ch + 1)) : 'New story · its own save') + '</small>';
   b.after(s);
+  if (has) { const r = document.createElement('div'); r.style.cssText = 'width:100%;text-align:center;margin-top:6px'; r.innerHTML = storyResetBtn('btn sm', 'Reset story…'); s.parentNode.after(r); r.addEventListener('click', (e) => { const t = e.target.closest('[data-act]'); if (t) Story.resetClick(t); }); }
   b.onclick = () => { if (PLAY_MODE === 'sandbox') App.start(); else Story.switchTo('sandbox'); };
   s.onclick = () => { if (PLAY_MODE === 'story') App.start(); else Story.switchTo('story'); };
   const mh = document.getElementById('menuHead'); if (mh && !document.getElementById('btnTitle')) { const t = document.createElement('button'); t.className = 'btn sm'; t.id = 'btnTitle'; t.type = 'button'; t.textContent = '⏏ Title screen'; t.title = 'Back to the title: switch between free roam and the story'; t.onclick = () => { writeSave(); location.hash = 'mode=' + PLAY_MODE; location.reload(); }; mh.appendChild(t); }

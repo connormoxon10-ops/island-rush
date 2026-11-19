@@ -386,6 +386,7 @@ function bindUI() {
   E.titleVer.textContent = IR_VERSION;
   E.pane.addEventListener('click', (e) => {
     const b = e.target.closest('[data-act]'); if (!b || b.disabled) return; const a = b.dataset.act; if (a !== 'sellk' && a !== 'scrapk') Jack.conf = '';
+    if (a === 'sqreset' || a === 'sqreset2') { Story.resetClick(b); return; }
     if (a === 'sqt') { Story.trackSet(b.dataset.id); UI.closeMenu(); }
     else if (a === 'gps') { const m = missions.find((q) => q.id === b.dataset.id); UI.setWaypoint(m.x, m.z); UI.closeMenu(); }
     else if (a === 'hgps') { UI.setWaypoint(GAR.ox, GAR.oz + 12); UI.closeMenu(); }
