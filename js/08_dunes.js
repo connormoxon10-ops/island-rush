@@ -14,7 +14,7 @@ const DUNE = { W: 360, D: 190, GS: 2, BLEND: 50, HW: 7, BASE: 1.6, CAR: 'buggy',
 Dunes.plan = function () {
   let best = null, bc = 1e9;
   for (let a = 0; a < TAU; a += 0.035) {
-    const sx = Math.sin(a), sz = Math.cos(a); let r = 5600; while (r > 1200 && terrainNoRoad(sx * r, sz * r) < 0.8) r -= 8; if (r <= 1200) continue;
+    const sx = Math.sin(a), sz = Math.cos(a); let r = 2900; while (r > 1200 && terrainNoRoad(sx * r, sz * r) < 0.8) r -= 8; if (r <= 1200) continue;
     /* inland is down the slope from the shore point; the site's middle sits 110 m in */
     const x0 = sx * r, z0 = sz * r, gx = terrainNoRoad(x0 + 4, z0) - terrainNoRoad(x0 - 4, z0), gz = terrainNoRoad(x0, z0 + 4) - terrainNoRoad(x0, z0 - 4), gl = Math.hypot(gx, gz) || 1;
     const vx = gx / gl, vz = gz / gl, ux = vz, uz = -vx, cx = x0 + vx * (DUNE.D / 2 + 20), cz = z0 + vz * (DUNE.D / 2 + 20);

@@ -13,18 +13,8 @@ const BLD_SPECIAL = [
   ['apts', 'gym', 'pool', 'resto', 'resto', 'clothes'],
   ['apts', 'pool', 'resto', 'clothes'],
   ['bank', 'apts', 'gym', 'pool', 'kitlab', 'resto', 'clothes'],
-  ['reserve', 'bank', 'jail', 'apts', 'apts', 'gym', 'pool', 'dealer', 'kitlab', 'resto', 'resto', 'clothes', 'clothes'],
-  /* the outer ring: Bayou Hollow, Ashfall, Sundown Plains, Vellano, Frostholm, Verdance, Neo Haven */
-  ['apts', 'resto', 'clothes'],
-  ['bank', 'apts', 'gym', 'resto', 'clothes'],
-  ['apts', 'dealer', 'resto', 'clothes'],
-  ['bank', 'apts', 'resto', 'resto', 'clothes'],
-  ['apts', 'gym', 'pool', 'resto', 'clothes'],
-  ['apts', 'kitlab', 'resto', 'clothes'],
-  ['bank', 'bank', 'apts', 'apts', 'apts', 'gym', 'pool', 'dealer', 'kitlab', 'resto', 'resto', 'resto', 'clothes', 'clothes']
+  ['reserve', 'bank', 'jail', 'apts', 'apts', 'gym', 'pool', 'dealer', 'kitlab', 'resto', 'resto', 'clothes', 'clothes']
 ];
-/* names for the outer ring's specials: the town's name and a word */
-const BLD_TAIL = { bank: ['Savings Bank', 'Trust & Loan', 'Credit Bank'], apts: ['Residences', 'Heights', 'Lofts'], gym: ['Fitness'], pool: ['Swim Centre'], dealer: ['Motors'], kitlab: ['Custom Works'], resto: ['Grill', 'Kitchen', 'Diner'], clothes: ['Outfitters', 'Boutique'] };
 const BLD_NAMES = {
   bank: ['Harbor Trust Bank', 'Mesa Savings & Loan', '', '', '', 'Lakeshore Credit Union', 'First Fairhaven Bank'], reserve: ['', '', '', '', '', '', 'Island Reserve Bank'],
   apts: [['Quayside Apartments'], ['Red Rock Lofts'], ['Old Mill Flats'], ['Palm Court Residences'], ['Snowline Chalets'], ['Pinewater Apartments'], ['The Meridian Tower', 'Parkview Residences']],
@@ -75,7 +65,7 @@ Bld.plan = function (T) {
     if (want === 'down') { k = cand.findIndex((c, n) => n >= 0 && c.dn < 1 && !c.used); } else k = cand.findIndex((c) => !c.used && c.dn >= 1);
     if (k < 0) k = cand.findIndex((c) => !c.used); if (k < 0) break;
     const c = cand[k]; c.used = true; ci++;
-    const n = seen[kind] = (seen[kind] || 0); seen[kind]++; const nm = BLD_NAMES[kind] ? BLD_NAMES[kind][ti] : null, tl = BLD_TAIL[kind], name = Array.isArray(nm) ? nm[n % nm.length] : nm || (tl ? T.name + ' ' + tl[n % tl.length] : BLD_SUB[kind]);
+    const n = seen[kind] = (seen[kind] || 0); seen[kind]++; const nm = BLD_NAMES[kind] ? BLD_NAMES[kind][ti] : null, name = Array.isArray(nm) ? nm[n % nm.length] : nm || BLD_SUB[kind];
     const ls = (T.cell - 14) / 2 - 3, lx0 = T.x0 + c.i * T.cell + 7 + c.a * (T.cell - 14) / 2 + 1.5, lz0 = T.z0 + c.j * T.cell + 7 + c.b * (T.cell - 14) / 2 + 1.5;
     const S = { kind, name, ti, T, i: c.i, j: c.j, a: c.a, b: c.b, x: lx0 + ls / 2, z: c.b ? lz0 + ls + 1 : lz0 - 1, key: T.id + ':' + c.i + ':' + c.j + ':' + c.a + ':' + c.b, n };
     plan.set(S.key, S); Bld.sites.push(S);

@@ -37,7 +37,7 @@ Dock.pick = function () {
     let best = null;
     for (let deg = 0; deg < 360; deg += 2) {
       const an = deg * DEG, ca = Math.cos(an), sa = Math.sin(an); let rs = 0;
-      for (let r = 5650; r > 1000; r -= 6) if (terrainNoRoad(ca * r, sa * r) > 0.3) { rs = r; break; }
+      for (let r = 3300; r > 1000; r -= 6) if (terrainNoRoad(ca * r, sa * r) > 0.3) { rs = r; break; }
       if (!rs) continue;
       let Sx = 0, Sz = 0; if (Math.abs(ca) >= Math.abs(sa)) Sx = ca > 0 ? 1 : -1; else Sz = sa > 0 ? 1 : -1;
       const px = ca * rs, pz = sa * rs; let ox, oz;

@@ -19,7 +19,7 @@ const OUT = process.env.OUT || __dirname;
   const shores = await page.evaluate(() => {
     const g = window.__game, out = [];
     for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4 + 0.2; let hit = null;
-      for (let r = 1200; r < 5600 && !hit; r += 6) { const x = Math.sin(a) * r, z = Math.cos(a) * r, h = g.terrainHeight(x, z); if (h < 2.2 && h > 0.6 && g.Beach.site(x, z) === 1) hit = { x, z, h, r, a }; }
+      for (let r = 1200; r < 3000 && !hit; r += 6) { const x = Math.sin(a) * r, z = Math.cos(a) * r, h = g.terrainHeight(x, z); if (h < 2.2 && h > 0.6 && g.Beach.site(x, z) === 1) hit = { x, z, h, r, a }; }
       if (hit) out.push(hit); }
     return out;
   });

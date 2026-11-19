@@ -52,7 +52,7 @@ function genMissions() {
   /* rallies */
   const rr = mulberry32(8812); let made = 0;
   for (let tries = 0; tries < 1500 && made < 2; tries++) {
-    const a = rr() * TAU, d = Math.sqrt(rr()) * 3300, cx = Math.cos(a) * d, cz = Math.sin(a) * d, h0 = rawHeight(cx, cz);
+    const a = rr() * TAU, d = Math.sqrt(rr()) * 1900, cx = Math.cos(a) * d, cz = Math.sin(a) * d, h0 = rawHeight(cx, cz);
     if (h0 < 25 || h0 > 85) continue; if (towns.some((t) => Math.hypot(t.cx - cx, t.cz - cz) < 450)) continue;
     const R = 300 + rr() * 150, pts = []; let ok = true;
     for (let k = 0; k < 8; k++) { const aa = k * TAU / 8 + rr() * 0.3, x = cx + Math.cos(aa) * R * (0.8 + rr() * 0.4), z = cz + Math.sin(aa) * R * (0.8 + rr() * 0.4), h = terrainHeight(x, z); if (h < 4 || townAt(x, z, 80)) { ok = false; break; } nearestRoad(x, z); pts.push({ x, z, h }); }

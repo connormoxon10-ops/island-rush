@@ -2,7 +2,7 @@
 const Far = { uCam: { value: new THREE.Vector2() }, uR0: { value: 400 }, group: null };
 
 function buildFarWorld() {
-  const N = 256, EXT = 5376, step = EXT * 2 / N, NV = N + 1;
+  const N = 192, EXT = 3072, step = EXT * 2 / N, NV = N + 1;
   const H = new Float32Array(NV * NV), pos = new Float32Array(NV * NV * 3), nor = new Float32Array(NV * NV * 3), col = new Float32Array(NV * NV * 3), uv = new Float32Array(NV * NV * 2), dep = new Float32Array(NV * NV);
   for (let j = 0; j < NV; j++) for (let i = 0; i < NV; i++) H[j * NV + i] = terrainNoRoad(-EXT + i * step, -EXT + j * step);
   for (let j = 0; j < NV; j++) for (let i = 0; i < NV; i++) {

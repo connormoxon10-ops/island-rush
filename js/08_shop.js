@@ -11,11 +11,7 @@ const SHOP_STY = {
   tropic: { wall: 0xf4efe0, trim: 0x2fc4c0, roof: 0x2fc4c0, door: 0xff7a6a, glass: 0x123a44 },
   alpine: { wall: 0x8d6b48, trim: 0xd33a2a, roof: 0xf2f6fa, door: 0x5a4632, glass: 0x1a2630 },
   lake: { wall: 0x6a553f, trim: 0x3d6b3a, roof: 0x3e4a3a, door: 0x7a6650, glass: 0x142228 },
-  city: { wall: 0x252b35, trim: 0x7a3ff0, roof: 0x16191f, door: 0x303844, glass: 0x0c1824 },
-  swamp: { wall: 0x7a6a52, trim: 0x8ab04a, roof: 0x4a3a2a, door: 0x6a5a44, glass: 0x142228 }, volcano: { wall: 0x3a3838, trim: 0xff5a2a, roof: 0x2a2828, door: 0x5a5450, glass: 0x101418 },
-  savanna: { wall: 0xd8a86a, trim: 0xe8b040, roof: 0x8a5a2a, door: 0xa8703a, glass: 0x1a2630 }, vineyard: { wall: 0xf0e0c0, trim: 0xb04a7a, roof: 0xc0603a, door: 0x6a3a2a, glass: 0x1a2630 },
-  tundra: { wall: 0x9a3a2a, trim: 0xa8e8ff, roof: 0x2a2a2a, door: 0xe8e0d0, glass: 0x1a2630 }, jungle: { wall: 0xf2d060, trim: 0x2fbe62, roof: 0x3a6a3a, door: 0xf2a0b0, glass: 0x123a44 },
-  metro: { wall: 0x1e2230, trim: 0xd05aff, roof: 0x14161c, door: 0x2a3040, glass: 0x0a1420 }
+  city: { wall: 0x252b35, trim: 0x7a3ff0, roof: 0x16191f, door: 0x303844, glass: 0x0c1824 }
 };
 const SHOP_ICO = { wheel: '◎', kit: '▣' };
 const Shop = { sites: [], ready: false, on: false, near: null, S: null, tab: 'paint', drafts: {}, cur: null, rec: null, out: {}, carId: 'rook', az: 0.55, azIdle: 0, zoom: 1, sc: null, carMesh: null, av: null, focus: null, fc: { x: 0, y: 1, D: 8, el: 0.15 }, which: 'car', fx: { speed: 0, damage: 0, chroma: 0, expo: 1 }, expo: 0.95, drag: null, vkey: '', tvis: 0 };

@@ -202,7 +202,7 @@ INT_KINDS.resto = { name: 'Restaurant', rooms: { main(K, rec, r) { const th = Ob
 /* ---------- car dealership: the only place to buy a car ---------- */
 const INT_DEALER = [{ max: 6000, cls: null, col: 0x2a6ad8 }, { max: 1e9, cls: /truck|off|buggy|4x4|rally|pickup|suv|van/i, col: 0xd86a1a }, { min: 4000, max: 1e9, cls: null, col: 0xc8a050 }];
 function intDealerCars(rec) {
-  const all = CARS.filter((d) => !d.stolen && !d.prize && !d.kit && d.price > 0), t = rec.ti === 1 ? INT_DEALER[1] : rec.ti === 6 || rec.ti === 13 ? INT_DEALER[2] : INT_DEALER[0];
+  const all = CARS.filter((d) => !d.stolen && !d.prize && !d.kit && d.price > 0), t = rec.ti === 1 ? INT_DEALER[1] : rec.ti === 6 ? INT_DEALER[2] : INT_DEALER[0];
   let L = all.filter((d) => d.price <= t.max && (!t.min || d.price >= t.min) && (!t.cls || t.cls.test(d.cls + ' ' + d.name)));
   if (L.length < 4) L = all.slice().sort((a, b) => a.price - b.price); return L;
 }
@@ -217,7 +217,7 @@ function intBuyCar(d, rec) {
   UI.banner('SOLD', 'The ' + d.name + ' is yours · it is waiting outside'); Int.say('The keys are yours. Your new ' + d.name + ' is parked out front.', 4);
 }
 INT_KINDS.dealer = { name: 'Car dealership', rooms: { main(K, rec, r) {
-  const { W, D } = intDims(rec, 26, 22), col = (rec.ti === 1 ? INT_DEALER[1] : rec.ti === 6 || rec.ti === 13 ? INT_DEALER[2] : INT_DEALER[0]).col;
+  const { W, D } = intDims(rec, 26, 22), col = (rec.ti === 1 ? INT_DEALER[1] : rec.ti === 6 ? INT_DEALER[2] : INT_DEALER[0]).col;
   K.shell({ W, D, H: 6, floor: 0xf2f2f2, tiles: 0xd8d8d8, wall: 0xeef0f2, trim: 0x1a1a1a, lamp: 0xffffff, lightI: 1.1, winH: [0.3, 5.6], hemi: 0.9 });
   K.sign(rec.name.toUpperCase(), 0, 4.8, K.z0 + 0.04, Math.min(W - 4, 12), 1, 0, { fg: _hexCss(col) });
   const cars = intDealerCars(rec), spots = []; for (let z = K.z0 + 4; z < K.z1 - 4; z += 6.2) for (const x of [K.x0 + 4.5, 0, K.x1 - 4.5]) spots.push([x, z]);

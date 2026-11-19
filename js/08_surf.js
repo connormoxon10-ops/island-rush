@@ -14,7 +14,7 @@ const SURF = { WAVES: 3, WV: 4.2, A: 3.4, F: 10, D0: 105, D1: 22, BS: 5.2, U0: -
 Surf.plan = function () {
   const cands = [];
   for (let a = 0; a < TAU; a += 0.025) {
-    const sx = Math.sin(a), sz = Math.cos(a); let r = 5600; while (r > 1300 && terrainNoRoad(sx * r, sz * r) < 0.6) r -= 6; if (r <= 1300) continue;
+    const sx = Math.sin(a), sz = Math.cos(a); let r = 2950; while (r > 1300 && terrainNoRoad(sx * r, sz * r) < 0.6) r -= 6; if (r <= 1300) continue;
     const x0 = sx * r, z0 = sz * r, gx = terrainNoRoad(x0 + 5, z0) - terrainNoRoad(x0 - 5, z0), gz = terrainNoRoad(x0, z0 + 5) - terrainNoRoad(x0, z0 - 5), gl = Math.hypot(gx, gz) || 1, ix = gx / gl, iz = gz / gl;   /* inland */
     const h30 = terrainNoRoad(x0 + ix * 30, z0 + iz * 30), h60 = terrainNoRoad(x0 + ix * 60, z0 + iz * 60), hs = terrainNoRoad(x0 - ix * 40, z0 - iz * 40);
     if (h30 < 0.8 || h30 > 4.5 || h60 > 10 || hs > -0.8) continue;   /* a gentle beach with real sea in front of it */
@@ -24,7 +24,7 @@ Surf.plan = function () {
     /* the nearest road point */
     const px = x0 + ix * 55, pz = z0 + iz * 55; let best = null, bd = 1e18;
     for (const rd of roads) for (const p of rd.pts) { const d = (p.x - px) ** 2 + (p.z - pz) ** 2; if (d < bd) { bd = d; best = p; } }
-    if (!best) continue; const dist = Math.sqrt(bd); if (dist < 90 || dist > 1700) continue;
+    if (!best) continue; const dist = Math.sqrt(bd); if (dist < 90 || dist > 1100) continue;
     cands.push({ a, x: x0, z: z0, ix, iz, px, pz, to: best, dist, c: Math.abs(h30 - 2) + h60 * 0.15 + dist / 900 });
   }
   cands.sort((p, q) => p.c - q.c);
