@@ -234,7 +234,7 @@ const SIDE = [
       { t: 'run', id: 'sm_rico2', obj: 'Race Rico on his road', intro: () => [['', 'RICO’S ROAD', 'card'], ['rico', Story.F().ricoS === 'shamed' ? 'No crowd tonight. Nobody to see you lose.' : 'No crowd, no cops. Just us and the road.', 'rival'], ['you', 'Try not to blink.', 'mecar'], ['', 'Go.', 'line']],
         events: [[0.05, stSay(['rico', 'I know every bump on this road!'])], [0.4, stBoost(0.22, 6, 'Rico hits the nitro!')], [0.75, stSay(['rico', 'How are you still there?!'])]] },
       { t: 'call', lines: () => Story.F().ricoS === 'shamed' ? [['Rico (phone)', '…Fine. FINE. We are even. Don’t tell anyone I said that.']] : [['Rico (phone)', 'Dinner’s on me. Again. You know you are the only one who ever beat me? Twice now. Jerk. Friend. Same thing.']], done: () => { const f = Story.F(); if (f.ricoS === 'shamed') f.ricoS = 'even'; } }] },
-  { id: 'pier', title: 'Dinner at the Pier', who: 'mara', desc: 'Mara has a table booked. Just the two of you.', reward: 0, aff: { mara: 1 }, avail: (S) => S.ch >= 4 && (Story.F().mara | 0) >= 2,
+  { id: 'pier', title: 'Dinner at the Pier', who: 'mara', desc: 'Mara has a table booked. Just the two of you.', reward: 0, aff: { mara: 1 }, avail: (S) => (S.ch >= 4 && (Story.F().mara | 0) >= 2) || (S.ch >= 3 && !!Story.F().pierAsk),
     steps: [{ t: 'call', lines: [['Mara (phone)', 'Hey. So. I booked a table. At the pier, eight o’clock. It is not a big deal. Wear a shirt.']] },
       { t: 'talk', who: 'mara', at: 'pier', obj: 'Meet Mara for dinner at eight', tod: 20, lines: () => [['', '20:00 · THE PIER', 'card'], ['mara', 'You wore a shirt. I am impressed.', 'npc'], ['mara', 'I used to watch the ferries from here, my first year. Every one of them, I thought, maybe somebody I know is on it.', 'two'], ['mara', 'Nobody ever was. Until you.', 'npc'],
         ['', 'What do you say?', 'me', [
@@ -399,6 +399,8 @@ Story.commTick = function (dt) {
   if (!C.cur && C.q.length) { C.cur = C.q.shift(); if (C.cur.done) { const d = C.cur.done; C.cur = null; d(); return; } C.t = 0; C.log.push(C.cur); if (C.log.length > 80) C.log.shift(); Snd.beep(/phone|text/.test(C.cur.who) ? 980 : 640, 0.05); }
   const c = C.cur; if (!c) { el.hidden = true; return; }
   C.t += dt; const n = Math.min(c.text.length, Math.floor(C.t * 50)), who = STORY_CAST[c.who] ? STORY_CAST[c.who].name : c.who;
+  /* a phone call or a text comes in on the phone itself (it opens, and shows the conversation); radio, scanner and passers-by stay in the box */
+  if (/\((phone|text)\)/.test(c.who) && typeof Phone !== 'undefined' && Phone.el) { el.hidden = true; Phone.incoming(c, n); if (C.t > 2.6 + c.text.length * 0.045) C.cur = null; return; }
   el.hidden = false; el.innerHTML = (who ? '<b>' + (/phone|text/.test(who) ? '📱 ' : /radio|scanner/i.test(who) ? '📻 ' : '') + who + '</b>' : '') + '<span>' + c.text.slice(0, n) + '</span>';
   if (C.t > 2.6 + c.text.length * 0.045) C.cur = null;
 };
@@ -538,7 +540,7 @@ Story.ui = function () {
   const cm = Story.comm.el = document.createElement('div'); cm.id = 'storyComm'; cm.hidden = true; document.body.appendChild(cm);
 };
 /* ---------- the title screen: free roam or the story, each its own save ---------- */
-Story.switchTo = function (mode) { try { writeSave(); localStorage.setItem(MODE_KEY, mode); sessionStorage.setItem('island-rush-go', '1'); } catch (e) { /* ignore */ } location.reload(); };
+Story.switchTo = function (mode) { try { writeSave(); localStorage.setItem(MODE_KEY, mode); localStorage.setItem('island-rush-go', String(Date.now())); } catch (e) { /* ignore */ } location.reload(); };
 Story.initTitle = function () {
   const b = document.getElementById('btnStart'); if (!b || document.getElementById('btnStory')) return;
   let has = false, ch = 0; try { const o = JSON.parse(localStorage.getItem(STORY_KEY) || 'null'); has = !!(o && o.story); ch = has ? (o.story.ch | 0) : 0; } catch (e) { /* ignore */ }
@@ -551,4 +553,5 @@ Story.initTitle = function () {
   const mh = document.getElementById('menuHead'); if (mh && !document.getElementById('btnTitle')) { const t = document.createElement('button'); t.className = 'btn sm'; t.id = 'btnTitle'; t.type = 'button'; t.textContent = '⏏ Title screen'; t.title = 'Back to the title: switch between free roam and the story'; t.onclick = () => { writeSave(); location.reload(); }; mh.appendChild(t); }
   if (PLAY_MODE === 'story') { const tg = document.getElementById('tagline'); if (tg) tg.textContent = 'Story mode: ' + (has ? 'chapter ' + Math.min(ch + 1, STORY.length) + ' of ' + STORY.length : 'a new life on the island') + '. Free roam keeps its own save.'; }
 };
-Story.autoStart = function () { let go = false; try { go = sessionStorage.getItem('island-rush-go') === '1'; sessionStorage.removeItem('island-rush-go'); } catch (e) { /* ignore */ } if (go) setTimeout(() => App.start(), 60); };
+/* straight into the game after a switch (the page reloads into the other save): a note left just before the reload, good for 20 s */
+Story.autoStart = function () { let go = false; try { const t = +localStorage.getItem('island-rush-go') || 0; go = Date.now() - t < 20000; localStorage.removeItem('island-rush-go'); } catch (e) { /* ignore */ } if (go) setTimeout(() => App.start(), 60); };

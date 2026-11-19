@@ -13,7 +13,7 @@ const OUT = process.env.OUT || __dirname;
   page.on('pageerror', (e) => logs.push('PAGEERROR: ' + String(e.stack || e).slice(0, 600)));
   await page.route('**/three.min.js', (r) => r.fulfill({ path: path.resolve(__dirname, 'three.min.js'), contentType: 'application/javascript' }));
   await page.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
-  await page.addInitScript(() => { window.__noAdapt = true; try { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.clear(); localStorage.setItem('island-rush-v1', JSON.stringify({ money: 123456, set: { quality: 'low', traffic: 'off' } })); } } catch (e) { /* ignore */ } });
+  await page.addInitScript(() => { window.__noAdapt = true; try { if (!localStorage.getItem('test-seeded')) { localStorage.clear(); localStorage.setItem('test-seeded', '1'); localStorage.setItem('island-rush-v1', JSON.stringify({ money: 123456, set: { quality: 'low', traffic: 'off' } })); } } catch (e) { /* ignore */ } });
   const ready = async () => { await page.waitForFunction(() => window.__ready || window.__bootError, null, { timeout: 170000 }); await page.evaluate(() => { const g = window.__game; window.requestAnimationFrame = () => 0; window.__now = performance.now(); window.__run = (n) => { for (let i = 0; i < n; i++) { window.__now += 1000 / 30; g.frame(window.__now); } }; }); };
   let fails = 0; const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console.log('ok  ', m); };
   const shot = async (name) => { const u = await page.evaluate(() => window.__game.renderer.domElement.toDataURL('image/jpeg', 0.85)); fs.writeFileSync(path.join(OUT, 'story_' + name + '.jpg'), Buffer.from(u.split(',')[1], 'base64')); };
@@ -50,7 +50,7 @@ const OUT = process.env.OUT || __dirname;
       g.key('KeyE', true); g.key('KeyE', false); window.__run(3); r.cut = g.Cut.on;
       if (r.cut) { g.key('Space', true); g.key('Space', false); window.__run(20); r.pic = g.renderer.domElement.toDataURL('image/jpeg', 0.75); }
     } else if (st.t === 'cut') { window.__run(40); r.cut = g.Cut.on; }
-    else if (st.t === 'call') { let k = 0; while (k++ < 900 && g.Story.entries().some((x) => x.key === e.key && x.i === e.i)) window.__run(1); r.calls = g.Story.comm.log.length; r.took = k; }
+    else if (st.t === 'call') { let k = 0, onPhone = false, inBox = false; while (k++ < 900 && g.Story.entries().some((x) => x.key === e.key && x.i === e.i)) { window.__run(1); const P = document.getElementById('phone'), B = document.getElementById('storyComm'); if (g.Phone.inc && !P.hidden && P.querySelector('.ph-chat p')) onPhone = true; if (B && !B.hidden && /📱/.test(B.textContent)) inBox = true; } r.calls = g.Story.comm.log.length; r.took = k; r.onPhone = onPhone; r.inBox = inBox; window.__run(80); r.closed = document.getElementById('phone').hidden; }
     else if (st.t === 'goto') { const P = g.Story.place(st.at); g.loadAround(P.x, P.z, 20); if (g.Foot.on) g.Foot.board(true); g.spawnAt(P.x + 3, P.z + 3, 0); window.__run(5); }
     else if (st.t === 'run') {
       const m = g.Story.def(st.id); r.m = m.id; g.loadAround(m.x, m.z, 30); if (g.Foot.on) g.Foot.board(true); g.spawnAt(m.x + 4, m.z + 4, 0); window.__run(4); r.near = !!(g.Story.near && g.Story.near.what === 'run');
@@ -63,7 +63,7 @@ const OUT = process.env.OUT || __dirname;
     else if (st.t === 'clean') { g.Wanted.set && g.Wanted.set(0); if (g.Police && g.Police.reset) g.Police.reset(); window.__run(2); }
     return r;
   });
-  const seen = [], pics = {}; let guard = 0, talkOk = true, hudOk = true, runOk = true, events = 0;
+  const seen = [], pics = {}; let guard = 0, talkOk = true, hudOk = true, runOk = true, events = 0, calls = 0, callsOnPhone = 0, callsInBox = 0, callsOpen = 0;
   while (guard++ < 140) {
     const fin = await page.evaluate(() => window.__game.save.story.fin && !window.__game.Story.entries().length); if (fin) break;
     const r = await doStep(); if (r.none) break; seen.push(r.key + ':' + r.t + (r.who ? '(' + r.who + ')' : '') + (r.m ? '[' + r.m + ']' : ''));
@@ -74,6 +74,7 @@ const OUT = process.env.OUT || __dirname;
       events += q.ev || 0; if (!(r.near && r.cut && r.mi && q.story && q.cd < 5 && (!/race|rico2/.test(r.m) || r.rival))) { runOk = false; console.log('  run', JSON.stringify(Object.assign({}, r, { pic: !!r.pic }))); }
       if (r.pic) fs.writeFileSync(path.join(OUT, 'story_' + r.m + '_intro.jpg'), Buffer.from(r.pic.split(',')[1], 'base64'));
     }
+    if (r.t === 'call') { calls++; if (r.onPhone) callsOnPhone++; if (r.inBox) callsInBox++; if (r.onPhone && !r.closed) callsOpen++; }
     if (r.t === 'talk') { if (!(r.vis && r.near && r.cut)) { talkOk = false; console.log('  talk', JSON.stringify(Object.assign({}, r, { pic: !!r.pic }))); } if (r.pic && !pics[r.who]) { pics[r.who] = 1; fs.writeFileSync(path.join(OUT, 'story_talk_' + r.who + '.jpg'), Buffer.from(r.pic.split(',')[1], 'base64')); } }
     await finishCut();
   }
@@ -83,6 +84,7 @@ const OUT = process.env.OUT || __dirname;
   const mainSeen = seen.filter((s) => s.indexOf('main:') === 0), sideDone = Object.keys(end.sq || {}).filter((k) => end.sq[k].done);
   ok(end.n >= 9 && mainSeen.filter((s) => /talk/.test(s)).length >= 9 && mainSeen.some((s) => /bank/.test(s)) && mainSeen.some((s) => /heist/.test(s)) && mainSeen.some((s) => /mvolc/.test(s)), end.n + ' chapters, ' + mainSeen.length + ' main steps: conversations, calls, a bank job, the train heist and the volcano');
   ok(sideDone.length === end.nSide, 'every side quest offered and finished (' + sideDone.join(', ') + ')');
+  ok(calls >= 8 && callsOnPhone === calls && callsInBox === 0 && callsOpen === 0, 'story calls and texts come in on the phone screen, not over the game, and the phone puts itself away after (' + callsOnPhone + ' of ' + calls + ')');
   ok(talkOk, 'every conversation: the person is there, you walk up, E starts it as a cutscene');
   ok(runOk && ['sm_parts', 'sm_race1', 'sm_race2', 'sm_rico2', 'sm_nina'].every((id) => seen.some((x) => x.indexOf(id) >= 0)), 'the story’s own runs: E at the start plays the intro (rivals leaning out of the window), then the countdown');
   ok(events >= 8, 'during the races the radio chatter, nitro bursts and police fire (' + events + ' events)');
@@ -95,15 +97,24 @@ const OUT = process.env.OUT || __dirname;
   const ph = await page.evaluate(async () => {
     const g = window.__game, r = {}; g.key('KeyO', true); g.key('KeyO', false); window.__run(2); const P = document.getElementById('phone'); r.open = !P.hidden; r.apps = P.querySelectorAll('.ph-grid button').length;
     P.querySelector('[data-ph="contacts"]').click(); r.contacts = P.querySelectorAll('[data-call]').length + '+' + P.querySelectorAll('[data-svc]').length;
-    const n0 = g.Story.comm.log.length; P.querySelector('[data-call="mara"]').click(); await new Promise((res) => setTimeout(res, 1600)); window.__run(30); r.called = g.Story.comm.log.length > n0; r.line = (g.Story.comm.log[g.Story.comm.log.length - 1] || {}).text;
+    const n0 = g.Story.comm.log.length; P.querySelector('[data-call="mara"]').click(); r.ring = /Calling/.test(P.textContent); await new Promise((res) => setTimeout(res, 1600)); window.__run(4);
+    r.answered = !!g.Phone.call && g.Phone.call.st === 'talk'; r.line = (g.Phone.call && g.Phone.call.log[0] || [])[1]; r.opts = P.querySelectorAll('[data-say]').length; r.optTxt = [...P.querySelectorAll('[data-say]')].map((b) => b.textContent);
+    P.querySelector('[data-say="0"]').click(); r.chat = P.querySelectorAll('.ph-chat p').length; r.me = P.querySelectorAll('.ph-chat p.me').length; r.callShot = g.renderer.domElement.toDataURL('image/jpeg', 0.8);
+    const bye = [...P.querySelectorAll('[data-say]')].find((b) => /Bye/.test(b.textContent)); if (bye) bye.click(); await new Promise((res) => setTimeout(res, 1800)); window.__run(2); r.hungUp = !g.Phone.call; r.called = g.Story.comm.log.length >= n0 + 4;
     P.querySelector('[data-ph="home"]').click(); P.querySelector('[data-ph="messages"]').click(); r.msgs = P.querySelectorAll('.ph-msg').length;
     P.querySelector('[data-ph="home"]').click(); P.querySelector('[data-ph="quests"]').click(); r.log = /Chapters/.test(P.textContent) && /Side quests/.test(P.textContent) && /People/.test(P.textContent);
+    /* keep calling Rico: "again?", then irritated, then voicemail */
+    const ring = async () => { P.querySelector('[data-ph="home"]').click(); P.querySelector('[data-ph="contacts"]').click(); P.querySelector('[data-call="rico"]').click(); await new Promise((res) => setTimeout(res, 1600)); window.__run(2); const C = g.Phone.call, o = { st: C && C.st, first: C && C.log.find((l) => l[0] === 'rico'), opts: P.querySelectorAll('[data-say]').length }; g.Phone.hang(); return o; };
+    r.spam = []; for (let i = 0; i < 4; i++) r.spam.push(await ring());
     r.shot = g.renderer.domElement.toDataURL('image/jpeg', 0.8); g.key('Escape', true); g.key('Escape', false); r.closed = P.hidden;
     g.UI.openMenu('quests'); const pane = document.getElementById('pane').innerHTML; r.tab = /Chapters/.test(pane) && /Mara Quinn/.test(pane) && /More than friends/.test(pane); g.UI.closeMenu(); return r;
   });
-  console.log(JSON.stringify(Object.assign({}, ph, { shot: undefined })));
+  console.log(JSON.stringify(Object.assign({}, ph, { shot: undefined, callShot: undefined }))); if (ph.callShot) fs.writeFileSync(path.join(OUT, 'story_call.jpg'), Buffer.from(ph.callShot.split(',')[1], 'base64'));
   ok(ph.open && ph.apps >= 7 && ph.closed, 'the phone: O opens it (' + ph.apps + ' apps), Esc puts it away');
-  ok(ph.called && ph.contacts.split('+')[0] >= 6, 'call Mara from the contacts (' + ph.contacts + ' contacts): “' + ph.line + '”');
+  ok(ph.ring && ph.answered && ph.opts >= 3 && ph.contacts.split('+')[0] >= 6, 'call Mara from the contacts (' + ph.contacts + '): it rings, she answers (“' + ph.line + '”), and you pick what to say (' + (ph.optTxt || []).join(' / ') + ')');
+  ok(ph.chat >= 3 && ph.me >= 1 && ph.hungUp && ph.called, 'your answer and hers in the chat; Bye ends the call; it is all in Messages');
+  console.log('  spam: ' + JSON.stringify(ph.spam));
+  ok(ph.spam && ph.spam[1].st === 'talk' && /again|Miss me/i.test((ph.spam[1].first || [])[1]) && ph.spam[2].opts <= 2 && ph.spam[3].st === 'none', 'call Rico over and over: a normal answer, then “again?”, then irritated (only sorry or bye), then voicemail');
   ok(ph.msgs >= 10 && ph.log, 'Messages keeps every call and radio line (' + ph.msgs + '); the Quests app shows the chapters, side quests and people');
   ok(ph.tab, 'the pause menu’s Story tab: chapters, and Mara “More than friends”');
   /* the other roads */

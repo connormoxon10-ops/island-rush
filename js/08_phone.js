@@ -7,36 +7,96 @@
      Map, Garage (the pause menu's), Bank (your money and reputation), Camera (saves a picture of the screen), Music (on / off). */
 const Phone = { open: false, app: 'home', el: null, btn: null, call: null, called: {} };
 const PHONE_APPS = [['contacts', '📇', 'Contacts'], ['messages', '💬', 'Messages'], ['quests', '📖', 'Quests'], ['map', '🗺️', 'Map'], ['garage', '🚗', 'Garage'], ['bank', '🏦', 'Bank'], ['camera', '📷', 'Camera'], ['music', '🎵', 'Music']];
-/* ---------- calls ---------- */
-/* what someone says when you call them: the story so far and how they feel about you */
-Phone.lines = function (id) {
-  const S = Story.S(), f = Story.F(), v = f[id] | 0, ch = S.ch, nm = STORY_CAST[id].name.split(' ')[0] + ' (phone)', L = [];
-  const st = Story.step(), what = st && st.obj ? st.obj.charAt(0).toLowerCase() + st.obj.slice(1) : '';
+/* ---------- calls: they pick up, and you talk ----------
+   A call rings, then they answer (what they say first depends on where the story is and how they feel about you). You pick what to say from the
+   buttons; each answer can move the relationship, and some set things going (ask Mara out and the dinner is on; say sorry to Rico and you may be
+   even). Topics you have used drop off the list; Hang up whenever you like. Every call is kept in Messages. */
+const PH_GREET = {
+  mara: (v, f) => f.maraLove && v >= 4 ? 'Hey, you. I was just thinking about you.' : v >= 3 ? 'Hey! I was hoping it was you.' : v >= 1 ? 'Mara’s garage. Oh, hi! What’s up?' : v < 0 ? 'What? I’m elbow-deep in a gearbox.' : 'Mara’s garage.',
+  rico: (v, f) => f.ricoS === 'shamed' ? 'You’ve got some nerve calling me.' : f.ricoS ? 'Ferry kid! What’s up?' : 'Who is this?',
+  nina: (v) => v >= 3 ? 'Hi! It’s nice to hear from you when it isn’t about work.' : 'Nina speaking. …Oh. This isn’t a good time, I’m at the counter.',
+  sal: () => 'Sal here. My grandson set this phone up. I hate it. What is it, son?',
+  jax: () => '…Yeah.',
+  hal: () => 'Brody Haulage! Oh, it’s the fast one.',
+  dex: () => 'Make it quick.'
+};
+/* calling the same person again and again: a second call in a few minutes gets "again?", a third gets an irritated answer and little to say,
+   after that they let it ring out to voicemail (and keep at it and they think less of you) */
+const PH_SPAM = {
+  again: { mara: 'Again? What did you forget?', rico: 'You again? Miss me already?', nina: 'You just called. Is something wrong?', sal: 'Twice in one day. Must be my birthday.', jax: 'What now.', hal: 'Back again! Forget something?', dex: 'You are wasting my minutes.' },
+  annoyed: { mara: 'Seriously. I have a customer standing right here. What?', rico: 'Okay, this is getting weird, ferry kid.', nina: 'Please stop calling me at work. Please.', sal: 'Son, I’m old, not lonely. What is it?', jax: 'Stop calling this number.', hal: 'I’m driving! What?!', dex: 'Call me again and you will regret it.' },
+  vmail: { mara: 'Hi, this is Mara. Leave a message. …If this is you again: stop calling, I’m working.', rico: 'Yo, it’s Rico. If you’re fast, leave a message. If you’re the ferry kid, chill.', nina: 'You’ve reached Nina Park. Please leave a message.', sal: 'This is Sal’s telephone. I don’t know how to check these.', jax: '[A long beep. No greeting.]', hal: 'Brody Haulage, leave it after the horn. HONK.', dex: 'The number you have called is busy.' }
+};
+/* small talk once the real topics are used up: something different each time */
+const PH_SMALL = [
+  ['Just wanted to hear your voice.', { mara: ['Smooth. Very smooth. I’m blushing at a gearbox.', 'Well, now you’ve heard it. Go do something useful.'], rico: ['Weird. But okay. Hi.'], nina: ['That’s… actually lovely. Thank you.'], sal: ['It’s an old voice, son. Same as yesterday.'], hal: ['Ha! Sounds like a diesel, doesn’t it?'], jax: ['Don’t.'], dex: ['Flattery is free. My time isn’t.'] }],
+  ['Nothing, I’m bored.', { mara: ['Bored? Come sweep the garage.', 'Bored people find trouble. Come here instead.'], rico: ['Bored? Race me!', 'Go do donuts in the car park, works for me.'], nina: ['Lucky you. I’m counting coins.'], sal: ['Watch a train go by. Best thing for boredom.'], hal: ['Bored? Load my truck, then.'], jax: ['Then be bored quietly.'], dex: ['Then go and earn something.'] }],
+  ['Seen anything weird today?', { mara: ['A goat on the coast road again. I swear it’s the same goat.', 'Someone brought in a car full of sand. Full. Of sand.'], rico: ['A cop doing the speed limit. Spooky.'], nina: ['A man tried to deposit a fish. A whole fish.'], sal: ['A teenager waved at the train. Nobody waves any more.'], hal: ['A seagull stole my sandwich. Whole thing. Bread and all.'], jax: ['Every day is weird working for Dex.'], dex: ['Only you.'] }]
+];
+/* the topics you can bring up with someone: [what you say, what happens] (the result: lines they answer with, a change to how they feel, end the call) */
+Phone.topics = function (id) {
+  const S = Story.S(), f = Story.F(), v = f[id] | 0, st = Story.step(), obj = st && st.obj ? st.obj.charAt(0).toLowerCase() + st.obj.slice(1) : 'enjoy the island', T = [];
+  const chOnce = (k) => { S.calls = S.calls || {}; const key = id + ':' + k + ':' + S.ch; if (S.calls[key]) return false; S.calls[key] = 1; return true; };
+  T.push(['How are you doing?', () => { const up = v >= 0 && id !== 'dex' && !(id === 'rico' && f.ricoS === 'shamed') && chOnce('how');
+    const a = { mara: v >= 2 ? 'Better now. The van finally runs. Mostly. How are you holding up?' : 'Busy. Fine. Why?', rico: f.ricoS === 'shamed' ? 'Like you care.' : 'Bored! Nobody on this island can drive except you, and you never race me.', nina: 'Tired. Mum had a good day, though.', sal: 'My knees say rain. My knees are always wrong.', jax: 'Alive. That’s a good day, working for Dex.', hal: 'Hauling. Always hauling.', dex: 'Rich. Next question.' }[id];
+    return { say: [a], eff: up ? { [id]: 1 } : null, note: up ? 'They seemed glad you asked.' : '' }; }]);
+  T.push(['Any advice?', () => ({ say: [{ mara: 'Next thing you’re doing is ' + obj + '. Do it carefully. For me.', rico: 'Advice? Brake late, lie later. And for ' + obj + '? Don’t blink.', nina: 'For ' + obj + '? Be the most boring person in the room. Nobody remembers boring.', sal: 'Whatever ' + obj + ' is, son, do it before dark if you can.', jax: 'Don’t trust anything Dex says about ' + obj + '.', hal: 'Check your tyres. That’s my advice for everything.', dex: 'My advice is ' + obj + '. Chop chop.' }[id]] })]);
   if (id === 'mara') {
-    L.push(v >= 4 && f.maraLove ? 'Hey, you. I was just thinking about you. What’s up?' : v >= 2 ? 'Hey! Everything okay? You never call just to chat.' : v < 0 ? 'What do you want? I’m elbow-deep in a gearbox.' : 'Mara’s garage. Oh, it’s you.');
-    if (S.fin) L.push('Garage is busy. Come by later, I saved you the good coffee.');
-    else if (ch <= 2) L.push('Don’t forget: ' + what + '. And drive like I’m in the passenger seat.');
-    else if (ch <= 5) L.push(f.lie ? 'I’m not asking where you were last night. I’m just not.' : 'Be careful with Dex. I mean it.');
-    else L.push('Whatever you’re doing tonight… come home after, okay?');
+    if (!f.maraLove && v >= 3) T.push(['I miss you when I’m not at the garage.', () => v >= 4 ? { say: ['…Yeah?', 'Me too. A bit. A lot. Get back here soon.'], eff: { mara: 1, maraHint: 1 } } : { say: ['That’s sweet. Don’t get weird on me.'] }]);
+    if (f.maraLove) T.push(['I love you.', () => ({ say: ['Say it in person, idiot.', '…I love you too.'] })]);
+    if (!((S.sq.pier || {}).done) && !f.pierAsk && S.ch >= 3) T.push(['Want to get dinner some time?', () => v >= 1 ? { say: ['…Like a date?', 'Okay. The pier. I’ll book a table, you wear a shirt.'], eff: { pierAsk: 1 } } : { say: ['Ha. Ask me again when you’ve earned it.'], eff: { mara: 0 } }]);
+    if (S.ch >= 4 && !f.maraDex) T.push(['What do you know about Dex?', () => ({ say: ['Enough to stay away. He finds people when they’re broke and keeps them that way.', 'Please tell me you’re not working for him.'], eff: { maraDex: 1 } })]);
   } else if (id === 'rico') {
-    L.push(f.ricoS === 'shamed' ? 'You’ve got some nerve calling me.' : f.ricoS === 'ally' || f.ricoS === 'even' ? 'Ferry kid! What’s up? Need a wingman?' : 'Who is this? …Oh. You.');
-    L.push(f.ricoS === 'ally' || f.ricoS === 'even' ? 'If Dex gives you any trouble, you call me. I know every back road on this island.' : 'Next time it’s my road. Count on it.');
-  } else if (id === 'nina') { L.push(v >= 2 ? 'Hi. It’s nice to hear from you when it isn’t about work.' : 'This isn’t a good time. I’m at the counter.'); L.push(f.ninaF && v >= 3 ? 'Mum keeps asking about “the fast one”. I keep changing the subject. Badly.' : 'Look after yourself.'); }
-  else if (id === 'sal') { L.push('Sal here. My grandson set this phone up. I hate it.'); L.push(f.salT ? 'I still think about that sunset you told me about. Every evening.' : 'The last train runs at night, if you’re wondering. Mind the timing.'); }
-  else if (id === 'jax') L.push(f.jaxA ? 'Not on this line. …Thanks, for before. Watch Dex.' : '…');
-  else if (id === 'hal') L.push('Brody Haulage. Oh, the fast one! Gearbox purrs like a kitten. Tell Mara.');
-  else if (id === 'dex') L.push(S.fin ? 'The number you have called is not in service.' : 'Busy. I’ll call you.');
-  return L.map((t) => [nm, t]);
+    if (f.ricoS === 'shamed') T.push(['I’m sorry about the race. That was a jerk move.', () => f.ricoSorry ? { say: ['You said that already.'] } : v >= -3 ? { say: ['…', 'You mean that?', 'Fine. We’re even. Don’t make it weird.'], eff: { rico: 3, ricoS: 'even', ricoSorry: 1 } } : { say: ['Sorry doesn’t fix my reputation.'], eff: { ricoSorry: 1 } }]);
+    else if (f.ricoS) { T.push(['Know any good roads?', () => ({ say: ['The coast road at dawn. No traffic, no cops, and the sun comes up right in your mirrors.'] })]); T.push(['Want to race again?', () => ({ say: [(S.sq.rico2 || {}).done ? 'And lose a third time? Ask me next month.' : 'Always. Come find me. You know where.'] })]); }
+  } else if (id === 'nina') {
+    T.push(['How’s your mum?', () => ({ say: [(S.sq.nina || {}).done ? 'Much better, thanks to you. She asks about “the fast one” every day.' : 'Not great. The medicine is the expensive kind. That’s… why I do what I do.'], eff: (S.sq.nina || {}).done && chOnce('mum') ? { nina: 1 } : null })]);
+    if (f.ninaF && !f.ninaDate) T.push(['Dinner some time? Somewhere that isn’t a bank.', () => v >= 3 ? { say: ['…Okay. Yes. You pick.', 'Somewhere with tablecloths. I want to feel fancy.'], eff: { nina: 1, ninaDate: 1 } } : { say: ['Let’s see if you’re still around next week.'] }]);
+  } else if (id === 'sal') {
+    T.push(['Tell me about the train.', () => ({ say: ['Forty years. Forty-one, if you count the year I trained.', 'Best job in the world. You see the whole island twice a day and nobody can phone you.'], eff: chOnce('train') ? { sal: 1 } : null })]);
+  } else if (id === 'jax') {
+    if (f.jaxA) T.push(['Are you getting out?', () => ({ say: [(S.sq.jax || {}).done ? 'Ferry’s booked. Thanks to you. Don’t tell Dex.' : 'Working on it. Don’t ask on this line.'] })]);
+  } else if (id === 'hal') {
+    T.push(['Any work going?', () => ({ say: ['Mara keeps you busy enough. But if she ever lets you go, I pay in diesel and sandwiches.'] })]);
+  } else if (id === 'dex') {
+    T.push(['We need to talk.', () => ({ say: ['No, we don’t. I call you. That’s how this works.'], end: true })]);
+  }
+  /* small talk: one at a time, a different line each call */
+  { const C = Phone.call, sm = PH_SMALL.filter((x) => !(C && C.used[x[0]])); if (sm.length) { const x = sm[(C ? C.n : 0) % sm.length], pool = x[1][id] || ['Huh.']; T.push([x[0], () => ({ say: [pool[Math.floor(Math.random() * pool.length)]] })]); } }
+  if (Phone.call && Phone.call.annoyed) { T.length = 0; T.push(['Sorry, wrong button.', () => ({ say: ['Mm-hm. Sure.'], end: true })]); }
+  T.push(['Bye.', () => ({ say: [{ mara: v >= 3 ? 'Bye, you. Drive safe.' : 'Bye.', rico: 'Later, ferry kid.', nina: 'Bye. Be careful.', sal: 'Mind the timing, son.', jax: '…', hal: 'Keep it on the black stuff!', dex: '' }[id] || 'Bye.'], end: true })]);
+  return T;
 };
 Phone.dial = function (id) {
-  if (Phone.call) return; Phone.call = { id, t: 0 }; Phone.render(); Snd.beep(880, 0.05);
-  setTimeout(() => {
-    Phone.call = null; if (!Story.on || !STORY_CAST[id]) return; Story.say(Phone.lines(id));
-    /* a friendly call brings you a little closer, once a chapter */
-    const S = Story.S(), k = id + ':' + S.ch, f = Story.F(); if (!Phone.called[k] && (f[id] | 0) >= 0 && id !== 'dex' && id !== 'jax' && !(id === 'rico' && f.ricoS === 'shamed')) { Phone.called[k] = 1; S.calls = S.calls || {}; if (!S.calls[k]) { S.calls[k] = 1; Story.applyEff({ [id]: 1 }); } }
-    Phone.render();
-  }, 1400);
+  if (Phone.call || !STORY_CAST[id]) return; const S = Story.S();
+  const now = Date.now(), R = Phone.recent || (Phone.recent = {}), L = (R[id] = (R[id] || []).filter((t) => now - t < 180000)), n = L.length; L.push(now);
+  Phone.call = { id, st: 'ring', t: App.time, log: [], used: {}, n: (Phone.nCalls = (Phone.nCalls || 0) + 1), spam: n }; Phone.render(); Snd.beep(880, 0.05);
+  setTimeout(() => { const C = Phone.call; if (!C || C.id !== id) return;
+    if (id === 'dex' && (S.ch >= 8 || S.fin)) { C.st = 'none'; C.log.push(['', 'The number you have called is not in service.']); Phone.render(); return; }
+    if (C.spam >= 3) { C.st = 'none'; C.log.push(['', 'Voicemail']); Phone.hear(id, [PH_SPAM.vmail[id]]); if (C.spam >= 4 && !Phone.spamHit) { Phone.spamHit = id; if (STORY_CAST[id] && id !== 'dex') Story.applyEff({ [id]: -1 }); C.log.push(['', (STORY_CAST[id].name.split(' ')[0]) + ' is getting tired of your calls.']); } Phone.render(); return; }
+    C.st = 'talk'; C.t0 = App.time; C.annoyed = C.spam === 2; const g = C.spam === 1 ? PH_SPAM.again[id] : C.spam === 2 ? PH_SPAM.annoyed[id] : PH_GREET[id](Story.F()[id] | 0, Story.F()); Phone.hear(id, [g]); Phone.render(); }, 1400);
 };
+/* they say something: into the call, and into Messages */
+Phone.hear = function (id, lines) { const C = Phone.call; for (const t of lines) { if (!t) continue; C.log.push([id, t]); Story.comm.log.push({ who: id, text: t }); } Snd.beep(660, 0.03); };
+Phone.say = function (k) {
+  const C = Phone.call; if (!C || C.st !== 'talk') return; const T = Phone.topics(C.id).filter((x) => !C.used[x[0]]), o = T[k]; if (!o) return;
+  C.used[o[0]] = 1; C.log.push(['you', o[0]]); Story.comm.log.push({ who: 'you', text: o[0] }); const r = o[1]();
+  if (r.eff) Story.applyEff(r.eff); Phone.hear(C.id, r.say || []); if (r.note) C.log.push(['', r.note]); if (r.end) { C.st = 'ended'; setTimeout(() => { if (Phone.call === C) { Phone.call = null; Phone.render(); } }, 1600); }
+  writeSave(); Phone.render();
+};
+/* a call or text coming in (the story's calls): the phone opens on it, the lines appear as they are said, and it puts itself away after */
+Phone.incoming = function (c, n) {
+  const nm = c.who.replace(/\s*\((phone|text)\)/, ''), txt = /\(text\)/.test(c.who);
+  let I = Phone.inc; if (!I || I.nm !== nm) { I = Phone.inc = { nm, txt, log: [], auto: !Phone.open, last: null }; if (!Phone.open) { Phone.open = true; Phone.app = 'home'; Phone.el.hidden = false; } Snd.beep(1100, 0.06); }
+  if (I.last !== c) { I.last = c; I.log.push([c.who === 'you (phone)' ? 'you' : 'them', c.text]); }
+  I.n = n; I.t = App.time; Phone.render();
+};
+Phone.incTick = function () {
+  const I = Phone.inc; if (!I) return; const C = Story.comm, next = C.cur || C.q[0];
+  if (next && next.who && /\((phone|text)\)/.test(next.who) && next.who.replace(/\s*\((phone|text)\)/, '') === I.nm) return;
+  if (App.time - I.t > 2.2) { const auto = I.auto; Phone.inc = null; if (auto && !Phone.call) Phone.toggle(false); else Phone.render(); }
+};
+Phone.hang = function () { if (Phone.call && Phone.call.spam < 3) Phone.spamHit = null; const C = Phone.call; if (!C) return; if (C.st === 'talk') C.log.push(['', 'Call ended']); Phone.call = null; Snd.beep(420, 0.05); Phone.render(); };
 /* free roam services */
 Phone.service = function (k) {
   const c = car;
@@ -46,7 +106,7 @@ Phone.service = function (k) {
 };
 /* ---------- the screen ---------- */
 Phone.toggle = function (on) {
-  Phone.open = on == null ? !Phone.open : !!on; if (Phone.open) { Phone.app = 'home'; Phone.render(); Snd.beep(1200, 0.03); }
+  Phone.open = on == null ? !Phone.open : !!on; if (!Phone.open && Phone.call) Phone.hang(); if (!Phone.open) Phone.inc = null; if (Phone.open) { Phone.app = 'home'; Phone.render(); Snd.beep(1200, 0.03); }
   Phone.el.hidden = !Phone.open;
 };
 Phone.go = function (app) {
@@ -59,7 +119,13 @@ Phone.go = function (app) {
 Phone.render = function () {
   if (!Phone.el || !Phone.open) return; const scr = Phone.el.querySelector('.scr'), a = Phone.app; let h = '';
   const top = (t) => '<div class="ph-top"><button type="button" data-ph="home">‹</button><b>' + t + '</b><span></span></div>';
-  if (Phone.call) h = '<div class="ph-call"><div class="ph-av">' + (STORY_CAST[Phone.call.id] ? STORY_CAST[Phone.call.id].name.charAt(0) : '?') + '</div><b>' + (STORY_CAST[Phone.call.id] ? STORY_CAST[Phone.call.id].name : '') + '</b><small>Calling…</small></div>';
+  if (!Phone.call && Phone.inc) { const I = Phone.inc;
+    h = '<div class="ph-call"><div class="ph-av s2">' + I.nm.charAt(0) + '</div><b>' + I.nm + '</b><small>' + (I.txt ? 'Message' : 'Incoming call · on speaker') + '</small></div><div class="ph-chat">' +
+      I.log.map((l, k) => '<p' + (l[0] === 'you' ? ' class="me"' : '') + '>' + (k === I.log.length - 1 ? l[1].slice(0, I.n) : l[1]) + '</p>').join('') + '</div>'; }
+  else if (Phone.call) { const C = Phone.call, nm = STORY_CAST[C.id].name, sec = C.t0 ? Math.floor(App.time - C.t0) : 0;
+    h = '<div class="ph-call"><div class="ph-av s2">' + nm.charAt(0) + '</div><b>' + nm + '</b><small>' + (C.st === 'ring' ? 'Calling…' : C.st === 'none' ? 'No answer' : C.st === 'ended' ? 'Call ended' : 'On call · ' + Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0')) + '</small></div><div class="ph-chat">' +
+      C.log.map((l) => (l[0] === 'you' ? '<p class="me">' + l[1] + '</p>' : l[0] ? '<p>' + l[1] + '</p>' : '<p class="sys">' + l[1] + '</p>')).join('') + '</div>' +
+      (C.st === 'talk' ? '<div class="ph-opts">' + Phone.topics(C.id).filter((x) => !C.used[x[0]]).map((x, k) => '<button type="button" data-say="' + k + '">' + x[0] + '</button>').join('') + '</div>' : '') + '<button type="button" class="ph-hang" data-hang="1">' + (C.st === 'talk' || C.st === 'ring' ? 'Hang up' : 'Close') + '</button>'; }
   else if (a === 'home') h = '<div class="ph-clock">' + String(Math.floor(App.tod)).padStart(2, '0') + ':' + String(Math.floor((App.tod % 1) * 60)).padStart(2, '0') + '</div><div class="ph-sub">' + (Story.on ? 'Story mode' : 'Free roam') + ' · ' + money(save.money) + '</div><div class="ph-grid">' + PHONE_APPS.filter((p) => p[0] !== 'quests' || Story.on).map((p) => '<button type="button" data-ph="' + p[0] + '"><i>' + p[1] + '</i><small>' + (p[0] === 'music' ? 'Music ' + (save.set.music ? 'on' : 'off') : p[2]) + '</small></button>').join('') + '</div>';
   else if (a === 'contacts') {
     h = top('Contacts');
@@ -80,6 +146,8 @@ Phone.init = function () {
     '#phone .ph-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}#phone .ph-top button{background:none;border:0;color:#8fd0ff;font-size:26px;cursor:pointer;width:28px}#phone .ph-top b{font-size:18px}' +
     '#phone .ph-row{display:flex;align-items:center;gap:10px;width:100%;background:rgba(255,255,255,.06);border:0;border-radius:12px;padding:8px;margin-bottom:6px;color:#fff;cursor:pointer;text-align:left}#phone .ph-row span:nth-child(2){flex:1}#phone .ph-row b{display:block;font-size:15px}#phone .ph-row small{color:#a8b6cc}#phone .ph-row i{font-style:normal}' +
     '#phone .ph-av{width:64px;height:64px;border-radius:50%;background:#2f6f78;display:grid;place-items:center;font-size:28px;font-weight:700;margin:40px auto 10px}#phone .ph-av.s{width:34px;height:34px;font-size:15px;margin:0}#phone .ph-call{text-align:center}#phone .ph-call b{display:block;font-size:20px}#phone .ph-call small{color:#8fd0ff}' +
+    '#phone .ph-av.s2{width:54px;height:54px;font-size:24px;margin:6px auto 6px}#phone .ph-chat{margin:10px 0;display:flex;flex-direction:column;gap:6px}#phone .ph-chat p{margin:0;max-width:85%;padding:6px 10px;border-radius:12px 12px 12px 3px;background:rgba(255,255,255,.12);font-size:14px;align-self:flex-start}#phone .ph-chat p.me{align-self:flex-end;background:#2a6fdb;border-radius:12px 12px 3px 12px}#phone .ph-chat p.sys{align-self:center;background:none;color:#a8b6cc;font-size:12px}' +
+    '#phone .ph-opts{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}#phone .ph-opts button{background:rgba(255,211,77,.12);border:1px solid rgba(255,211,77,.45);color:#fff;border-radius:10px;padding:7px 10px;text-align:left;font:600 14px Rajdhani,system-ui,sans-serif;cursor:pointer}#phone .ph-hang{width:100%;background:#c0392b;border:0;color:#fff;border-radius:12px;padding:9px;font:700 15px Rajdhani,system-ui,sans-serif;cursor:pointer}' +
     '#phone .ph-msg{background:rgba(255,255,255,.07);border-radius:10px;padding:6px 9px;margin-bottom:6px;font-size:14px}#phone .ph-msg b{display:block;color:#8fd0ff;font-size:12px}#phone .ph-empty{color:#a8b6cc}#phone .ph-bank{text-align:center;margin-top:30px}#phone .ph-bank b{display:block;font-size:34px;margin:6px 0}#phone .ph-bank small{display:block;color:#a8b6cc}' +
     '#phone .ph-log .sect{color:#ffd34d;font-size:12px;letter-spacing:.12em;text-transform:uppercase;margin:10px 0 4px}#phone .ph-log .row{display:flex;align-items:center;gap:8px;justify-content:space-between;background:rgba(255,255,255,.06);border-radius:10px;padding:6px 8px;margin-bottom:5px;font-size:14px}#phone .ph-log small{color:#a8b6cc}#phone .ph-log p{margin:4px 0;font-size:13px}';
   document.head.appendChild(css);
@@ -88,15 +156,15 @@ Phone.init = function () {
   const p = Phone.el = document.createElement('div'); p.id = 'phone'; p.hidden = true; p.innerHTML = '<div class="scr"></div>'; document.body.appendChild(p);
   p.addEventListener('click', (e) => {
     const t = e.target.closest('button'); if (!t) return;
-    if (t.dataset.ph) Phone.go(t.dataset.ph); else if (t.dataset.call) Phone.dial(t.dataset.call); else if (t.dataset.svc) Phone.service(t.dataset.svc);
+    if (t.dataset.say) Phone.say(+t.dataset.say); else if (t.dataset.hang) Phone.hang(); else if (t.dataset.ph) { if (Phone.call) Phone.hang(); Phone.go(t.dataset.ph); } else if (t.dataset.call) Phone.dial(t.dataset.call); else if (t.dataset.svc) Phone.service(t.dataset.svc);
     else if (t.dataset.act === 'sqt') { Story.trackSet(t.dataset.id); Phone.render(); }
   });
 };
 Phone.key = function (code) { if (code === 'KeyO') { Phone.toggle(); return true; } if (Phone.open && code === 'Escape') { Phone.toggle(false); return true; } return false; };
 /* every frame: the button shows in play, and moves below the run panel when one is up */
 Phone.tick = function () {
-  if (!Phone.btn) return; const on = App.mode === 'play'; Phone.btn.hidden = !on; if (!on && Phone.open) Phone.toggle(false);
+  if (!Phone.btn) return; Phone.incTick(); const on = App.mode === 'play'; Phone.btn.hidden = !on; if (!on && Phone.open) Phone.toggle(false);
   const mp = document.getElementById('mp'), r = mp && !mp.hidden && mp.offsetParent ? mp.getBoundingClientRect() : null, top = r && r.left < 80 ? r.bottom + 8 : 16;
   Phone.btn.style.top = top + 'px'; Phone.el.style.top = (top + 52) + 'px';
-  if (Phone.open && Phone.app === 'home' && ((Phone.rt = (Phone.rt || 0) + 1) % 60 === 0)) Phone.render();
+  if (Phone.open && (Phone.app === 'home' || (Phone.call && Phone.call.st === 'talk')) && ((Phone.rt = (Phone.rt || 0) + 1) % 30 === 0)) Phone.render();
 };
