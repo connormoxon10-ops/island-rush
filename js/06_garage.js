@@ -208,6 +208,7 @@ function applyCar(id, rebuildMesh) {
   d.bumpY = (d.body.y0 != null ? d.body.y0 : 0.36) + 0.19; d.bumpZ = hl + 0.2;
   EYE.y = 1.13 + d.dy; if (Cockpit.group) Cockpit.group.position.y = d.dy;
   if (Cockpit.hood) { Cockpit.hood.scale.set(d.body.W / 1.82, 1, clamp((hl + 0.43 - 1.18) / 1.4, 0.6, 1.7)); }
+  if (Cockpit.theme) Cockpit.theme(d);
   if (rebuildMesh && car.body) {
     const old = car.ext; car.body.remove(old);
     disposeCar(old);
