@@ -17045,14 +17045,14 @@ Phone.say = function (k) {
 };
 /* a call or text coming in (the story's calls): the phone opens on it, the lines appear as they are said, and it puts itself away after */
 Phone.incoming = function (c, n) {
-  const nm = c.who.replace(/\s*\((phone|text)\)/, ''), txt = /\(text\)/.test(c.who);
-  let I = Phone.inc; if (!I || I.nm !== nm) { I = Phone.inc = { nm, txt, log: [], auto: !Phone.open, last: null }; if (!Phone.open) { Phone.open = true; Phone.app = 'home'; Phone.el.hidden = false; } Snd.beep(1100, 0.06); }
+  const me = /^you\b/i.test(c.who), nm = me && Phone.inc ? Phone.inc.nm : c.who.replace(/\s*\((phone|text)\)/, ''), txt = /\(text\)/.test(c.who);   /* your own lines belong to the call you are on */
+  let I = Phone.inc; if (!I || (I.nm !== nm && !me)) { I = Phone.inc = { nm, txt, log: I ? I.log : [], auto: I ? I.auto : !Phone.open, last: null }; if (!Phone.open) { Phone.open = true; Phone.app = 'home'; Phone.el.hidden = false; } Snd.beep(1100, 0.06); }
   if (I.last !== c) { I.last = c; I.log.push([c.who === 'you (phone)' ? 'you' : 'them', c.text]); }
   I.n = n; I.t = App.time; Phone.render();
 };
 Phone.incTick = function () {
   const I = Phone.inc; if (!I) return; const C = Story.comm, next = C.cur || C.q[0];
-  if (next && next.who && /\((phone|text)\)/.test(next.who) && next.who.replace(/\s*\((phone|text)\)/, '') === I.nm) return;
+  if (next && next.who && /\((phone|text)\)/.test(next.who)) return;   /* more of the call (or the next call) is coming */
   if (App.time - I.t > 2.2) { const auto = I.auto; Phone.inc = null; if (auto && !Phone.call) Phone.toggle(false); else Phone.render(); }
 };
 Phone.hang = function () { if (Phone.call && Phone.call.spam < 3) Phone.spamHit = null; const C = Phone.call; if (!C) return; if (C.st === 'talk') C.log.push(['', 'Call ended']); Phone.call = null; Snd.beep(420, 0.05); Phone.render(); };
@@ -18646,7 +18646,7 @@ Story.dropNpc = function (key) { const n = Story.npcs[key]; if (n) { Human.dispo
 /* a rival leaning out of the driver's window of their car (a pivot at the hips, tipped out over the sill) */
 Story.rival = function (who, mesh, side) {
   Story.dropRival(); const h = Human.make(STORY_CAST[who].o()), pv = new THREE.Group();
-  pv.position.set(side * 0.42, 0.52, 0.2); pv.rotation.y = side * Math.PI / 2; pv.rotateX(0.95); h.root.position.y = -0.95; pv.add(h.root); mesh.add(pv);
+  pv.position.set(side * 0.42, 0.7, 0.2);   /* hips on the seat, high enough that the shoulders clear the sill */ pv.rotation.y = side * Math.PI / 2; pv.rotateX(0.95); h.root.position.y = -0.95; pv.add(h.root); mesh.add(pv);
   Story.rivalH = { who, h, pv, mesh, side }; return Story.rivalH;
 };
 Story.dropRival = function () { const R = Story.rivalH; if (!R) return; R.pv.parent && R.pv.parent.remove(R.pv); Human.dispose(R.h); Story.rivalH = null; };
@@ -18825,7 +18825,7 @@ Cut.frame = function (dt) {
   const fw = { x: Math.sin(car.yaw), z: Math.cos(car.yaw) }, rt = { x: Math.cos(car.yaw), z: -Math.sin(car.yaw) };
   if (n) Cut.gesture(n.h, L[0] === n.id && Cut.typed < L[1].length + 8, t, n.h.id);
   if (R) {
-    const b = R.h.b, talk = L[0] === R.who; b.armR.rotation.x = talk ? -2.3 + 0.35 * Math.sin(t * 7) : -1.1; b.elR.rotation.x = talk ? -0.5 : -1.3; b.armL.rotation.x = -0.9; b.elL.rotation.x = -1.2;
+    const b = R.h.b, talk = L[0] === R.who; b.armR.rotation.x = talk ? -2.3 + 0.35 * Math.sin(t * 7) : -1.1; b.elR.rotation.x = talk ? -0.5 : -1.3; b.armL.rotation.set(-1.25, 0, 0.35); b.elL.rotation.x = -1.5;   /* the other arm folded on the sill */
     b.head.rotation.x = -0.75 + (talk ? 0.05 * Math.sin(t * 4) : 0); b.head.rotation.y = 0.25 * Math.sin(t * 0.8); b.jaw.rotation.x = talk && Cut.typed < L[1].length ? 0.06 + 0.08 * Math.abs(Math.sin(t * 14)) : 0.02;
     Human.alive(R.h, dt, t, 1.3);
   }
@@ -18837,8 +18837,8 @@ Cut.frame = function (dt) {
     else { camera.position.set(n.x + ux * 0.5 + px * 0.55 * side, ny + 0.05, n.z + uz * 0.5 + pz * 0.55 * side); camera.position.lerp(_cutP.set(me.x, my, me.z), 0.12 * k); _cutV.set(me.x, my, me.z); }
     camera.lookAt(_cutV);
   } else if (shot === 'rival' && R) {
-    R.h.b.head.getWorldPosition(_cutH); const ox = rt.x * R.side, oz = rt.z * R.side;
-    camera.position.set(car.x + fw.x * (0.6 + 0.6 * k) - ox * 0.2, _cutH.y + 0.1, car.z + fw.z * (0.6 + 0.6 * k) - oz * 0.2); _cutV.copy(_cutH); camera.lookAt(_cutV);
+    R.h.b.head.getWorldPosition(_cutH); const dx = car.x - R.mesh.position.x, dz = car.z - R.mesh.position.z, dl = Math.hypot(dx, dz) || 1;   /* out in the gap between the cars, at his head height, facing him */
+    camera.position.set(_cutH.x + dx / dl * 1.05 + fw.x * (0.6 + 0.3 * k), _cutH.y + 0.08, _cutH.z + dz / dl * 1.05 + fw.z * (0.6 + 0.3 * k)); _cutV.copy(_cutH); camera.lookAt(_cutV);
   } else if (shot === 'line') {
     const cx = R ? (car.x + R.mesh.position.x) / 2 : car.x, cz = R ? (car.z + R.mesh.position.z) / 2 : car.z, D = 11 + 4 * k;
     camera.position.set(cx + fw.x * D + rt.x * 2.5 * Math.sin(k * 1.5), car.y + 0.7, cz + fw.z * D + rt.z * 2.5 * Math.sin(k * 1.5)); _cutV.set(cx, car.y + 0.9, cz); camera.lookAt(_cutV);
@@ -18850,7 +18850,7 @@ Cut.frame = function (dt) {
   } else {
     const a = car.yaw + Cut.ca * 0.12 + 0.6, D = 9.5; camera.position.set(me.x + Math.sin(a) * D, me.y + 2.6, me.z + Math.cos(a) * D); _cutV.set(me.x, me.y + 1, me.z); camera.lookAt(_cutV);
   }
-  Cut.ca += dt; placeBody(); car.ext.visible = true;
+  Cut.ca += dt; placeBody(); car.ext.visible = shot !== 'rival'; if (Cockpit.group) Cockpit.group.visible = false;   /* (the close-up on your rival is shot from beside your car, so your car is out of it) */   /* the outside of your car in a cutscene, never the first-person cockpit */
   if (Math.abs(camera.fov - 44) > 0.1) { camera.fov = 44; camera.updateProjectionMatrix(); }
 };
 /* ---------- scenes inside buildings: a table set for two, them already sitting, a waiter going round ----------
