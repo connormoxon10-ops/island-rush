@@ -70,5 +70,6 @@ function loadSave() {
       KIT.load(s.kit);
       save.car = (s.car && (save.owned[s.car] || (save.jack && save.jack.id === s.car))) ? s.car : save.heist.prev && save.owned[save.heist.prev] ? save.heist.prev : 'rook'; }
   } catch (e) { /* storage unavailable */ }
+  save.set.dev = false;   /* developer mode never carries over: it is off at every start (11_ui.js: DevCode) */
 }
 function writeSave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* ignore */ } }
