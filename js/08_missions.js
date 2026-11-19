@@ -147,6 +147,7 @@ function updateGPS(dt) {
   let tg = null;
   if (Mi && Mi.phase !== 'done') { const cp = Mi.cps[Mi.idx]; if (cp) tg = { x: cp.x, z: cp.z, label: Mi.type === 'radar' && cp.gantry ? 'Speed camera' : (cp.finish ? 'Finish' : 'Checkpoint') }; }
   else if (Waypoint.on) tg = { x: Waypoint.x, z: Waypoint.z, label: 'Waypoint' };
+  else if (Story.on && Story.tg && !Story.S().fin) tg = Story.tg;   /* Story Mode: the objective */
   if (tg) { Target.on = true; Target.x = tg.x; Target.z = tg.z; Target.label = tg.label; GPS.pts = (!Mi || Mi.type === 'delivery') ? computeRoute(car.x, car.z, tg.x, tg.z) : null; }
   else { Target.on = false; GPS.pts = null; }
 }

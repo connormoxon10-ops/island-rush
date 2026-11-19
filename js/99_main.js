@@ -140,7 +140,7 @@ function step(dt) {
   if (Drag.on) { Drag.update(dt); carFx(dt); return; }
   if (Derby.on) { Derby.update(dt); carFx(dt); return; }   /* and the derby bowl */   /* so is the drag strip */   /* the stage is its own little world: no traffic, people, police or missions */
   /* world */
-  if (!(Fly.on && Fly.agl > 25)) { updateTraffic(dt); updatePeds(dt); } Police.update(dt); if (Foot.on) Foot.scan(); Fly.scan(); Boat.scan(dt); if (!Rally.on && !Derby.on && !Drag.on) { Rail.update(dt); Heist.update(dt); Surf.update(dt); Surf.visual(dt, App.time); Dunes.update(dt); Volc.update(dt); } Talk.tick(dt); Rel.tick(dt); Home.tick(dt); Shop.tick(); Wk.tick(); Ven.tick(); Bld.tick(); Race.tick(); Race.update(dt); Jack.tick(dt); Fare.tick(dt); Court.tick(dt); updateMission(dt); VM.update(dt); updateGPS(dt);
+  if (!(Fly.on && Fly.agl > 25)) { updateTraffic(dt); updatePeds(dt); } Police.update(dt); if (Foot.on) Foot.scan(); Fly.scan(); Boat.scan(dt); if (!Rally.on && !Derby.on && !Drag.on) { Rail.update(dt); Heist.update(dt); Surf.update(dt); Surf.visual(dt, App.time); Dunes.update(dt); Volc.update(dt); } Talk.tick(dt); Rel.tick(dt); Home.tick(dt); Shop.tick(); Wk.tick(); Ven.tick(); Bld.tick(); Race.tick(); Race.update(dt); Jack.tick(dt); Fare.tick(dt); Court.tick(dt); updateMission(dt); Story.tick(dt); VM.update(dt); updateGPS(dt);
   if (Waypoint.on && !Mi && Math.hypot(Waypoint.x - Pl.x, Waypoint.z - Pl.z) < 28) { Waypoint.on = false; GPS.t = 0; UI.toast('Destination reached', 'good'); }
   carFx(dt);
 }
@@ -180,8 +180,8 @@ function frame(now) {
   if (App.mode === 'play') {
     step(dt * (save.set.dev ? Dev.ts : 1)); Dmg.update(dt); if (Fly.on) Fly.camera(dt); else if (Boat.on) Boat.camera(dt); else if (Surf.on) Surf.camera(dt); else updateCamera(dt, Foot.on ? Foot.fovAdd : 0); if (Foot.on) Foot.camera(dt); if (GAR.edit) Home.camera(dt); Tow.camera(dt); Bust.camera(dt);
     if (!Cam.dragging) { Cam.lookYaw *= Math.exp(-dt * 4); Cam.lookPitch *= Math.exp(-dt * 4); }
-  } else { updateTraffic(dt); updatePeds(dt); Rail.update(dt); titleCamera(dt); }
-  updateMarkerVis(dt, App.time); Shop.visual(dt, App.time); Wk.visual(dt, App.time); Ven.visual(dt, App.time); Col.update(dt, App.time); Dunes.visual(dt); Bots.visual(dt); updateParticles(dt); if (Rally.on) Rally.visual(dt); if (Drag.on) Drag.visual(dt); if (Derby.on) Derby.visual(dt); Home.visual(dt); Fly.visual(dt); Boat.visual(dt); VM.visual(dt);
+  } else { updateTraffic(dt); updatePeds(dt); Rail.update(dt); if (App.mode === 'cut') Cut.frame(dt); else titleCamera(dt); }
+  updateMarkerVis(dt, App.time); Story.visual(dt); Shop.visual(dt, App.time); Wk.visual(dt, App.time); Ven.visual(dt, App.time); Col.update(dt, App.time); Dunes.visual(dt); Bots.visual(dt); updateParticles(dt); if (Rally.on) Rally.visual(dt); if (Drag.on) Drag.visual(dt); if (Derby.on) Derby.visual(dt); Home.visual(dt); Fly.visual(dt); Boat.visual(dt); VM.visual(dt);
   c.lights = env.lampOn > 0.4;
   updateEnvironment(App.tod, Fly.on ? Fly.focus : Boat.on ? Boat.focus : c, App.time); Fly.fog(); Env.update(dt); updateWheels(dt);
   const k = 0.45 + 0.85 * env.lampOn;   /* lens glow: warm and bright, but kept under white so it doesn't bloom into a blob */
@@ -205,6 +205,7 @@ function frame(now) {
 App.start = function () {
   if (App.mode !== 'title') return;
   Police.reset(); Snd.init(); Cam.view = save.set.cam != null ? save.set.cam : (window.innerWidth / window.innerHeight < 1 ? 2 : 0); Cam.chaseYaw = car.yaw; Cam.ch = car.y + 2; Cam.fov = save.set.fov; UI.setMode('play');
+  if (Story.on) { Story.begin(); return; }
   setTimeout(() => UI.toast('Follow a colored beam to start a run', 'info'), 600);
   setTimeout(() => UI.toast(TouchIn.on ? 'Drag to look · GO starts a run' : 'M map · C camera · Shift nitro', 'info'), 3200);
 };
@@ -235,11 +236,11 @@ async function boot() {
     try { if (document.fonts && document.fonts.load) await Promise.race([document.fonts.load('600 16px Rajdhani'), new Promise((r) => setTimeout(r, 800))]); } catch (e) { /* ignore */ }
     UI.progress(1, 'Ready'); await tick();
     E.tagline.textContent = 'An open island, seven towns and ' + missions.length + ' runs to chase. Pick a beam, or just drive.';
-    UI.setMode('title'); requestAnimationFrame(() => { last = performance.now(); requestAnimationFrame(frame); });
-    window.__ready = true;
+    UI.setMode('title'); Story.initTitle(); requestAnimationFrame(() => { last = performance.now(); requestAnimationFrame(frame); });
+    window.__ready = true; Story.autoStart();
   } catch (err) {
     console.error(err); E.loadmsg.textContent = 'Could not start the 3D view: ' + (err && err.message ? err.message : err); window.__bootError = String(err && err.stack || err);
   }
 }
-window.__game = { get scene() { return scene; }, Volc, VOLC, VOL, volcLift, volcLakeY, DEV_PLACES, Int, Bld, INT_KINDS, Jail, intSave, BankJob, KIT, kitDef, kitParts, kitDefault, HEIST_PRIZES, Part, L, Surf, Dunes, Rail, Beach, Heist, Wanted, GAR, terrainHeight, NR, Derby, DD, applyCar, buildCarModel, CAR_BY_ID, Env, get renderer() { return renderer; }, writePeds, Cam, Human, HU, Peds, Foot, Setup, TU, TU_PRESETS, CARS, CARP, tune, Drag, DG, DG_TIERS, Rally, RR, RY, RY_STAGES, RYG, RW, RY_FEATS, WK, Wk, WkF, WKSim, WKG, WKS, WkE, qfromAxes3, Dmg, Mech, RACE_DIFF, Wreck, Jack, JACK_MODELS, Race, Bots, Crash, newCarState, Track, TRK, Col, COLK, Ven, VDEF, CDEF, venSave, VM, VMD, VMK, towns, roads, Dock, MARINA, Boat, Boats, BSPEC, HB, solidHit, TREE, Air, AIR, Fly, Planes, PSPEC, Rel, REL_ROSTER, Shop, COS, Cosm, Biome, Weather, REG, Bust, CR, Fight, Police, Wanted, WANT, footBlockedAt, findNearestRoadPoint, Tow, GAR, Home, GP, Foot, Talk, Fare, Pl, pedHit, getMoney: () => save.money, get save() { return save; }, getLaw: () => save.law, Court, CR, Peds, pedSpawn, Dyn, abortMission, stepSim: step, frame, Env, Wheels, updateWheels, updateCamera, groundAt, buildCarModel, carSpec, TRAFFIC_DEFS, secAt, disposeCar, THREE_: THREE, TREE, GB, addTree, addGrass, terrainHeight, fbm, noise2, sstep, Dev, devReset, CARS, CAR_BY_ID, applyCar, stepCar, CARP, roads, loadAround, carThumb, car, App, UI, Chunks, Post, Cam, Keys, missions, towns, spawnAt, get Mi() { return Mi; }, startMission, applyQuality, get renderer() { return renderer; }, get scene() { return scene; }, get camera() { return camera; }, Snd, WorldMap, MView, Mirror, MAT, Cockpit, Q: () => Q, hasPost: () => hasPost, key(code, down) { Keys[code] = down; if (down) onKey(code); }, tune };
+window.__game = { get scene() { return scene; }, Story, STORY, Cut, PLAY_MODE, Volc, VOLC, VOL, volcLift, volcLakeY, DEV_PLACES, Int, Bld, INT_KINDS, Jail, intSave, BankJob, KIT, kitDef, kitParts, kitDefault, HEIST_PRIZES, Part, L, Surf, Dunes, Rail, Beach, Heist, Wanted, GAR, terrainHeight, NR, Derby, DD, applyCar, buildCarModel, CAR_BY_ID, Env, get renderer() { return renderer; }, writePeds, Cam, Human, HU, Peds, Foot, Setup, TU, TU_PRESETS, CARS, CARP, tune, Drag, DG, DG_TIERS, Rally, RR, RY, RY_STAGES, RYG, RW, RY_FEATS, WK, Wk, WkF, WKSim, WKG, WKS, WkE, qfromAxes3, Dmg, Mech, RACE_DIFF, Wreck, Jack, JACK_MODELS, Race, Bots, Crash, newCarState, Track, TRK, Col, COLK, Ven, VDEF, CDEF, venSave, VM, VMD, VMK, towns, roads, Dock, MARINA, Boat, Boats, BSPEC, HB, solidHit, TREE, Air, AIR, Fly, Planes, PSPEC, Rel, REL_ROSTER, Shop, COS, Cosm, Biome, Weather, REG, Bust, CR, Fight, Police, Wanted, WANT, footBlockedAt, findNearestRoadPoint, Tow, GAR, Home, GP, Foot, Talk, Fare, Pl, pedHit, getMoney: () => save.money, get save() { return save; }, getLaw: () => save.law, Court, CR, Peds, pedSpawn, Dyn, abortMission, stepSim: step, frame, Env, Wheels, updateWheels, updateCamera, groundAt, buildCarModel, carSpec, TRAFFIC_DEFS, secAt, disposeCar, THREE_: THREE, TREE, GB, addTree, addGrass, terrainHeight, fbm, noise2, sstep, Dev, devReset, CARS, CAR_BY_ID, applyCar, stepCar, CARP, roads, loadAround, carThumb, car, App, UI, Chunks, Post, Cam, Keys, missions, towns, spawnAt, get Mi() { return Mi; }, startMission, applyQuality, get renderer() { return renderer; }, get scene() { return scene; }, get camera() { return camera; }, Snd, WorldMap, MView, Mirror, MAT, Cockpit, Q: () => Q, hasPost: () => hasPost, key(code, down) { Keys[code] = down; if (down) onKey(code); }, tune };
 boot();
