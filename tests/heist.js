@@ -35,7 +35,7 @@ const OUT = process.env.OUT || __dirname;
   const tryJump = (off, k) => page.evaluate(([off, k]) => {
     const g = window.__game, c = g.car, H = g.Heist, R = g.Rail, pad = window.__pad; H.k = k; H.site = H.sites[k]; const S = H.site;
     H.phase = 'armed'; R.v = 16; H.wasAir = false; H.ride = null; window.__cross = null; c.health = 100; c.wrecked = 0; g.Wanted.set && g.Wanted.set(0);
-    const back = 40; if (!window.__ld || window.__ld !== k) { g.loadAround(S.bx, S.bz, 40); window.__ld = k; } g.spawnAt(S.bx + S.rx * back, S.bz + S.rz * back, S.yaw); c.vx = -S.rx * 26; c.vz = -S.rz * 26; c.speed = 26; c.air = false; H.rampT = -9;
+    const back = 40; g.spawnAt(S.bx + S.rx * back, S.bz + S.rz * back, S.yaw); c.vx = -S.rx * 26; c.vz = -S.rz * 26; c.speed = 26; c.air = false; H.rampT = -9;
     /* nominal: about (back + RL) / 27 s to the lip, and the flight */
     const tNom = (back + 24) / 27 + 13 / 25; const t = H.wagon(), want = S.s - 3.25 + t.off - (tNom + off) * R.v; R.s = ((want % R.L) + R.L) % R.L; R.update(0);
     let caught = false, minLat = 1e9, maxY = -1e9, pics = 0;

@@ -11,7 +11,7 @@ const BEXTRA = {
   marlin: { lean: 0.6, fee: 160, thrUp: 2.6, thrDn: 3.4 },
   odyssey: { lean: 1.0, fee: 300, thrUp: 1.5, thrDn: 2.2 }
 };
-const BLIM = 5650;
+const BLIM = 3320;
 const Boat = { on: false, bill: 0, mechT: 0, p: null, boats: [], all: [], near: null, view: 1, zoom: 1, inited: false, cyaw: 0, focus: { x: 0, y: 0, z: 0 }, hudT: 0, warn: '', canExit: false, snapCam: true, tipT: 0, valetT: 0, trail: [], tm: 0, wakeMesh: null, foam: null, lastDrop: null };
 const _bY = new THREE.Vector3(0, 1, 0), _bq1 = new THREE.Quaternion(), _bq2 = new THREE.Quaternion(), _bl1 = new THREE.Vector3(), _be1 = new THREE.Euler();
 const _bIn = { st: 0, th: 0, br: 0, hand: 0, boost: false, analog: false }, _bz = { st: 0, th: 0, br: 1, hand: 1, boost: false, analog: false }, _bgr = { h: 0, mu: 1, rr: 0, rough: 0, road: false, water: false }, _bsp = { x: 0, z: 0, yaw: 0 };

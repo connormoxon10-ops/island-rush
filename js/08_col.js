@@ -47,7 +47,7 @@ Col.setup = function () {
   /* eight in the wilds, the first three up high */
   let high = 0;
   for (let n = 0; n < 8; n++) for (let a = 0; a < 6000; a++) {
-    const x = (R() * 2 - 1) * 4600, z = (R() * 2 - 1) * 4600; if (x * x + z * z > 4700 * 4700) continue;
+    const x = (R() * 2 - 1) * 2700, z = (R() * 2 - 1) * 2700; if (x * x + z * z > 2750 * 2750) continue;
     const h = terrainNoRoad(x, z); if (h < 3 || h > 260 || (n < 3 && h < 70 && a < 5000)) continue;
     if (townD(x, z) < 300 || !far(x, z, 's', 420)) continue; nearestRoad(x, z); if (NR.seg >= 0 && NR.d < 140) continue;
     if (Math.abs(terrainNoRoad(x + 12, z) - h) > 7 || Math.abs(terrainNoRoad(x, z + 12) - h) > 7) continue;
@@ -55,7 +55,7 @@ Col.setup = function () {
   }
   /* ten pearls out at sea */
   for (let n = 0; n < 10; n++) for (let a = 0; a < 4000; a++) {
-    const ang = R() * TAU, rad = 350 + R() * 5300, x = Math.cos(ang) * rad, z = Math.sin(ang) * rad;
+    const ang = R() * TAU, rad = 350 + R() * 2750, x = Math.cos(ang) * rad, z = Math.sin(ang) * rad;
     if (terrainNoRoad(x, z) > -7 || !far(x, z, 'p', 450)) continue; let deep = true; for (let k = 0; k < 4 && deep; k++) deep = terrainNoRoad(x + Math.cos(k * 1.57) * 80, z + Math.sin(k * 1.57) * 80) < -3; if (!deep) continue;
     add('p', x, 0.45, z, { hint: 'Floating at sea, ' + Col.where(x, z) }); break;
   }
@@ -63,9 +63,9 @@ Col.setup = function () {
   for (let n = 0; n < 10; n++) for (let a = 0; a < 4000; a++) {
     let x, z, y;
     if (n < 3) { const T = towns[(n * 2 + 1) % towns.length]; x = T.cx + (R() - 0.5) * 500; z = T.cz + (R() - 0.5) * 500; y = Math.max(0, terrainNoRoad(x, z)) + 150 + R() * 70; }
-    else if (n < 6) { x = (R() * 2 - 1) * 4400; z = (R() * 2 - 1) * 4400; const h = terrainNoRoad(x, z); if (h < 90) continue; y = h + 32; }
-    else { x = (R() * 2 - 1) * 4700; z = (R() * 2 - 1) * 4700; y = Math.max(0, terrainNoRoad(x, z)) + 70 + R() * 160; }
-    if (x * x + z * z > 5000 * 5000 || !far(x, z, 'k', 520)) continue; add('k', x, y, z, { hint: (n < 3 ? 'Above the rooftops, ' : n < 6 ? 'Hanging over a summit, ' : 'High in the sky, ') + Col.where(x, z) }); break;
+    else if (n < 6) { x = (R() * 2 - 1) * 2600; z = (R() * 2 - 1) * 2600; const h = terrainNoRoad(x, z); if (h < 90) continue; y = h + 32; }
+    else { x = (R() * 2 - 1) * 2800; z = (R() * 2 - 1) * 2800; y = Math.max(0, terrainNoRoad(x, z)) + 70 + R() * 160; }
+    if (x * x + z * z > 3000 * 3000 || !far(x, z, 'k', 520)) continue; add('k', x, y, z, { hint: (n < 3 ? 'Above the rooftops, ' : n < 6 ? 'Hanging over a summit, ' : 'High in the sky, ') + Col.where(x, z) }); break;
   }
   Col.items = out; Col.ready = true; Col.high = high; Col.build();
 };

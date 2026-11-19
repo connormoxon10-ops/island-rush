@@ -1,5 +1,5 @@
 /* ================= MAP: pre-rendered island, minimap, full map ================= */
-const WorldMap = { S: 560, EXT: 10800, base: null, g: null, H: null, row: 0, ready: false, stamp: 0 };
+const WorldMap = { S: 420, EXT: 6400, base: null, g: null, H: null, row: 0, ready: false, stamp: 0 };
 WorldMap.init = function () {
   const S = WorldMap.S; WorldMap.base = mkCanvas(S, S); WorldMap.g = WorldMap.base.getContext('2d'); WorldMap.H = new Float32Array(S * S); WorldMap.row = 0; WorldMap.ready = false;
 };
@@ -96,7 +96,7 @@ FM.fit = function (cv) {
   const r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
   const w = Math.max(50, Math.round(r.width * dpr)), h = Math.max(50, Math.round(r.height * dpr));
   if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
-  FM.w = w; FM.h = h; FM.dpr = dpr; FM.ppm = Math.min(w, h) / 9800 * FM.zoom;
+  FM.w = w; FM.h = h; FM.dpr = dpr; FM.ppm = Math.min(w, h) / 5600 * FM.zoom;
 };
 WorldMap.drawFull = function (cv) {
   FM.fit(cv); const g = cv.getContext('2d'), W = FM.w, H = FM.h, k = FM.dpr, c = Pl;
