@@ -16917,6 +16917,19 @@ const PH_GREET = {
   hal: () => 'Brody Haulage! Oh, it’s the fast one.',
   dex: () => 'Make it quick.'
 };
+/* calling the same person again and again: a second call in a few minutes gets "again?", a third gets an irritated answer and little to say,
+   after that they let it ring out to voicemail (and keep at it and they think less of you) */
+const PH_SPAM = {
+  again: { mara: 'Again? What did you forget?', rico: 'You again? Miss me already?', nina: 'You just called. Is something wrong?', sal: 'Twice in one day. Must be my birthday.', jax: 'What now.', hal: 'Back again! Forget something?', dex: 'You are wasting my minutes.' },
+  annoyed: { mara: 'Seriously. I have a customer standing right here. What?', rico: 'Okay, this is getting weird, ferry kid.', nina: 'Please stop calling me at work. Please.', sal: 'Son, I’m old, not lonely. What is it?', jax: 'Stop calling this number.', hal: 'I’m driving! What?!', dex: 'Call me again and you will regret it.' },
+  vmail: { mara: 'Hi, this is Mara. Leave a message. …If this is you again: stop calling, I’m working.', rico: 'Yo, it’s Rico. If you’re fast, leave a message. If you’re the ferry kid, chill.', nina: 'You’ve reached Nina Park. Please leave a message.', sal: 'This is Sal’s telephone. I don’t know how to check these.', jax: '[A long beep. No greeting.]', hal: 'Brody Haulage, leave it after the horn. HONK.', dex: 'The number you have called is busy.' }
+};
+/* small talk once the real topics are used up: something different each time */
+const PH_SMALL = [
+  ['Just wanted to hear your voice.', { mara: ['Smooth. Very smooth. I’m blushing at a gearbox.', 'Well, now you’ve heard it. Go do something useful.'], rico: ['Weird. But okay. Hi.'], nina: ['That’s… actually lovely. Thank you.'], sal: ['It’s an old voice, son. Same as yesterday.'], hal: ['Ha! Sounds like a diesel, doesn’t it?'], jax: ['Don’t.'], dex: ['Flattery is free. My time isn’t.'] }],
+  ['Nothing, I’m bored.', { mara: ['Bored? Come sweep the garage.', 'Bored people find trouble. Come here instead.'], rico: ['Bored? Race me!', 'Go do donuts in the car park, works for me.'], nina: ['Lucky you. I’m counting coins.'], sal: ['Watch a train go by. Best thing for boredom.'], hal: ['Bored? Load my truck, then.'], jax: ['Then be bored quietly.'], dex: ['Then go and earn something.'] }],
+  ['Seen anything weird today?', { mara: ['A goat on the coast road again. I swear it’s the same goat.', 'Someone brought in a car full of sand. Full. Of sand.'], rico: ['A cop doing the speed limit. Spooky.'], nina: ['A man tried to deposit a fish. A whole fish.'], sal: ['A teenager waved at the train. Nobody waves any more.'], hal: ['A seagull stole my sandwich. Whole thing. Bread and all.'], jax: ['Every day is weird working for Dex.'], dex: ['Only you.'] }]
+];
 /* the topics you can bring up with someone: [what you say, what happens] (the result: lines they answer with, a change to how they feel, end the call) */
 Phone.topics = function (id) {
   const S = Story.S(), f = Story.F(), v = f[id] | 0, st = Story.step(), obj = st && st.obj ? st.obj.charAt(0).toLowerCase() + st.obj.slice(1) : 'enjoy the island', T = [];
@@ -16945,15 +16958,20 @@ Phone.topics = function (id) {
   } else if (id === 'dex') {
     T.push(['We need to talk.', () => ({ say: ['No, we don’t. I call you. That’s how this works.'], end: true })]);
   }
+  /* small talk: one at a time, a different line each call */
+  { const C = Phone.call, sm = PH_SMALL.filter((x) => !(C && C.used[x[0]])); if (sm.length) { const x = sm[(C ? C.n : 0) % sm.length], pool = x[1][id] || ['Huh.']; T.push([x[0], () => ({ say: [pool[Math.floor(Math.random() * pool.length)]] })]); } }
+  if (Phone.call && Phone.call.annoyed) { T.length = 0; T.push(['Sorry, wrong button.', () => ({ say: ['Mm-hm. Sure.'], end: true })]); }
   T.push(['Bye.', () => ({ say: [{ mara: v >= 3 ? 'Bye, you. Drive safe.' : 'Bye.', rico: 'Later, ferry kid.', nina: 'Bye. Be careful.', sal: 'Mind the timing, son.', jax: '…', hal: 'Keep it on the black stuff!', dex: '' }[id] || 'Bye.'], end: true })]);
   return T;
 };
 Phone.dial = function (id) {
   if (Phone.call || !STORY_CAST[id]) return; const S = Story.S();
-  Phone.call = { id, st: 'ring', t: App.time, log: [], used: {} }; Phone.render(); Snd.beep(880, 0.05);
+  const now = Date.now(), R = Phone.recent || (Phone.recent = {}), L = (R[id] = (R[id] || []).filter((t) => now - t < 180000)), n = L.length; L.push(now);
+  Phone.call = { id, st: 'ring', t: App.time, log: [], used: {}, n: (Phone.nCalls = (Phone.nCalls || 0) + 1), spam: n }; Phone.render(); Snd.beep(880, 0.05);
   setTimeout(() => { const C = Phone.call; if (!C || C.id !== id) return;
     if (id === 'dex' && (S.ch >= 8 || S.fin)) { C.st = 'none'; C.log.push(['', 'The number you have called is not in service.']); Phone.render(); return; }
-    C.st = 'talk'; C.t0 = App.time; const g = PH_GREET[id](Story.F()[id] | 0, Story.F()); Phone.hear(id, [g]); Phone.render(); }, 1400);
+    if (C.spam >= 3) { C.st = 'none'; C.log.push(['', 'Voicemail']); Phone.hear(id, [PH_SPAM.vmail[id]]); if (C.spam >= 4 && !Phone.spamHit) { Phone.spamHit = id; if (STORY_CAST[id] && id !== 'dex') Story.applyEff({ [id]: -1 }); C.log.push(['', (STORY_CAST[id].name.split(' ')[0]) + ' is getting tired of your calls.']); } Phone.render(); return; }
+    C.st = 'talk'; C.t0 = App.time; C.annoyed = C.spam === 2; const g = C.spam === 1 ? PH_SPAM.again[id] : C.spam === 2 ? PH_SPAM.annoyed[id] : PH_GREET[id](Story.F()[id] | 0, Story.F()); Phone.hear(id, [g]); Phone.render(); }, 1400);
 };
 /* they say something: into the call, and into Messages */
 Phone.hear = function (id, lines) { const C = Phone.call; for (const t of lines) { if (!t) continue; C.log.push([id, t]); Story.comm.log.push({ who: id, text: t }); } Snd.beep(660, 0.03); };
@@ -16963,7 +16981,7 @@ Phone.say = function (k) {
   if (r.eff) Story.applyEff(r.eff); Phone.hear(C.id, r.say || []); if (r.note) C.log.push(['', r.note]); if (r.end) { C.st = 'ended'; setTimeout(() => { if (Phone.call === C) { Phone.call = null; Phone.render(); } }, 1600); }
   writeSave(); Phone.render();
 };
-Phone.hang = function () { const C = Phone.call; if (!C) return; if (C.st === 'talk') C.log.push(['', 'Call ended']); Phone.call = null; Snd.beep(420, 0.05); Phone.render(); };
+Phone.hang = function () { if (Phone.call && Phone.call.spam < 3) Phone.spamHit = null; const C = Phone.call; if (!C) return; if (C.st === 'talk') C.log.push(['', 'Call ended']); Phone.call = null; Snd.beep(420, 0.05); Phone.render(); };
 /* free roam services */
 Phone.service = function (k) {
   const c = car;
