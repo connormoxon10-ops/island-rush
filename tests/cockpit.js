@@ -28,8 +28,7 @@ const OUT = process.env.OUT || __dirname;
     }
     return out;
   });
-  const geo = await page.evaluate(() => { const g = window.__game; let grp = null; g.scene.traverse((o) => { if (!grp && o.isGroup && o.children.some((c) => c.material && c.material.map && c.geometry && c.geometry.type === 'PlaneGeometry' && c.geometry.parameters.width === 0.5)) grp = o; });
-    const t = {}; let n = 0; if (grp) grp.traverse((o) => { if (o.isMesh) { n++; t[o.geometry.type] = (t[o.geometry.type] || 0) + 1; } }); return { n, t }; });
+  const geo = await page.evaluate(() => { const g = window.__game, grp = g.Cockpit.group, t = {}; let n = 0; grp.traverse((o) => { if (o.isMesh) { n++; t[o.geometry.type] = (t[o.geometry.type] || 0) + 1; } }); return { n, t }; });
   console.log(JSON.stringify(res.cars), JSON.stringify(geo));
   for (const [s, p] of Object.entries(res.pics)) p.forEach((u, k) => fs.writeFileSync(path.join(OUT, 'cockpit_' + s + (k ? '_night' : '') + '.jpg'), Buffer.from(u.split(',')[1], 'base64')));
   ok(res.cars.every((c) => c.got === c.style), 'each car gets its interior: ' + res.cars.map((c) => c.id + ' → ' + c.got).join(', '));

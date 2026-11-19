@@ -241,15 +241,15 @@ function buildCockpit() {
   { const s = new THREE.Shape(); s.moveTo(1.36, 0.6); s.lineTo(1.3, 0.9); s.quadraticCurveTo(1.18, 0.95, 1.0, 0.95); s.quadraticCurveTo(0.84, 0.95, 0.8, 0.88); s.quadraticCurveTo(0.76, 0.8, 0.79, 0.72); s.quadraticCurveTo(0.83, 0.62, 0.95, 0.6); s.lineTo(1.36, 0.6);
     const geo = new THREE.ExtrudeGeometry(s, { depth: 1.86, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.025, bevelSegments: 3, curveSegments: 10 }); geo.translate(0, 0, -0.93); geo.rotateY(-Math.PI / 2); geo.computeVertexNormals(); put(geo, M.dash, 0, 0, 0); }
   /* a soft-touch strip and a trim line across the dash face */
-  put(new THREE.CylinderGeometry(0.012, 0.012, 1.84, 10), M.trim, 0, 0.705, 0.79, 0, 0, Math.PI / 2);
-  rb(1.0, 0.07, 0.05, 0.025, M.accent, 0.42, 0.79, 0.79, -0.25);
+  put(new THREE.CylinderGeometry(0.012, 0.012, 1.84, 10), M.trim, 0, 0.705, 0.765, 0, 0, Math.PI / 2);
+  rb(1.0, 0.07, 0.05, 0.025, M.accent, 0.42, 0.79, 0.765, -0.25);
   /* the arched hood over the gauges */
   { const s = new THREE.Shape(); s.absellipse(0, 0, 0.3, 0.13, 0, Math.PI, false); s.lineTo(-0.27, 0); s.absellipse(0, 0, 0.27, 0.105, Math.PI, 0, true); s.lineTo(0.3, 0);
-    const geo = new THREE.ExtrudeGeometry(s, { depth: 0.2, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.01, bevelSegments: 2, curveSegments: 14 }); geo.computeVertexNormals(); put(geo, M.soft, -0.35, 0.83, 0.74, -0.15); }
+    const geo = new THREE.ExtrudeGeometry(s, { depth: 0.2, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.01, bevelSegments: 2, curveSegments: 14 }); geo.computeVertexNormals(); put(geo, M.soft, -0.35, 0.83, 0.705, -0.15); }
   /* round air vents: two in the middle, one at each end */
-  for (const x of [-0.86, -0.13, 0.13, 0.86]) { const v = put(new THREE.TorusGeometry(0.045, 0.012, 8, 20), M.trim, x, 0.84, 0.79, -0.25); put(new THREE.CircleGeometry(0.045, 16), M.dark, 0, 0, -0.005, 0, Math.PI, 0, v); for (const a of [0, Math.PI / 2]) put(new THREE.BoxGeometry(0.08, 0.006, 0.006), M.trim, 0, 0, 0.002, 0, 0, a, v); }
+  for (const x of [-0.86, -0.13, 0.13, 0.86]) { const v = put(new THREE.TorusGeometry(0.045, 0.012, 8, 20), M.trim, x, 0.84, 0.755, -0.25); put(new THREE.CircleGeometry(0.045, 16), M.dark, 0, 0, -0.005, 0, Math.PI, 0, v); for (const a of [0, Math.PI / 2]) put(new THREE.BoxGeometry(0.08, 0.006, 0.006), M.trim, 0, 0, 0.002, 0, 0, a, v); }
   /* the centre screen */
-  { const sc = rb(0.3, 0.17, 0.025, 0.012, M.dark, 0, 0.8, 0.8, -0.3); put(new THREE.PlaneGeometry(0.27, 0.145), M.screen, 0, 0, -0.014, 0, Math.PI, 0, sc); Cockpit.screen = M.screen; }
+  { const sc = rb(0.3, 0.17, 0.025, 0.012, M.dark, 0, 0.8, 0.755, -0.3); put(new THREE.PlaneGeometry(0.27, 0.145), M.screen, 0, 0, -0.014, 0, Math.PI, 0, sc); Cockpit.screen = M.screen; }
   /* the console between the seats: a soft lid, the gear knob, the handbrake, cup holders */
   rb(0.28, 0.24, 1.0, 0.06, M.dash, 0, 0.47, 0.32); rb(0.24, 0.05, 0.42, 0.025, M.soft, 0, 0.6, 0.0);
   put(new THREE.CylinderGeometry(0.012, 0.016, 0.13, 10), M.trim, 0, 0.65, 0.5, 0.25); put(new THREE.SphereGeometry(0.032, 16, 12), M.soft, 0, 0.72, 0.52);
@@ -298,7 +298,7 @@ function buildCockpit() {
   /* gauges */
   const gc = mkCanvas(512, 200); Cockpit.gc = gc; Cockpit.gx = gc.getContext('2d'); Cockpit.gtex = new THREE.CanvasTexture(gc); Cockpit.gtex.encoding = THREE.sRGBEncoding; Cockpit.gtex.anisotropy = maxAniso;
   const gm = new THREE.MeshBasicMaterial({ map: Cockpit.gtex, toneMapped: false }); Cockpit.gm = gm;
-  const gp = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.195), gm); gp.position.set(-0.35, 0.83, 0.765); gp.rotation.set(-0.2, Math.PI, 0, 'YXZ'); g.add(gp);
+  const gp = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.195), gm); gp.position.set(-0.35, 0.83, 0.725);   /* clear of the dash's rounded edge */ gp.rotation.set(-0.2, Math.PI, 0, 'YXZ'); g.add(gp);
   Cockpit.group = g; if (typeof CUR !== 'undefined' && CUR) Cockpit.theme(CUR); return g;
 }
 /* dress the cabin for a car: sport (carbon and red), classic (tan leather, wood and chrome), rugged (grey and orange) or modern (graphite and blue) */
