@@ -213,7 +213,7 @@ function updateMission(dt) {
   /* rival AI */
   if (Mi.rival) {
     const rv = Mi.rival, def = Mi.def; const sPlayer = cp ? (cp.s - Math.hypot(cp.x - c.x, cp.z - c.z)) : def.s0;
-    const gap = sPlayer - rv.rs; const target = def.rivalV * (1 + clamp(gap / 100, -0.06, 0.3)) * (1 + 0.04 * Math.sin(Mi.t * 0.35));
+    const gap = sPlayer - rv.rs; const target = def.rivalV * (1 + (rv.boost || 0)) * (1 + clamp(gap / 100, -0.06, 0.3)) * (1 + 0.04 * Math.sin(Mi.t * 0.35));
     const slow = rv.stun > 0 ? 0.2 : 1; rv.stun = Math.max(0, (rv.stun || 0) - dt); rv.lane += (-1.2 - rv.lane) * Math.min(1, dt * 1.1);
     rv.vtt = target * slow; rv.v += clamp(rv.vtt - rv.v, -10 * dt, 8 * dt); rv.rs += rv.v * dt; rv.s = def.dir > 0 ? rv.rs : def.road.len - rv.rs; placeDyn(rv);
     if (rv.rs >= def.road.len - 14) return endMission(false, 'RIVAL WON', ['Your rival crossed the line first.'], 0);

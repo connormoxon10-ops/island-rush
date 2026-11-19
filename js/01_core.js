@@ -74,7 +74,7 @@ function loadSave() {
       if (s.dune && typeof s.dune === 'object') save.dune = { races: s.dune.races | 0, wins: s.dune.wins | 0, best: +s.dune.best || 0 };
       KIT.load(s.kit);
       save.car = (s.car && (save.owned[s.car] || (save.jack && save.jack.id === s.car))) ? s.car : save.heist.prev && save.owned[save.heist.prev] ? save.heist.prev : 'rook';
-      if (s.story && typeof s.story === 'object') save.story = { ch: clamp(s.story.ch | 0, 0, 99), st: clamp(s.story.st | 0, 0, 99), base: Object.assign({}, s.story.base || {}), fin: s.story.fin ? 1 : 0, f: Object.assign({}, s.story.f || {}) }; }
+      if (s.story && typeof s.story === 'object') { const q = s.story, ob = (o) => (o && typeof o === 'object' && !Array.isArray(o) ? Object.assign({}, o) : {}); save.story = { ch: clamp(q.ch | 0, 0, 99), st: clamp(q.st | 0, 0, 99), base: ob(q.base), fin: q.fin ? 1 : 0, f: ob(q.f), sq: ob(q.sq), met: ob(q.met), track: typeof q.track === 'string' ? q.track : null, said: Array.isArray(q.said) ? q.said.slice(-40).map(String) : [] }; } }
     if (PLAY_MODE === 'story') { const o = JSON.parse(localStorage.getItem(SANDBOX_KEY) || 'null'); if (o && o.set) Object.assign(save.set, o.set); }   /* the settings are the sandbox's */
   } catch (e) { /* storage unavailable */ }
   save.set.dev = false;   /* developer mode never carries over: it is off at every start (11_ui.js: DevCode) */
