@@ -5,7 +5,8 @@ const MT = {
   radar: { name: 'Speed Trap', col: '#33d4ff', ico: '📡', blurb: 'Blast through the speed cameras above the required speed.' },
   delivery: { name: 'Courier Run', col: '#4be08a', ico: '📦', blurb: 'Deliver fragile cargo across the island. Crashes cost you.' },
   drift: { name: 'Drift Zone', col: '#c07bff', ico: '🌀', blurb: 'Score drift points inside the zone before time runs out.' },
-  rally: { name: 'Off-Road Rally', col: '#ff8a3d', ico: '⛰', blurb: 'Hit every checkpoint across rough terrain, no roads required.' }
+  rally: { name: 'Off-Road Rally', col: '#ff8a3d', ico: '⛰', blurb: 'Hit every checkpoint across rough terrain, no roads required.' },
+  erupt: { name: 'Eruption Escape', col: '#ff5a2a', ico: '🌋', blurb: 'Mount Cinder is erupting. Race down from the observatory ahead of the lava, through a rain of lava bombs.' }
 };
 const missions = [];
 let Mi = null;
@@ -62,6 +63,7 @@ function genMissions() {
     missions.push({ id: 'm' + (id++), type: 'rally', from: near.name + ' hills', to: 'Loop', x: pts[0].x, z: pts[0].z, h: pts[0].h, cps, limit: len / 13 + 25, bonus: 5, reward: 900 + Math.round(len / 5), title: 'Off-Road Rally: ' + near.name + ' Hills', desc: MT.rally.blurb + ' (' + Math.round(len) + ' m)' }); made++;
   }
   missions.forEach((m) => { m.rep = 25; });
+  { const v = Volc.mission(); missions.push(v); }   /* Mount Cinder (08_volcano.js) */
 }
 
 /* ---------------- world markers & checkpoint visuals ---------------- */
@@ -164,6 +166,7 @@ function startMission(def) {
     d.mesh = buildCarMesh(0xd62828, 0); d.hl = 2; scene.add(d.mesh); placeDyn(d); Dyn.extra.push(d); Mi.rival = d;
   }
   UI.banner(MT[def.type].name.toUpperCase(), def.title.replace(/^[^:]+: /, ''));
+  if (def.type === 'erupt') Volc.start(Mi);
   Snd.beep(660, 0.12); GPS.t = 0; Mi.start = { x: car.x, z: car.z };
 }
 function endMission(ok, title, lines, reward) {
@@ -182,6 +185,7 @@ function endMission(ok, title, lines, reward) {
   if (Mi.rival) { removeDyn(Mi.rival); Dyn.extra.length = 0; }
   if (MView.cp) { scene.remove(MView.cp, MView.cp2); MView.cp = MView.cp2 = null; }
   if (Mi.gantries) Mi.gantries.forEach((g) => scene.remove(g));
+  if (def.type === 'erupt') Volc.stop();
   Mi = null;
 }
 function abortMission() { if (Mi && Mi.phase !== 'done') endMission(false, 'MISSION ABORTED', ['You abandoned the run.'], 0); }
@@ -238,6 +242,7 @@ function finishMission() {
   if (type === 'radar') { if (Mi.hits < 2) return endMission(false, 'TRAP MISSED', ['Cameras captured ' + Mi.hits + ' of 3. Need at least 2.'], 0); stars = Mi.hits === 3 ? 3 : 2; lines.push('Captured ' + Mi.hits + '/3 · ' + Mi.speeds.join(' / ') + ' km/h'); title = 'TRAP CLEARED'; }
   else if (type === 'race') { const gap = Mi.rival ? (Mi.def.road.len - Mi.rival.rs) : 0; stars = gap > 150 ? 3 : gap > 40 ? 2 : 1; title = 'YOU WON'; lines.push('Margin ' + Math.round(gap) + ' m'); }
   else if (type === 'delivery') { const q = Mi.integrity; stars = q > 85 ? 3 : q > 55 ? 2 : 1; reward = Math.round(reward * (0.5 + 0.5 * q / 100)); title = 'DELIVERED'; lines.push('Cargo condition ' + Math.round(q) + '%'); }
+  else if (type === 'erupt') { const V = Mi.vol || { hits: 0, dodged: 0 }; if (V.hits > 0 && stars > 2) stars = 2; title = 'YOU ESCAPED'; lines.push('Lava bombs dodged ' + V.dodged + ' · hits ' + V.hits); }
   lines.push('Time ' + fmtT(Mi.t)); Mi.stars = stars; reward = Math.round(reward * (0.7 + 0.3 * stars));
   endMission(true, title, lines, reward);
 }
