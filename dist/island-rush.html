@@ -18455,7 +18455,7 @@ const STORY = [
 /* ---------- side quests: offered by phone or in person once the story reaches them ---------- */
 const SIDE = [
   { id: 'scrap', title: 'Scrapyard Run', who: 'mara', desc: 'Mara needs a cylinder head from the scrapyard before her customer wakes up.', reward: 800, aff: { mara: 1 }, avail: (S) => S.ch >= 1,
-    steps: [{ t: 'call', lines: [['Mara (phone)', 'Favour? The scrapyard outside ' + towns[2].name + ' has a cylinder head I need. Grab it for me? I will owe you a beer.']] },
+    steps: [{ t: 'call', lines: () => [['Mara (phone)', 'Favour? The scrapyard outside ' + towns[2].name + ' has a cylinder head I need. Grab it for me? I will owe you a beer.']] },
       { t: 'goto', at: 'scrap', obj: 'Pick up the part at the scrapyard' }, { t: 'call', lines: [['Scrapyard owner', 'Mara’s part? Here. Tell her she still owes me for the last one.']] },
       { t: 'goto', at: 'garage', obj: 'Bring the part back to Mara' }, { t: 'call', lines: () => [['Mara (phone)', F().mara > 1 ? 'You are a lifesaver. Beer’s in the fridge. Both of them are yours.' : 'Got it, thanks. Leave it on the bench.']] }] },
   { id: 'rico2', title: 'Rico’s Rematch', who: 'rico', desc: 'Rico wants another go. On his road, this time.', reward: 0, aff: { rico: 2 }, avail: (S) => S.ch >= 3 && !!Story.F().ricoS,
@@ -18473,10 +18473,10 @@ const SIDE = [
           ['“You’re the best friend I’ve ever had.”', { mara: 1, maraFriend: 1 }, [['you', 'You are the best friend I have ever had, Mara.', 'me'], ['mara', '…Yeah. You too. Best friends. Eat your fish.', 'npc']]]]]] }] },
   { id: 'nina', title: 'Nina’s Favour', who: 'nina', desc: 'Nina’s mother’s medicine came in on the boat, and the clinic closes in an hour.', reward: 2500, aff: { nina: 2 }, avail: (S) => S.ch >= 5 && (Story.F().nina | 0) >= 1,
     steps: [{ t: 'talk', who: 'nina', at: 'nina', obj: 'Nina wants to see you', lines: () => [['nina', 'I did not think I would ask you for anything. But the medicine came in, and my car will not start, and the clinic in ' + towns[6].name + ' closes at six.', 'npc'], ['you', 'Give me the box.', 'me'], ['nina', 'Thank you. Truly.', 'npc']] },
-      { t: 'run', id: 'sm_nina', obj: 'Get the medicine to ' + towns[6].name + ' before the clinic closes', intro: () => [['nina', 'Keep it upright. And please, do not crash.', 'two']], npc: 'nina', at: 'nina' },
+      { t: 'run', id: 'sm_nina', obj: 'Get the medicine to the clinic before it closes', intro: () => [['nina', 'Keep it upright. And please, do not crash.', 'two']], npc: 'nina', at: 'nina' },
       { t: 'call', lines: () => [['Nina (phone)', 'Mum has it. She says to thank “the fast one”. ' + (Story.F().ninaF ? 'So do I. Dinner some time? Somewhere that is not a bank.' : 'So do I. I owe you one.')]] }] },
   { id: 'jax', title: 'Jax’s Envelope', who: 'jax', desc: 'Jax has an envelope for his sister, and does not trust anyone else with it.', reward: 1500, aff: { jax: 2 }, avail: (S) => S.ch >= 6 && !!Story.F().jaxA,
-    steps: [{ t: 'call', lines: [['Jax (phone)', 'You asked me why. I am asking you for something. My sister lives in ' + towns[5].name + '. There is an envelope in my glovebox at the start line. Take it to her. Do not open it.']] },
+    steps: [{ t: 'call', lines: () => [['Jax (phone)', 'You asked me why. I am asking you for something. My sister lives in ' + towns[5].name + '. There is an envelope in my glovebox at the start line. Take it to her. Do not open it.']] },
       { t: 'goto', at: 'sis', obj: 'Take Jax’s envelope to his sister' }, { t: 'call', lines: [['Jax’s sister', 'It is from Jax? It is… it is money. And a ferry ticket. He is getting out. Thank you. Thank you.'], ['Jax (text)', 'Thanks. I owe you. Watch Dex.']] }] },
   { id: 'sal', title: 'Sal’s Last Ride', who: 'sal', desc: 'Sal wants to see the sea from the cape one more time.', reward: 0, aff: { sal: 3, salT: 1 }, avail: (S) => S.ch >= 7,
     steps: [{ t: 'talk', who: 'sal', at: 'sal', obj: 'Sal is waiting by the line', lines: () => [['sal', 'Forty years I drove that line past the cape and never once stopped to look.', 'npc'], ['sal', 'My knees do not do cars any more. Go and look for me, son. Tell me what it is like.', 'two'], ['you', 'I will.', 'me']] },
