@@ -95,15 +95,19 @@ const OUT = process.env.OUT || __dirname;
   const ph = await page.evaluate(async () => {
     const g = window.__game, r = {}; g.key('KeyO', true); g.key('KeyO', false); window.__run(2); const P = document.getElementById('phone'); r.open = !P.hidden; r.apps = P.querySelectorAll('.ph-grid button').length;
     P.querySelector('[data-ph="contacts"]').click(); r.contacts = P.querySelectorAll('[data-call]').length + '+' + P.querySelectorAll('[data-svc]').length;
-    const n0 = g.Story.comm.log.length; P.querySelector('[data-call="mara"]').click(); await new Promise((res) => setTimeout(res, 1600)); window.__run(30); r.called = g.Story.comm.log.length > n0; r.line = (g.Story.comm.log[g.Story.comm.log.length - 1] || {}).text;
+    const n0 = g.Story.comm.log.length; P.querySelector('[data-call="mara"]').click(); r.ring = /Calling/.test(P.textContent); await new Promise((res) => setTimeout(res, 1600)); window.__run(4);
+    r.answered = !!g.Phone.call && g.Phone.call.st === 'talk'; r.line = (g.Phone.call && g.Phone.call.log[0] || [])[1]; r.opts = P.querySelectorAll('[data-say]').length; r.optTxt = [...P.querySelectorAll('[data-say]')].map((b) => b.textContent);
+    P.querySelector('[data-say="0"]').click(); r.chat = P.querySelectorAll('.ph-chat p').length; r.me = P.querySelectorAll('.ph-chat p.me').length; r.callShot = g.renderer.domElement.toDataURL('image/jpeg', 0.8);
+    const bye = [...P.querySelectorAll('[data-say]')].find((b) => /Bye/.test(b.textContent)); if (bye) bye.click(); await new Promise((res) => setTimeout(res, 1800)); window.__run(2); r.hungUp = !g.Phone.call; r.called = g.Story.comm.log.length >= n0 + 4;
     P.querySelector('[data-ph="home"]').click(); P.querySelector('[data-ph="messages"]').click(); r.msgs = P.querySelectorAll('.ph-msg').length;
     P.querySelector('[data-ph="home"]').click(); P.querySelector('[data-ph="quests"]').click(); r.log = /Chapters/.test(P.textContent) && /Side quests/.test(P.textContent) && /People/.test(P.textContent);
     r.shot = g.renderer.domElement.toDataURL('image/jpeg', 0.8); g.key('Escape', true); g.key('Escape', false); r.closed = P.hidden;
     g.UI.openMenu('quests'); const pane = document.getElementById('pane').innerHTML; r.tab = /Chapters/.test(pane) && /Mara Quinn/.test(pane) && /More than friends/.test(pane); g.UI.closeMenu(); return r;
   });
-  console.log(JSON.stringify(Object.assign({}, ph, { shot: undefined })));
+  console.log(JSON.stringify(Object.assign({}, ph, { shot: undefined, callShot: undefined }))); if (ph.callShot) fs.writeFileSync(path.join(OUT, 'story_call.jpg'), Buffer.from(ph.callShot.split(',')[1], 'base64'));
   ok(ph.open && ph.apps >= 7 && ph.closed, 'the phone: O opens it (' + ph.apps + ' apps), Esc puts it away');
-  ok(ph.called && ph.contacts.split('+')[0] >= 6, 'call Mara from the contacts (' + ph.contacts + ' contacts): “' + ph.line + '”');
+  ok(ph.ring && ph.answered && ph.opts >= 3 && ph.contacts.split('+')[0] >= 6, 'call Mara from the contacts (' + ph.contacts + '): it rings, she answers (“' + ph.line + '”), and you pick what to say (' + (ph.optTxt || []).join(' / ') + ')');
+  ok(ph.chat >= 3 && ph.me >= 1 && ph.hungUp && ph.called, 'your answer and hers in the chat; Bye ends the call; it is all in Messages');
   ok(ph.msgs >= 10 && ph.log, 'Messages keeps every call and radio line (' + ph.msgs + '); the Quests app shows the chapters, side quests and people');
   ok(ph.tab, 'the pause menu’s Story tab: chapters, and Mara “More than friends”');
   /* the other roads */
