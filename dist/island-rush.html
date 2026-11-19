@@ -10991,7 +10991,7 @@ const RAIL = { R0: 1650, N: 64, CLR: 7.3, DECK: 1.3, W: 5.2, GAUGE: 1.435, GRADE
 Rail.plan = function () {
   const N = RAIL.N, rad = new Float32Array(N), cost = (k, r) => {
     const a = k / N * TAU, x = Math.sin(a) * r, z = Math.cos(a) * r; let c = ((r - RAIL.R0) / 450) ** 2;
-    for (const T of towns) { const d = Math.hypot(x - T.cx, z - T.cz) - (T.half * 1.5 + 110); if (d < 0) c += 40 - d / 8; }
+    for (const T of towns) { const d = Math.hypot(x - T.cx, z - T.cz) - (T.half * 1.5 + 110); if (d < 0) c += 400 - d * 2; }   /* (never through a town: the outer ring's towns can reach in towards the line) */
     for (const S of [Air.s && { x: (Air.s.x0 + Air.s.x1) / 2, z: (Air.s.z0 + Air.s.z1) / 2, r: Math.hypot(Air.s.x1 - Air.s.x0, Air.s.z1 - Air.s.z0) / 2 + 260 }, Track.s && { x: (Track.s.x0 + Track.s.x1) / 2, z: (Track.s.z0 + Track.s.z1) / 2, r: Math.hypot(Track.s.x1 - Track.s.x0, Track.s.z1 - Track.s.z0) / 2 + 120 }, Dock.s && { x: Dock.s.ox, z: Dock.s.oz, r: 260 }]) {
       if (!S) continue; const d = Math.hypot(x - S.x, z - S.z) - S.r; if (d < 0) c += 40 - d / 8; }
     const h = terrainNoRoad(x, z); if (h < 2) c += 4; if (h > 60) c += (h - 60) / 8; return c;
