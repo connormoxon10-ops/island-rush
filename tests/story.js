@@ -9,7 +9,7 @@ const { chromium } = require('playwright'); const path = require('path'); const 
 const OUT = process.env.OUT || __dirname;
 (async () => {
   const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-  const page = await (await browser.newContext({ viewport: { width: 960, height: 540 } })).newPage(); const logs = [];
+  const page = await (await browser.newContext({ viewport: { width: 640, height: 360 } })).newPage(); const logs = [];
   page.on('pageerror', (e) => logs.push('PAGEERROR: ' + String(e.stack || e).slice(0, 600)));
   await page.route('**/three.min.js', (r) => r.fulfill({ path: path.resolve(__dirname, 'three.min.js'), contentType: 'application/javascript' }));
   await page.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
@@ -34,7 +34,7 @@ const OUT = process.env.OUT || __dirname;
   /* the answers this run gives (by the words in the choice's prompt line; anything else takes the first answer) */
   const PLAN = [['Tell her…', 1], ['crowd is watching', 1], ['Your answer', 2], ['Ask Sal', 2], ['What do you do', 2], ['Talk back', 3], ['What do you tell her', 2], ['What do you ask', 3]];
   const finishCut = () => page.evaluate((PLAN) => { const g = window.__game, C = g.Cut; let n = 0; window.__chose = window.__chose || [];
-    while (C.on && n < 90) { if (C.choosing) { const L = C.lines[C.i], p = PLAN.find((q) => L[1].indexOf(q[0]) >= 0), k = p ? Math.min(p[1], L[3].length) : 1; window.__chose.push(L[1] + ' → ' + L[3][k - 1][0]); g.key('Digit' + k, true); g.key('Digit' + k, false); const op = document.getElementById('cutOpts'); if (op && getComputedStyle(op).display !== 'none') window.__optStuck = (window.__optStuck || 0) + 1; } else { g.key('Space', true); g.key('Space', false); } window.__run(2); n++; }
+    while (C.on && n < 90) { if (C.choosing) { const L = C.lines[C.i], p = PLAN.find((q) => L[1].indexOf(q[0]) >= 0), k = p ? Math.min(p[1], L[3].length) : 1; window.__chose.push(L[1] + ' → ' + L[3][k - 1][0]); g.key('Digit' + k, true); g.key('Digit' + k, false); const op = document.getElementById('cutOpts'); if (op && getComputedStyle(op).display !== 'none') window.__optStuck = (window.__optStuck || 0) + 1; } else { g.key('Space', true); g.key('Space', false); } if (n % 12 === 11) window.__run(1); n++; }   /* lines move on with the key press: no need to draw every one */
     window.__run(3); return n; }, PLAN);
   const n0 = await finishCut(); const after0 = await page.evaluate(() => ({ app: window.__game.App.mode, st: window.__game.save.story.st }));
   ok(after0.app === 'play' && after0.st === 1, 'Space moves through the lines; at the end you are driving and the next step is up (' + n0 + ' presses)');
@@ -53,17 +53,17 @@ const OUT = process.env.OUT || __dirname;
     }
     if (st.t === 'talk') {
       const n = g.Story.npcs['n:' + e.key]; r.who = st.who; r.vis = !!(n && n.h.root.visible); if (!n) return r; g.loadAround(n.x, n.z, 24);
-      if (!g.Foot.on) { g.spawnAt(n.x + 8, n.z, 0); window.__run(3); g.key('KeyF', true); g.key('KeyF', false); window.__run(4); }
-      g.Foot.x = n.x + 2.2; g.Foot.z = n.z + 0.4; window.__run(4); r.near = !!(g.Story.near && g.Story.near.n === n); r.hud = hud();
+      if (!g.Foot.on) { const q = {}; g.findNearestRoadPoint(n.x, n.z, q); g.spawnAt(q.x, q.z, Math.atan2(q.tx, q.tz)); window.__run(3); g.key('KeyF', true); g.key('KeyF', false); window.__run(4); }
+      r.foot = g.Foot.on; g.Foot.x = n.x + 2.2; g.Foot.z = n.z + 0.4; window.__run(4); r.near = !!(g.Story.near && g.Story.near.n === n); r.hud = hud();
       g.key('KeyE', true); g.key('KeyE', false); window.__run(3); r.cut = g.Cut.on;
-      if (r.cut) { g.key('Space', true); g.key('Space', false); window.__run(20); r.pic = g.renderer.domElement.toDataURL('image/jpeg', 0.75); }
+      if (r.cut) { g.key('Space', true); g.key('Space', false); window.__run(8); r.pic = g.renderer.domElement.toDataURL('image/jpeg', 0.75); }
     } else if (st.t === 'cut') { window.__run(40); r.cut = g.Cut.on; }
     else if (st.t === 'call') { let k = 0, onPhone = false, inBox = false; while (k++ < 900 && g.Story.entries().some((x) => x.key === e.key && x.i === e.i)) { window.__run(1); const P = document.getElementById('phone'), B = document.getElementById('storyComm'); if (g.Phone.inc && !P.hidden && P.querySelector('.ph-chat p')) onPhone = true; if (B && !B.hidden && /📱/.test(B.textContent)) inBox = true; } r.calls = g.Story.comm.log.length; r.took = k; r.onPhone = onPhone; r.inBox = inBox; window.__run(80); r.closed = document.getElementById('phone').hidden; }
     else if (st.t === 'goto') { const P = g.Story.place(st.at); g.loadAround(P.x, P.z, 20); if (g.Foot.on) g.Foot.board(true); g.spawnAt(P.x + 3, P.z + 3, 0); window.__run(5); }
     else if (st.t === 'run') {
       const m = g.Story.def(st.id); r.m = m.id; g.loadAround(m.x, m.z, 30); if (g.Foot.on) g.Foot.board(true); g.spawnAt(m.x + 4, m.z + 4, 0); window.__run(4); r.near = !!(g.Story.near && g.Story.near.what === 'run');
       g.key('KeyE', true); g.key('KeyE', false); window.__run(2); r.cut = g.Cut.on; r.mi = !!g.Mi; r.rival = !!g.Story.rivalH;
-      if (g.Story.rivalH) { let k = 0; while (g.Cut.on && k++ < 40 && g.Cut.lines[g.Cut.i][2] !== 'rival') { if (g.Cut.choosing) { g.key('Digit1', true); g.key('Digit1', false); } else { g.key('Space', true); g.key('Space', false); } window.__run(1); } window.__run(24); r.pic = g.renderer.domElement.toDataURL('image/jpeg', 0.8); }
+      if (g.Story.rivalH) { let k = 0; while (g.Cut.on && k++ < 40 && g.Cut.lines[g.Cut.i][2] !== 'rival') { if (g.Cut.choosing) { g.key('Digit1', true); g.key('Digit1', false); } else { g.key('Space', true); g.key('Space', false); } window.__run(0); } window.__run(10); r.pic = g.renderer.domElement.toDataURL('image/jpeg', 0.8); }
     }
     else if (st.t === 'mission') { const m = st.m(); r.m = m && m.id; g.save.done[m.id] = { stars: 1, best: 60 }; window.__run(2); }
     else if (st.t === 'bank') { const b = g.intSave().banks; b.test = { n: ((b.test && b.test.n) | 0) + 1, best: 4000, stars: 2, t: 1 }; window.__run(2); }
@@ -74,7 +74,7 @@ const OUT = process.env.OUT || __dirname;
   const seen = [], pics = {}; let guard = 0, talkOk = true, hudOk = true, runOk = true, events = 0, calls = 0, callsOnPhone = 0, callsInBox = 0, callsOpen = 0, insideN = 0, insideOk = true;
   while (guard++ < 140) {
     const fin = await page.evaluate(() => window.__game.save.story.fin && !window.__game.Story.entries().length); if (fin) break;
-    const r = await doStep(); if (r.none) break; seen.push(r.key + ':' + r.t + (r.who ? '(' + r.who + ')' : '') + (r.m ? '[' + r.m + ']' : ''));
+    const t0s = Date.now(); const r = await doStep(); console.log('  step ' + guard + ' ' + r.key + ' ' + r.t + (r.who ? '(' + r.who + ')' : '') + (r.m ? '[' + r.m + ']' : '') + ' ' + Math.round((Date.now() - t0s) / 1000) + 's' + (r.t === 'run' ? ' near=' + r.near + ' cut=' + r.cut + ' mi=' + r.mi : '')); if (r.none) break; seen.push(r.key + ':' + r.t + (r.who ? '(' + r.who + ')' : '') + (r.m ? '[' + r.m + ']' : ''));
     if (r.t !== 'cut' && r.t !== 'call' && !/CHAPTER|SIDE QUEST/.test(r.hud)) { hudOk = false; console.log('  hud', r.key, r.t, JSON.stringify(r.hud)); }
     if (r.t === 'run') {
       await finishCut();
@@ -131,7 +131,7 @@ const OUT = process.env.OUT || __dirname;
   /* Mara at her garage: spend time with her, a new scene each visit while there are new ones */
   const hang = await page.evaluate(async () => { const g = window.__game, S = g.save.story, r = { scenes: [], shots: [] };
     for (let i = 0; i < 7; i++) {
-      window.__run(2); const n = g.Story.npcs['n:home']; if (!n) { r.noMara = i; break; } g.loadAround(n.x, n.z, 20); if (!g.Foot.on) { g.spawnAt(n.x + 8, n.z, 0); window.__run(3); g.key('KeyF', true); g.key('KeyF', false); window.__run(3); }
+      window.__run(2); const n = g.Story.npcs['n:home']; if (!n) { r.noMara = i; break; } g.loadAround(n.x, n.z, 20); if (!g.Foot.on) { const q = {}; g.findNearestRoadPoint(n.x, n.z, q); g.spawnAt(q.x, q.z, Math.atan2(q.tx, q.tz)); window.__run(3); g.key('KeyF', true); g.key('KeyF', false); window.__run(3); }
       g.Foot.x = n.x + 2; g.Foot.z = n.z + 0.3; window.__run(3); const before = Object.keys(S.hang || {}).length; g.key('KeyE', true); g.key('KeyE', false); window.__run(3); r.cut = (r.cut || 0) + (g.Cut.on ? 1 : 0);
       if (i === 2) { window.__run(20); r.shots.push(g.renderer.domElement.toDataURL('image/jpeg', 0.8)); }
       let k = 0; while (g.Cut.on && k++ < 60) { if (g.Cut.choosing) { g.key('Digit1', true); g.key('Digit1', false); } else { g.key('Space', true); g.key('Space', false); } window.__run(2); }
