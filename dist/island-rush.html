@@ -3296,42 +3296,101 @@ function stepCar(dt, c0, P0, T0, circ0) {
 const Cockpit = {};
 const EYE = new THREE.Vector3(-0.35, 1.13, 0.12);
 function sm(hex, rough, metal, extra) { return new THREE.MeshStandardMaterial(Object.assign({ color: lc(hex), roughness: rough, metalness: metal || 0 }, extra || {})); }
+/* the cabin you see from the driver's seat: one for every car, sculpted rather than boxy (a moulded dash with an arched gauge hood, round vents
+   and a centre screen; curved pillars and roof rail; padded doors with armrests; a contoured passenger seat with bolsters; a console with a gear
+   knob and handbrake; a thick-rimmed wheel; a crowned bonnet ahead), dressed per car by Cockpit.theme: sport, classic, rugged or modern */
+const CK_THEME = {
+  sport: { dash: 0x16171b, soft: 0x0e0e10, seat: 0x121214, trim: 0x50545c, accent: 0xc0202a, door: 0x18191d },
+  classic: { dash: 0x2a1e18, soft: 0x3a2618, seat: 0x8a5a36, trim: 0xc8ccd2, accent: 0x6a3e20, door: 0x34241a },
+  rugged: { dash: 0x2a2c2e, soft: 0x1e2022, seat: 0x3a3c40, trim: 0x7a7e86, accent: 0xd0702a, door: 0x2c2e31 },
+  modern: { dash: 0x1b1e24, soft: 0x101114, seat: 0x1a1c22, trim: 0x8a909b, accent: 0x3a7bd5, door: 0x1a1c21 }
+};
+function ckThemeOf(d) {
+  const c = String((d && d.cls) || '');
+  if (/Super|Hyper|Drag|Open-wheel|Go-kart|Rally car|Rally hatch|Hot hatch/.test(c)) return 'sport';
+  if (/Muscle|Hot rod|Lowrider|Roadster|Retro|Surf/.test(c)) return 'classic';
+  if (/Pickup|4x4|Monster|truck|buggy|Sand rail/i.test(c)) return 'rugged';
+  return 'modern';
+}
+/* a rectangle with rounded corners, and a box made from it with soft edges */
+function ckRect(w, h, r) { const s = new THREE.Shape(), x = -w / 2, y = -h / 2; r = Math.max(0.001, Math.min(r, w / 2, h / 2)); s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r); s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h); s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r); s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y); return s; }
+function ckRBox(w, h, d, r) { const b = Math.max(0.002, Math.min(r, d / 2 - 0.002, w / 2 - 0.002, h / 2 - 0.002)), geo = new THREE.ExtrudeGeometry(ckRect(w - 2 * b, h - 2 * b, b * 0.9), { depth: Math.max(0.001, d - 2 * b), bevelEnabled: true, bevelThickness: b, bevelSize: b, bevelSegments: 3, curveSegments: 5 }); geo.translate(0, 0, -(d - 2 * b) / 2); geo.computeVertexNormals(); return geo; }
 function buildCockpit() {
-  const g = new THREE.Group();
-  const mDark = sm(0x14161a, 0.6, 0.05), mDash = sm(0x1b1e24, 0.5, 0.1), mTrim = sm(0x8a909b, 0.35, 0.8), mRoof = sm(0x3b3e45, 0.95, 0), mLeather = sm(0x101114, 0.7, 0), mDoor = sm(0x1a1c21, 0.65, 0.05);
-  const box = (w, h, d, x, y, z, m, rx, ry, rz) => { const me = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); me.position.set(x, y, z); me.rotation.set(rx || 0, ry || 0, rz || 0); g.add(me); return me; };
-  const beam = (p0, p1, t, m) => { const a = new THREE.Vector3(...p0), b = new THREE.Vector3(...p1); const len = a.distanceTo(b); const me = new THREE.Mesh(new THREE.BoxGeometry(t, t, len), m); me.position.copy(a).add(b).multiplyScalar(0.5); me.lookAt(b); g.add(me); return me; };
-  /* dash: top at y=0.93, driver-facing face at z=0.8 */
-  box(1.95, 0.3, 0.55, 0, 0.78, 1.075, mDash); box(1.95, 0.03, 0.5, 0, 0.945, 1.1, mLeather, 0.05);
-  box(1.9, 0.02, 0.02, 0, 0.66, 0.795, mTrim); box(0.5, 0.12, 0.03, 0.42, 0.8, 0.795, mDark);
-  box(0.28, 0.22, 1.1, 0.12, 0.49, 0.28, mDark); box(0.06, 0.14, 0.06, 0.12, 0.66, 0.5, mTrim);
-  box(0.12, 0.45, 1.4, 0.96, 0.7, 0.3, mDoor); box(0.12, 0.45, 1.4, -0.96, 0.7, 0.3, mDoor);
-  box(0.14, 0.06, 1.0, 0.94, 0.94, 0.55, mLeather); box(0.14, 0.06, 1.0, -0.94, 0.94, 0.55, mLeather);
-  beam([0.88, 0.93, 1.15], [0.7, 1.42, 0.98], 0.075, mRoof); beam([-0.88, 0.93, 1.15], [-0.7, 1.42, 0.98], 0.075, mRoof);
-  box(1.5, 0.06, 0.2, 0, 1.42, 1.0, mRoof); box(1.7, 0.03, 1.3, 0, 1.455, 0.3, mRoof);
-  /* side mirrors sit outside the windows */
-  box(0.12, 0.1, 0.16, 1.04, 1.0, 1.02, MAT.paintPlayer, 0, 0.2, 0); box(0.12, 0.1, 0.16, -1.04, 1.0, 1.02, MAT.paintPlayer, 0, -0.2, 0);
-  box(0.03, 0.07, 0.03, 0, 1.38, 0.98, mDark);
-  const mir = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.075), MAT.mirror); mir.position.set(0, 1.325, 0.925); mir.lookAt(EYE.x, EYE.y, EYE.z); g.add(mir); Cockpit.mirror = mir;
-  box(0.27, 0.095, 0.04, 0, 1.325, 0.97, mDark).lookAt(EYE.x, EYE.y, EYE.z);
-  /* hood */
-  box(1.74, 0.07, 1.4, 0, 0.9, 1.88, MAT.paintPlayer, 0.05, 0, 0); box(0.55, 0.05, 0.9, 0, 0.955, 1.95, MAT.paintPlayer, 0.05, 0, 0);
-  box(0.34, 0.12, 1.3, 0.83, 0.92, 1.85, MAT.paintPlayer, 0.04, 0, 0); box(0.34, 0.12, 1.3, -0.83, 0.92, 1.85, MAT.paintPlayer, 0.04, 0, 0);
-  { const hd = new THREE.Group(); hd.position.z = 1.18; const n = g.children.length; for (const m of g.children.slice(n - 4)) { g.remove(m); m.position.z -= 1.18; hd.add(m); } g.add(hd); Cockpit.hood = hd; }
-  /* steering wheel */
+  const g = new THREE.Group(), T = CK_THEME.modern;
+  const M = Cockpit.mats = { dash: sm(T.dash, 0.55, 0.05), soft: sm(T.soft, 0.75, 0), seat: sm(T.seat, 0.8, 0), trim: sm(T.trim, 0.3, 0.85), accent: sm(T.accent, 0.5, 0.1), door: sm(T.door, 0.65, 0.05), dark: sm(0x0c0d10, 0.6, 0.05), roof: sm(0x3b3e45, 0.95, 0, { side: THREE.DoubleSide }), screen: new THREE.MeshBasicMaterial({ color: lc(0x10233a) }) };
+  const put = (geo, m, x, y, z, rx, ry, rz, par) => { const me = new THREE.Mesh(geo, m); me.position.set(x, y, z); me.rotation.set(rx || 0, ry || 0, rz || 0); (par || g).add(me); return me; };
+  const rb = (w, h, d, r, m, x, y, z, rx, ry, rz, par) => put(ckRBox(w, h, d, r), m, x, y, z, rx, ry, rz, par);
+  const tube = (pts, r, m) => put(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map((p) => new THREE.Vector3(...p))), 16, r, 10, false), m, 0, 0, 0);
+  /* the dash: a moulded profile (side view: windscreen base, the top falling to a rounded lip over the driver's knees) swept across the car */
+  { const s = new THREE.Shape(); s.moveTo(1.36, 0.6); s.lineTo(1.3, 0.9); s.quadraticCurveTo(1.18, 0.95, 1.0, 0.95); s.quadraticCurveTo(0.84, 0.95, 0.8, 0.88); s.quadraticCurveTo(0.76, 0.8, 0.79, 0.72); s.quadraticCurveTo(0.83, 0.62, 0.95, 0.6); s.lineTo(1.36, 0.6);
+    const geo = new THREE.ExtrudeGeometry(s, { depth: 1.86, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.025, bevelSegments: 3, curveSegments: 10 }); geo.translate(0, 0, -0.93); geo.rotateY(-Math.PI / 2); geo.computeVertexNormals(); put(geo, M.dash, 0, 0, 0); }
+  /* a soft-touch strip and a trim line across the dash face */
+  put(new THREE.CylinderGeometry(0.012, 0.012, 1.84, 10), M.trim, 0, 0.705, 0.79, 0, 0, Math.PI / 2);
+  rb(1.0, 0.07, 0.05, 0.025, M.accent, 0.42, 0.79, 0.79, -0.25);
+  /* the arched hood over the gauges */
+  { const s = new THREE.Shape(); s.absellipse(0, 0, 0.3, 0.13, 0, Math.PI, false); s.lineTo(-0.27, 0); s.absellipse(0, 0, 0.27, 0.105, Math.PI, 0, true); s.lineTo(0.3, 0);
+    const geo = new THREE.ExtrudeGeometry(s, { depth: 0.2, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.01, bevelSegments: 2, curveSegments: 14 }); geo.computeVertexNormals(); put(geo, M.soft, -0.35, 0.83, 0.74, -0.15); }
+  /* round air vents: two in the middle, one at each end */
+  for (const x of [-0.86, -0.13, 0.13, 0.86]) { const v = put(new THREE.TorusGeometry(0.045, 0.012, 8, 20), M.trim, x, 0.84, 0.79, -0.25); put(new THREE.CircleGeometry(0.045, 16), M.dark, 0, 0, -0.005, 0, Math.PI, 0, v); for (const a of [0, Math.PI / 2]) put(new THREE.BoxGeometry(0.08, 0.006, 0.006), M.trim, 0, 0, 0.002, 0, 0, a, v); }
+  /* the centre screen */
+  { const sc = rb(0.3, 0.17, 0.025, 0.012, M.dark, 0, 0.8, 0.8, -0.3); put(new THREE.PlaneGeometry(0.27, 0.145), M.screen, 0, 0, -0.014, 0, Math.PI, 0, sc); Cockpit.screen = M.screen; }
+  /* the console between the seats: a soft lid, the gear knob, the handbrake, cup holders */
+  rb(0.28, 0.24, 1.0, 0.06, M.dash, 0, 0.47, 0.32); rb(0.24, 0.05, 0.42, 0.025, M.soft, 0, 0.6, 0.0);
+  put(new THREE.CylinderGeometry(0.012, 0.016, 0.13, 10), M.trim, 0, 0.65, 0.5, 0.25); put(new THREE.SphereGeometry(0.032, 16, 12), M.soft, 0, 0.72, 0.52);
+  put(new THREE.CylinderGeometry(0.06, 0.07, 0.02, 20), M.accent, 0, 0.595, 0.5);
+  rb(0.04, 0.03, 0.26, 0.014, M.soft, 0.06, 0.62, 0.18, 0.35);
+  for (const z of [0.29, 0.37]) put(new THREE.CylinderGeometry(0.035, 0.035, 0.02, 16), M.dark, 0, 0.59, z);
+  /* the doors: padded cards, a sill, an armrest, a handle and a speaker */
+  for (const sd of [-1, 1]) {
+    rb(0.1, 0.5, 1.4, 0.045, M.door, sd * 0.96, 0.68, 0.3); rb(0.14, 0.07, 1.05, 0.03, M.soft, sd * 0.94, 0.94, 0.55);
+    rb(0.11, 0.06, 0.42, 0.028, M.soft, sd * 0.89, 0.66, 0.25); rb(0.025, 0.035, 0.12, 0.012, M.trim, sd * 0.905, 0.79, 0.52);
+    put(new THREE.TorusGeometry(0.065, 0.01, 6, 20), M.trim, sd * 0.905, 0.5, 0.62, 0, Math.PI / 2, 0); put(new THREE.CircleGeometry(0.065, 18), M.dark, sd * 0.908, 0.5, 0.62, 0, -sd * Math.PI / 2, 0);
+    rb(0.02, 0.03, 0.9, 0.01, M.accent, sd * 0.905, 0.86, 0.45);
+  }
+  /* pillars and roof: curved tubes, a header rail, a soft headliner */
+  for (const sd of [-1, 1]) tube([[sd * 0.9, 0.92, 1.18], [sd * 0.82, 1.2, 1.08], [sd * 0.7, 1.43, 0.96]], 0.045, M.roof);
+  tube([[-0.72, 1.43, 0.97], [0, 1.455, 1.02], [0.72, 1.43, 0.97]], 0.04, M.roof);
+  { const geo = new THREE.CylinderGeometry(2.4, 2.4, 1.3, 24, 1, true, -0.34, 0.68); geo.rotateX(Math.PI / 2); put(geo, M.roof, 0, 1.46 - 2.4 + 0.02, 0.3, 0, 0, Math.PI); }
+  /* side mirrors outside the windows, the rear-view mirror */
+  for (const sd of [-1, 1]) { const mm = rb(0.13, 0.1, 0.17, 0.04, MAT.paintPlayer, sd * 1.04, 1.0, 1.02, 0, sd * 0.2, 0); put(new THREE.PlaneGeometry(0.1, 0.07), MAT.mirror, 0, 0, -0.087, 0, Math.PI, 0, mm); }
+  put(new THREE.CylinderGeometry(0.012, 0.012, 0.07, 8), M.dark, 0, 1.4, 0.98);
+  rb(0.28, 0.095, 0.04, 0.03, M.dark, 0, 1.325, 0.97).lookAt(EYE.x, EYE.y, EYE.z);
+  const mir = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.075), MAT.mirror); mir.position.set(0, 1.325, 0.945); mir.lookAt(EYE.x, EYE.y, EYE.z); g.add(mir); Cockpit.mirror = mir;
+  /* the passenger seat, contoured: cushion, backrest, side bolsters, headrest, a stripe down the middle */
+  { const st = new THREE.Group(); st.position.set(0.42, 0, 0.15); g.add(st);
+    rb(0.5, 0.13, 0.5, 0.05, M.seat, 0, 0.45, 0.05, 0, 0, 0, st); rb(0.5, 0.64, 0.13, 0.055, M.seat, 0, 0.82, -0.22, -0.18, 0, 0, st);
+    for (const sd of [-1, 1]) { rb(0.09, 0.16, 0.5, 0.04, M.seat, sd * 0.22, 0.53, 0.05, 0, 0, sd * -0.15, st); rb(0.1, 0.5, 0.15, 0.045, M.seat, sd * 0.22, 0.8, -0.2, -0.18, 0, sd * -0.2, st); }
+    rb(0.1, 0.5, 0.012, 0.005, M.accent, 0, 0.83, -0.155, -0.18, 0, 0, st); rb(0.26, 0.17, 0.1, 0.045, M.seat, 0, 1.24, -0.29, -0.18, 0, 0, st); put(new THREE.CylinderGeometry(0.008, 0.008, 0.1, 6), M.trim, 0.07, 1.13, -0.27, -0.18, 0, 0, st); put(new THREE.CylinderGeometry(0.008, 0.008, 0.1, 6), M.trim, -0.07, 1.13, -0.27, -0.18, 0, 0, st); }
+  /* the driver's seat, just its edges where you can see them */
+  for (const sd of [-1, 1]) rb(0.09, 0.16, 0.5, 0.04, M.seat, -0.35 + sd * 0.22, 0.53, 0.2, 0, 0, sd * -0.15);
+  /* the bonnet ahead: a crowned panel with rounded wings (scaled to each car's width and nose) */
+  { const hd = new THREE.Group(); hd.position.z = 1.18; g.add(hd); Cockpit.hood = hd;
+    const pg = new THREE.PlaneGeometry(1.74, 1.4, 16, 8); pg.rotateX(-Math.PI / 2); const pp = pg.attributes.position; for (let k = 0; k < pp.count; k++) { const x = pp.getX(k), z = pp.getZ(k); pp.setY(k, 0.035 * (1 - (x / 0.87) ** 2) - 0.02 * (z / 0.7)); } pg.computeVertexNormals();
+    put(pg, MAT.paintPlayer, 0, 0.93, 0.7, 0.05, 0, 0, hd);
+    for (const sd of [-1, 1]) rb(0.32, 0.12, 1.3, 0.055, MAT.paintPlayer, sd * 0.83, 0.92, 0.67, 0.04, 0, 0, hd);
+    rb(0.5, 0.04, 0.8, 0.02, MAT.paintPlayer, 0, 0.965, 0.77, 0.05, 0, 0, hd); }
+  /* the steering wheel: a thick rim with thumb grips, a rounded hub, flat spokes, a tapered column */
   const wm = new THREE.Group(); wm.position.set(-0.35, 0.74, 0.58); wm.rotation.x = 0.5; g.add(wm);
   const wheel = new THREE.Group(); wm.add(wheel);
-  wheel.add(new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.017, 8, 36), mLeather));
-  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.055, 0.045, 16), mTrim); hub.rotation.x = Math.PI / 2; wheel.add(hub);
-  for (const a of [Math.PI / 2, Math.PI * 1.17, Math.PI * 1.83]) { const sp = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.026, 0.012), mDark); sp.position.set(Math.cos(a) * 0.09, Math.sin(a) * 0.09, 0); sp.rotation.z = a; wheel.add(sp); }
-  box(0.09, 0.09, 0.2, -0.35, 0.7, 0.66, mDark, 0.5, 0, 0);
+  wheel.add(new THREE.Mesh(new THREE.TorusGeometry(0.165, 0.021, 12, 48), M.soft));
+  for (const a of [0.15, Math.PI - 0.15]) { const gp = new THREE.Mesh(new THREE.TorusGeometry(0.165, 0.025, 10, 10, 0.5), M.soft); gp.rotation.z = a - 0.25; wheel.add(gp); }
+  { const hub = new THREE.Mesh(new THREE.SphereGeometry(0.065, 20, 12), M.soft); hub.scale.set(1.15, 0.9, 0.42); wheel.add(hub); const badge = new THREE.Mesh(new THREE.CircleGeometry(0.018, 16), M.trim); badge.position.z = -0.028; badge.rotation.y = Math.PI; wheel.add(badge); }
+  for (const a of [Math.PI * 1.5, Math.PI * 0.17, Math.PI * 0.83]) { const sp = new THREE.Mesh(ckRBox(0.11, 0.035, 0.016, 0.007), M.dark); sp.position.set(Math.cos(a) * 0.1, Math.sin(a) * 0.1, 0); sp.rotation.z = a; wheel.add(sp); }
+  rb(0.022, 0.012, 0.03, 0.005, M.accent, 0, 0.165, 0, 0, 0, 0, wheel);
+  put(new THREE.CylinderGeometry(0.045, 0.06, 0.24, 16), M.dark, -0.35, 0.7, 0.68, Math.PI / 2 + 0.5);
   Cockpit.wheel = wheel;
   /* gauges */
   const gc = mkCanvas(512, 200); Cockpit.gc = gc; Cockpit.gx = gc.getContext('2d'); Cockpit.gtex = new THREE.CanvasTexture(gc); Cockpit.gtex.encoding = THREE.sRGBEncoding; Cockpit.gtex.anisotropy = maxAniso;
   const gm = new THREE.MeshBasicMaterial({ map: Cockpit.gtex, toneMapped: false }); Cockpit.gm = gm;
   const gp = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.195), gm); gp.position.set(-0.35, 0.83, 0.765); gp.rotation.set(-0.2, Math.PI, 0, 'YXZ'); g.add(gp);
-  Cockpit.group = g; return g;
+  Cockpit.group = g; if (typeof CUR !== 'undefined' && CUR) Cockpit.theme(CUR); return g;
 }
+/* dress the cabin for a car: sport (carbon and red), classic (tan leather, wood and chrome), rugged (grey and orange) or modern (graphite and blue) */
+Cockpit.theme = function (d) {
+  const k = ckThemeOf(d), T = CK_THEME[k], M = Cockpit.mats; if (!M) return; Cockpit.style = k;
+  for (const n of ['dash', 'soft', 'seat', 'trim', 'accent', 'door']) M[n].color.copy(lc(T[n]));
+  M.seat.roughness = k === 'classic' ? 0.55 : k === 'rugged' ? 0.95 : 0.8; M.accent.metalness = k === 'classic' ? 0 : 0.1; M.accent.roughness = k === 'classic' ? 0.35 : 0.5;
+};
 function drawGauges(kmh, rpm, gear, nitro, health, mph, lampOn, rev) {
   const g = Cockpit.gx; g.clearRect(0, 0, 512, 200);
   g.fillStyle = '#07090c'; g.fillRect(0, 0, 512, 200);
@@ -5288,6 +5347,7 @@ function applyCar(id, rebuildMesh) {
   d.bumpY = (d.body.y0 != null ? d.body.y0 : 0.36) + 0.19; d.bumpZ = hl + 0.2;
   EYE.y = 1.13 + d.dy; if (Cockpit.group) Cockpit.group.position.y = d.dy;
   if (Cockpit.hood) { Cockpit.hood.scale.set(d.body.W / 1.82, 1, clamp((hl + 0.43 - 1.18) / 1.4, 0.6, 1.7)); }
+  if (Cockpit.theme) Cockpit.theme(d);
   if (rebuildMesh && car.body) {
     const old = car.ext; car.body.remove(old);
     disposeCar(old);
@@ -29275,7 +29335,7 @@ function frame(now) {
   c.lights = env.lampOn > 0.4;
   updateEnvironment(App.tod, Fly.on ? Fly.focus : Boat.on ? Boat.focus : c, App.time); Fly.fog(); Env.update(dt); updateWheels(dt);
   const k = 0.45 + 0.85 * env.lampOn;   /* lens glow: warm and bright, but kept under white so it doesn't bloom into a blob */
-  MAT.carHead.color.setRGB(0.62 * k, 0.57 * k, 0.48 * k); MAT.carTail.color.setRGB(0.5 + 1.6 * env.lampOn, 0.025, 0.025); Cosm.tick();
+  MAT.carHead.color.setRGB(0.62 * k, 0.57 * k, 0.48 * k); if (Cockpit.screen) Cockpit.screen.color.setRGB(0.05 + 0.12 * env.lampOn, 0.12 + 0.3 * env.lampOn, 0.2 + 0.5 * env.lampOn);   /* the cabin's centre screen glows at night */ MAT.carTail.color.setRGB(0.5 + 1.6 * env.lampOn, 0.025, 0.025); Cosm.tick();
   L.head.intensity += ((c.lights && App.mode === 'play' && !Foot.on && !Fly.on && !Boat.on ? (GAR.inside ? 0.25 : GAR.ok && GAR.dist < 80 ? 7 - 5.2 * Math.min(1, (80 - GAR.dist) / 34) : 7) : 0) - L.head.intensity) * Math.min(1, dt * 6);
   if (Rally.on || Drag.on || Derby.on) { /* no streaming on the stage, the strip or in the bowl */ } else if (devOn('free')) Chunks.update(Dev.fx, Dev.fz, 1); else Chunks.update(Pl.x, Pl.z, Fly.on || (Boat.on && Boat.p && Boat.p.speed > 14) ? 2 : 1);
   HB.update();
@@ -29332,7 +29392,7 @@ async function boot() {
     console.error(err); E.loadmsg.textContent = 'Could not start the 3D view: ' + (err && err.message ? err.message : err); window.__bootError = String(err && err.stack || err);
   }
 }
-window.__game = { get scene() { return scene; }, Story, STORY, SIDE, Phone, Cut, PLAY_MODE, endMission, Volc, VOLC, VOL, volcLift, volcLakeY, DEV_PLACES, Int, Bld, INT_KINDS, Jail, intSave, BankJob, KIT, kitDef, kitParts, kitDefault, HEIST_PRIZES, Part, L, Surf, Dunes, Rail, Beach, Heist, Wanted, GAR, terrainHeight, NR, Derby, DD, applyCar, buildCarModel, CAR_BY_ID, Env, get renderer() { return renderer; }, writePeds, Cam, Human, HU, Peds, Foot, Setup, TU, TU_PRESETS, CARS, CARP, tune, Drag, DG, DG_TIERS, Rally, RR, RY, RY_STAGES, RYG, RW, RY_FEATS, WK, Wk, WkF, WKSim, WKG, WKS, WkE, qfromAxes3, Dmg, Mech, RACE_DIFF, Wreck, Jack, JACK_MODELS, Race, Bots, Crash, newCarState, Track, TRK, Col, COLK, Ven, VDEF, CDEF, venSave, VM, VMD, VMK, towns, roads, Dock, MARINA, Boat, Boats, BSPEC, HB, solidHit, TREE, Air, AIR, Fly, Planes, PSPEC, Rel, REL_ROSTER, Shop, COS, Cosm, Biome, Weather, REG, Bust, CR, Fight, Police, Wanted, WANT, footBlockedAt, findNearestRoadPoint, Tow, GAR, Home, GP, Foot, Talk, Fare, Pl, pedHit, getMoney: () => save.money, get save() { return save; }, getLaw: () => save.law, Court, CR, Peds, pedSpawn, Dyn, abortMission, stepSim: step, frame, Env, Wheels, updateWheels, updateCamera, groundAt, buildCarModel, carSpec, TRAFFIC_DEFS, secAt, disposeCar, THREE_: THREE, TREE, GB, addTree, addGrass, terrainHeight, fbm, noise2, sstep, Dev, devReset, CARS, CAR_BY_ID, applyCar, stepCar, CARP, roads, loadAround, carThumb, car, App, UI, Chunks, Post, Cam, Keys, missions, towns, spawnAt, get Mi() { return Mi; }, startMission, applyQuality, get renderer() { return renderer; }, get scene() { return scene; }, get camera() { return camera; }, Snd, WorldMap, MView, Mirror, MAT, Cockpit, Q: () => Q, hasPost: () => hasPost, key(code, down) { Keys[code] = down; if (down) onKey(code); }, tune };
+window.__game = { get scene() { return scene; }, ckThemeOf, Story, STORY, SIDE, Phone, Cut, PLAY_MODE, endMission, Volc, VOLC, VOL, volcLift, volcLakeY, DEV_PLACES, Int, Bld, INT_KINDS, Jail, intSave, BankJob, KIT, kitDef, kitParts, kitDefault, HEIST_PRIZES, Part, L, Surf, Dunes, Rail, Beach, Heist, Wanted, GAR, terrainHeight, NR, Derby, DD, applyCar, buildCarModel, CAR_BY_ID, Env, get renderer() { return renderer; }, writePeds, Cam, Human, HU, Peds, Foot, Setup, TU, TU_PRESETS, CARS, CARP, tune, Drag, DG, DG_TIERS, Rally, RR, RY, RY_STAGES, RYG, RW, RY_FEATS, WK, Wk, WkF, WKSim, WKG, WKS, WkE, qfromAxes3, Dmg, Mech, RACE_DIFF, Wreck, Jack, JACK_MODELS, Race, Bots, Crash, newCarState, Track, TRK, Col, COLK, Ven, VDEF, CDEF, venSave, VM, VMD, VMK, towns, roads, Dock, MARINA, Boat, Boats, BSPEC, HB, solidHit, TREE, Air, AIR, Fly, Planes, PSPEC, Rel, REL_ROSTER, Shop, COS, Cosm, Biome, Weather, REG, Bust, CR, Fight, Police, Wanted, WANT, footBlockedAt, findNearestRoadPoint, Tow, GAR, Home, GP, Foot, Talk, Fare, Pl, pedHit, getMoney: () => save.money, get save() { return save; }, getLaw: () => save.law, Court, CR, Peds, pedSpawn, Dyn, abortMission, stepSim: step, frame, Env, Wheels, updateWheels, updateCamera, groundAt, buildCarModel, carSpec, TRAFFIC_DEFS, secAt, disposeCar, THREE_: THREE, TREE, GB, addTree, addGrass, terrainHeight, fbm, noise2, sstep, Dev, devReset, CARS, CAR_BY_ID, applyCar, stepCar, CARP, roads, loadAround, carThumb, car, App, UI, Chunks, Post, Cam, Keys, missions, towns, spawnAt, get Mi() { return Mi; }, startMission, applyQuality, get renderer() { return renderer; }, get scene() { return scene; }, get camera() { return camera; }, Snd, WorldMap, MView, Mirror, MAT, Cockpit, Q: () => Q, hasPost: () => hasPost, key(code, down) { Keys[code] = down; if (down) onKey(code); }, tune };
 boot();
 
 })();
