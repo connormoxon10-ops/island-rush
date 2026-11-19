@@ -286,7 +286,7 @@ Story.dropNpc = function (key) { const n = Story.npcs[key]; if (n) { Human.dispo
 /* a rival leaning out of the driver's window of their car (a pivot at the hips, tipped out over the sill) */
 Story.rival = function (who, mesh, side) {
   Story.dropRival(); const h = Human.make(STORY_CAST[who].o()), pv = new THREE.Group();
-  pv.position.set(side * 0.42, 0.52, 0.2); pv.rotation.y = side * Math.PI / 2; pv.rotateX(0.95); h.root.position.y = -0.95; pv.add(h.root); mesh.add(pv);
+  pv.position.set(side * 0.42, 0.7, 0.2);   /* hips on the seat, high enough that the shoulders clear the sill */ pv.rotation.y = side * Math.PI / 2; pv.rotateX(0.95); h.root.position.y = -0.95; pv.add(h.root); mesh.add(pv);
   Story.rivalH = { who, h, pv, mesh, side }; return Story.rivalH;
 };
 Story.dropRival = function () { const R = Story.rivalH; if (!R) return; R.pv.parent && R.pv.parent.remove(R.pv); Human.dispose(R.h); Story.rivalH = null; };
@@ -465,7 +465,7 @@ Cut.frame = function (dt) {
   const fw = { x: Math.sin(car.yaw), z: Math.cos(car.yaw) }, rt = { x: Math.cos(car.yaw), z: -Math.sin(car.yaw) };
   if (n) Cut.gesture(n.h, L[0] === n.id && Cut.typed < L[1].length + 8, t, n.h.id);
   if (R) {
-    const b = R.h.b, talk = L[0] === R.who; b.armR.rotation.x = talk ? -2.3 + 0.35 * Math.sin(t * 7) : -1.1; b.elR.rotation.x = talk ? -0.5 : -1.3; b.armL.rotation.x = -0.9; b.elL.rotation.x = -1.2;
+    const b = R.h.b, talk = L[0] === R.who; b.armR.rotation.x = talk ? -2.3 + 0.35 * Math.sin(t * 7) : -1.1; b.elR.rotation.x = talk ? -0.5 : -1.3; b.armL.rotation.set(-1.25, 0, 0.35); b.elL.rotation.x = -1.5;   /* the other arm folded on the sill */
     b.head.rotation.x = -0.75 + (talk ? 0.05 * Math.sin(t * 4) : 0); b.head.rotation.y = 0.25 * Math.sin(t * 0.8); b.jaw.rotation.x = talk && Cut.typed < L[1].length ? 0.06 + 0.08 * Math.abs(Math.sin(t * 14)) : 0.02;
     Human.alive(R.h, dt, t, 1.3);
   }
@@ -478,7 +478,7 @@ Cut.frame = function (dt) {
     camera.lookAt(_cutV);
   } else if (shot === 'rival' && R) {
     R.h.b.head.getWorldPosition(_cutH); const dx = car.x - R.mesh.position.x, dz = car.z - R.mesh.position.z, dl = Math.hypot(dx, dz) || 1;   /* out in the gap between the cars, at his head height, facing him */
-    camera.position.set(_cutH.x + dx / dl * 1.7 + fw.x * (0.7 + 0.4 * k), _cutH.y + 0.12, _cutH.z + dz / dl * 1.7 + fw.z * (0.7 + 0.4 * k)); _cutV.copy(_cutH); camera.lookAt(_cutV);
+    camera.position.set(_cutH.x + dx / dl * 1.05 + fw.x * (0.6 + 0.3 * k), _cutH.y + 0.08, _cutH.z + dz / dl * 1.05 + fw.z * (0.6 + 0.3 * k)); _cutV.copy(_cutH); camera.lookAt(_cutV);
   } else if (shot === 'line') {
     const cx = R ? (car.x + R.mesh.position.x) / 2 : car.x, cz = R ? (car.z + R.mesh.position.z) / 2 : car.z, D = 11 + 4 * k;
     camera.position.set(cx + fw.x * D + rt.x * 2.5 * Math.sin(k * 1.5), car.y + 0.7, cz + fw.z * D + rt.z * 2.5 * Math.sin(k * 1.5)); _cutV.set(cx, car.y + 0.9, cz); camera.lookAt(_cutV);
@@ -490,7 +490,7 @@ Cut.frame = function (dt) {
   } else {
     const a = car.yaw + Cut.ca * 0.12 + 0.6, D = 9.5; camera.position.set(me.x + Math.sin(a) * D, me.y + 2.6, me.z + Math.cos(a) * D); _cutV.set(me.x, me.y + 1, me.z); camera.lookAt(_cutV);
   }
-  Cut.ca += dt; placeBody(); car.ext.visible = true; if (Cockpit.group) Cockpit.group.visible = false;   /* the outside of your car in a cutscene, never the first-person cockpit */
+  Cut.ca += dt; placeBody(); car.ext.visible = shot !== 'rival'; if (Cockpit.group) Cockpit.group.visible = false;   /* (the close-up on your rival is shot from beside your car, so your car is out of it) */   /* the outside of your car in a cutscene, never the first-person cockpit */
   if (Math.abs(camera.fov - 44) > 0.1) { camera.fov = 44; camera.updateProjectionMatrix(); }
 };
 /* ---------- scenes inside buildings: a table set for two, them already sitting, a waiter going round ----------
