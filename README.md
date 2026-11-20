@@ -136,6 +136,7 @@ node tests/nitro.js         # nitro: a small flame on each of the model's exhaus
 node tests/dunes.js         # Dune Dash: the beach dune track (on the map), a race against five dune buggies, prize money
 node tests/story.js         # Story Mode: its own save, the whole story and side quests, choices and endings, indoor scenes, the phone and calls
 node tests/story_reset.js   # Story Mode: Reset story (title and quest log) erases the story save and starts over; free roam untouched
+node tests/casino.js        # the casino: two of them, slots, roulette and blackjack paying the right sums, the bar, the cashier's record
 node tests/volcano.js       # Mount Cinder and the Eruption Escape
 node tests/cockpit.js       # the car cabin: sculpted, one of four looks per car
 node tests/wildlife.js      # wildlife: every kind, the right ones in each region, they scatter, a cow dents the car, an elephant stops it, gulls fly

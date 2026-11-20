@@ -74,6 +74,7 @@ function loadSave() {
       if (s.surf && typeof s.surf === 'object') save.surf = { best: +s.surf.best || 0, sessions: s.surf.sessions | 0 };
       if (s.dune && typeof s.dune === 'object') save.dune = { races: s.dune.races | 0, wins: s.dune.wins | 0, best: +s.dune.best || 0 };
       KIT.load(s.kit);
+      if (s.casino && typeof s.casino === 'object') save.casino = { won: Math.max(0, +s.casino.won || 0), lost: Math.max(0, +s.casino.lost || 0), plays: Math.max(0, s.casino.plays | 0), best: Math.max(0, +s.casino.best || 0) };
       save.car = (s.car && (save.owned[s.car] || (save.jack && save.jack.id === s.car))) ? s.car : save.heist.prev && save.owned[save.heist.prev] ? save.heist.prev : 'rook';
       if (s.story && typeof s.story === 'object') { const q = s.story, ob = (o) => (o && typeof o === 'object' && !Array.isArray(o) ? Object.assign({}, o) : {}); save.story = { ch: clamp(q.ch | 0, 0, 99), st: clamp(q.st | 0, 0, 99), base: ob(q.base), fin: q.fin ? 1 : 0, f: ob(q.f), sq: ob(q.sq), met: ob(q.met), track: typeof q.track === 'string' ? q.track : null, said: Array.isArray(q.said) ? q.said.slice(-40).map(String) : [] }; } }
     if (PLAY_MODE === 'story') { const o = JSON.parse(localStorage.getItem(SANDBOX_KEY) || 'null'); if (o && o.set) Object.assign(save.set, o.set); }   /* the settings are the sandbox's */
