@@ -138,6 +138,7 @@ node tests/story.js         # Story Mode: its own save, the whole story and side
 node tests/story_reset.js   # Story Mode: Reset story (title and quest log) erases the story save and starts over; free roam untouched
 node tests/volcano.js       # Mount Cinder and the Eruption Escape
 node tests/cockpit.js       # the car cabin: sculpted, one of four looks per car
+node tests/wildlife.js      # wildlife: every kind, the right ones in each region, they scatter, a cow dents the car, an elephant stops it, gulls fly
 ```
 
 The browser tests drive the built game in headless Chromium with software GL (slow, 1-7 fps), using step lists of `{js}`, `{wait}` and `{shot}`:
