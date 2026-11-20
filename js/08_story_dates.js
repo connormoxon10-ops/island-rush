@@ -170,6 +170,9 @@ Story.intRoom = function (K, rec, room) {
 
 /* ---------- the dates ---------- */
 const DATE_DONE = (id) => { const r = Story.S().sq[id]; return !!(r && r.done); };
+/* she wants a few days between dates: the next one comes up DATE_GAP days after the last one ended */
+const DATE_GAP = 3, DATE_IDS = ['mdinner', 'mboat', 'mbeach', 'mace', 'mstars'];
+const DATE_READY = (prev) => DATE_DONE(prev) && Story.day() >= (Story.S().dateDay == null ? -99 : Story.S().dateDay) + DATE_GAP;
 const DATE_PICKUP = (lines) => ({ t: 'talk', who: 'mara', at: 'garage', obj: 'Pick Mara up at the garage', lines, done: () => Story.passOn('mara') });
 SIDE.push(
   { id: 'mdinner', title: 'Dinner Uptown', who: 'mara', date: true, food: [0x8a4a2a, 0x5a9a3a], desc: 'Mara has never been to the fancy place in the city. You are taking her.', reward: 0, aff: { mara: 1 },
@@ -187,7 +190,7 @@ SIDE.push(
         ['mara', 'Thank you for this. Really. Now eat, or I am having yours.', 'two']] }] },
 
   { id: 'mboat', title: 'The Boat Ride', who: 'mara', desc: 'Mara wants to see the island from the water. Rent a boat at the marina and take her out at sunset.', reward: 0, aff: { mara: 2 },
-    avail: (S) => DATE_DONE('mdinner') && (Story.F().mara | 0) >= 2,
+    avail: (S) => DATE_READY('mdinner') && (Story.F().mara | 0) >= 2,
     steps: [{ t: 'call', lines: [['Mara (phone)', 'Do you know how long I have lived on an island and never been on a boat? Eight years.'], ['Mara (phone)', 'The marina rents little ones. Sunset. You steer, I will sit at the front and look romantic. I mean scenic. Look scenic.']] },
       DATE_PICKUP(() => [['', '18:40 · THE GARAGE', 'card'], ['mara', 'I packed sandwiches. Two kinds. Both cheese.', 'npc'], ['you', 'Ready to be seasick?', 'me'], ['mara', 'I fix diesel engines for a living. I fear nothing. Except fish.', 'npc']]),
       { t: 'goto', at: 'marina', with: 'mara', obj: 'Take Mara to the marina', r: 24, tod: 18.9, done: () => Story.passOff(),
@@ -201,7 +204,7 @@ SIDE.push(
         ['', 'You bring the skiff home in the dark, the lights of the marina guiding you in.', 'wide']]; } }] },
 
   { id: 'mbeach', title: 'Sunset on the Sand', who: 'mara', desc: 'A walk on the beach, nothing else. Mara insists it is not a date.', reward: 0, aff: { mara: 1 },
-    avail: (S) => DATE_DONE('mboat') && (Story.F().mara | 0) >= 3,
+    avail: (S) => DATE_READY('mboat') && (Story.F().mara | 0) >= 3,
     steps: [{ t: 'call', lines: () => [['Mara (phone)', 'I closed the garage early. Do not tell Hal. Take me to the beach? Just a walk. Not a date.'], ['you (phone)', 'Definitely not a date.'], ['Mara (phone)', 'Glad we agree. Bring a jumper.']] },
       DATE_PICKUP(() => [['', '18:50 · THE GARAGE', 'card'], ['mara', 'Not a date. I just happen to have brushed my hair.', 'npc'], ['you', 'Noted.', 'me']]),
       { t: 'goto', at: 'sand', with: 'mara', obj: 'Drive Mara to the beach', r: 30, tod: 19.0, done: () => Story.passOff(),
@@ -215,7 +218,7 @@ SIDE.push(
         ['', 'The sun is gone. You sit a while longer anyway.', 'sit']] }] },
 
   { id: 'mace', title: 'A Night at the Golden Ace', who: 'mara', date: true, food: [0xd8b040, 0xc84a4a], desc: 'Mara has never set foot in a casino. Tonight she wants to see what all the lights are about.', reward: 0, aff: { mara: 1 },
-    avail: (S) => DATE_DONE('mbeach') && S.ch >= 3,
+    avail: (S) => DATE_READY('mbeach') && S.ch >= 3,
     steps: [{ t: 'call', lines: [['Mara (phone)', 'Rico says the Golden Ace has a ceiling made of gold. I need to see this for myself. Strictly for professional reasons.'], ['Mara (phone)', 'You are buying the first drink. And the second.']] },
       DATE_PICKUP(() => [['', '21:10 · THE GARAGE', 'card'], ['mara', 'I have forty dollars and a lucky spanner. Let us go and lose both.', 'npc']]),
       { t: 'goto', at: 'ace', with: 'mara', obj: 'Take Mara to the Golden Ace', r: 18, tod: 21.3, done: () => Story.passOff(),
@@ -228,7 +231,7 @@ SIDE.push(
         ['mara', 'Thank you for tonight. I did not know I needed it.', 'two']] }] },
 
   { id: 'mstars', title: 'Stargazing at the Cape', who: 'mara', desc: 'Mara wants to park up at the cape and look at the stars. Late. Just the two of you and the car.', reward: 0, aff: { mara: 2 },
-    avail: (S) => DATE_DONE('mace') && (Story.F().mara | 0) >= 4,
+    avail: (S) => DATE_READY('mace') && (Story.F().mara | 0) >= 4,
     steps: [{ t: 'call', lines: [['Mara (phone)', 'Are you awake? Of course you are awake. Come and get me. There are no clouds tonight and I want to go and look at the stars from the cape.']] },
       DATE_PICKUP(() => [['', '23:00 · THE GARAGE', 'card'], ['mara', 'I brought a blanket and a flask of the terrible coffee. Drive.', 'npc']]),
       { t: 'goto', at: 'cape', with: 'mara', obj: 'Drive Mara out to the cape', r: 30, tod: 23.1,
@@ -240,3 +243,74 @@ SIDE.push(
           ['“Me too. Now share the coffee.”', { mara: 1 }, [['you', 'Me too. Now share the coffee.', 'mecar'], ['mara', 'It is terrible. Here.', 'mecar']]]]],
         ['', 'You drive her home as the sky starts to go grey.', 'wide']] }] }
 );
+
+/* ---------- days ----------
+   A new day starts when the clock goes past midnight (the clock running round, sleeping until morning, the story moving on to the next
+   morning), or after eight minutes of play, so days pass even with the day/night cycle off. */
+const DAY_PLAY = 480;
+Story.day = () => Story.S().day | 0;
+Dates.newDay = function () { const S = Story.S(); S.day = (S.day | 0) + 1; S.dayT = 0; };
+Dates.dayTick = function (dt) {
+  const S = Story.S(); if (Dates.lastTod != null && App.tod < Dates.lastTod - 6) Dates.newDay(); Dates.lastTod = App.tod;
+  S.dayT = (S.dayT || 0) + dt; if (S.dayT >= DAY_PLAY) Dates.newDay();
+};
+const _stTick1 = Story.tick;
+Story.tick = function (dt) { _stTick1(dt); if (Story.on && App.mode === 'play' && Story.started) Dates.dayTick(dt); };
+/* the day a date ends is remembered: the next waits DATE_GAP days */
+const _adv0 = Story.advance;
+Story.advance = function (key, i) {
+  _adv0(key, i); const id = key.slice(3), S = Story.S(), r = S.sq[id];
+  if (DATE_IDS.includes(id) && r && r.done && r.day == null) { r.day = Story.day(); S.dateDay = r.day; writeSave(); }
+};
+/* the next date, and how long until she is up for it */
+Dates.next = function () {
+  const S = Story.S(), q = SIDE.find((x) => DATE_IDS.includes(x.id) && !DATE_DONE(x.id)); if (!q) return null;
+  const k = DATE_IDS.indexOf(q.id), prevOk = k === 0 || DATE_DONE(DATE_IDS[k - 1]), wait = S.dateDay == null ? 0 : Math.max(0, S.dateDay + DATE_GAP - Story.day());
+  return { q, on: !!S.sq[q.id] || q.avail(S), wait, prevOk };
+};
+
+/* ---------- Mara on the phone: what you can say depends on where you are with her ----------
+   cold (she is cross with you), friends, close, together. Each stage has its own things to say; some warm her a little, once a day or once a
+   chapter; "When is our next date?" tells you how many days she wants first. */
+Dates.tier = function () { const f = Story.F(), v = f.mara | 0; return v < 1 || (f.lie && v < 3) ? 'cold' : f.maraLove || v >= 6 ? 'love' : v >= 3 ? 'close' : 'friend'; };
+const MARA_SECRETS = ['I still have the bike we crashed when we were eight. In pieces, under a tarp in the back.', 'The first year here I cried every time the ferry horn went.', 'I named the van. I am not telling you what. It is embarrassing.', 'I can’t whistle. I have been faking it for twenty years.', 'Hal taught me to weld. I set his eyebrows on fire. He still has a gap.'];
+const MARA_NOW = { friend: ['Rebuilding a carburettor. It is going badly. Thanks for asking.', 'Eating a sandwich over an engine. Living the dream.'], close: ['Lying under the van, phone on my chest. Talk to me while I swear at this bolt.', 'Watching the sunset off the garage roof. You should be here.'], love: ['Wearing your jacket. You left it here. It is mine now.', 'Thinking about you. And about the gearbox. Mostly you.', 'Lying on the roof, counting satellites. Still winning, by the way.'] };
+const _phoneTopics0 = Phone.topics;
+Phone.topics = function (id) {
+  const T = _phoneTopics0(id); if (id !== 'mara' || !Story.on) return T;
+  const S = Story.S(), f = Story.F(), tier = Dates.tier(), C = Phone.call, n = C ? C.n | 0 : 0;
+  const once = (k, per) => { S.calls = S.calls || {}; const key = 'mara:' + k + ':' + (per === 'day' ? 'd' + Story.day() : 'c' + S.ch); if (S.calls[key]) return false; S.calls[key] = 1; return true; };
+  /* the greeting she answers "How are you doing?" with */
+  const how = T.find((x) => x[0] === 'How are you doing?');
+  if (how) { const fn = how[1]; how[1] = () => { const r = fn(); r.say = [{ cold: 'Fine.', friend: 'Busy. Good busy. You?', close: 'Better now you called.', love: 'Missing you. Is that allowed on a Tuesday?' }[tier]]; return r; }; }
+  const X = [];
+  if (tier === 'cold') {
+    X.push(['Are we okay?', () => f.lie ? { say: ['Honestly? No.', 'You lied to my face. That doesn’t go away because you phone me.'] } : once('okay') ? { say: ['…We’re fine. I’m just tired. Thanks for asking.'], eff: { mara: 1 }, note: 'She softened a little.' } : { say: ['Still fine. Still tired.'] }]);
+    if (f.lie && !f.maraSorryLie) X.push(['I’m sorry I lied to you.', () => ({ say: ['…', 'Okay. Thank you for saying it. Give me time.'], eff: { mara: 1, maraSorryLie: 1 } })]);
+  } else {
+    if (tier === 'friend') {
+      X.push(['How’s the van?', () => ({ say: [['Still dying. Still mine.', 'It started first time today. I nearly cried.', 'Do not mention the van. The van knows when you mention it.'][n % 3]] })]);
+      X.push(['Coffee tomorrow?', () => once('coffee') ? { say: ['At the garage? You bring it, I’ll drink it.', 'Two sugars. Don’t judge me.'], eff: { mara: 1 }, note: 'She’s looking forward to it.' } : { say: ['You already promised me coffee. I’m holding you to it.'] }]);
+    }
+    if (tier === 'close' || tier === 'love') {
+      X.push(['I was thinking about you.', () => once('think', 'day') ? { say: [tier === 'love' ? 'Good. Keep doing that.' : 'Yeah? What about?', tier === 'love' ? 'I was thinking about you too. Obviously.' : 'Don’t answer that. Tell me in person.'], eff: { mara: 1 }, note: tier === 'love' ? '' : 'She went quiet in a good way.' } : { say: ['You said that already today. Not complaining.'] }]);
+      X.push(['Tell me a secret.', () => { const k = (S.secret | 0) % MARA_SECRETS.length; S.secret = k + 1; return { say: [MARA_SECRETS[k]], eff: k === 0 && once('secret') ? { mara: 1 } : null }; }]);
+    }
+    X.push(['What are you doing right now?', () => { const L = MARA_NOW[tier] || MARA_NOW.friend; return { say: [L[n % L.length]] }; }]);
+    if (tier === 'love') {
+      if (App.tod >= 21 || App.tod < 5) X.push(['Just calling to say goodnight.', () => once('night', 'day') ? { say: ['Mm. Goodnight, you.', '…Actually, stay on the line a bit. Tell me about your day.'], eff: { mara: 1 } } : { say: ['You already said goodnight. Go to sleep, idiot.'] }]);
+      if (DATE_DONE('mboat')) X.push(['I keep thinking about the boat.', () => ({ say: ['The sunset? Or me fighting the seagull for my sandwich?', 'Same. Let’s go again some time. You steer.'] })]);
+      if (S.ch >= 6 && (f.mara | 0) >= 8 && !f.maraMoveIn) X.push(['Move in with me?', () => ({ say: ['…Into the garage office? It has a camp bed and a kettle.', 'Yes. Obviously yes. Bring the good pillows.'], eff: { mara: 1, maraMoveIn: 1 } })]);
+    }
+    /* when is the next date? */
+    const D = Dates.next();
+    if (D && (S.ch >= 2 || DATE_DONE('mdinner'))) X.push(['When’s our next date?', () => {
+      if (S.sq[D.q.id] && !S.sq[D.q.id].done) return { say: ['We’re on one, genius. Or we’re about to be. ' + (D.q.steps[S.sq[D.q.id].st || 0].obj || '') + '.'] };
+      if (D.wait > 0) return { say: [D.wait === 1 ? 'Tomorrow. Give a girl a day to miss you.' : 'Give me ' + D.wait + ' days. I need to recover from the last one. In a good way.'] };
+      if (!D.prevOk || !D.q.avail(S)) return { say: [tier === 'friend' ? 'A date? Let’s see how things go, hotshot.' : 'Soon. I’m planning something. Be patient.'] };
+      return { say: ['Funny you should ask. Keep your phone on.'] };
+    }]);
+  }
+  const at = T.findIndex((x) => x[0] === 'Bye.' || PH_SMALL.some((p) => p[0] === x[0])); T.splice(at < 0 ? T.length : at, 0, ...X);
+  return T;
+};
