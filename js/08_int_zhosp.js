@@ -81,7 +81,7 @@ Hosp.cut = function () {
       ['“Can I go now?”', {}, [['you', 'Great. Can I go now?', 'bed'], [HOSP_DOC, 'Not so fast.', 'doc']]]]],
     [HOSP_DOC, 'Before you go: a few tests. Your balance, your reflexes, and whether you can take your own pills.', 'doc'],
     [HOSP_DOC, 'Do well and you get out sooner, and I knock some off the bill. The bill is ' + money(A.bill) + '.', 'doc'], ['you', '…That is a lot of money for a bed.', 'bed'], [HOSP_NURSE, 'The jelly is included.', 'nurse']];
-  Cut.play(lines, null, () => Hosp.endCut());
+  Hosp.hook(); Cut.play(lines, null, () => Hosp.endCut());
 };
 Hosp.endCut = function () {
   const H = Hosp.scene; Hosp.scene = null; if (!H) return;
@@ -122,8 +122,8 @@ Hosp.frame = function (dt) {
   const s0 = scene, c0 = camera, e0 = env.exposure; scene = Int.sc; camera = cam; env.exposure = Int.K.expo || Int.expo;
   try { renderFrame(Int.fx, App.time); } finally { env.exposure = e0; scene = s0; camera = c0; }
 };
-const _cutFrameInt0 = Cut.frameInt;
-Cut.frameInt = function (dt) { if (Hosp.scene) return Hosp.frame(dt); return _cutFrameInt0(dt); };
+/* the scene draws through the story's indoor cutscene hook; hooked in when first needed (08_story.js, where Cut lives, loads after this file) */
+Hosp.hook = function () { if (Hosp.hooked) return; Hosp.hooked = true; const f0 = Cut.frameInt; Cut.frameInt = function (dt) { if (Hosp.scene) return Hosp.frame(dt); return f0(dt); }; };
 /* the heartbeat on your monitor: a green trace scrolling across, a blip each beat */
 Hosp.ecgDraw = function (dt) {
   const E = Hosp.ecg; if (!E) return; const g = E.cv.getContext('2d'), W = 256, H = 160;
