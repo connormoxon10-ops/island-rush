@@ -5688,8 +5688,8 @@ const CARS = [
   /* an original design: a naked sport bike. The car physics on a narrow track; drawn on two wheels and leaning into corners (06_moto.js) */
   { id: 'moto', name: 'Viper 600', cls: 'Motorcycle', price: 2800, paint: 1, dy: 0.47, snd: { f: 1.5, lp: 1.7 }, dial: 280,
     blurb: 'A naked sport bike: a screaming inline four, a twin-spar frame and next to no weight. It leans into the bends, squeezes through traffic and is the quickest thing off the line on the island. Nothing between you and the road, though: crash it and you go over the bars.',
-    p: { m: 270, a: 0.72, b: 0.72, Iz: 150, rw: 0.31, fd: 7.0, gears: [2.6, 1.9, 1.5, 1.25, 1.08, 0.96], idle: 1300, red: 11800, track: 0.9, cgh: 0.55, rd: 0, rsf: 0.62, cf: 10.5, cr: 11.5 },
-    t: { Tmax: 50, mu: 1.14, cd: 0.3, brk: 1.1, off: 0.7, cl: 0 },
+    p: { m: 270, a: 0.72, b: 0.72, Iz: 150, rw: 0.31, fd: 7.0, gears: [2.6, 1.9, 1.5, 1.25, 1.08, 0.96], idle: 1300, red: 11800, track: 0.9, cgh: 0.55, rd: 0.95, rsf: 0.62, cf: 10.5, cr: 11.5 },
+    t: { Tmax: 50, mu: 1.2, cd: 0.3, brk: 1.1, off: 0.7, cl: 0 },
     stats: { spd: 8, acc: 9, hdl: 7, off: 2 },
     body: { susp: 0.06, L: 2.1, W: 0.36, H: 0.4, C: 0.5, wr: 0.31, y0: 0.5, tw: 0.13, rim: [0.12, 0.12, 0.13], rimStyle: 'five', tire: 'sport', custom: 'moto' } }
 ];
@@ -6377,14 +6377,20 @@ Human.ragStart = function (h, vx, vy, vz, gy) {
   for (const p of R.p) { const rx = p.x - com.x, ry = p.y - com.y, rz = p.z - com.z, wx = ax * om, wz = az * om; R.q.push(new THREE.Vector3(p.x - (vx + (0 * rz - wz * ry) + (Math.random() - 0.5) * 0.6) * dt, p.y - (vy + (wz * rx - wx * rz)) * dt, p.z - (vz + (wx * ry - 0 * rx) + (Math.random() - 0.5) * 0.6) * dt)); }
   h.from = null;
 };
+/* optional, set after ragStart: R.gf(x, z) the ground height under each point (else flat at R.gy), R.fr the ground friction per contact (else 0.22;
+   low lets a body thrown from a vehicle slide and roll on), R.wall(x, z) true inside a wall (the point is stopped there) */
+const _rgG = [];
 Human.ragStep = function (h, dt) {
   const R = h.rag; if (!R) return; dt = Math.min(dt, 1 / 30); const n = 2, hh = dt / n, P = R.p, Q = R.q; R.t += dt; let move = 0;
+  const fr = R.fr != null ? R.fr : 0.22;
+  if (R.gf) { const cx = (P[0].x + P[1].x) / 2, cz = (P[0].z + P[1].z) / 2; R.gy = R.gf(cx, cz); for (let i = 0; i < P.length; i++) _rgG[i] = R.gf(P[i].x, P[i].z); }
+  if (R.wall) for (let i = 0; i < P.length; i++) if (R.wall(P[i].x, P[i].z)) { const p = P[i], q = Q[i]; p.x = q.x - (p.x - q.x) * 0.3; p.z = q.z - (p.z - q.z) * 0.3; q.x = p.x; q.z = p.z; }   /* hit a wall: bounce back a little, stop */
   for (let it = 0; it < n; it++) {
     for (let i = 0; i < P.length; i++) { const p = P[i], q = Q[i], vx = (p.x - q.x) * 0.992, vy = (p.y - q.y) * 0.992, vz = (p.z - q.z) * 0.992; q.copy(p); p.x += vx; p.y += vy - 9.8 * hh * hh; p.z += vz; move += Math.abs(vx) + Math.abs(vy) + Math.abs(vz); }
     for (let k = 0; k < 6; k++) {
       for (let j = 0; j < HU_RAG.sticks.length; j++) { const s = HU_RAG.sticks[j], a = P[s[0]], b = P[s[1]]; _hv.copy(b).sub(a); const d = _hv.length() || 1e-6, f = (d - R.len[j]) / d * 0.5 * s[2]; a.addScaledVector(_hv, f); b.addScaledVector(_hv, -f); }
       for (const m of HU_RAG.mins) { const a = P[m[0]], b = P[m[1]]; _hv.copy(b).sub(a); const d = _hv.length() || 1e-6, mn = m[2] * h.s; if (d < mn) { const f = (d - mn) / d * 0.5; a.addScaledVector(_hv, f); b.addScaledVector(_hv, -f); } }
-      for (let i = 0; i < P.length; i++) { const p = P[i], q = Q[i], g = R.gy + R.r[i]; if (p.y < g) { p.y = g; if (q.y < g) q.y = g + (q.y - g) * 0.3; q.x += (p.x - q.x) * 0.22; q.z += (p.z - q.z) * 0.22; } }
+      for (let i = 0; i < P.length; i++) { const p = P[i], q = Q[i], g = (R.gf ? _rgG[i] : R.gy) + R.r[i]; if (p.y < g) { p.y = g; if (q.y < g) q.y = g + (q.y - g) * 0.3; q.x += (p.x - q.x) * fr; q.z += (p.z - q.z) * fr; } }
     }
   }
   R.still = move / (P.length * n) < 0.0016 ? R.still + dt : 0;
@@ -9548,7 +9554,7 @@ function footBlockedAt(x, z) {
 }
 
 /* ---------- park / board / leave ---------- */
-Foot.parkCar = function (c) { const roll = Vit.bailT > 0 && car.wrecked <= 0; c.thr = 0; c.brk = roll ? (isBike(CUR) ? 0.3 : 0.03) : 0; c.hand = roll ? 0 : 1;   /* after a bail-out it rolls on (a bike slides on its side) */
+Foot.parkCar = function (c) { const roll = Vit.bailT > 0 && car.wrecked <= 0; c.thr = 0; c.brk = roll ? (isBike(CUR) ? 0.3 : 0.1) : 0; c.hand = roll ? 0 : 1;   /* after a bail-out it rolls on (a bike slides on its side) */
   c.nit = false; c.steerIn = 0; c.steer *= 0.9; Cam.back = false; };
 Foot.carLocal = function (out) { const dx = Foot.x - car.x, dz = Foot.z - car.z, s = Math.sin(car.yaw), co = Math.cos(car.yaw); out.lz = dx * s + dz * co; out.lx = dx * co - dz * s; return out; };
 const _fl = { lx: 0, lz: 0 };
@@ -9569,7 +9575,7 @@ Foot.exit = function () {
 };
 Foot.board = function (silent) {
   if (!Foot.on) return; if (!silent && Foot.state !== 'walk') return;   /* not while you are still rolling on the ground */
-  Moto.fallen = 0; Vit.bailT = 0; if (Talk.on) Talk.close(true);
+  Moto.fallen = 0; Vit.bailT = 0; Foot.tpWas = null; if (Talk.on) Talk.close(true);
   Fight.reset(); Foot.on = false; Foot.state = 'walk'; try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) { /* ignore */ }
   Cam.chaseYaw = car.yaw; Cam.ch = car.y + 2; Cam.lookYaw = Cam.lookPitch = 0; Cam.fov = save.set.fov; Foot.fovAdd = 0;
   if (car.wrecked <= 0) car.hand = 0;
@@ -9594,6 +9600,15 @@ Foot.scan = function () {
   }
   F.target = bp;
 };
+/* your ragdoll: the ground under each point, buildings and water stop it, and the ground grips softly at first so a body thrown at speed slides
+   and tumbles on (the grip firms up over a couple of seconds). While it lasts, where you are (and the camera) follows the body */
+const _frg = { h: 0, mu: 1, rr: 0, rough: 0, road: false, water: false };
+function footRag(R) {
+  R.gf = (x, z) => { groundAt(x, z, _frg); return _frg.h; };
+  R.wall = (x, z) => { groundAt(x, z, _frg); const ccx = Math.floor(x / CHUNK), ccz = Math.floor(z / CHUNK), ch = Chunks.get(ccx, ccz); if (!ch) return false; for (const o of ch.cols.b) if (x > o[0] && x < o[2] && z > o[1] && z < o[3] && o[4] > _frg.h + 0.6) return true; for (const o of ch.cols.c) { const ex = x - o[0], ez = z - o[1]; if (ex * ex + ez * ez < o[2] * o[2] && o[4] > _frg.h + 0.6) return true; } return false; };
+  const sp = Math.hypot(Foot.vx, Foot.vz); R.fr0 = sp > 6 ? 0.035 : sp > 3 ? 0.1 : 0.22; R.fr = R.fr0;
+}
+Foot.rag = function () { const P = Foot.ped, h = P && P.hu; return h && h.rag && !h.dead ? h.rag : null; };
 Foot.knock = function (d, why) {
   const F = Foot, P = F.ped; F.state = 'down'; F.downT = 0; F.air = true; F.vy = 3.4; F.vx = (d.vx || 0) * 0.8 + (Math.random() - 0.5); F.vz = (d.vz || 0) * 0.8 + (Math.random() - 0.5);
   P.air = true; P.t = 0; P.tilt = 0; P.spin = (Math.random() < 0.5 ? -1 : 1) * 5.5; F.hitCool = 4;
@@ -9612,12 +9627,17 @@ Foot.step = function (dt) {
   /* knocked down: ragdoll-lite, then get up */
   if (F.state === 'down' || F.state === 'rise') {
     F.downT += dt; P.t = F.downT;
-    if (F.state === 'down') {
+    const R = F.state === 'down' ? Foot.rag() : null;
+    if (R) {   /* the ragdoll has you: follow it, and get up once it has come to rest */
+      R.fr = Math.min(0.22, R.fr0 + F.downT * 0.06);
+      F.x = (R.p[0].x + R.p[1].x) / 2; F.z = (R.p[0].z + R.p[1].z) / 2; groundAt(F.x, F.z, _fg); F.y = _fg.h; F.vx = F.vz = 0; P.air = false;
+      if ((R.still > 0.5 && F.downT > 1.4) || F.downT > 9) { F.state = 'rise'; F.downT = 0; P.t = 0; }
+    } else if (F.state === 'down') {
       if (P.air) { F.x += F.vx * dt; F.z += F.vz * dt; F.y += F.vy * dt; F.vy -= 9.8 * dt; P.tilt += P.spin * dt; footResolve(); groundAt(F.x, F.z, _fg); if (F.vy < 0 && F.y <= _fg.h + 0.12) { P.air = false; F.y = _fg.h + 0.12; F.vx *= 0.5; F.vz *= 0.5; P.lieT = P.tilt < 0 ? -1.5 : 1.5; P.tilt = P.lieT + Math.round((P.tilt - P.lieT) / TAU) * TAU; } }
       else { const k = Math.exp(-3.2 * dt); F.vx *= k; F.vz *= k; F.x += F.vx * dt; F.z += F.vz * dt; footResolve(); P.tilt += (P.lieT - P.tilt) * Math.min(1, dt * 9); if (F.downT > 3.2) { F.state = 'rise'; F.downT = 0; P.t = 0; } }
     } else {
       P.tilt += (0 - P.tilt) * Math.min(1, dt * 4.5); groundAt(F.x, F.z, _fg); F.y += (_fg.h - F.y) * Math.min(1, dt * 6);
-      if (F.downT > 0.9) { F.state = 'walk'; P.tilt = 0; F.air = false; F.vx = F.vz = 0; }
+      if (F.downT > 0.9) { F.state = 'walk'; P.tilt = 0; F.air = false; F.vx = F.vz = 0; if (F.tpWas != null) { F.tp = F.tpWas; F.tpWas = null; } }   /* back to your own view */
     }
     F.speed = 0; Foot.sync(dt, 0); return;
   }
@@ -10632,6 +10652,7 @@ function pedPose(p, time, dt, hideHead, far) {
   /* knocked down: the ragdoll has the body */
   if (st === 'down') {
     if (!h.rag) Human.ragStart(h, (p.avatar ? Foot.vx : p.vx) || 0, (p.avatar ? Foot.vy : p.vy) || 2.5, (p.avatar ? Foot.vz : p.vz) || 0, h.gy - 0.02);
+    if (p.avatar && h.rag && !h.rag.gf) footRag(h.rag);   /* you: real ground, walls, and a long slide when thrown from a vehicle (07_foot.js) */
     Human.ragStep(h, dt); Human.ragApply(h); const R = h.rag;
     if (!p.avatar) { p.x = (R.p[0].x + R.p[1].x) / 2; p.z = (R.p[0].z + R.p[1].z) / 2; }
     b.head.scale.setScalar(hideHead ? 0.001 : a.hs || 1); b.lidL.quaternion.setFromAxisAngle(HU_LAX[0], h.lidA); b.lidR.quaternion.setFromAxisAngle(HU_LAX[1], h.lidA); b.jaw.rotation.x = 0.06; if (!far) Human.physics(h, dt); return;
@@ -13134,7 +13155,7 @@ Vit.bail = function (impact) {
   F.vx = c.vx * 0.85 + co * -kick * 2.2; F.vz = c.vz * 0.85 - s * -kick * 2.2; F.vy = 2 + Math.min(4, sp * 0.06);
   F.state = 'down'; F.downT = 0; F.air = true; F.speed = 0; F.dip = 0; F.hitCool = 3;
   P.air = true; P.t = 0; P.tilt = 0; P.spin = (Math.random() < 0.5 ? -1 : 1) * (4 + Math.min(8, sp * 0.15));
-  F.prevView = Cam.view; F.tp = Cam.view === 2; F.yaw = c.yaw; F.body = c.yaw; F.pitch = 0; F.camD = 3.4; Cam.lookYaw = Cam.lookPitch = 0;
+  F.prevView = Cam.view; F.tpWas = Cam.view === 2; F.tp = true;   /* watch yourself tumble; your view comes back when you get up */ F.yaw = c.yaw; F.body = c.yaw; F.pitch = 0; F.camD = 3.4; Cam.lookYaw = Cam.lookPitch = 0;
   c.thr = c.brk = 0; c.hand = 0; c.nit = false; c.steerIn = 0; Vit.bailT = 6;   /* the vehicle rolls on by itself (Foot.parkCar) */
   if (bike) Moto.fallen = kick;
   const kmh = Math.round(sp * 3.6), dmg = sp < 3 ? 0 : Math.min(96, 4 + sp * 1.55 + (impact ? 10 : 0));
