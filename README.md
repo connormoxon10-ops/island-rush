@@ -140,6 +140,7 @@ node tests/casino.js        # the casino: two of them, slots, roulette and black
 node tests/volcano.js       # Mount Cinder and the Eruption Escape
 node tests/cockpit.js       # the car cabin: sculpted, one of four looks per car
 node tests/wildlife.js      # wildlife: every kind, the right ones in each region, they scatter, a cow dents the car, an elephant stops it, gulls fly
+node tests/buildings.js     # building variety: facade styles, footprints and heights, tower shapes and crowns, neon/board/plate signs, blade and OPEN signs, night glow
 ```
 
 The browser tests drive the built game in headless Chromium with software GL (slow, 1-7 fps), using step lists of `{js}`, `{wait}` and `{shot}`:

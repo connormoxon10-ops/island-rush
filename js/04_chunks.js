@@ -118,40 +118,22 @@ function genTownLots(ch, T, gbB, gbP) {
         const hgt = 4 * Math.max(2, Math.round((A.dtH[0] + r() * (A.dtH[1] - A.dtH[0])) / 4)), tall = hgt > 34;
         const fw = tall ? 4 * (5 + ((r() * 3) | 0)) : 4 * (5 + ((r() * 2) | 0)), fd = tall ? 4 * (5 + ((r() * 3) | 0)) : 4 * (5 + ((r() * 2) | 0));
         const c = _pk(r, A.B), ox = lx0 + (ls - fw) / 2, oz = lz0 + (ls - fd) / 2;
+        const v = bvRng(T, i, j, a, b), spc = bvSpecial(T, i, j, a, b);   /* the building's own looks (04_bvar.js) */
         if (tall) {
           bldgBox(gbB, lx0 + 0.5, lz0 + 0.5, lx0 + ls - 0.5, lz0 + ls - 0.5, baseY, baseY + 8, _pk(r, A.M), uo, vo, 0.7);
           colBox(ch, lx0 + 0.5, lz0 + 0.5, lx0 + ls - 0.5, lz0 + ls - 0.5, baseY, baseY + 8);
           Bld.reg(ch, T, i, j, a, b, lx0 + 0.5, lz0 + 0.5, lx0 + ls - 0.5, lz0 + ls - 0.5, baseY, hgt, 'tower', gbP);
-          bldgBox(gbB, ox, oz, ox + fw, oz + fd, baseY + 8, baseY + hgt, c, uo, vo, key === 'city' ? 0.5 : 0.55);
-          colBox(ch, ox, oz, ox + fw, oz + fd, baseY, baseY + hgt);
-          let top = baseY + hgt;
-          if (key === 'city' && hgt > 60) {   /* stepped crowns */
-            const tiers = r() < 0.5 ? 2 : 1; let ix = 3, w2 = fw, d2 = fd, cc = c;
-            for (let t = 0; t < tiers; t++) { w2 -= 2 * ix; d2 -= 2 * ix; if (w2 < 8 || d2 < 8) break; const th = 8 + r() * 16; cc = dark(cc, 0.93); bldgBox(gbB, ox + (fw - w2) / 2, oz + (fd - d2) / 2, ox + (fw + w2) / 2, oz + (fd + d2) / 2, top, top + th, cc, uo, vo, 0.5); colBox(ch, ox + (fw - w2) / 2, oz + (fd - d2) / 2, ox + (fw + w2) / 2, oz + (fd + d2) / 2, top, top + th); top += th; ix = 2; }
-            const sph = 14 + r() * 18; gbP.box(ox + fw / 2 - 0.25, top, oz + fd / 2 - 0.25, ox + fw / 2 + 0.25, top + sph, oz + fd / 2 + 0.25, 0.7, 0.7, 0.72); colBox(ch, ox + fw / 2 - 0.25, oz + fd / 2 - 0.25, ox + fw / 2 + 0.25, oz + fd / 2 + 0.25, top, top + sph);
-            gbP.box(ox + fw / 2 - 0.4, top + 20, oz + fd / 2 - 0.4, ox + fw / 2 + 0.4, top + 21, oz + fd / 2 + 0.4, 1, 0.12, 0.1);
-          } else if (hgt > 70) { gbP.box(ox + fw / 2 - 0.3, top, oz + fd / 2 - 0.3, ox + fw / 2 + 0.3, top + 10, oz + fd / 2 + 0.3, 0.5, 0.5, 0.5); colBox(ch, ox + fw / 2 - 0.3, oz + fd / 2 - 0.3, ox + fw / 2 + 0.3, oz + fd / 2 + 0.3, top, top + 10); }
-          else roofExtra(gbB, gbP, key, ox, oz, fw, fd, top, r);
+          bvShopfront(ch, gbP, lx0 + 2, lx0 + ls - 2, b ? lz0 + ls - 0.5 : lz0 + 0.5, b ? 1 : -1, baseY, v);
+          bvTower(ch, gbB, gbP, key, ox, oz, fw, fd, baseY, hgt, c, uo, vo, v, b ? 1 : -1, r);
         } else {
           const wc = _pk(r, A.H), rcol = _pk(r, A.R);
-          bldgBox(gbB, ox, oz, ox + fw, oz + fd, baseY, baseY + hgt, c, uo, vo, roof === 'flat' || roof === 'low' ? 0.6 : 0);
-          Bld.reg(ch, T, i, j, a, b, ox, oz, ox + fw, oz + fd, baseY, hgt, 'down', gbP);
-          colBox(ch, ox, oz, ox + fw, oz + fd, baseY, baseY + hgt, roof === 'pitch' || roof === 'steep' || roof === 'low' ? hr : 0);
-          if (roof === 'pitch' || roof === 'steep') houseRoof(gbB, ox, oz, ox + fw, oz + fd, baseY + hgt, hr, rcol, wc);
-          else if (roof === 'low') houseRoof(gbB, ox, oz, ox + fw, oz + fd, baseY + hgt, hr, rcol, c);
-          else roofExtra(gbB, gbP, key, ox, oz, fw, fd, baseY + hgt, r);
+          bvBlock(ch, gbB, gbP, { v, spc, key, T, i, j, a, b, lx0, lz0, ls, fw, fd, hgt, c, wc, rcol, roof, hr, uo, vo, baseY, cat: 'down', r, chim: false });
         }
       } else if (dn < 2) {
         const fw = 4 * (6 + ((r() * 2) | 0)), fd = 4 * (6 + ((r() * 2) | 0)), hgt = 4 * Math.max(2, Math.round((A.midH[0] + r() * (A.midH[1] - A.midH[0])) / 4));
-        const ox = lx0 + (ls - fw) / 2, oz = lz0 + (ls - fd) / 2, c = _pk(r, A.M), wc = _pk(r, A.H), rcol = _pk(r, A.R);
-        const pitched = roof === 'pitch' || roof === 'steep';
-        bldgBox(gbB, ox, oz, ox + fw, oz + fd, baseY, baseY + hgt, c, uo, vo, pitched ? 0 : 0.6);
-        Bld.reg(ch, T, i, j, a, b, ox, oz, ox + fw, oz + fd, baseY, hgt, 'mid', gbP);
-        colBox(ch, ox, oz, ox + fw, oz + fd, baseY, baseY + hgt, pitched || roof === 'low' ? hr : 0);
-        if (pitched) { houseRoof(gbB, ox, oz, ox + fw, oz + fd, baseY + hgt, hr, rcol, wc); if (r() < 0.6) chimneyAt(gbP, ox, oz, fw, fd, baseY + hgt, hr, rcol); }
-        else if (roof === 'low') { houseRoof(gbB, ox, oz, ox + fw, oz + fd, baseY + hgt, hr, rcol, c); }
-        else roofExtra(gbB, gbP, key, ox, oz, fw, fd, baseY + hgt, r);
-        if (key === 'tropic' && r() < 0.7) for (let k = 0; k < 2; k++) { const tx = k ? ox + fw + 3 : ox - 3, tz = oz + 4 + r() * (fd - 8); if (tx > lx0 - 1 && tx < lx0 + ls + 1) { addTree(gbP, ch.gbF, 'palm', (r() * 3) | 0, tx, baseY + 0.4, tz, 0.9 + r() * 0.4, r() * TAU, r(), 1, r(), ch); } }
+        const c = _pk(r, A.M), wc = _pk(r, A.H), rcol = _pk(r, A.R);
+        const q = bvBlock(ch, gbB, gbP, { v: bvRng(T, i, j, a, b), spc: bvSpecial(T, i, j, a, b), key, T, i, j, a, b, lx0, lz0, ls, fw, fd, hgt, c, wc, rcol, roof, hr, uo, vo, baseY, cat: 'mid', r, chim: true }), ox = q.ox, oz = q.oz;
+        if (key === 'tropic' && r() < 0.7) for (let k = 0; k < 2; k++) { const tx = k ? ox + q.fw + 3 : ox - 3, tz = oz + 4 + r() * (q.fd - 8); if (tx > lx0 - 1 && tx < lx0 + ls + 1) { addTree(gbP, ch.gbF, 'palm', (r() * 3) | 0, tx, baseY + 0.4, tz, 0.9 + r() * 0.4, r() * TAU, r(), 1, r(), ch); } }
       } else {
         const t = r();
         if (t < 0.72) {
@@ -159,11 +141,11 @@ function genTownLots(ch, T, gbB, gbP) {
           const wh = key === 'city' ? _pk(r, [8, 8, 12, 16]) : key === 'harbor' ? (r() < 0.5 ? 8 : 4) : key === 'desert' ? (r() < 0.2 ? 8 : 4) : r() < 0.4 ? 8 : 4;
           const ox = lx0 + 1.5 + r() * (ls - hw - 3), oz = lz0 + 1.5 + r() * (ls - hd - 3), wc = _pk(r, A.H), rcol = _pk(r, A.R);
           const pitched = roof === 'pitch' || roof === 'steep';
-          bldgBox(gbB, ox, oz, ox + hw, oz + hd, baseY, baseY + wh, wc, uo, vo, pitched ? 0 : 0.7);
+          const hv = bvHouse(ch, gbB, gbP, { v: bvRng(T, i, j, a, b), key, ox, oz, hw, hd, wh, baseY, b, wc, rcol, uo, vo, pitched, lx0, ls }), hc = hv.hc;   /* style, porch, garage (04_bvar.js) */
           Bld.reg(ch, T, i, j, a, b, ox, oz, ox + hw, oz + hd, baseY, wh, 'house', gbP);
           colBox(ch, ox, oz, ox + hw, oz + hd, baseY, baseY + wh, pitched || roof === 'low' ? hr : 0);
-          if (pitched) { houseRoof(gbB, ox, oz, ox + hw, oz + hd, baseY + wh, hr, rcol, wc); if (key !== 'farm' || r() < 0.5) chimneyAt(gbP, ox, oz, hw, hd, baseY + wh, hr, rcol); }
-          else if (roof === 'low') houseRoof(gbB, ox, oz, ox + hw, oz + hd, baseY + wh, hr, rcol, wc);
+          if (pitched) { houseRoof(gbB, ox, oz, ox + hw, oz + hd, baseY + wh, hr, rcol, hc); if (key !== 'farm' || r() < 0.5) chimneyAt(gbP, ox, oz, hw, hd, baseY + wh, hr, rcol); }
+          else if (roof === 'low') houseRoof(gbB, ox, oz, ox + hw, oz + hd, baseY + wh, hr, rcol, hc);
           else if (key === 'desert' && r() < 0.35) roofExtra(gbB, gbP, key, ox, oz, hw, hd, baseY + wh, r);
           if (key === 'tropic' && r() < 0.6) { const tx = ox + hw + 2.2, tz = oz + hd * 0.5; if (tx < lx0 + ls) { addTree(gbP, ch.gbF, 'palm', (r() * 3) | 0, tx, baseY + 0.4, tz, 0.9 + r() * 0.4, r() * TAU, r(), 1, r(), ch); } }
         } else if (t < 0.88) {
@@ -358,6 +340,7 @@ function buildChunk(cx, cz) {
   if (gbP.count) { const m = gbP.mesh(MAT.prop, true, true); ch.group.add(m); }
   if (gbF.count) { const m = gbF.mesh(MAT.foliage, true, true); ch.group.add(m); }
   if (gbB.count) { const m = gbB.mesh(MAT.build, true, true); ch.group.add(m); }
+  bvMesh(ch);   /* facade styles, neon, sign glow (04_bvar.js) */
   if (gbL.count) { const m = gbL.mesh(MAT.lamp, false, false); ch.group.add(m); }
   if (gbPool.count) { const m = gbPool.mesh(MAT.pool, false, false); m.renderOrder = 2; ch.group.add(m); }
   /* water */
