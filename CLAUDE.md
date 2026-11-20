@@ -4,6 +4,7 @@
 - Work on a `claude/<topic>` branch, never directly on `main`. Current long-running branch: `claude/continue-dev`.
 - **Push early and often.** Commit and push after each meaningful change, not just at the end of a feature.
 - **Open a pull request for each feature** (one feature per PR, branch from `main`) so the owner can review and merge it.
+- **Confirm a PR can merge before posting it.** Before opening a PR or pushing to a branch that has one, `git fetch` and merge the latest `origin/main` into it (resolve conflicts, rebuild `dist/`), push, then check `gh api repos/<owner>/<repo>/pulls/<n> --jq .mergeable` is `true` before telling the owner it is ready.
 - **Remind the owner to merge open PRs.** End replies with a one-line list of PRs that are open and awaiting merge, until they are merged.
 - Commit messages end with the attribution trailers the session provides (`Co-Authored-By: Claude … <noreply@anthropic.com>` plus the session link).
   PR descriptions end with `🤖 Generated with [Claude Code](https://claude.com/claude-code)` plus the session link.

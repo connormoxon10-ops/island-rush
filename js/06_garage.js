@@ -189,7 +189,15 @@ const CARS = [
     p: { m: 1700, a: 1.5, b: 1.55, Iz: 3200, rw: 0.32, fd: 3.2, gears: [2.5, 1.5, 1.0], idle: 600, red: 4600, track: 1.55, cgh: 0.5, rd: 0.95, rsf: 0.52, cf: 9.2, cr: 10 },
     t: { Tmax: 420, mu: 1.02, cd: 0.58, brk: 0.9, off: 0.6, cl: 0 },
     stats: { spd: 4, acc: 4, hdl: 4, off: 1 },
-    body: { susp: 0.08, sway: { w: 5, z: 0.3, k: 1.5 }, L: 5.4, W: 2.0, H: 0.42, C: 0.45, wr: 0.3, y0: 0.3, tw: 0.2, rim: [0.92, 0.72, 0.3], rimStyle: 'mesh', custom: 'lowrider' } }
+    body: { susp: 0.08, sway: { w: 5, z: 0.3, k: 1.5 }, L: 5.4, W: 2.0, H: 0.42, C: 0.45, wr: 0.3, y0: 0.3, tw: 0.2, rim: [0.92, 0.72, 0.3], rimStyle: 'mesh', custom: 'lowrider' } },
+
+  /* an original design: a naked sport bike. The car physics on a narrow track; drawn on two wheels and leaning into corners (06_moto.js) */
+  { id: 'moto', name: 'Viper 600', cls: 'Motorcycle', price: 2800, paint: 1, dy: 0.47, snd: { f: 1.5, lp: 1.7 }, dial: 280,
+    blurb: 'A naked sport bike: a screaming inline four, a twin-spar frame and next to no weight. It leans into the bends, squeezes through traffic and is the quickest thing off the line on the island. Nothing between you and the road, though: crash it and you go over the bars.',
+    p: { m: 270, a: 0.72, b: 0.72, Iz: 150, rw: 0.31, fd: 7.0, gears: [2.6, 1.9, 1.5, 1.25, 1.08, 0.96], idle: 1300, red: 11800, track: 0.9, cgh: 0.55, rd: 0, rsf: 0.62, cf: 10.5, cr: 11.5 },
+    t: { Tmax: 50, mu: 1.14, cd: 0.3, brk: 1.1, off: 0.7, cl: 0 },
+    stats: { spd: 8, acc: 9, hdl: 7, off: 2 },
+    body: { susp: 0.06, L: 2.1, W: 0.36, H: 0.4, C: 0.5, wr: 0.31, y0: 0.5, tw: 0.13, rim: [0.12, 0.12, 0.13], rimStyle: 'five', tire: 'sport', custom: 'moto' } }
 ];
 const CAR_BY_ID = {}; for (const d of CARS) { CAR_BY_ID[d.id] = d; const b = d.body; d.top = (b.y0 != null ? b.y0 : 0.36) + b.H + 0.1 + b.C; d.hl = b.L / 2; }
 const BASE_N = CARS.length;   /* CARS[0..BASE_N) are the dealership cars; stolen cars are appended at runtime (see 07_jack.js) */
@@ -206,7 +214,7 @@ function applyCar(id, rebuildMesh) {
   CIRC[0][0] = hl - 0.45; CIRC[1][0] = 0; CIRC[2][0] = -(hl - 0.45); for (const k of CIRC) k[1] = hw + 0.09;
   car.gear = Math.min(car.gear, CARP.gears.length);
   d.bumpY = (d.body.y0 != null ? d.body.y0 : 0.36) + 0.19; d.bumpZ = hl + 0.2;
-  EYE.y = 1.13 + d.dy; if (Cockpit.group) Cockpit.group.position.y = d.dy;
+  EYE.set(isBike(d) ? 0 : -0.35, 1.13 + d.dy, isBike(d) ? -0.02 : 0.12); if (Cockpit.group) Cockpit.group.position.y = d.dy;   /* on a bike you sit in the middle, over the tank */
   if (Cockpit.hood) { Cockpit.hood.scale.set(d.body.W / 1.82, 1, clamp((hl + 0.43 - 1.18) / 1.4, 0.6, 1.7)); }
   if (Cockpit.theme) Cockpit.theme(d);
   if (rebuildMesh && car.body) {

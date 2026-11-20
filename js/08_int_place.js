@@ -48,7 +48,7 @@ INT_KINDS.terminal = { name: 'Airport terminal', rooms: { main(K, rec, r) {
   for (let x = 3; x < K.x1 - 2; x += 3.4) for (const z of [-2, 0.5]) for (let k = 0; k < 4; k++) K.chair(x - 1.2 + k * 0.6, z, z < 0 ? 0 : Math.PI, 0x2a5aa8);
   intSeat(K, 3 - 0.6, 0.5, Math.PI, { phone: true }); intSeat(K, 6.4, -2, 0, {}); intSeat(K, 9.8 + 0.6, 0.5, Math.PI, { eat: true });
   K.counter(K.x1 - 6, K.z1 - 3, K.x1 - 1, K.z1 - 2.2, 0x6a4a34, 0xe8e0d0); intStaff(K, K.x1 - 3.5, K.z1 - 1.5, Math.PI, 0x2a1a14); K.sign('CAFÉ', K.x1 - 3.5, 3, K.z1 - 0.04, 2, 0.6, Math.PI, { fg: '#ffcf6a', bg: '#2a1a14' });
-  K.act(K.x1 - 3.5, K.z1 - 3.8, 1.6, 'Buy an airport coffee', () => intBuy(7, 'a coffee', () => intBuzz(3), 'Airport prices. Still, you feel awake.'), { cost: 7 });
+  K.act(K.x1 - 3.5, K.z1 - 3.8, 1.6, 'Buy an airport coffee', () => intBuy(7, 'a coffee', () => { intBuzz(3); Vit.eat(0, 18); }, 'Airport prices. Still, you feel awake.'), { cost: 7 });
   K.shelf(K.x0 + 0.05, K.z0 + 3, K.x0 + 0.5, K.z0 + 9, 2, 4, r, INT_PROD); K.sign('NEWS · TRAVEL', K.x0 + 0.04, 2.5, K.z0 + 6, 2.4, 0.4, Math.PI / 2, { fg: '#fff', bg: '#c8302a' });
   for (let k = 0; k < 2; k++) { const x = -4 + k * 4; K.box(x - 0.5, 0, K.z0 + 6, x - 0.35, 2.2, K.z0 + 7, 0x9a9aa0, true); K.box(x + 0.35, 0, K.z0 + 6, x + 0.5, 2.2, K.z0 + 7, 0x9a9aa0, true); K.box(x - 0.5, 2.2, K.z0 + 6, x + 0.5, 2.4, K.z0 + 7, 0x9a9aa0); K.box(x + 0.7, 0, K.z0 + 5.5, x + 1.4, 0.9, K.z0 + 7.5, 0x3a3c40, true); }
   K.person({ x: -1.5, z: K.z0 + 6.5, yaw: 0, shirt: 0x1a2a4a, pants: 0x1a1c24, face: true, role: 'guard' });
@@ -95,7 +95,7 @@ INT_KINDS.venue = { name: 'Venue', rooms: { main(K, rec, r) {
   for (let k = 0; k < 3; k++) { const x = 1 + k * 3; K.table(x, K.z1 - 2.8, 0.8, 0.8, 0x3a2416, 0.75, true); K.chair(x - 0.6, K.z1 - 2.8, -Math.PI / 2 + Math.PI, 0x3a2416); if (r() < 0.6) intSeat(K, x - 0.62, K.z1 - 2.8, Math.PI / 2, { eat: r() < 0.5, talk: true }); }
   K.person({ x: px + 1, z: pz + 1.5, kind: 'walk', path: [[px - 2, pz + 1.6, 3], [px + 3, pz + 1.4, 3]] });
   K.act(px, pz + 2.4, 2.4, 'Play: ' + D.sub.replace(/^[^·]*· ?/, '') + ' (pick your stake)', () => intPlayVenue(rec), { wide: true });
-  K.act(K.x0 + 2.2, 0.5, 1.6, 'Order: ' + D.snack.name, () => intBuy(D.snack.price, D.snack.name, () => { car.health = Math.min(100, car.health + 25); car.nitro = tune.nitroMax; intBuzz(2); }, D.snack.name + '. Your car feels better already.'), { cost: D.snack.price });
+  K.act(K.x0 + 2.2, 0.5, 1.6, 'Order: ' + D.snack.name, () => intBuy(D.snack.price, D.snack.name, () => { car.health = Math.min(100, car.health + 25); car.nitro = tune.nitroMax; intBuzz(2); Vit.eat(40, 15); }, D.snack.name + '. Your car feels better already.'), { cost: D.snack.price });
 } } };
 INT_KINDS.club = { name: 'Club', rooms: { main(K, rec, r) {
   const S = rec.S, D = S.D, col = D.col, W = 22, Dd = 14, show = D.game === 'show';
@@ -111,6 +111,6 @@ INT_KINDS.club = { name: 'Club', rooms: { main(K, rec, r) {
   K.counter(K.x1 - 1.3, -3, K.x1 - 0.5, K.z1 - 2, 0x1a1c22, 0x2a2c34, 1.1); K.glow(K.x1 - 1.32, 0.1, -3, K.x1 - 1.3, 0.15, K.z1 - 2, col, 1.4); intStaff(K, K.x1 - 0.2, 0.2, -Math.PI / 2, 0x1a1a1a, { sleeve: false });
   for (let k = 0; k < 2; k++) K.sofa(K.x0 + 1, -1 + k * 3, Math.PI / 2, 2.4, 0x3a1a2a);
   K.act(0, K.z0 + 4.6, 2.6, (show ? 'Watch the show (buy a ticket)' : 'Hit the dance floor (the dance game)'), () => intPlayVenue(rec), { wide: true });
-  K.act(K.x1 - 1.9, 0.2, 1.6, 'Buy a mocktail', () => intBuy(9, 'a mocktail', () => intBuzz(2), 'Something blue with an umbrella in it.'), { cost: 9 });
+  K.act(K.x1 - 1.9, 0.2, 1.6, 'Buy a mocktail', () => intBuy(9, 'a mocktail', () => { intBuzz(2); Vit.eat(0, 30); }, 'Something blue with an umbrella in it.'), { cost: 9 });
   let ph = 0; K.tick((dt) => { ph += dt; });
 } } };

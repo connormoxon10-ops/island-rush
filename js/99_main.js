@@ -94,13 +94,14 @@ function titleCamera(dt) {
 function step(dt) {
   const c = car;
   syncPl();
-  if (Surf.on) { Foot.parkCar(c); Surf.step(dt); } else if (Fly.on) { Foot.parkCar(c); Fly.step(dt); syncPl(); } else if (Boat.on) { Foot.parkCar(c); Boat.step(dt); syncPl(); } else if (Foot.on) { Foot.parkCar(c); Foot.step(dt); syncPl(); } else readControls(dt);
+  if (Surf.on) { Foot.parkCar(c); Surf.step(dt); } else if (Fly.on) { Foot.parkCar(c); Fly.step(dt); syncPl(); } else if (Boat.on) { Foot.parkCar(c); Boat.step(dt); syncPl(); } else if (Foot.on) { Foot.parkCar(c); Foot.step(dt); syncPl(); } else { readControls(dt); if (Vit.dead) { c.thr = 0; c.brk = 1; } else Vit.drive(c); }
   const n = Math.min(10, Math.ceil(dt / (1 / 120))), h = dt / n;
   c.crashFlag = 0; c.landImpact = 0; Police.ram = false;
   if (Bots.on) Bots.update(dt, Race.refProg());
   if (Heist.ride) Heist.rideStep(dt);   /* in the heist wagon: the train carries the car */
   else for (let i = 0; i < n; i++) { stepCar(h); if (Rally.on) { Rally.sub(c, h); continue; } if (Drag.on) { Drag.sub(c, h); continue; } if (Derby.on) { Derby.sub(c, h); continue; } if (Bots.on) Bots.step(h); if (Dunes.on) Dunes.step(h); Crash.run(c); collideDyn(c); if (Rail.built && !Rally.on && !Drag.on && !Derby.on) Rail.collide(c); }
   c.kmh = Math.abs(c.speed) * 3.6;
+  Vit.update(dt);   /* health, stamina, food, water, intoxication (07_vit.js) */
   /* impacts */
   const v = c.crashFlag;
   if (v > 2.2 && App.time - c.lastImpact > 0.12 && c.wrecked <= 0) {
@@ -108,10 +109,11 @@ function step(dt) {
     c.health -= Math.pow(v - 2, 1.35) * 1.3 * tune.dmg * (Police.ram ? 0.55 : 1) * (Race.on ? 0.4 : Rally.on ? 0.3 : Derby.on ? DD.ARMOUR : 1); Dmg.hit(c, v, hpB - c.health);
     Cam.shake = Math.max(Cam.shake, Math.min(2.5, v * 0.12)); App.dmg = Math.min(1, App.dmg + v / 24);
     Snd.crash(v); sparks(c.cx, c.y + 0.6, c.cz, Math.min(34, Math.round(v * 2.2)), 2 + v * 0.45); if (!devOn('god')) onMissionCrash(v);
+    if (!Foot.on && !Race.on && !Rally.on && !Derby.on && !Drag.on) { if (isBike(CUR) && v > 7 && !devOn('god')) Vit.bail(v); else if (v > 6) Vit.hurt((v - 6) * (isBike(CUR) ? 3 : 1.1), 'A hard crash'); }   /* you feel it too; a bike throws you off */
   } else if (v > 0.6 && Math.abs(c.speed) > 6 && c.wrecked <= 0) Dmg.scrape(c);
   if (c.landImpact > 0) {
     const li = c.landImpact; Cam.shake = Math.max(Cam.shake, Math.min(2, li * 0.12)); Snd.crash(li * 0.6); sparks(c.x, c.y + 0.2, c.z, 10, 5);
-    if (li > 11) { c.health -= (li - 11) * 3 * tune.dmg * (Rally.on ? 0.12 : Derby.on ? DD.ARMOUR : 1); App.dmg = Math.min(1, App.dmg + (Rally.on ? 0.1 : 0.3)); }
+    if (li > 11) { c.health -= (li - 11) * 3 * tune.dmg * (Rally.on ? 0.12 : Derby.on ? DD.ARMOUR : 1); App.dmg = Math.min(1, App.dmg + (Rally.on ? 0.1 : 0.3)); if (!Rally.on && !Derby.on) Vit.hurt((li - 11) * (isBike(CUR) ? 2.5 : 1), 'A heavy landing'); }
   }
   if (devOn('god')) c.health = 100; else if ((Race.on || Rally.on || Drag.on) && c.health < 12) c.health = 12;   /* no tow trucks mid-race */
   else if (Derby.on && c.health < 0.5) c.health = 0.5;   /* the derby decides when you are out */
@@ -178,7 +180,7 @@ function frame(now) {
   if (save.set.cycle) App.tod = (App.tod + dt * 0.02 * save.set.cycle) % 24;
   App.dmg = Math.max(0, App.dmg - dt * 1.1);
   if (App.mode === 'play') {
-    step(dt * (save.set.dev ? Dev.ts : 1)); Dmg.update(dt); if (Fly.on) Fly.camera(dt); else if (Boat.on) Boat.camera(dt); else if (Surf.on) Surf.camera(dt); else updateCamera(dt, Foot.on ? Foot.fovAdd : 0); if (Foot.on) Foot.camera(dt); if (GAR.edit) Home.camera(dt); Tow.camera(dt); Bust.camera(dt);
+    step(dt * (save.set.dev ? Dev.ts : 1)); Dmg.update(dt); if (Fly.on) Fly.camera(dt); else if (Boat.on) Boat.camera(dt); else if (Surf.on) Surf.camera(dt); else updateCamera(dt, Foot.on ? Foot.fovAdd : 0); if (Foot.on) Foot.camera(dt); if (GAR.edit) Home.camera(dt); Tow.camera(dt); Bust.camera(dt); Vit.cam();
     if (!Cam.dragging) { Cam.lookYaw *= Math.exp(-dt * 4); Cam.lookPitch *= Math.exp(-dt * 4); }
   } else { updateTraffic(dt); updatePeds(dt); Rail.update(dt); if (App.mode === 'cut') Cut.frame(dt); else titleCamera(dt); }
   updateMarkerVis(dt, App.time); Story.visual(dt); Phone.tick(); Shop.visual(dt, App.time); Wk.visual(dt, App.time); Ven.visual(dt, App.time); Col.update(dt, App.time); Dunes.visual(dt); Bots.visual(dt); updateParticles(dt); if (Rally.on) Rally.visual(dt); if (Drag.on) Drag.visual(dt); if (Derby.on) Derby.visual(dt); Home.visual(dt); Fly.visual(dt); Boat.visual(dt); VM.visual(dt);
@@ -203,7 +205,7 @@ function frame(now) {
 }
 
 App.start = function () {
-  if (App.mode !== 'title') return;
+  if (App.mode !== 'title') return; Vit.load();
   Police.reset(); Snd.init(); Cam.view = save.set.cam != null ? save.set.cam : (window.innerWidth / window.innerHeight < 1 ? 2 : 0); Cam.chaseYaw = car.yaw; Cam.ch = car.y + 2; Cam.fov = save.set.fov; UI.setMode('play');
   if (Story.on) { Story.begin(); return; }
   setTimeout(() => UI.toast('Follow a colored beam to start a run', 'info'), 600);
@@ -242,5 +244,5 @@ async function boot() {
     console.error(err); E.loadmsg.textContent = 'Could not start the 3D view: ' + (err && err.message ? err.message : err); window.__bootError = String(err && err.stack || err);
   }
 }
-window.__game = { get scene() { return scene; }, BV, bvStyle, Wild, WILD_KINDS, Casino, csVal, csSlotPay, csRouletteWin, Cockpit, ckThemeOf, Story, STORY, SIDE, Phone, Cut, PLAY_MODE, endMission, Volc, VOLC, VOL, volcLift, volcLakeY, DEV_PLACES, Int, Bld, INT_KINDS, Jail, intSave, BankJob, KIT, kitDef, kitParts, kitDefault, HEIST_PRIZES, Part, L, Surf, Dunes, Rail, Beach, Heist, Wanted, GAR, terrainHeight, NR, Derby, DD, applyCar, buildCarModel, CAR_BY_ID, Env, get renderer() { return renderer; }, writePeds, Cam, Human, HU, Peds, Foot, Setup, TU, TU_PRESETS, CARS, CARP, tune, Drag, DG, DG_TIERS, Rally, RR, RY, RY_STAGES, RYG, RW, RY_FEATS, WK, Wk, WkF, WKSim, WKG, WKS, WkE, qfromAxes3, Dmg, Mech, RACE_DIFF, Wreck, Jack, JACK_MODELS, Race, Bots, Crash, newCarState, Track, TRK, Col, COLK, Ven, VDEF, CDEF, venSave, VM, VMD, VMK, towns, roads, Dock, MARINA, Boat, Boats, BSPEC, HB, solidHit, TREE, Air, AIR, Fly, Planes, PSPEC, Rel, REL_ROSTER, Shop, COS, Cosm, Biome, Weather, REG, Bust, CR, Fight, Police, Wanted, WANT, footBlockedAt, findNearestRoadPoint, Tow, GAR, Home, GP, Foot, Talk, Fare, Pl, pedHit, getMoney: () => save.money, get save() { return save; }, getLaw: () => save.law, Court, CR, Peds, pedSpawn, Dyn, abortMission, stepSim: step, frame, Env, Wheels, updateWheels, updateCamera, groundAt, buildCarModel, carSpec, TRAFFIC_DEFS, secAt, disposeCar, THREE_: THREE, TREE, GB, addTree, addGrass, terrainHeight, fbm, noise2, sstep, Dev, devReset, CARS, CAR_BY_ID, applyCar, stepCar, CARP, roads, loadAround, carThumb, car, App, UI, Chunks, Post, Cam, Keys, missions, towns, spawnAt, get Mi() { return Mi; }, startMission, applyQuality, get renderer() { return renderer; }, get scene() { return scene; }, get camera() { return camera; }, Snd, WorldMap, MView, Mirror, MAT, Cockpit, Q: () => Q, hasPost: () => hasPost, key(code, down) { Keys[code] = down; if (down) onKey(code); }, tune };
+window.__game = { get scene() { return scene; }, Vit, VIT, Moto, isBike, BV, bvStyle, Wild, WILD_KINDS, Casino, csVal, csSlotPay, csRouletteWin, Cockpit, ckThemeOf, Story, STORY, SIDE, Phone, Cut, PLAY_MODE, endMission, Volc, VOLC, VOL, volcLift, volcLakeY, DEV_PLACES, Int, Bld, INT_KINDS, Jail, intSave, BankJob, KIT, kitDef, kitParts, kitDefault, HEIST_PRIZES, Part, L, Surf, Dunes, Rail, Beach, Heist, Wanted, GAR, terrainHeight, NR, Derby, DD, applyCar, buildCarModel, CAR_BY_ID, Env, get renderer() { return renderer; }, writePeds, Cam, Human, HU, Peds, Foot, Setup, TU, TU_PRESETS, CARS, CARP, tune, Drag, DG, DG_TIERS, Rally, RR, RY, RY_STAGES, RYG, RW, RY_FEATS, WK, Wk, WkF, WKSim, WKG, WKS, WkE, qfromAxes3, Dmg, Mech, RACE_DIFF, Wreck, Jack, JACK_MODELS, Race, Bots, Crash, newCarState, Track, TRK, Col, COLK, Ven, VDEF, CDEF, venSave, VM, VMD, VMK, towns, roads, Dock, MARINA, Boat, Boats, BSPEC, HB, solidHit, TREE, Air, AIR, Fly, Planes, PSPEC, Rel, REL_ROSTER, Shop, COS, Cosm, Biome, Weather, REG, Bust, CR, Fight, Police, Wanted, WANT, footBlockedAt, findNearestRoadPoint, Tow, GAR, Home, GP, Foot, Talk, Fare, Pl, pedHit, getMoney: () => save.money, get save() { return save; }, getLaw: () => save.law, Court, CR, Peds, pedSpawn, Dyn, abortMission, stepSim: step, frame, Env, Wheels, updateWheels, updateCamera, groundAt, buildCarModel, carSpec, TRAFFIC_DEFS, secAt, disposeCar, THREE_: THREE, TREE, GB, addTree, addGrass, terrainHeight, fbm, noise2, sstep, Dev, devReset, CARS, CAR_BY_ID, applyCar, stepCar, CARP, roads, loadAround, carThumb, car, App, UI, Chunks, Post, Cam, Keys, missions, towns, spawnAt, get Mi() { return Mi; }, startMission, applyQuality, get renderer() { return renderer; }, get scene() { return scene; }, get camera() { return camera; }, Snd, WorldMap, MView, Mirror, MAT, Cockpit, Q: () => Q, hasPost: () => hasPost, key(code, down) { Keys[code] = down; if (down) onKey(code); }, tune };
 boot();

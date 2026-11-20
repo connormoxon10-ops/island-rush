@@ -376,7 +376,7 @@ function updateCamera(dt, speedFx) {
   }
   const leanP = c.leanP, leanR = c.leanR;
   b.position.set(c.x, c.y + c.sY * 0.4, c.z);   /* heave: the wheels stay on the ground and the suspension takes it (updateWheels) */
-  b.rotation.set(-(c.pitch + leanP), c.yaw, c.roll + leanR, 'YXZ'); b.updateMatrixWorld(true);
+  b.rotation.set(-(c.pitch + leanP), c.yaw, c.roll + leanR, 'YXZ'); Moto.pose(dt, leanR); b.updateMatrixWorld(true);
   const spd = Math.abs(c.speed);
   const sh = save.set.shake ? Cam.shake : 0;
   if (devOn('free')) {
@@ -389,7 +389,7 @@ function updateCamera(dt, speedFx) {
     _eye.copy(EYE); b.localToWorld(_eye); _eye.y += c.sY * 0.6;
     camera.position.set(_eye.x + (Math.random() - 0.5) * sh * 0.05, _eye.y + (Math.random() - 0.5) * sh * 0.05, _eye.z + (Math.random() - 0.5) * sh * 0.05);
     let ly = Cam.back ? Math.PI : Cam.lookYaw;
-    camera.rotation.set(c.pitch * 0.75 + leanP * 0.8 + Cam.lookPitch + (Math.random() - 0.5) * sh * 0.004, c.yaw + Math.PI + ly, (c.roll + leanR) * 0.5 + (Math.random() - 0.5) * sh * 0.004, 'YXZ');
+    camera.rotation.set(c.pitch * 0.75 + leanP * 0.8 + Cam.lookPitch + (Math.random() - 0.5) * sh * 0.004, c.yaw + Math.PI + ly, (isBike(CUR) ? -Moto.lean * 0.7 : (c.roll + leanR) * 0.5) + (Math.random() - 0.5) * sh * 0.004, 'YXZ');
     if (Cam.back) camera.position.y += 0;
   } else if (Cam.view === 1) {
     _eye.set(0, CUR.bumpY, CUR.bumpZ); b.localToWorld(_eye); camera.position.copy(_eye); camera.position.y += c.sY * 0.2;
@@ -417,7 +417,7 @@ function updateCamera(dt, speedFx) {
   if (Math.abs(camera.fov - Cam.fov) > 0.05) { camera.fov = Cam.fov; camera.updateProjectionMatrix(); }
   Cam.shake *= Math.max(0, 1 - dt * 5);
   if (Cam.view === 0) { Cockpit.wheel.rotation.z = -c.steer * 2.0; }
-  const fc = devOn('free'); Cockpit.group.visible = Cam.view === 0 && !fc; car.ext.visible = Cam.view !== 0 || fc;
+  const fc = devOn('free'), bk = isBike(CUR); Cockpit.group.visible = Cam.view === 0 && !fc && !bk; car.ext.visible = Cam.view !== 0 || fc || bk;   /* a bike has no cabin: you see the bike under you */
 }
 
 /* ---------------- particles ---------------- */
