@@ -29,7 +29,7 @@ const OUT = process.env.OUT || __dirname;
         if (!o.isMesh) return; const m = o.material, nv = o.geometry.attributes.position ? o.geometry.attributes.position.count : 0;
         for (const s in M.bv) if (m === M.bv[s] && nv) styles[s] = (styles[s] || 0) + nv;
         if (m === M.neon) neonV += nv; if (m === M.halo) haloV += nv;
-        if (o.geometry.type === 'PlaneGeometry' && m.map && m.map.image) { const im = m.map.image; if (im.height > im.width * 2) blades++; if (o.geometry.parameters.width === 1.15) open++; }
+        if (o.geometry.type === 'PlaneGeometry' && m.map && m.map.image) { const im = m.map.image; if (im.height > im.width * 2) blades++; if (o.geometry.parameters.width === 1.5) open++; }
       });
       /* pictures: down a street, and from the air */
       const y = T.baseH, cam = new THREE.PerspectiveCamera(60, 16 / 9, 0.3, 3000), shoot = () => { g.renderer.setRenderTarget(null); g.renderer.render(g.scene, cam); return g.renderer.domElement.toDataURL('image/jpeg', 0.85); };

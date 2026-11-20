@@ -824,6 +824,7 @@ function loadSave() {
       if (s.surf && typeof s.surf === 'object') save.surf = { best: +s.surf.best || 0, sessions: s.surf.sessions | 0 };
       if (s.dune && typeof s.dune === 'object') save.dune = { races: s.dune.races | 0, wins: s.dune.wins | 0, best: +s.dune.best || 0 };
       KIT.load(s.kit);
+      if (s.casino && typeof s.casino === 'object') save.casino = { won: Math.max(0, +s.casino.won || 0), lost: Math.max(0, +s.casino.lost || 0), plays: Math.max(0, s.casino.plays | 0), best: Math.max(0, +s.casino.best || 0) };
       save.car = (s.car && (save.owned[s.car] || (save.jack && save.jack.id === s.car))) ? s.car : save.heist.prev && save.owned[save.heist.prev] ? save.heist.prev : 'rook';
       if (s.story && typeof s.story === 'object') { const q = s.story, ob = (o) => (o && typeof o === 'object' && !Array.isArray(o) ? Object.assign({}, o) : {}); save.story = { ch: clamp(q.ch | 0, 0, 99), st: clamp(q.st | 0, 0, 99), base: ob(q.base), fin: q.fin ? 1 : 0, f: ob(q.f), sq: ob(q.sq), met: ob(q.met), track: typeof q.track === 'string' ? q.track : null, said: Array.isArray(q.said) ? q.said.slice(-40).map(String) : [] }; } }
     if (PLAY_MODE === 'story') { const o = JSON.parse(localStorage.getItem(SANDBOX_KEY) || 'null'); if (o && o.set) Object.assign(save.set, o.set); }   /* the settings are the sandbox's */
@@ -15086,7 +15087,7 @@ const BLD_SPECIAL = [
   ['apts', 'gym', 'pool', 'resto', 'resto', 'clothes'],
   ['apts', 'pool', 'resto', 'clothes'],
   ['bank', 'apts', 'gym', 'pool', 'kitlab', 'resto', 'clothes'],
-  ['reserve', 'bank', 'jail', 'apts', 'apts', 'gym', 'pool', 'dealer', 'kitlab', 'resto', 'resto', 'clothes', 'clothes'],
+  ['reserve', 'bank', 'jail', 'casino', 'apts', 'apts', 'gym', 'pool', 'dealer', 'kitlab', 'resto', 'resto', 'clothes', 'clothes'],
   /* the outer ring: Bayou Hollow, Ashfall, Sundown Plains, Vellano, Frostholm, Verdance, Neo Haven */
   ['apts', 'resto', 'clothes'],
   ['bank', 'apts', 'gym', 'resto', 'clothes'],
@@ -15094,11 +15095,12 @@ const BLD_SPECIAL = [
   ['bank', 'apts', 'resto', 'resto', 'clothes'],
   ['apts', 'gym', 'pool', 'resto', 'clothes'],
   ['apts', 'kitlab', 'resto', 'clothes'],
-  ['bank', 'bank', 'apts', 'apts', 'apts', 'gym', 'pool', 'dealer', 'kitlab', 'resto', 'resto', 'resto', 'clothes', 'clothes']
+  ['bank', 'bank', 'casino', 'apts', 'apts', 'apts', 'gym', 'pool', 'dealer', 'kitlab', 'resto', 'resto', 'resto', 'clothes', 'clothes']
 ];
 /* names for the outer ring's specials: the town's name and a word */
-const BLD_TAIL = { bank: ['Savings Bank', 'Trust & Loan', 'Credit Bank'], apts: ['Residences', 'Heights', 'Lofts'], gym: ['Fitness'], pool: ['Swim Centre'], dealer: ['Motors'], kitlab: ['Custom Works'], resto: ['Grill', 'Kitchen', 'Diner'], clothes: ['Outfitters', 'Boutique'] };
+const BLD_TAIL = { casino: ['Casino'], bank: ['Savings Bank', 'Trust & Loan', 'Credit Bank'], apts: ['Residences', 'Heights', 'Lofts'], gym: ['Fitness'], pool: ['Swim Centre'], dealer: ['Motors'], kitlab: ['Custom Works'], resto: ['Grill', 'Kitchen', 'Diner'], clothes: ['Outfitters', 'Boutique'] };
 const BLD_NAMES = {
+  casino: ['', '', '', '', '', '', 'The Golden Ace', '', '', '', '', '', '', 'Neon Palace Casino'],
   bank: ['Harbor Trust Bank', 'Mesa Savings & Loan', '', '', '', 'Lakeshore Credit Union', 'First Fairhaven Bank'], reserve: ['', '', '', '', '', '', 'Island Reserve Bank'],
   apts: [['Quayside Apartments'], ['Red Rock Lofts'], ['Old Mill Flats'], ['Palm Court Residences'], ['Snowline Chalets'], ['Pinewater Apartments'], ['The Meridian Tower', 'Parkview Residences']],
   gym: ['Iron Harbor Gym', '', '', 'Palm Fitness', '', 'Lakeside Athletic Club', 'Pulse Fitness'],
@@ -15108,8 +15110,8 @@ const BLD_NAMES = {
   resto: [['The Salty Crab', 'Dockside Fish & Chips'], ['Cantina Roja'], ['Harvest Table'], ['Tiki Shack', 'Coral Grill'], ['Fondue Haus'], ['Lakeside Grill'], ['Kaito Sushi', 'Bistro Lumière']],
   clothes: [['Deckhand Outfitters'], ['Trail & Turquoise'], ['Barnyard Threads'], ['Sun & Sand Boutique'], ['Peak Outfitters'], ['Timberline Wear'], ['Maison Fairhaven', 'Uptown Threads']]
 };
-const BLD_ICO = { bank: ['🏦', 0x3fbf6a], reserve: ['🏦', 0xffd23a], apts: ['🏢', 0x8aa8ff], gym: ['🏋', 0xff7a3a], pool: ['🏊', 0x3ac8ff], dealer: ['🚗', 0xff4a6a], kitlab: ['🔧', 0x4be08a], jail: ['⛓', 0x9a9aa6], resto: ['🍽', 0xffb23a], clothes: ['👕', 0xd07aff] };
-const BLD_SUB = { bank: 'Bank', reserve: 'Bank · the island’s main vault', apts: 'Apartments · rooms for sale', gym: 'Gym', pool: 'Indoor pool', dealer: 'Car dealership', kitlab: 'Custom car workshop · build your own car', jail: 'County jail & police', resto: 'Restaurant', clothes: 'Clothing' };
+const BLD_ICO = { casino: ['🎰', 0xff3ad8], bank: ['🏦', 0x3fbf6a], reserve: ['🏦', 0xffd23a], apts: ['🏢', 0x8aa8ff], gym: ['🏋', 0xff7a3a], pool: ['🏊', 0x3ac8ff], dealer: ['🚗', 0xff4a6a], kitlab: ['🔧', 0x4be08a], jail: ['⛓', 0x9a9aa6], resto: ['🍽', 0xffb23a], clothes: ['👕', 0xd07aff] };
+const BLD_SUB = { casino: 'Casino · slots, roulette, blackjack', bank: 'Bank', reserve: 'Bank · the island’s main vault', apts: 'Apartments · rooms for sale', gym: 'Gym', pool: 'Indoor pool', dealer: 'Car dealership', kitlab: 'Custom car workshop · build your own car', jail: 'County jail & police', resto: 'Restaurant', clothes: 'Clothing' };
 /* generic kinds: name lists, signs */
 const BLD_GEN = {
   office: { names: ['Harbourview House', 'Atlas Building', 'One Market Place', 'Sterling Tower', 'Northgate Plaza', 'Corwin & Vale', 'The Exchange', 'Pinnacle House'], sub: 'Offices', sign: false },
@@ -16440,6 +16442,180 @@ INT_KINDS.jail = { name: 'County jail', rooms: {
   tick(dt) { if (Int.room === 'cells' && Jail.on && Jail.left > 0) { Jail.left = Math.max(0, Jail.left - dt / 10); App.tod = (App.tod + dt / 10) % 24; if (Jail.left <= 0) Int.say('“Time’s up. You’re free to go.” The door buzzes open.', 4); } },
   hud() { if (Int.room !== 'cells' || !Jail.on) return ''; const h = Math.ceil(Jail.left); return '<div class="ibar"><small>Doing time · ' + (h > 0 ? h + ' hour' + (h > 1 ? 's' : '') + ' left' : 'free to go') + (Jail.why ? ' · ' + esc(Jail.why) : '') + '</small><div class="ibt"><i class="iz" style="left:0;width:' + (100 * (1 - Jail.left / Math.max(1, Jail.hrs))).toFixed(0) + '%"></i></div></div>'; },
   leave(rec) { if (Int.room === 'cells' && Jail.on && Jail.left > 0.01) { Int.say('The door is locked · ' + Math.ceil(Jail.left) + 'h left. Sleep on your bunk to skip it.'); return false; } }
+};
+
+/* ---- js/08_int_zcasino.js ---- */
+/* ================= THE CASINO =================
+   The Golden Ace (in the city) and the Neon Palace (in Neo Haven): a dark room in red carpet and gold, rows of slot machines flashing, a roulette
+   wheel that really spins, two blackjack tables with dealers, a bar and the cashier's cage, and people at the machines. You play with your own
+   money (in Story Mode, the story's), with bets from $10 to $1,000:
+     slots      three reels; three of a kind pays 5× (cherries) up to 100× (diamonds), two cherries 2×, one cherry gets your bet back
+     roulette   a European wheel (0–36): red or black, odd or even, 1–18 or 19–36 pay 1:1, a dozen 2:1, a single number 35:1
+     blackjack  hit, stand or double down; the dealer draws to 16 and stands on 17; blackjack pays 3:2, a push gives your bet back
+   The cashier keeps your record (won, lost, biggest win). */
+const Casino = { rng: Math.random, bet: 50, game: null, wheel: null, ball: null, spinT: 0, spinRes: null, slot: null, deck: null };
+const CS_BETS = [10, 50, 100, 500, 1000];
+const CS_SYM = [['🍒', 30], ['🍋', 24], ['🔔', 18], ['⭐', 13], ['7️⃣', 9], ['💎', 6]];
+const CS_PAY = { '🍒': 5, '🍋': 8, '🔔': 12, '⭐': 20, '7️⃣': 50, '💎': 100 };
+const CS_RED = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
+/* the record, in the save */
+function csSave() { return save.casino || (save.casino = { won: 0, lost: 0, plays: 0, best: 0 }); }
+function csSettle(stake, back, what) {   /* the stake is already taken; back is what the player gets back (0 if lost) */
+  const S = csSave(); S.plays++; const net = back - stake; if (net > 0) { S.won += net; S.best = Math.max(S.best, net); } else if (net < 0) S.lost += -net;
+  save.money += back; writeSave(); if (net > 0) { Snd.win(); UI.toast(what + ' · you win ' + money(net), 'good'); } else if (net < 0) Snd.beep(240, 0.12); return net;
+}
+function csTake(b) { if (save.money < b) { UI.toast('Not enough money for that bet', 'bad'); return false; } save.money -= b; return true; }
+const csBetRow = () => '<div class="csbets">' + CS_BETS.map((b) => '<button type="button" class="btn sm' + (Casino.bet === b ? ' primary' : '') + '" data-ia="bet:' + b + '"' + (save.money < b ? ' disabled' : '') + '>' + money(b) + '</button>').join('') + '</div><p class="csmoney">You have <b>' + money(save.money) + '</b></p>';
+/* ---------- slots ---------- */
+function csReel() { let t = 0; for (const s of CS_SYM) t += s[1]; let q = Casino.rng() * t; for (const s of CS_SYM) { q -= s[1]; if (q <= 0) return s[0]; } return CS_SYM[0][0]; }
+function csSlotPay(r) { if (r[0] === r[1] && r[1] === r[2]) return CS_PAY[r[0]]; const ch = r.filter((s) => s === '🍒').length; return ch === 2 ? 2 : ch === 1 ? 1 : 0; }
+Casino.slots = function (M) {
+  Casino.game = 'slots'; Casino.slot = Casino.slot || { r: ['🍒', '🔔', '7️⃣'], spinning: false, msg: 'Three of a kind pays big. Cherries pay something.' }; const S = Casino.slot; S.M = M;
+  const draw = () => Int.panel({ title: 'Slot machine', sub: 'Pays: 💎💎💎 100× · 7️⃣7️⃣7️⃣ 50× · ⭐⭐⭐ 20× · 🔔🔔🔔 12× · 🍋🍋🍋 8× · 🍒🍒🍒 5× · two 🍒 2× · one 🍒 your bet back',
+    body: '<div class="csreels">' + S.r.map((s) => '<span>' + s + '</span>').join('') + '</div><p class="csmsg">' + S.msg + '</p>' + csBetRow(),
+    btns: [[S.spinning ? 'Spinning…' : 'Spin (' + money(Casino.bet) + ')', () => spin(), true, S.spinning || save.money < Casino.bet]], pick: (v) => { if (v.indexOf('bet:') === 0 && !S.spinning) { Casino.bet = +v.slice(4); draw(); } } });
+  const spin = () => {
+    if (S.spinning || !csTake(Casino.bet)) return; S.spinning = true; const res = [csReel(), csReel(), csReel()], stake = Casino.bet; let k = 0; S.msg = '…'; Snd.beep(600, 0.05);
+    const tick = () => { k++; for (let i = 0; i < 3; i++) if (k < 8 + i * 5) S.r[i] = CS_SYM[Math.floor(Math.random() * CS_SYM.length)][0]; else S.r[i] = res[i];
+      if (S.M) S.M.flash = 0.3; if (Int.pan && Int.pan.title === 'Slot machine') draw();
+      if (k < 18) setTimeout(tick, 70); else { S.spinning = false; const m = csSlotPay(res), net = csSettle(stake, stake * m, 'Slots'); S.msg = m >= 5 ? 'JACKPOT! ' + m + '× · +' + money(net) : m > 1 ? m + '× · +' + money(net) : m === 1 ? 'Your bet back' : 'No luck'; if (S.M && m >= 2) S.M.flash = 3; if (Int.pan && Int.pan.title === 'Slot machine') draw(); Casino.last = { game: 'slots', res, m, net }; } };
+    tick();
+  };
+  draw();
+};
+/* ---------- roulette ---------- */
+function csRouletteWin(bet, n) {
+  const red = CS_RED.includes(n);
+  if (bet === 'red') return n > 0 && red ? 2 : 0; if (bet === 'black') return n > 0 && !red ? 2 : 0;
+  if (bet === 'odd') return n > 0 && n % 2 ? 2 : 0; if (bet === 'even') return n > 0 && !(n % 2) ? 2 : 0;
+  if (bet === 'low') return n >= 1 && n <= 18 ? 2 : 0; if (bet === 'high') return n >= 19 ? 2 : 0;
+  if (bet === 'd1') return n >= 1 && n <= 12 ? 3 : 0; if (bet === 'd2') return n >= 13 && n <= 24 ? 3 : 0; if (bet === 'd3') return n >= 25 ? 3 : 0;
+  if (/^n\d+$/.test(bet)) return +bet.slice(1) === n ? 36 : 0; return 0;
+}
+Casino.roulette = function () {
+  Casino.game = 'roulette'; const R = Casino.rou || (Casino.rou = { on: 'red', msg: 'Place your bet and spin.', hist: [] });
+  const lab = { red: 'Red', black: 'Black', odd: 'Odd', even: 'Even', low: '1–18', high: '19–36', d1: '1st 12', d2: '2nd 12', d3: '3rd 12' };
+  const draw = () => {
+    const nums = []; for (let n = 0; n <= 36; n++) nums.push('<button type="button" class="csn ' + (n === 0 ? 'g' : CS_RED.includes(n) ? 'r' : 'k') + (R.on === 'n' + n ? ' on' : '') + '" data-ia="on:n' + n + '">' + n + '</button>');
+    Int.panel({ title: 'Roulette', sub: 'European wheel · even bets pay 1:1, dozens 2:1, a single number 35:1',
+      body: '<div class="csouts">' + Object.keys(lab).map((k) => '<button type="button" class="btn sm' + (R.on === k ? ' primary' : '') + '" data-ia="on:' + k + '">' + lab[k] + '</button>').join('') + '</div><div class="csnums">' + nums.join('') + '</div>' +
+        '<p class="csmsg">Betting on <b>' + (lab[R.on] || 'number ' + R.on.slice(1)) + '</b> · ' + R.msg + '</p><p class="cshist">' + R.hist.slice(-10).map((n) => '<span class="' + (n === 0 ? 'g' : CS_RED.includes(n) ? 'r' : 'k') + '">' + n + '</span>').join('') + '</p>' + csBetRow(),
+      btns: [[Casino.spinT > 0 ? 'The ball is rolling…' : 'Spin (' + money(Casino.bet) + ')', () => spin(), true, Casino.spinT > 0 || save.money < Casino.bet]],
+      pick: (v) => { if (Casino.spinT > 0) return; if (v.indexOf('bet:') === 0) Casino.bet = +v.slice(4); else if (v.indexOf('on:') === 0) R.on = v.slice(3); draw(); } });
+  };
+  const spin = () => {
+    if (Casino.spinT > 0 || !csTake(Casino.bet)) return; const n = Math.floor(Casino.rng() * 37), stake = Casino.bet, on = R.on; Casino.spinT = 3.2; Casino.spinRes = n; R.msg = 'No more bets…'; Snd.beep(500, 0.06); draw();
+    Casino.spinDone = () => { const m = csRouletteWin(on, n), net = csSettle(stake, stake * m, 'Roulette'); R.hist.push(n); R.msg = n + ' ' + (n === 0 ? 'green' : CS_RED.includes(n) ? 'red' : 'black') + (m ? ' · you win ' + money(net) : ' · the house wins'); Casino.last = { game: 'roulette', n, on, m, net }; if (Int.pan && Int.pan.title === 'Roulette') draw(); };
+  };
+  draw();
+};
+/* ---------- blackjack ---------- */
+function csDeck() { const d = []; for (const s of ['♠', '♥', '♦', '♣']) for (const r of ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']) d.push(r + s); for (let i = d.length - 1; i > 0; i--) { const j = Math.floor(Casino.rng() * (i + 1)); [d[i], d[j]] = [d[j], d[i]]; } return d; }
+function csVal(h) { let v = 0, a = 0; for (const c of h) { const r = c.slice(0, -1); if (r === 'A') { a++; v += 11; } else v += /[JQK]/.test(r) || r === '10' ? 10 : +r; } while (v > 21 && a) { v -= 10; a--; } return v; }
+const csCard = (c, hide) => hide ? '<span class="cscard back"></span>' : '<span class="cscard' + (/[♥♦]/.test(c) ? ' red' : '') + '">' + c + '</span>';
+Casino.blackjack = function () {
+  Casino.game = 'bj'; const B = Casino.bj || (Casino.bj = { st: 'bet', p: [], d: [], msg: 'Place your bet and deal.' });
+  const draw = () => {
+    const pv = csVal(B.p), dv = csVal(B.d), playing = B.st === 'play';
+    Int.panel({ title: 'Blackjack', sub: 'Dealer stands on 17 · blackjack pays 3:2',
+      body: '<div class="cshand"><small>Dealer' + (B.d.length ? ' · ' + (playing ? '?' : dv) : '') + '</small><div>' + B.d.map((c, i) => csCard(c, playing && i === 1)).join('') + '</div></div>' +
+        '<div class="cshand"><small>You' + (B.p.length ? ' · ' + pv : '') + (B.dbl ? ' · doubled' : '') + '</small><div>' + B.p.map((c) => csCard(c)).join('') + '</div></div><p class="csmsg">' + B.msg + '</p>' + (playing ? '' : csBetRow()),
+      btns: playing ? [['Hit', () => hit(), true], ['Stand', () => stand(), false], ['Double', () => dbl(), false, B.p.length !== 2 || save.money < B.stake]] : [['Deal (' + money(Casino.bet) + ')', () => deal(), true, save.money < Casino.bet]],
+      pick: (v) => { if (!playing && v.indexOf('bet:') === 0) { Casino.bet = +v.slice(4); draw(); } } });
+  };
+  const end = (back, msg) => { B.st = 'bet'; const net = csSettle(B.stake, back, 'Blackjack'); B.msg = msg + (net > 0 ? ' · +' + money(net) : net < 0 ? ' · −' + money(-net) : ''); Casino.last = { game: 'bj', p: B.p.slice(), d: B.d.slice(), back, net }; draw(); };
+  const deal = () => {
+    if (!csTake(Casino.bet)) return; B.stake = Casino.bet; B.dbl = false; if (!Casino.deck || Casino.deck.length < 15) Casino.deck = csDeck(); const D = Casino.deck;
+    B.p = [D.pop(), D.pop()]; B.d = [D.pop(), D.pop()]; B.st = 'play'; B.msg = 'Hit or stand?'; Snd.beep(700, 0.04);
+    const pb = csVal(B.p) === 21, db = csVal(B.d) === 21;
+    if (pb || db) { if (pb && db) end(B.stake, 'Both blackjack · push'); else if (pb) end(B.stake + Math.floor(B.stake * 1.5), 'BLACKJACK!'); else end(0, 'Dealer blackjack'); return; }
+    draw();
+  };
+  const hit = () => { B.p.push(Casino.deck.pop()); Snd.beep(700, 0.03); if (csVal(B.p) > 21) end(0, 'Bust · ' + csVal(B.p)); else if (csVal(B.p) === 21) stand(); else draw(); };
+  const dbl = () => { if (!csTake(B.stake)) return; B.stake *= 2; B.dbl = true; B.p.push(Casino.deck.pop()); if (csVal(B.p) > 21) end(0, 'Bust · ' + csVal(B.p)); else stand(); };
+  const stand = () => {
+    while (csVal(B.d) < 17) B.d.push(Casino.deck.pop()); const pv = csVal(B.p), dv = csVal(B.d);
+    if (dv > 21) end(B.stake * 2, 'Dealer busts · ' + dv); else if (pv > dv) end(B.stake * 2, 'You win · ' + pv + ' to ' + dv); else if (pv === dv) end(B.stake, 'Push · ' + pv); else end(0, 'Dealer wins · ' + dv + ' to ' + pv);
+  };
+  Casino.bjPlay = { deal, hit, stand, dbl }; draw();
+};
+Casino.cashier = function () {
+  const S = csSave(); Int.panel({ title: 'Cashier', sub: 'Your record at the tables', body: '<div class="vrec"><div><small>Won</small><b>' + money(S.won) + '</b></div><div><small>Lost</small><b>' + money(S.lost) + '</b></div><div><small>Biggest win</small><b>' + money(S.best) + '</b></div><div><small>Games</small><b>' + S.plays + '</b></div></div><p class="csmsg">' + (S.won > S.lost ? 'You are ahead. Most people leave before that changes.' : S.plays ? 'The house always wins. Eventually.' : 'Good luck in there.') + '</p>', btns: [] });
+};
+
+/* ---------- the room ---------- */
+function csWheelTex() {
+  const c = mkCanvas(512, 512), g = c.getContext('2d'), order = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+  g.fillStyle = '#4a2a14'; g.fillRect(0, 0, 512, 512);
+  for (let i = 0; i < 37; i++) { const a0 = i / 37 * Math.PI * 2, a1 = (i + 1) / 37 * Math.PI * 2, n = order[i]; g.beginPath(); g.moveTo(256, 256); g.arc(256, 256, 250, a0, a1); g.closePath(); g.fillStyle = n === 0 ? '#1a8a3a' : CS_RED.includes(n) ? '#b81c1c' : '#141414'; g.fill();
+    g.save(); g.translate(256, 256); g.rotate((a0 + a1) / 2); g.fillStyle = '#fff'; g.font = 'bold 20px sans-serif'; g.textAlign = 'center'; g.fillText(String(n), 220, 7); g.restore(); }
+  g.fillStyle = '#6a4424'; g.beginPath(); g.arc(256, 256, 165, 0, Math.PI * 2); g.fill(); g.fillStyle = '#d8b040'; g.beginPath(); g.arc(256, 256, 40, 0, Math.PI * 2); g.fill();
+  return canvasTex(c, true, false);
+}
+INT_KINDS.casino = { name: 'Casino', rooms: { main(K, rec) {
+  Casino.css();
+  const { W, D } = intDims(rec, 30, 24); K.shell({ W, D, H: 5, floor: 0x6a1420, wall: 0x2a0e14, ceil: 0x140a0e, trim: 0xd8a830, lamp: 0xffd890, lightI: 0.8 });
+  for (let x = Math.ceil(K.x0) + 1; x < K.x1; x += 2) K.box(x - 0.03, 0, K.z0, x + 0.03, 0.004, K.z1, 0x8a2a30);   /* the carpet's pattern */
+  K.sign(rec.name.toUpperCase(), 0, 4.1, K.z0 + 0.04, Math.min(W - 6, 10), 0.9, 0, { fg: '#ffd84a', bg: '#2a0a12' });
+  K.glow(K.x0 + 0.5, 4.6, K.z0 + 0.05, K.x1 - 0.5, 4.66, K.z0 + 0.1, 0xff3ad8, 1.6); K.glow(K.x0 + 0.05, 4.6, K.z0 + 0.5, K.x0 + 0.1, 4.66, K.z1 - 0.5, 0x3ad8ff, 1.6); K.glow(K.x1 - 0.1, 4.6, K.z0 + 0.5, K.x1 - 0.05, 4.66, K.z1 - 0.5, 0x3ad8ff, 1.6);
+  /* chandeliers */
+  for (const x of [-W / 4, W / 4]) { K.cyl(x, 4.2, 0, 0.6, 0.3, 0xd8a830); K.glow(x - 0.45, 4.05, -0.45, x + 0.45, 4.2, 0.45, 0xfff0c0, 1.4); K.light(x, 3.8, 0, 0xffe0a0, 0.9, 14); }
+  /* slot machines along the left wall: a cabinet, a glowing screen that flashes when it pays, a stool and a gambler at some */
+  Casino.machines = []; const n = Math.max(4, Math.floor((D - 6) / 1.3));
+  for (let i = 0; i < n; i++) {
+    const z = K.z0 + 2.2 + i * 1.3, x = K.x0 + 0.6; K.box(x - 0.4, 0, z - 0.45, x + 0.35, 1.7, z + 0.45, [0x8a1a2a, 0x1a2a8a, 0x8a6a1a][i % 3], true); K.box(x + 0.35, 0.95, z - 0.4, x + 0.5, 1.0, z + 0.4, 0x1a1a1a);
+    const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.42), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.6, 0.5, 1.2) })); scr.position.set(x + 0.36, 1.3, z); scr.rotation.y = Math.PI / 2; K.sc.add(scr);
+    const M = { x, z, scr, flash: 0, ph: i * 0.7 }; Casino.machines.push(M);
+    K.chair(x + 1.0, z, -Math.PI / 2, 0x2a2a30, true);
+    if (i % 2 === 1) K.person({ x: x + 1.0, z, yaw: -Math.PI / 2, kind: 'sit', sy: 0.3 });
+    K.act(x + 1.0, z, 0.9, 'Play the slot machine', () => Casino.slots(M), { wide: true });
+  }
+  /* the roulette table in the middle, its wheel spinning when you play */
+  const rx = 0, rz = K.z0 + D * 0.38; K.box(rx - 1.6, 0, rz - 0.9, rx + 1.6, 0.85, rz + 0.9, 0x3a2414, true); K.box(rx - 1.5, 0.85, rz - 0.8, rx + 1.5, 0.88, rz + 0.8, 0x1a6a3a);
+  K.box(rx - 1.62, 0.85, rz - 0.92, rx + 1.62, 0.93, rz - 0.82, 0x5a3a20); K.box(rx - 1.62, 0.85, rz + 0.82, rx + 1.62, 0.93, rz + 0.92, 0x5a3a20);
+  { const wh = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.06, 37), [new THREE.MeshStandardMaterial({ color: lc(0x5a3a20) }), new THREE.MeshBasicMaterial({ map: csWheelTex() }), new THREE.MeshStandardMaterial({ color: lc(0x5a3a20) })]); wh.position.set(rx - 0.9, 0.93, rz); K.sc.add(wh); Casino.wheel = wh;
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.025, 10, 8), new THREE.MeshStandardMaterial({ color: lc(0xf8f8f8), roughness: 0.2 })); ball.position.set(rx - 0.9 + 0.42, 0.98, rz); K.sc.add(ball); Casino.ball = ball; Casino.wc = [rx - 0.9, rz]; }
+  for (let k = 0; k < 12; k++) K.box(rx - 0.2 + (k % 6) * 0.25, 0.885, rz - 0.6 + Math.floor(k / 6) * 0.5, rx - 0.0 + (k % 6) * 0.25, 0.89, rz - 0.2 + Math.floor(k / 6) * 0.5, k % 2 ? 0xb81c1c : 0x141414);
+  intStaff(K, rx, rz - 1.4, 0, 0x141414, { suit: true });
+  K.person({ x: rx + 1.2, z: rz + 1.5, yaw: Math.PI, kind: 'stand', talk: true }); K.person({ x: rx - 0.4, z: rz + 1.5, yaw: Math.PI, kind: 'stand' });
+  K.act(rx, rz + 1.4, 1.6, 'Play roulette', () => Casino.roulette(), { wide: true });
+  /* two blackjack tables, half moons of green felt */
+  for (const k of [0, 1]) {
+    const bz = K.z0 + D * (k ? 0.68 : 0.38), x = W * 0.28;
+    K.cyl(x, 0, bz, 1.2, 0.85, 0x3a2414, true); K.cyl(x, 0.85, bz, 1.12, 0.03, 0x1a6a3a); K.box(x - 1.15, 0.85, bz - 1.25, x + 1.15, 0.95, bz - 0.4, 0x2a0e14);
+    for (let j = 0; j < 4; j++) K.box(x - 0.5 + j * 0.25, 0.885, bz + 0.2, x - 0.35 + j * 0.25, 0.89, bz + 0.42, 0xf2f2f2);
+    intStaff(K, x, bz - 0.9, 0, 0x141414, { suit: true });
+    for (const s of [-1, 1]) K.chair(x + s * 0.8, bz + 1.15, Math.PI + s * 0.4, 0x2a2a30, true);
+    if (k) K.person({ x: x + 0.8, z: bz + 1.15, yaw: Math.PI + 0.4, kind: 'sit', sy: 0.3 });
+    K.act(x, bz + 1.4, 1.5, 'Play blackjack', () => Casino.blackjack(), { wide: true });
+  }
+  K.sign('BLACKJACK', W * 0.28, 2.6, K.z0 + D * 0.38 - 1.5, 2, 0.4, 0, { fg: '#ffd84a', bg: '#1a0a10' });
+  /* the bar along the back, the cashier's cage by the door */
+  const bz = K.z0 + 1.0; K.counter(-W * 0.1, bz - 0.4, W * 0.35, bz + 0.4, 0x3a1a20, 0xd8a830); K.glow(-W * 0.1, 1.05, bz - 0.45, W * 0.35, 1.08, bz - 0.4, 0xff3ad8, 1.2);
+  for (let k = 0; k < 8; k++) K.cyl(-W * 0.1 + 0.4 + k * 0.5, 1.5, K.z0 + 0.2, 0.06, 0.32, [0x3a8a3a, 0xc8a050, 0x8a2a2a, 0xe8e8f0][k % 4]);
+  intStaff(K, W * 0.12, bz - 0.9, 0, 0xf2f2f2, { suit: true });
+  K.act(W * 0.12, bz + 1.0, 1.4, 'Buy a drink ($15)', () => { if (!csTake(15)) return; writeSave(); Snd.beep(900, 0.05); Int.say('Cheers. On the house it was not.', 2.4); }, { wide: true });
+  const cx = K.x1 - 2, cz = K.z1 - 3; K.counter(cx - 1.2, cz - 0.4, cx + 1.2, cz + 0.4, 0x2a2a30, 0xd8a830); for (let k = 0; k < 6; k++) K.box(cx - 1.2 + k * 0.48, 1.0, cz - 0.02, cx - 1.17 + k * 0.48, 2.3, cz + 0.02, 0xd8a830);
+  K.sign('CASHIER', cx, 2.6, cz, 1.8, 0.4, Math.PI, { fg: '#ffd84a', bg: '#1a0a10' }); intStaff(K, cx, cz - 0.9, 0, 0x2a2a30);
+  K.act(cx, cz + 1.0, 1.4, 'Cashier: your record', () => Casino.cashier(), { wide: true });
+  /* a security guard, and someone wandering between the tables */
+  K.person({ x: K.x1 - 1.0, z: K.z0 + D * 0.5, yaw: -Math.PI / 2, kind: 'stand', shirt: 0x141414, pants: 0x141414, face: true });
+  K.person({ x: -1, z: K.z0 + D * 0.6, kind: 'walk', path: [[-2, K.z0 + D * 0.6, 3], [3, K.z0 + D * 0.55, 2], [2, K.z1 - 3, 3], [-3, K.z1 - 4, 2]] });
+  /* the wheel spins, the machines flash */
+  K.tick((dt, t) => {
+    if (Casino.wheel) { if (Casino.spinT > 0) { Casino.spinT -= dt; const k = Math.max(0, Casino.spinT / 3.2); Casino.wheel.rotation.y += dt * (1 + 9 * k); const a = -t * (2 + 14 * k), r = 0.42 - 0.12 * (1 - k); Casino.ball.position.set(Casino.wc[0] + Math.cos(a) * r, 0.98, Casino.wc[1] + Math.sin(a) * r); if (Casino.spinT <= 0 && Casino.spinDone) { const d = Casino.spinDone; Casino.spinDone = null; d(); } } else Casino.wheel.rotation.y += dt * 0.2; }
+    for (const M of Casino.machines) { M.flash = Math.max(0, M.flash - dt); const f = M.flash > 0 ? 1.5 + Math.sin(t * 30) : 0.6 + 0.25 * Math.sin(t * 2 + M.ph); M.scr.material.color.setRGB(f * 0.9, f * (0.5 + 0.4 * Math.sin(t + M.ph)), f * 1.3); }
+  });
+} } };
+/* the panel's styles: reels, number board, cards */
+Casino.css = function () {
+  if (document.getElementById('csCss')) return; const s = document.createElement('style'); s.id = 'csCss';
+  s.textContent = '.csreels{display:flex;gap:10px;justify-content:center;margin:8px 0}.csreels span{font-size:44px;width:74px;height:74px;display:grid;place-items:center;background:#0e0a10;border:2px solid #d8a830;border-radius:10px}' +
+    '.csmsg{text-align:center;font-weight:600;margin:6px 0}.csmoney{text-align:center;margin:4px 0;opacity:.85}.csbets,.csouts{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:6px 0}' +
+    '.csnums{display:grid;grid-template-columns:repeat(13,1fr);gap:3px;margin:6px 0}.csn{border:0;border-radius:4px;color:#fff;font:600 13px Rajdhani,system-ui,sans-serif;padding:5px 0;cursor:pointer}.csn.r{background:#b81c1c}.csn.k{background:#222}.csn.g{background:#1a8a3a}.csn.on{outline:2px solid #ffd84a}' +
+    '.cshist{text-align:center}.cshist span{display:inline-block;min-width:24px;margin:1px;border-radius:4px;color:#fff;font-weight:600}.cshist .r{background:#b81c1c}.cshist .k{background:#222}.cshist .g{background:#1a8a3a}' +
+    '.cshand{margin:6px 0}.cshand small{opacity:.8}.cshand div{display:flex;gap:6px;min-height:62px}.cscard{width:44px;height:60px;border-radius:6px;background:#f8f6f0;color:#141414;display:grid;place-items:center;font:700 17px Rajdhani,system-ui,sans-serif}.cscard.red{color:#c01c1c}.cscard.back{background:repeating-linear-gradient(45deg,#8a1a2a 0 6px,#5a0e1a 6px 12px)}';
+  document.head.appendChild(s);
 };
 
 /* ---- js/08_int_zjob.js ---- */
@@ -22906,6 +23082,223 @@ Volc.update = function (dt) {
     if (Math.random() < dt * 30) emit(Part.fire, c.x + (Math.random() - 0.5) * 2, c.y + 0.4, c.z + (Math.random() - 0.5) * 2, c.vx * 0.3, 2 + Math.random() * 2, c.vz * 0.3, 0.5, 1, 1.5, 2.4, 0.9, 0.2, 0.8, -1);
     if (Volc.burnT <= 0) { Volc.burnT = 3; UI.toast('LAVA! Get out of it', 'bad'); }
   }
+};
+
+/* ---- js/08_wildlife.js ---- */
+/* ================= WILDLIFE =================
+   Animals live out in the countryside around you, each kind where it belongs: deer and rabbits in the woods and hills, cows, sheep and horses on
+   the farms, mountain goats on the alpine slopes and on Mount Cinder, camels in the desert, zebras, elephants and giraffes on the savanna,
+   flamingos and crocodiles in the swamp, penguins and white foxes in the tundra, monkeys in the jungle, crabs on the sand, gulls over the shore.
+   They come in herds, graze, wander, and scatter when you come at them fast (cows and elephants hold their ground; a crocodile takes its time).
+   Hit one and it is thrown, staggers up and runs off, and your car takes the knock: a rabbit is nothing, a cow is a crash, an elephant stops you.
+   They are spawned around you as you go (never in towns or on roads) and leave when you are far away. Built from simple shapes; legs walk, rabbits
+   hop, penguins waddle, crabs scuttle sideways and gulls flap. */
+const Wild = { list: [], grp: null, t: 0, spawnT: 0, mats: {}, on: true };
+const WILD_G = {};
+function wildGeo() {
+  if (WILD_G.sph) return WILD_G;
+  WILD_G.sph = new THREE.SphereGeometry(0.5, 14, 10); WILD_G.cyl = new THREE.CylinderGeometry(0.5, 0.5, 1, 8); WILD_G.cylT = new THREE.CylinderGeometry(0.5, 0.32, 1, 8);   /* thick where it joins, thinner at the end */ WILD_G.cone = new THREE.ConeGeometry(0.5, 1, 8);
+  for (const k of ['cyl', 'cylT', 'cone']) WILD_G[k].translate(0, -0.5, 0);   /* hung from the top, so it can swing from a hip or a shoulder */
+  WILD_G.box = new THREE.BoxGeometry(1, 1, 1); return WILD_G;
+}
+function wildMat(hex, rough) { const k = hex + ':' + (rough || 0.85); return Wild.mats[k] || (Wild.mats[k] = new THREE.MeshStandardMaterial({ color: lc(hex), roughness: rough || 0.85, metalness: 0 })); }
+/* zebra stripes */
+function wildStripeMat() {
+  if (Wild.mats.stripe) return Wild.mats.stripe; const c = mkCanvas(64, 64), g = c.getContext('2d'); g.fillStyle = '#f2f0ea'; g.fillRect(0, 0, 64, 64); g.fillStyle = '#141414';
+  for (let i = 0; i < 8; i++) { g.beginPath(); g.moveTo(i * 8, 0); g.bezierCurveTo(i * 8 + 4, 22, i * 8 - 3, 42, i * 8 + 2, 64); g.lineTo(i * 8 + 5, 64); g.bezierCurveTo(i * 8, 42, i * 8 + 7, 22, i * 8 + 3.5, 0); g.fill(); }
+  const t = canvasTex(c, true, true); t.repeat.set(3, 1); return (Wild.mats.stripe = new THREE.MeshStandardMaterial({ map: t, roughness: 0.85 }));
+}
+/* a part: geometry g, material m, at (x, y, z), scaled (sx, sy, sz), rotated (rx, ry, rz), into parent p */
+function wp(p, g, m, x, y, z, sx, sy, sz, rx, ry, rz) { const o = new THREE.Mesh(wildGeo()[g], m); o.position.set(x, y, z); o.scale.set(sx, sy, sz); o.rotation.set(rx || 0, ry || 0, rz || 0); o.castShadow = false; p.add(o); return o; }
+function wpivot(p, x, y, z) { const q = new THREE.Group(); q.position.set(x, y, z); p.add(q); return q; }
+/* a four-legged animal: body length L, hip height H, body width W, colours, a neck and a head, and extras */
+function wildQuad(o) {
+  const root = new THREE.Group(), bod = wpivot(root, 0, 0, 0), M = wildMat(o.col), Mb = o.belly ? wildMat(o.belly) : M, Md = wildMat(o.dark || 0x1a1410), L = o.L, H = o.H, W = o.W, BH = o.BH || W * 0.95;
+  const by = H + BH * 0.35;
+  wp(bod, 'sph', o.stripe ? wildStripeMat() : M, 0, by, 0, W, BH, L);
+  if (o.belly) wp(bod, 'sph', Mb, 0, by - BH * 0.18, 0, W * 0.8, BH * 0.7, L * 0.8);
+  if (o.hump) wp(bod, 'sph', M, 0, by + BH * 0.45, -L * 0.05, W * 0.6, BH * 0.7, L * 0.35);
+  if (o.wool) for (const [x, y, z] of [[0, 0.2, 0.25], [0.2, 0.05, -0.2], [-0.2, 0.05, -0.2], [0, 0.25, -0.1], [0.18, 0.15, 0.15], [-0.18, 0.15, 0.15]]) wp(bod, 'sph', M, x * W * 1.2, by + y * BH, z * L, W * 0.65, BH * 0.65, L * 0.45);
+  if (o.spots) for (const [x, y, z, s] of [[0.42, 0.1, 0.15, 0.4], [-0.43, 0.05, -0.2, 0.35], [0.4, 0.15, -0.3, 0.3], [-0.38, 0.2, 0.25, 0.3], [0, 0.42, -0.05, 0.38]]) wp(bod, 'sph', Md, x * W, by + y * BH, z * L, W * s * 0.6, BH * s * 0.7, L * s * 0.55);
+  /* legs, hung from the hips and shoulders */
+  const legs = [], lt = o.legT || W * 0.18;
+  for (const [sx, sz, ph] of [[-1, 1, 0], [1, 1, Math.PI], [-1, -1, Math.PI], [1, -1, 0]]) { const pv = wpivot(bod, sx * W * 0.3, H + 0.04, sz * L * 0.32); wp(pv, 'cylT', o.legCol ? wildMat(o.legCol) : M, 0, 0, 0, lt, H, lt); if (o.hoof) wp(pv, 'cyl', Md, 0, -H + 0.04, 0, lt * 1.1, 0.06, lt * 1.1); legs.push({ pv, ph }); }
+  /* neck and head */
+  const nk = wpivot(bod, 0, by + BH * 0.15, L * 0.42), na = o.neckA != null ? o.neckA : 0.7, nl = o.neckL != null ? o.neckL : L * 0.3;
+  nk.rotation.x = -(Math.PI / 2 + na); wp(nk, 'cylT', o.stripe ? wildStripeMat() : M, 0, 0, 0, W * (o.neckW || 0.42), nl, W * (o.neckW || 0.42));
+  const hd = wpivot(nk, 0, -nl, 0); hd.rotation.x = Math.PI / 2 + na + (o.headTilt || 0.2);   /* level again, nose a little down */
+  const hs = o.headS || W * 0.42; wp(hd, 'sph', M, 0, 0, hs * 0.35, hs * 0.75, hs * 0.75, hs * 1.4); wp(hd, 'sph', o.snout != null ? wildMat(o.snout) : M, 0, -hs * 0.12, hs * 1.0, hs * 0.5, hs * 0.45, hs * 0.6);
+  for (const s of [-1, 1]) { wp(hd, 'sph', wildMat(0x0a0a0a, 0.3), s * hs * 0.3, hs * 0.12, hs * 0.75, hs * 0.1, hs * 0.1, hs * 0.1); if (o.ears !== false) wp(hd, 'cone', M, s * hs * 0.32, hs * (o.earLong ? 0.95 : 0.55), -hs * 0.1, hs * 0.18, o.earLong ? hs * 0.9 : hs * 0.4, hs * 0.1, 0, 0, Math.PI - s * 0.35); }
+  if (o.antlers) for (const s of [-1, 1]) { const a = wpivot(hd, s * hs * 0.22, hs * 0.4, 0); a.rotation.z = -s * 0.5; wp(a, 'cyl', wildMat(0x8a6a44), 0, 0.5 * hs * 2, 0, hs * 0.07, hs * 1.0, hs * 0.07, Math.PI); for (const t of [0.4, 0.75]) wp(a, 'cyl', wildMat(0x8a6a44), 0, t * hs * 2, 0, hs * 0.05, hs * 0.45, hs * 0.05, Math.PI - 0.9, 0, 0); }
+  if (o.horns) for (const s of [-1, 1]) wp(hd, 'cone', wildMat(o.hornCol || 0xd8ccb0), s * hs * 0.28, hs * 0.75, 0, hs * 0.13, hs * (o.hornL || 0.5), hs * 0.13, Math.PI - 0.3, 0, -s * 0.5);
+  if (o.trunk) { let p = wpivot(hd, 0, -hs * 0.1, hs * 1.15); for (let i = 0; i < 4; i++) { wp(p, 'cylT', M, 0, 0, 0, hs * 0.22 * (1 - i * 0.15), hs * 0.4, hs * 0.22 * (1 - i * 0.15)); p = wpivot(p, 0, -hs * 0.38, 0); p.rotation.x = 0.25; } }
+  if (o.bigEars) for (const s of [-1, 1]) wp(hd, 'sph', M, s * hs * 0.65, 0, hs * 0.1, hs * 0.08, hs * 0.9, hs * 0.75, 0, s * 0.35, 0);
+  if (o.mane) wp(nk, 'box', Md, 0, -nl * 0.45, -W * 0.14, W * 0.06, nl * 0.9, W * 0.1);
+  /* tail */
+  const tl = wpivot(bod, 0, by + BH * 0.2, -L * 0.48); tl.rotation.x = o.tailUp ? 2.4 : 0.35;
+  wp(tl, o.bushy ? 'sph' : 'cylT', o.tailCol ? wildMat(o.tailCol) : M, 0, o.bushy ? -L * 0.18 : 0, 0, o.bushy ? W * 0.28 : W * 0.06, o.tailL || L * 0.3, o.bushy ? W * 0.28 : W * 0.06);
+  if (o.tip) wp(tl, 'sph', wildMat(o.tip), 0, -(o.tailL || L * 0.3) * 0.9, 0, W * 0.2, W * 0.25, W * 0.2);
+  return { root, bod, legs, head: hd, neck: nk, tail: tl };
+}
+/* the odd ones: a penguin, a flamingo, a crab, a crocodile, a gull */
+function wildPenguin() {
+  const root = new THREE.Group(), bod = wpivot(root, 0, 0, 0), K = wildMat(0x14161c), Wt = wildMat(0xf2f2ee), Or = wildMat(0xf0a020);
+  wp(bod, 'sph', K, 0, 0.36, 0, 0.36, 0.62, 0.32); wp(bod, 'sph', Wt, 0, 0.34, 0.06, 0.28, 0.5, 0.25); wp(bod, 'sph', K, 0, 0.74, 0.02, 0.24, 0.22, 0.22); wp(bod, 'cone', Or, 0, 0.74, 0.16, 0.05, 0.12, 0.05, -Math.PI / 2);
+  for (const s of [-1, 1]) { wp(bod, 'sph', Wt, s * 0.06, 0.78, 0.1, 0.05, 0.05, 0.03); wp(bod, 'sph', K, s * 0.19, 0.42, 0, 0.06, 0.3, 0.14, 0, 0, s * 0.25); wp(bod, 'sph', Or, s * 0.08, 0.03, 0.06, 0.08, 0.04, 0.14); }
+  return { root, bod, legs: [], head: null, waddle: true };
+}
+function wildFlamingo() {
+  const root = new THREE.Group(), bod = wpivot(root, 0, 0, 0), P = wildMat(0xf08aa8), K = wildMat(0x1a1a1a), legs = [];
+  wp(bod, 'sph', P, 0, 0.95, 0, 0.32, 0.3, 0.5);
+  for (const [s, ph] of [[-1, 0], [1, Math.PI]]) { const pv = wpivot(bod, s * 0.06, 0.85, 0); wp(pv, 'cyl', wildMat(0xe07890), 0, 0, 0, 0.025, 0.85, 0.025); legs.push({ pv, ph }); }
+  const nk = wpivot(bod, 0, 1.0, 0.2); nk.rotation.x = -(Math.PI / 2 + 1.35); wp(nk, 'cyl', P, 0, 0, 0, 0.05, 0.42, 0.05); const n2 = wpivot(nk, 0, -0.42, 0); n2.rotation.x = 0.9; wp(n2, 'cyl', P, 0, 0, 0, 0.045, 0.3, 0.045);
+  const hd = wpivot(n2, 0, -0.32, 0); wp(hd, 'sph', P, 0, 0, 0, 0.1, 0.1, 0.12); wp(hd, 'cone', K, 0, -0.02, 0.06, 0.035, 0.14, 0.035, -2.2);
+  wp(bod, 'cone', P, 0, 0.98, -0.3, 0.12, 0.2, 0.06, -1.3);
+  return { root, bod, legs, head: hd, neck: nk };
+}
+function wildCrab() {
+  const root = new THREE.Group(), bod = wpivot(root, 0, 0, 0), R = wildMat(0xc8402a), legs = [];
+  wp(bod, 'sph', R, 0, 0.1, 0, 0.32, 0.1, 0.24); for (const s of [-1, 1]) { wp(bod, 'sph', wildMat(0x101010, 0.3), s * 0.05, 0.17, 0.11, 0.025, 0.04, 0.025); const c = wpivot(bod, s * 0.16, 0.1, 0.12); c.rotation.y = s * 0.5; wp(c, 'sph', R, 0, 0, 0.08, 0.08, 0.06, 0.12); legs.push({ pv: c, ph: s > 0 ? 0 : Math.PI, claw: true }); }
+  for (let i = 0; i < 3; i++) for (const s of [-1, 1]) { const pv = wpivot(bod, s * 0.14, 0.1, 0.06 - i * 0.07); pv.rotation.z = s * 2.2; wp(pv, 'cyl', R, 0, 0, 0, 0.02, 0.16, 0.02); legs.push({ pv, ph: i * 2 + (s > 0 ? Math.PI : 0), side: s }); }
+  return { root, bod, legs, head: null, crab: true };
+}
+function wildCroc() {
+  const root = new THREE.Group(), bod = wpivot(root, 0, 0, 0), G = wildMat(0x5a7a3a), B = wildMat(0xb8b07a), legs = [];
+  wp(bod, 'sph', G, 0, 0.22, 0, 0.55, 0.28, 1.4); wp(bod, 'sph', B, 0, 0.16, 0, 0.45, 0.16, 1.2);
+  const hd = wpivot(bod, 0, 0.24, 0.65); wp(hd, 'sph', G, 0, 0, 0.35, 0.34, 0.18, 0.85); for (const s of [-1, 1]) wp(hd, 'sph', wildMat(0xd8c020, 0.3), s * 0.1, 0.09, 0.1, 0.05, 0.05, 0.05);
+  const tl = wpivot(bod, 0, 0.22, -0.65); tl.rotation.x = Math.PI / 2; wp(tl, 'cylT', G, 0, 0, 0, 0.3, 1.5, 0.18);
+  for (const [sx, sz, ph] of [[-1, 1, 0], [1, 1, Math.PI], [-1, -1, Math.PI], [1, -1, 0]]) { const pv = wpivot(bod, sx * 0.28, 0.2, sz * 0.38); pv.rotation.z = sx * 0.9; wp(pv, 'cylT', G, 0, 0, 0, 0.08, 0.22, 0.08); legs.push({ pv, ph }); }
+  return { root, bod, legs, head: hd, tail: tl, croc: true };
+}
+function wildGull() {
+  const root = new THREE.Group(), bod = wpivot(root, 0, 0, 0), Wt = wildMat(0xf4f4f0), Gy = wildMat(0x8a9098), Or = wildMat(0xe0b020);
+  wp(bod, 'sph', Wt, 0, 0, 0, 0.18, 0.16, 0.42); wp(bod, 'sph', Wt, 0, 0.06, 0.2, 0.12, 0.12, 0.13); wp(bod, 'cone', Or, 0, 0.05, 0.28, 0.025, 0.08, 0.025, -Math.PI / 2);
+  const wings = []; for (const s of [-1, 1]) { const pv = wpivot(bod, s * 0.06, 0.03, 0); const w = wp(pv, 'box', Gy, s * 0.36, 0, 0, 0.72, 0.02, 0.24); w.position.x = s * 0.36; wings.push({ pv, s }); }
+  return { root, bod, legs: [], head: null, wings };
+}
+/* the kinds: how to build one, how big and heavy it is, how fast, how skittish, how many together, and where it lives */
+const WILD_KINDS = {
+  deer: { name: 'Deer', b: (r) => wildQuad({ L: 1.4, H: 0.78, W: 0.5, BH: 0.52, col: 0x8a5a34, belly: 0xd8c0a0, legT: 0.085, neckL: 0.45, neckA: 1.0, headS: 0.24, antlers: r() < 0.4, tailL: 0.15, hoof: true }), r: 0.7, m: 0.5, walk: 1.1, run: 9, flee: 34, herd: [2, 5] },
+  rabbit: { name: 'Rabbit', b: () => wildQuad({ L: 0.32, H: 0.09, W: 0.2, BH: 0.2, col: 0x9a8a72, neckL: 0.04, headS: 0.12, earLong: true, tailL: 0.05, bushy: true, tailCol: 0xf2f2ee, legT: 0.04 }), r: 0.25, m: 0.03, walk: 0.8, run: 7, flee: 16, herd: [1, 3], hop: true },
+  fox: { name: 'Fox', b: () => wildQuad({ L: 0.75, H: 0.3, W: 0.26, col: 0xc8642a, belly: 0xf2e8d8, legCol: 0x2a1a10, neckL: 0.14, headS: 0.17, tailL: 0.45, bushy: true, tip: 0xf2f2ee, legT: 0.05 }), r: 0.4, m: 0.08, walk: 1.2, run: 8, flee: 26, herd: [1, 1] },
+  snowfox: { name: 'Arctic fox', b: () => wildQuad({ L: 0.7, H: 0.28, W: 0.26, col: 0xf2f4f6, legCol: 0xe8eaee, neckL: 0.12, headS: 0.16, tailL: 0.42, bushy: true, legT: 0.05 }), r: 0.4, m: 0.07, walk: 1.2, run: 8, flee: 26, herd: [1, 2] },
+  cow: { name: 'Cow', b: () => wildQuad({ L: 2.0, H: 0.75, W: 0.75, BH: 0.8, col: 0xf0ece4, dark: 0x1c1a18, spots: true, snout: 0xd8a0a0, neckL: 0.35, neckA: 0.35, headS: 0.32, horns: true, hornL: 0.3, tailL: 0.7, tip: 0x1c1a18, hoof: true, legT: 0.13 }), r: 1.2, m: 1.0, walk: 0.7, run: 3, flee: 6, herd: [3, 6], stubborn: true },
+  sheep: { name: 'Sheep', b: () => wildQuad({ L: 1.0, H: 0.4, W: 0.55, BH: 0.55, col: 0xece6d8, wool: true, legCol: 0x1a1612, snout: 0x2a2420, neckL: 0.1, neckA: 0.4, headS: 0.2, tailL: 0.1, legT: 0.06 }), r: 0.6, m: 0.3, walk: 0.7, run: 5, flee: 18, herd: [4, 8] },
+  horse: { name: 'Horse', b: (r) => wildQuad({ L: 1.9, H: 1.0, W: 0.55, BH: 0.65, col: [0x6a3a1a, 0x2a1a10, 0xc8a070, 0x8a8a8a][Math.floor(r() * 4)], dark: 0x1a1210, neckL: 0.7, neckA: 1.0, headS: 0.28, mane: true, tailL: 0.7, hoof: true, legT: 0.14 }), r: 1.0, m: 0.9, walk: 1.2, run: 11, flee: 22, herd: [2, 4] },
+  goat: { name: 'Mountain goat', b: () => wildQuad({ L: 1.0, H: 0.55, W: 0.42, BH: 0.5, col: 0xe8e4dc, horns: true, hornL: 0.6, hornCol: 0x3a3430, neckL: 0.25, neckA: 0.9, headS: 0.2, tailL: 0.1, hoof: true, legT: 0.1 }), r: 0.55, m: 0.35, walk: 0.9, run: 7, flee: 20, herd: [2, 5] },
+  camel: { name: 'Camel', b: () => wildQuad({ L: 2.0, H: 1.25, W: 0.6, BH: 0.65, col: 0xc89a5a, hump: true, neckL: 0.85, neckA: 0.55, headTilt: 0.9, headS: 0.26, tailL: 0.5, legT: 0.14 }), r: 1.1, m: 1.0, walk: 1.0, run: 5, flee: 10, herd: [2, 4] },
+  zebra: { name: 'Zebra', b: () => wildQuad({ L: 1.8, H: 0.85, W: 0.55, BH: 0.65, col: 0xf2f0ea, stripe: true, dark: 0x141414, neckL: 0.6, neckA: 1.0, headS: 0.26, mane: true, tailL: 0.5, tip: 0x141414, hoof: true, legT: 0.12, legCol: 0xe8e4dc }), r: 1.0, m: 0.8, walk: 1.1, run: 12, flee: 30, herd: [4, 8] },
+  elephant: { name: 'Elephant', b: () => wildQuad({ L: 3.4, H: 1.5, W: 1.6, BH: 1.7, col: 0x7a7672, neckL: 0.2, neckA: 0.3, headS: 0.85, trunk: true, bigEars: true, horns: true, hornL: 0.9, hornCol: 0xf2ecdc, ears: false, tailL: 0.8, legT: 0.32 }), r: 2.0, m: 4.0, walk: 0.9, run: 4, flee: 0, herd: [2, 5], stubborn: true },
+  giraffe: { name: 'Giraffe', b: () => wildQuad({ L: 1.9, H: 1.8, W: 0.55, BH: 0.7, col: 0xd8a050, dark: 0x6a3a14, spots: true, neckL: 2.0, neckA: 1.25, headS: 0.25, horns: true, hornL: 0.4, hornCol: 0x6a3a14, tailL: 0.7, tip: 0x2a1a10, legT: 0.12 }), r: 1.1, m: 1.5, walk: 1.0, run: 8, flee: 22, herd: [1, 3] },
+  monkey: { name: 'Monkey', b: () => wildQuad({ L: 0.55, H: 0.3, W: 0.28, BH: 0.32, col: 0x6a4428, snout: 0xd8b090, neckL: 0.08, headS: 0.18, tailL: 0.7, tailUp: true, legT: 0.05 }), r: 0.35, m: 0.06, walk: 1.0, run: 6, flee: 14, herd: [3, 6], hop: true },
+  penguin: { name: 'Penguin', b: wildPenguin, r: 0.35, m: 0.08, walk: 0.5, run: 1.6, flee: 10, herd: [4, 9] },
+  flamingo: { name: 'Flamingo', b: wildFlamingo, r: 0.4, m: 0.08, walk: 0.6, run: 4, flee: 22, herd: [4, 9] },
+  crab: { name: 'Crab', b: wildCrab, r: 0.2, m: 0.01, walk: 0.5, run: 2.5, flee: 8, herd: [2, 5] },
+  croc: { name: 'Crocodile', b: wildCroc, r: 1.0, m: 1.2, walk: 0.5, run: 2.5, flee: 0, herd: [1, 2], water: true, stubborn: true },
+  gull: { name: 'Gull', b: wildGull, r: 0, m: 0, walk: 9, run: 12, flee: 0, herd: [3, 6], fly: true }
+};
+/* who lives where: [kind, weight] for each region, the open country, and the shore */
+const WILD_AT = {
+  wild: [['deer', 4], ['rabbit', 3], ['fox', 1]], farm: [['cow', 4], ['sheep', 3], ['horse', 2], ['rabbit', 1]], alpine: [['goat', 3], ['deer', 3], ['sheep', 1]], lake: [['deer', 3], ['rabbit', 2], ['fox', 1]],
+  desert: [['camel', 3], ['rabbit', 1]], tropic: [['monkey', 1], ['rabbit', 1]], harbor: [['rabbit', 1], ['fox', 1]], city: [['rabbit', 1]], metro: [['rabbit', 1]],
+  swamp: [['croc', 2], ['flamingo', 3]], volcano: [['goat', 3]], savanna: [['zebra', 4], ['elephant', 2], ['giraffe', 2]], vineyard: [['horse', 2], ['rabbit', 3], ['fox', 1]],
+  tundra: [['penguin', 3], ['snowfox', 2]], jungle: [['monkey', 4], ['croc', 1]], shore: [['crab', 3], ['gull', 3]]
+};
+const WILD_DESPAWN = 250, WILD_SHOW = 170, _wnr = {};
+Wild.cap = () => Math.round(10 + (Q && Q.ped ? Q.ped : 30) * 0.45);
+Wild.init = function () { if (Wild.grp) return; Wild.grp = new THREE.Group(); Wild.grp.name = 'wildlife'; scene.add(Wild.grp); };
+Wild.clear = function () { for (const a of Wild.list) Wild.grp.remove(a.root); Wild.list.length = 0; };
+/* what lives at (x, z): the region's animals, or the shore's on the sand */
+Wild.kindsAt = function (x, z, h) {
+  if (h < 3.2 && h > -0.4) return WILD_AT.shore; Biome.at(x, z); const key = Biome.w0 > 0.6 || Biome.top < 0 ? 'wild' : REG[Biome.top % REG.length].key;
+  return WILD_AT[key] || WILD_AT.wild;
+};
+/* can an animal of kind K stand at (x, z)? not in a town, not on a road, not in the sea (a crocodile likes the water's edge) */
+Wild.ok = function (K, x, z) {
+  const h = terrainHeight(x, z); if (K.fly) return true;
+  if (K.water ? h < -0.6 || h > 6 : h < 0.25) return false; if (townAt(x, z, 25)) return false;
+  nearestRoad(x, z); if (NR.seg >= 0 && NR.d < NR.halfW + 5) return false; return true;
+};
+/* a herd (or a flock) of kind id at (x, z) */
+Wild.spawn = function (id, x, z, n) {
+  const K = WILD_KINDS[id]; if (!K) return []; Wild.init(); const r = Math.random, out = [], cnt = n || Math.round(K.herd[0] + r() * (K.herd[1] - K.herd[0]));
+  for (let i = 0; i < cnt; i++) {
+    const a = r() * TAU, d = i ? 2 + r() * 7 : 0, px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d; if (!n && !Wild.ok(K, px, pz)) continue;
+    const B = K.b(r), s = 0.85 + r() * 0.3; B.root.scale.setScalar(s);
+    const A = Object.assign(B, { id, K, x: px, z: pz, y: terrainHeight(px, pz), yaw: r() * TAU, v: 0, vt: 0, st: 'idle', t: r() * 4, ph: r() * TAU, ax: x, az: z, tx: px, tz: pz, s, hy: 0, vy: 0, spin: 0, alt: 16 + r() * 14, ang: r() * TAU, rad: 20 + r() * 25 });
+    if (K.fly) { A.y = Math.max(0, terrainHeight(x, z)) + A.alt; }
+    A.root.position.set(A.x, A.y, A.z); Wild.grp.add(A.root); Wild.list.push(A); out.push(A);
+  }
+  return out;
+};
+/* new herds out ahead of you, old ones gone when you are far away */
+Wild.populate = function () {
+  const P = Pl; for (let i = Wild.list.length - 1; i >= 0; i--) { const A = Wild.list[i]; if (Math.hypot(A.x - P.x, A.z - P.z) > WILD_DESPAWN) { Wild.grp.remove(A.root); Wild.list.splice(i, 1); } }
+  if (Wild.list.length >= Wild.cap()) return;
+  for (let tries = 0; tries < 6; tries++) {
+    const a = Math.random() * TAU, d = 70 + Math.random() * 110, x = P.x + Math.cos(a) * d, z = P.z + Math.sin(a) * d, h = terrainHeight(x, z);
+    if (h < -2 && Math.random() > 0.3) continue; const L = Wild.kindsAt(x, z, h); let sum = 0; for (const e of L) sum += e[1]; let q = Math.random() * sum, id = L[0][0]; for (const e of L) { q -= e[1]; if (q <= 0) { id = e[0]; break; } }
+    if (!Wild.ok(WILD_KINDS[id], x, z)) continue; Wild.spawn(id, x, z); return;
+  }
+};
+/* every frame: think, move, animate, and meet the car */
+Wild.update = function (dt) {
+  if (!Wild.on || !Wild.grp || Rally.on || Drag.on || Derby.on) { if (Wild.grp) Wild.grp.visible = false; return; }
+  Wild.grp.visible = true; Wild.t += dt; Wild.spawnT -= dt; if (Wild.spawnT <= 0) { Wild.spawnT = 0.35; Wild.populate(); }
+  const c = car, onFoot = Foot.on, px = Pl.x, pz = Pl.z, cs = Math.abs(c.speed);
+  for (const A of Wild.list) {
+    const K = A.K, dx = A.x - px, dz = A.z - pz, dd = Math.hypot(dx, dz); A.root.visible = dd < WILD_SHOW; if (dd > WILD_SHOW + 40 && A.st !== 'thrown') continue;
+    if (K.fly) { Wild.fly(A, dt); continue; }
+    /* thrown by the car: fly, tumble, land, stagger up, run */
+    if (A.st === 'thrown') { A.vy -= 18 * dt; A.x += A.vx * dt; A.z += A.vz * dt; A.y += A.vy * dt; A.root.rotation.x += A.spin * dt; const g = terrainHeight(A.x, A.z); if (A.y <= g) { A.y = g; A.vx *= 0.5; A.vz *= 0.5; A.vy = 0; A.st = 'daze'; A.t = 1.6; } A.root.position.set(A.x, A.y, A.z); continue; }
+    if (A.st === 'daze') { A.t -= dt; A.root.rotation.x *= Math.max(0, 1 - dt * 3); A.root.rotation.z = Math.sin(Wild.t * 9) * 0.15 * A.t; if (A.t <= 0) { A.root.rotation.set(0, A.yaw, 0); A.st = K.stubborn ? 'idle' : 'flee'; A.t = 4; A.fx = A.x + (A.x - px); A.fz = A.z + (A.z - pz); } A.root.position.set(A.x, A.y, A.z); continue; }
+    /* a threat: a car coming fast, or you on foot close by */
+    const threat = K.flee > 0 && ((!onFoot && cs > 4 && dd < K.flee) || (onFoot && dd < K.flee * 0.35));
+    if (threat && A.st !== 'flee') { A.st = 'flee'; A.t = 3 + Math.random() * 2; const k = 1 / (dd || 1); A.fx = A.x + dx * k * 60; A.fz = A.z + dz * k * 60; }
+    A.t -= dt;
+    if (A.st === 'flee') { A.tx = A.fx; A.tz = A.fz; A.vt = K.run; if (A.t <= 0 && !threat) { A.st = 'idle'; A.t = 2; A.ax = A.x; A.az = A.z; } }
+    else if (A.st === 'walk') { A.vt = K.walk; if (Math.hypot(A.tx - A.x, A.tz - A.z) < 1 || A.t <= 0) { A.st = 'idle'; A.t = 2 + Math.random() * 6; } }
+    else { A.vt = 0; if (A.t <= 0) { A.st = 'walk'; A.t = 8 + Math.random() * 6; const a = Math.random() * TAU, d = 4 + Math.random() * 18; A.tx = A.ax + Math.cos(a) * d; A.tz = A.az + Math.sin(a) * d; } }
+    /* move: turn toward where it is going, keep out of the sea (and out of towns) */
+    const hx = A.tx - A.x, hz = A.tz - A.z, hl = Math.hypot(hx, hz); A.v += (A.vt - A.v) * Math.min(1, dt * (A.st === 'flee' ? 4 : 2));
+    if (hl > 0.3 && A.v > 0.05) {
+      const want = Math.atan2(hx, hz) + (A.crab ? Math.PI / 2 : 0); A.yaw += angDiff(A.yaw, want) * Math.min(1, dt * (A.st === 'flee' ? 5 : 2));
+      const mx = Math.sin(A.yaw - (A.crab ? Math.PI / 2 : 0)), mz = Math.cos(A.yaw - (A.crab ? Math.PI / 2 : 0)), nx = A.x + mx * A.v * dt, nz = A.z + mz * A.v * dt, nh = terrainHeight(nx, nz);
+      if ((K.water ? nh < -0.8 : nh < 0.25) || townAt(nx, nz, 10)) { A.tx = A.x - mx * 10; A.tz = A.z - mz * 10; A.fx = A.tx; A.fz = A.tz; A.v *= 0.3; } else { A.x = nx; A.z = nz; }
+    }
+    A.y = terrainHeight(A.x, A.z);
+    /* animate: legs, a hop, a waddle, grazing */
+    A.ph += dt * (2 + A.v * (K.hop ? 2.2 : 3.2)) / Math.max(0.5, A.s); const sw = Math.min(0.7, A.v * 0.25);
+    for (const L of A.legs) { if (L.side) L.pv.rotation.x = Math.sin(A.ph + L.ph) * sw * 1.2; else if (L.claw) L.pv.rotation.x = Math.sin(Wild.t * 3 + L.ph) * 0.2; else L.pv.rotation.x = Math.sin(A.ph + L.ph) * sw; }
+    let bob = 0; if (K.hop && A.v > 0.3) bob = Math.abs(Math.sin(A.ph)) * 0.25 * A.s; else if (A.waddle) { A.bod.rotation.z = Math.sin(A.ph) * 0.18 * Math.min(1, A.v * 2); }
+    if (A.neck && A.st === 'idle' && !A.crab && !A.croc) A.neck.rotation.y = Math.sin(Wild.t * 0.7 + A.ph) * 0.25;
+    if (A.tail && !A.croc) A.tail.rotation.z = Math.sin(Wild.t * 4 + A.ph) * 0.25; if (A.croc && A.tail) A.tail.rotation.y = Math.sin(A.ph) * 0.3 * Math.min(1, A.v);
+    A.root.position.set(A.x, A.y + bob, A.z); A.root.rotation.y = A.yaw;
+    /* the car: thrown and hurt, and the car knocked (an elephant stops it dead) */
+    if (!onFoot && K.r > 0 && dd < K.r * A.s + 1.5 && c.wrecked <= 0 && Math.abs(c.y - A.y) < 2.5) {
+      if (cs > 3) Wild.hit(A, c, cs);
+      else { const k = (K.r * A.s + 1.5 - dd) / (dd || 1); if (K.stubborn) { c.x -= dx * k * 0.5; c.z -= dz * k * 0.5; } else { A.x += dx * k; A.z += dz * k; } }
+    }
+  }
+};
+Wild.hit = function (A, c, cs) {
+  const K = A.K, m = K.m * A.s * A.s * A.s, sev = cs * Math.min(1.6, m) * 0.9;
+  if (m >= 2.5) {   /* an elephant: the car stops, the elephant barely moves */
+    const sp = Math.hypot(c.vx, c.vz) || 1; c.x -= c.vx / sp * 1.2; c.z -= c.vz / sp * 1.2; c.vx *= -0.15; c.vz *= -0.15; c.speed *= -0.15; A.st = 'idle'; A.t = 3;
+  } else {
+    const k = 1 / (0.6 + m); A.st = 'thrown'; A.vx = c.vx * 0.8 * k + (Math.random() - 0.5) * 3; A.vz = c.vz * 0.8 * k + (Math.random() - 0.5) * 3; A.vy = 3 + cs * 0.25 * k; A.spin = (Math.random() < 0.5 ? -1 : 1) * (4 + cs * 0.2);
+    if (m > 0.4) { c.vx *= 1 - Math.min(0.5, m * 0.3); c.vz *= 1 - Math.min(0.5, m * 0.3); c.speed *= 1 - Math.min(0.5, m * 0.3); }
+  }
+  if (sev > 2.5 && !devOn('god')) { const hp0 = c.health; c.health -= Math.pow(Math.max(0, sev - 2), 1.2) * 1.1; Dmg.hit(c, sev, hp0 - c.health); App.dmg = Math.min(1, App.dmg + sev / 30); }
+  Cam.shake = Math.max(Cam.shake, Math.min(2.2, sev * 0.1)); if (Snd.ok) Snd.crash(Math.min(30, sev)); Wild.hits = (Wild.hits || 0) + 1; Wild.lastHit = K.name;
+  for (let i = 0; i < 10; i++) emit(Part.smoke, A.x, A.y + 0.5, A.z, (Math.random() - 0.5) * 3, 1 + Math.random() * 2, (Math.random() - 0.5) * 3, 1, 0.6, 1.6, 0.6, 0.55, 0.45, 0.35, -0.2);   /* dust and fur */
+};
+/* gulls: wheel round over the shore, flapping and gliding */
+Wild.fly = function (A, dt) {
+  A.ang += dt * A.K.walk / A.rad; const x = A.ax + Math.cos(A.ang) * A.rad, z = A.az + Math.sin(A.ang) * A.rad, g = Math.max(0, terrainHeight(x, z));
+  A.yaw = Math.atan2(-Math.sin(A.ang), Math.cos(A.ang)) + Math.PI / 2; A.x = x; A.z = z; A.y += (g + A.alt + Math.sin(Wild.t * 0.5 + A.ph) * 3 - A.y) * Math.min(1, dt);
+  A.root.position.set(A.x, A.y, A.z); A.root.rotation.set(0, A.yaw, -0.25);
+  const flap = Math.sin(Wild.t * 0.7 + A.ph) > 0.3 ? Math.sin(Wild.t * 9 + A.ph) * 0.6 : 0.05; for (const w of A.wings) w.pv.rotation.z = w.s * flap;
 };
 
 /* ---- js/09_audio.js ---- */
@@ -29654,7 +30047,7 @@ function step(dt) {
   if (Drag.on) { Drag.update(dt); carFx(dt); return; }
   if (Derby.on) { Derby.update(dt); carFx(dt); return; }   /* and the derby bowl */   /* so is the drag strip */   /* the stage is its own little world: no traffic, people, police or missions */
   /* world */
-  if (!(Fly.on && Fly.agl > 25)) { updateTraffic(dt); updatePeds(dt); } Police.update(dt); if (Foot.on) Foot.scan(); Fly.scan(); Boat.scan(dt); if (!Rally.on && !Derby.on && !Drag.on) { Rail.update(dt); Heist.update(dt); Surf.update(dt); Surf.visual(dt, App.time); Dunes.update(dt); Volc.update(dt); } Talk.tick(dt); Rel.tick(dt); Home.tick(dt); Shop.tick(); Wk.tick(); Ven.tick(); Bld.tick(); Race.tick(); Race.update(dt); Jack.tick(dt); Fare.tick(dt); Court.tick(dt); updateMission(dt); Story.tick(dt); VM.update(dt); updateGPS(dt);
+  if (!(Fly.on && Fly.agl > 25)) { updateTraffic(dt); updatePeds(dt); } Police.update(dt); if (Foot.on) Foot.scan(); Fly.scan(); Boat.scan(dt); if (!Rally.on && !Derby.on && !Drag.on) { Rail.update(dt); Heist.update(dt); Surf.update(dt); Surf.visual(dt, App.time); Dunes.update(dt); Volc.update(dt); Wild.update(dt); } Talk.tick(dt); Rel.tick(dt); Home.tick(dt); Shop.tick(); Wk.tick(); Ven.tick(); Bld.tick(); Race.tick(); Race.update(dt); Jack.tick(dt); Fare.tick(dt); Court.tick(dt); updateMission(dt); Story.tick(dt); VM.update(dt); updateGPS(dt);
   if (Waypoint.on && !Mi && Math.hypot(Waypoint.x - Pl.x, Waypoint.z - Pl.z) < 28) { Waypoint.on = false; GPS.t = 0; UI.toast('Destination reached', 'good'); }
   carFx(dt);
 }
@@ -29734,7 +30127,7 @@ async function boot() {
     UI.progress(0.15, 'Starting graphics'); await tick();
     Q = QUAL[save.set.quality] || QUAL.high;
     initRenderer(E.gl); initMaterials(); makeCarMats(); initTreeSources(); initSky(); initLights(); initEnv(); initCarMats(); Env.reg(MAT.paintPlayer); Env.refresh(); initMirror(); initParticles();
-    scene.add(Chunks.group); buildFarWorld(); scene.add(Far.group); initMarkers(); Shop.initMarkers(); Ven.initMarkers(); Air.build(); Wk.initMarkers(); Dock.build(); Track.build(); Rail.build(); Heist.setup(); Surf.setup(); Dunes.setup(); Volc.build(); Fly.init(); Boat.init(); VM.init(); buildPlayer(); Home.build(); Home.apply(); Home.refresh();
+    scene.add(Chunks.group); buildFarWorld(); scene.add(Far.group); initMarkers(); Shop.initMarkers(); Ven.initMarkers(); Air.build(); Wk.initMarkers(); Dock.build(); Track.build(); Rail.build(); Heist.setup(); Surf.setup(); Dunes.setup(); Volc.build(); Wild.init(); Fly.init(); Boat.init(); VM.init(); buildPlayer(); Home.build(); Home.apply(); Home.refresh();
     applyQuality(); window.addEventListener('resize', () => { resizeRenderer(); });
     UI.progress(0.25, 'Finding the start line'); await tick();
     const T = towns[0]; findNearestRoadPoint(T.cx, T.cz, _np2);
@@ -29756,7 +30149,7 @@ async function boot() {
     console.error(err); E.loadmsg.textContent = 'Could not start the 3D view: ' + (err && err.message ? err.message : err); window.__bootError = String(err && err.stack || err);
   }
 }
-window.__game = { get scene() { return scene; }, BV, bvStyle, Cockpit, ckThemeOf, Story, STORY, SIDE, Phone, Cut, PLAY_MODE, endMission, Volc, VOLC, VOL, volcLift, volcLakeY, DEV_PLACES, Int, Bld, INT_KINDS, Jail, intSave, BankJob, KIT, kitDef, kitParts, kitDefault, HEIST_PRIZES, Part, L, Surf, Dunes, Rail, Beach, Heist, Wanted, GAR, terrainHeight, NR, Derby, DD, applyCar, buildCarModel, CAR_BY_ID, Env, get renderer() { return renderer; }, writePeds, Cam, Human, HU, Peds, Foot, Setup, TU, TU_PRESETS, CARS, CARP, tune, Drag, DG, DG_TIERS, Rally, RR, RY, RY_STAGES, RYG, RW, RY_FEATS, WK, Wk, WkF, WKSim, WKG, WKS, WkE, qfromAxes3, Dmg, Mech, RACE_DIFF, Wreck, Jack, JACK_MODELS, Race, Bots, Crash, newCarState, Track, TRK, Col, COLK, Ven, VDEF, CDEF, venSave, VM, VMD, VMK, towns, roads, Dock, MARINA, Boat, Boats, BSPEC, HB, solidHit, TREE, Air, AIR, Fly, Planes, PSPEC, Rel, REL_ROSTER, Shop, COS, Cosm, Biome, Weather, REG, Bust, CR, Fight, Police, Wanted, WANT, footBlockedAt, findNearestRoadPoint, Tow, GAR, Home, GP, Foot, Talk, Fare, Pl, pedHit, getMoney: () => save.money, get save() { return save; }, getLaw: () => save.law, Court, CR, Peds, pedSpawn, Dyn, abortMission, stepSim: step, frame, Env, Wheels, updateWheels, updateCamera, groundAt, buildCarModel, carSpec, TRAFFIC_DEFS, secAt, disposeCar, THREE_: THREE, TREE, GB, addTree, addGrass, terrainHeight, fbm, noise2, sstep, Dev, devReset, CARS, CAR_BY_ID, applyCar, stepCar, CARP, roads, loadAround, carThumb, car, App, UI, Chunks, Post, Cam, Keys, missions, towns, spawnAt, get Mi() { return Mi; }, startMission, applyQuality, get renderer() { return renderer; }, get scene() { return scene; }, get camera() { return camera; }, Snd, WorldMap, MView, Mirror, MAT, Cockpit, Q: () => Q, hasPost: () => hasPost, key(code, down) { Keys[code] = down; if (down) onKey(code); }, tune };
+window.__game = { get scene() { return scene; }, BV, bvStyle, Wild, WILD_KINDS, Casino, csVal, csSlotPay, csRouletteWin, Cockpit, ckThemeOf, Story, STORY, SIDE, Phone, Cut, PLAY_MODE, endMission, Volc, VOLC, VOL, volcLift, volcLakeY, DEV_PLACES, Int, Bld, INT_KINDS, Jail, intSave, BankJob, KIT, kitDef, kitParts, kitDefault, HEIST_PRIZES, Part, L, Surf, Dunes, Rail, Beach, Heist, Wanted, GAR, terrainHeight, NR, Derby, DD, applyCar, buildCarModel, CAR_BY_ID, Env, get renderer() { return renderer; }, writePeds, Cam, Human, HU, Peds, Foot, Setup, TU, TU_PRESETS, CARS, CARP, tune, Drag, DG, DG_TIERS, Rally, RR, RY, RY_STAGES, RYG, RW, RY_FEATS, WK, Wk, WkF, WKSim, WKG, WKS, WkE, qfromAxes3, Dmg, Mech, RACE_DIFF, Wreck, Jack, JACK_MODELS, Race, Bots, Crash, newCarState, Track, TRK, Col, COLK, Ven, VDEF, CDEF, venSave, VM, VMD, VMK, towns, roads, Dock, MARINA, Boat, Boats, BSPEC, HB, solidHit, TREE, Air, AIR, Fly, Planes, PSPEC, Rel, REL_ROSTER, Shop, COS, Cosm, Biome, Weather, REG, Bust, CR, Fight, Police, Wanted, WANT, footBlockedAt, findNearestRoadPoint, Tow, GAR, Home, GP, Foot, Talk, Fare, Pl, pedHit, getMoney: () => save.money, get save() { return save; }, getLaw: () => save.law, Court, CR, Peds, pedSpawn, Dyn, abortMission, stepSim: step, frame, Env, Wheels, updateWheels, updateCamera, groundAt, buildCarModel, carSpec, TRAFFIC_DEFS, secAt, disposeCar, THREE_: THREE, TREE, GB, addTree, addGrass, terrainHeight, fbm, noise2, sstep, Dev, devReset, CARS, CAR_BY_ID, applyCar, stepCar, CARP, roads, loadAround, carThumb, car, App, UI, Chunks, Post, Cam, Keys, missions, towns, spawnAt, get Mi() { return Mi; }, startMission, applyQuality, get renderer() { return renderer; }, get scene() { return scene; }, get camera() { return camera; }, Snd, WorldMap, MView, Mirror, MAT, Cockpit, Q: () => Q, hasPost: () => hasPost, key(code, down) { Keys[code] = down; if (down) onKey(code); }, tune };
 boot();
 
 })();
