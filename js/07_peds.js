@@ -316,6 +316,7 @@ function pedPose(p, time, dt, hideHead, far) {
   /* knocked down: the ragdoll has the body */
   if (st === 'down') {
     if (!h.rag) Human.ragStart(h, (p.avatar ? Foot.vx : p.vx) || 0, (p.avatar ? Foot.vy : p.vy) || 2.5, (p.avatar ? Foot.vz : p.vz) || 0, h.gy - 0.02);
+    if (p.avatar && h.rag && !h.rag.gf) footRag(h.rag);   /* you: real ground, walls, and a long slide when thrown from a vehicle (07_foot.js) */
     Human.ragStep(h, dt); Human.ragApply(h); const R = h.rag;
     if (!p.avatar) { p.x = (R.p[0].x + R.p[1].x) / 2; p.z = (R.p[0].z + R.p[1].z) / 2; }
     b.head.scale.setScalar(hideHead ? 0.001 : a.hs || 1); b.lidL.quaternion.setFromAxisAngle(HU_LAX[0], h.lidA); b.lidR.quaternion.setFromAxisAngle(HU_LAX[1], h.lidA); b.jaw.rotation.x = 0.06; if (!far) Human.physics(h, dt); return;

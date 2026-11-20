@@ -194,8 +194,8 @@ const CARS = [
   /* an original design: a naked sport bike. The car physics on a narrow track; drawn on two wheels and leaning into corners (06_moto.js) */
   { id: 'moto', name: 'Viper 600', cls: 'Motorcycle', price: 2800, paint: 1, dy: 0.47, snd: { f: 1.5, lp: 1.7 }, dial: 280,
     blurb: 'A naked sport bike: a screaming inline four, a twin-spar frame and next to no weight. It leans into the bends, squeezes through traffic and is the quickest thing off the line on the island. Nothing between you and the road, though: crash it and you go over the bars.',
-    p: { m: 270, a: 0.72, b: 0.72, Iz: 150, rw: 0.31, fd: 7.0, gears: [2.6, 1.9, 1.5, 1.25, 1.08, 0.96], idle: 1300, red: 11800, track: 0.9, cgh: 0.55, rd: 0, rsf: 0.62, cf: 10.5, cr: 11.5 },
-    t: { Tmax: 50, mu: 1.14, cd: 0.3, brk: 1.1, off: 0.7, cl: 0 },
+    p: { m: 270, a: 0.72, b: 0.72, Iz: 150, rw: 0.31, fd: 7.0, gears: [2.6, 1.9, 1.5, 1.25, 1.08, 0.96], idle: 1300, red: 11800, track: 0.9, cgh: 0.55, rd: 0.95, rsf: 0.62, cf: 10.5, cr: 11.5 },
+    t: { Tmax: 50, mu: 1.2, cd: 0.3, brk: 1.1, off: 0.7, cl: 0 },
     stats: { spd: 8, acc: 9, hdl: 7, off: 2 },
     body: { susp: 0.06, L: 2.1, W: 0.36, H: 0.4, C: 0.5, wr: 0.31, y0: 0.5, tw: 0.13, rim: [0.12, 0.12, 0.13], rimStyle: 'five', tire: 'sport', custom: 'moto' } }
 ];

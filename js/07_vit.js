@@ -120,7 +120,7 @@ Vit.bail = function (impact) {
   F.vx = c.vx * 0.85 + co * -kick * 2.2; F.vz = c.vz * 0.85 - s * -kick * 2.2; F.vy = 2 + Math.min(4, sp * 0.06);
   F.state = 'down'; F.downT = 0; F.air = true; F.speed = 0; F.dip = 0; F.hitCool = 3;
   P.air = true; P.t = 0; P.tilt = 0; P.spin = (Math.random() < 0.5 ? -1 : 1) * (4 + Math.min(8, sp * 0.15));
-  F.prevView = Cam.view; F.tp = Cam.view === 2; F.yaw = c.yaw; F.body = c.yaw; F.pitch = 0; F.camD = 3.4; Cam.lookYaw = Cam.lookPitch = 0;
+  F.prevView = Cam.view; F.tpWas = Cam.view === 2; F.tp = true;   /* watch yourself tumble; your view comes back when you get up */ F.yaw = c.yaw; F.body = c.yaw; F.pitch = 0; F.camD = 3.4; Cam.lookYaw = Cam.lookPitch = 0;
   c.thr = c.brk = 0; c.hand = 0; c.nit = false; c.steerIn = 0; Vit.bailT = 6;   /* the vehicle rolls on by itself (Foot.parkCar) */
   if (bike) Moto.fallen = kick;
   const kmh = Math.round(sp * 3.6), dmg = sp < 3 ? 0 : Math.min(96, 4 + sp * 1.55 + (impact ? 10 : 0));

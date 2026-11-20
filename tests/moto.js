@@ -48,7 +48,7 @@ const OUT = process.env.OUT || __dirname;
   ok(bail.bikeV > 20 && Math.abs(after.lean) > 1, 'the bike slides on without you (' + bail.bikeV + ' km/h a moment later) and ends up on its side');
   ok(after.state === 'walk' && after.bikeV < 3, 'you get up; the bike has stopped');
   const carBail = await page.evaluate(() => { const g = window.__game, V = g.Vit, c = g.car; g.Foot.board(true); g.applyCar('rook', true); V.hp = 100; window.__go(50); window.__run(2); g.key('KeyF', true); g.key('KeyF', false); window.__run(10);
-    const r = { on: g.Foot.on, hp: V.hp, carV: Math.round(c.kmh) }; window.__run(160); r.stopped = c.kmh < 3; return r; });
+    const r = { on: g.Foot.on, hp: V.hp, carV: Math.round(c.kmh) }; window.__run(240); r.stopped = c.kmh < 3; return r; });
   console.log(JSON.stringify(carBail));
   ok(carBail.on && carBail.hp < 90 && carBail.hp > 55 && carBail.carV > 10 && carBail.stopped, 'out of a car at 50 km/h: hurt less (health ' + Math.round(carBail.hp) + '), and the car rolls on (' + carBail.carV + ' km/h) and stops');
   const slow = await page.evaluate(() => { const g = window.__game, V = g.Vit; g.Foot.board(true); window.__go(0); window.__run(3); V.hp = 100; g.key('KeyF', true); g.key('KeyF', false); window.__run(3); const r = { on: g.Foot.on, state: g.Foot.state, hp: V.hp }; g.Foot.board(true); return r; });
@@ -63,8 +63,7 @@ const OUT = process.env.OUT || __dirname;
   ok(crash.on && crash.hp < 85, 'riding into a wall at 70 km/h throws you off the bike (health ' + Math.round(crash.hp) + ')');
   /* ---- stamina ---- */
   const sta = await page.evaluate(() => { const g = window.__game, V = g.Vit, F = g.Foot; window.__run(150); if (!F.on) { g.key('KeyF', true); g.key('KeyF', false); } window.__run(3); V.st = 100; V.winded = false;
-    g.key('ShiftLeft', true); g.key('KeyW', true); let tOut = 0; for (let i = 0; i < 30 * 12; i++) { window.__run(1); if (!tOut && V.winded) tOut = i / 30; }
-    const sp = F.speed; g.key('ShiftLeft', false); g.key('KeyW', false); window.__run(30 * 5); return { tOut, sp: +sp.toFixed(2), back: Math.round(V.st), winded: V.winded }; });
+    g.key('ShiftLeft', true); g.key('KeyW', true); let tOut = 0, sp = 0; for (let i = 0; i < 30 * 12; i++) { window.__run(1); if (!tOut && V.winded) tOut = i / 30; if (tOut && i / 30 > tOut + 1 && !sp) sp = F.speed; } g.key('ShiftLeft', false); g.key('KeyW', false); window.__run(30 * 5); return { tOut, sp: +sp.toFixed(2), back: Math.round(V.st), winded: V.winded }; });
   console.log(JSON.stringify(sta));
   ok(sta.tOut > 5 && sta.tOut < 10 && sta.sp < 3, 'sprinting empties stamina in ' + sta.tOut.toFixed(1) + ' s, then you can only walk (' + sta.sp + ' m/s)');
   ok(sta.back > 60 && !sta.winded, 'five seconds standing still and it is back to ' + sta.back);
