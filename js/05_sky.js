@@ -146,7 +146,7 @@ function updateEnvironment(tod, focus, time) {
   MAT.sky.uniforms.uTime.value = time; MAT.sky.uniforms.uDay.value = env.day; MAT.sky.uniforms.uNight.value = env.night;
   MAT.water.uniforms.uTime.value = time; MAT.water.uniforms.uDay.value = env.day; MAT.water.uniforms.uNight.value = env.night;
   MAT.water.uniforms.uDeep.value.copy(_deepDay).lerp(_deepNight, env.night); MAT.water.uniforms.uShallow.value.copy(_shDay).lerp(_shNight, env.night);
-  MAT.build.emissiveIntensity = env.lampOn * 1.6;
+  MAT.build.emissiveIntensity = env.lampOn * 1.6; bvNight(env.lampOn);
   MAT.lamp.color.setRGB(0.25 + 4.5 * env.lampOn, 0.23 + 3.6 * env.lampOn, 0.2 + 2.2 * env.lampOn);
   MAT.pool.opacity = env.lampOn * 0.55;
   Sky.mesh.position.copy(camera.position);

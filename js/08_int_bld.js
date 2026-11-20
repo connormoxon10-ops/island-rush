@@ -124,12 +124,7 @@ Bld.dress = function (ch, rec, gbP, R) {
     const col = rec.special ? lc(BLD_ICO[rec.kind] ? BLD_ICO[rec.kind][1] : 0x4a6a8a) : lc([0xc8302a, 0x2a6a4a, 0x2a4a8a, 0xd89a2a, 0x6a2a6a, 0x2a8a8a][rec.seed % 6]);
     for (let k = 0; k < 6; k++) B(x - dw - 0.9 + k * (2 * dw + 1.8) / 6, g0 + dh + 0.35, z + n * 0.1, x - dw - 0.9 + (k + 1) * (2 * dw + 1.8) / 6, g0 + dh + 0.45, z + n * 1.3, k % 2 ? col : lc(0xf2efe6), 1);
   }
-  if (shop || rec.special) {
-    const W = Math.min(rec.W - 2, Math.max(6, rec.name.length * 0.62)), H = 1.15, yy = g0 + dh + (shop && rec.kind !== 'office' ? 1.35 : 0.9);
-    const key = rec.name + '|' + rec.kind; let mat = Bld.sigMat.get(key);
-    if (!mat) { const ic = BLD_ICO[rec.kind], fg = rec.special && ic ? _hexCss(ic[1]) : '#f4f0e6'; mat = new THREE.MeshBasicMaterial({ map: ikText(rec.name.toUpperCase(), { w: 1024, h: 160, fg, bg: '#101318', bar: rec.special && ic ? _hexCss(ic[1]) : null }), color: new THREE.Color(1.2, 1.2, 1.2) }); Bld.sigMat.set(key, mat); }
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(W, H), mat); m.position.set(x - ch.x0, yy, z + n * 0.14 - ch.z0); m.rotation.y = n > 0 ? 0 : Math.PI; ch.group.add(m);
-  }
+  if (shop || rec.special) bvSign(ch, rec, x, z, n, g0, dh, dw, shop, gbP);   /* neon, painted boards, blade and OPEN signs (04_bvar.js) */
 };
 
 /* ---------- the door in reach ---------- */
