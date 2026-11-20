@@ -141,6 +141,12 @@ Vit.deadStep = function (dt) {
   if (Vit.deadT > 3.4) Vit.wake();
 };
 Vit.wake = function () {
+  /* a hospital: the car brought round outside, you in a bed on the ward, the doctor, the tests (08_int_zhosp.js) */
+  Vit.dead = false; Vit.hp = 70; Vit.st = 100; Vit.winded = false; Vit.food = Math.max(Vit.food, 45); Vit.water = Math.max(Vit.water, 45); Vit.drunk = 0; Vit.hurtT = 0; Moto.fallen = 0; Vit.store();
+  if (Hosp.admit(Vit.why)) { if (Vit.black) Vit.black.style.transition = 'opacity 1.5s'; return; }
+  Vit.wakeStreet();
+};
+Vit.wakeStreet = function () {
   let T = towns[0], bd = 1e18; for (const t of towns) { const d = (t.cx - Pl.x) ** 2 + (t.cz - Pl.z) ** 2; if (d < bd) { bd = d; T = t; } }
   const fee = Math.min(save.money, 250);
   if (findNearestRoadPoint(T.cx + T.cell * 0.5, T.cz + T.cell * 0.5, _np2)) { const yaw = Math.atan2(_np2.tx, _np2.tz); loadAround(_np2.x, _np2.z, 12); spawnAt(_np2.x, _np2.z, yaw); }

@@ -7,24 +7,24 @@
 const Bld = { lots: new Map(), plans: new Map(), near: null, sites: [], sigMat: new Map() };
 /* specials by town (order follows REG: harbor, desert, farm, tropic, alpine, lake, city) */
 const BLD_SPECIAL = [
-  ['bank', 'apts', 'gym', 'dealer', 'resto', 'resto', 'clothes'],
-  ['bank', 'apts', 'dealer', 'kitlab', 'resto', 'clothes'],
-  ['apts', 'resto', 'clothes'],
-  ['apts', 'gym', 'pool', 'resto', 'resto', 'clothes'],
-  ['apts', 'pool', 'resto', 'clothes'],
-  ['bank', 'apts', 'gym', 'pool', 'kitlab', 'resto', 'clothes'],
-  ['reserve', 'bank', 'jail', 'casino', 'apts', 'apts', 'gym', 'pool', 'dealer', 'kitlab', 'resto', 'resto', 'clothes', 'clothes'],
+  ['bank', 'apts', 'gym', 'dealer', 'resto', 'resto', 'clothes', 'hospital'],
+  ['bank', 'apts', 'dealer', 'kitlab', 'resto', 'clothes', 'hospital'],
+  ['apts', 'resto', 'clothes', 'hospital'],
+  ['apts', 'gym', 'pool', 'resto', 'resto', 'clothes', 'hospital'],
+  ['apts', 'pool', 'resto', 'clothes', 'hospital'],
+  ['bank', 'apts', 'gym', 'pool', 'kitlab', 'resto', 'clothes', 'hospital'],
+  ['reserve', 'bank', 'jail', 'casino', 'apts', 'apts', 'gym', 'pool', 'dealer', 'kitlab', 'resto', 'resto', 'clothes', 'clothes', 'hospital'],
   /* the outer ring: Bayou Hollow, Ashfall, Sundown Plains, Vellano, Frostholm, Verdance, Neo Haven */
-  ['apts', 'resto', 'clothes'],
-  ['bank', 'apts', 'gym', 'resto', 'clothes'],
-  ['apts', 'dealer', 'resto', 'clothes'],
-  ['bank', 'apts', 'resto', 'resto', 'clothes'],
-  ['apts', 'gym', 'pool', 'resto', 'clothes'],
-  ['apts', 'kitlab', 'resto', 'clothes'],
-  ['bank', 'bank', 'casino', 'apts', 'apts', 'apts', 'gym', 'pool', 'dealer', 'kitlab', 'resto', 'resto', 'resto', 'clothes', 'clothes']
+  ['apts', 'resto', 'clothes', 'hospital'],
+  ['bank', 'apts', 'gym', 'resto', 'clothes', 'hospital'],
+  ['apts', 'dealer', 'resto', 'clothes', 'hospital'],
+  ['bank', 'apts', 'resto', 'resto', 'clothes', 'hospital'],
+  ['apts', 'gym', 'pool', 'resto', 'clothes', 'hospital'],
+  ['apts', 'kitlab', 'resto', 'clothes', 'hospital'],
+  ['bank', 'bank', 'casino', 'apts', 'apts', 'apts', 'gym', 'pool', 'dealer', 'kitlab', 'resto', 'resto', 'resto', 'clothes', 'clothes', 'hospital']
 ];
 /* names for the outer ring's specials: the town's name and a word */
-const BLD_TAIL = { casino: ['Casino'], bank: ['Savings Bank', 'Trust & Loan', 'Credit Bank'], apts: ['Residences', 'Heights', 'Lofts'], gym: ['Fitness'], pool: ['Swim Centre'], dealer: ['Motors'], kitlab: ['Custom Works'], resto: ['Grill', 'Kitchen', 'Diner'], clothes: ['Outfitters', 'Boutique'] };
+const BLD_TAIL = { hospital: ['General Hospital'], casino: ['Casino'], bank: ['Savings Bank', 'Trust & Loan', 'Credit Bank'], apts: ['Residences', 'Heights', 'Lofts'], gym: ['Fitness'], pool: ['Swim Centre'], dealer: ['Motors'], kitlab: ['Custom Works'], resto: ['Grill', 'Kitchen', 'Diner'], clothes: ['Outfitters', 'Boutique'] };
 const BLD_NAMES = {
   casino: ['', '', '', '', '', '', 'The Golden Ace', '', '', '', '', '', '', 'Neon Palace Casino'],
   bank: ['Harbor Trust Bank', 'Mesa Savings & Loan', '', '', '', 'Lakeshore Credit Union', 'First Fairhaven Bank'], reserve: ['', '', '', '', '', '', 'Island Reserve Bank'],
@@ -36,8 +36,8 @@ const BLD_NAMES = {
   resto: [['The Salty Crab', 'Dockside Fish & Chips'], ['Cantina Roja'], ['Harvest Table'], ['Tiki Shack', 'Coral Grill'], ['Fondue Haus'], ['Lakeside Grill'], ['Kaito Sushi', 'Bistro Lumière']],
   clothes: [['Deckhand Outfitters'], ['Trail & Turquoise'], ['Barnyard Threads'], ['Sun & Sand Boutique'], ['Peak Outfitters'], ['Timberline Wear'], ['Maison Fairhaven', 'Uptown Threads']]
 };
-const BLD_ICO = { casino: ['🎰', 0xff3ad8], bank: ['🏦', 0x3fbf6a], reserve: ['🏦', 0xffd23a], apts: ['🏢', 0x8aa8ff], gym: ['🏋', 0xff7a3a], pool: ['🏊', 0x3ac8ff], dealer: ['🚗', 0xff4a6a], kitlab: ['🔧', 0x4be08a], jail: ['⛓', 0x9a9aa6], resto: ['🍽', 0xffb23a], clothes: ['👕', 0xd07aff] };
-const BLD_SUB = { casino: 'Casino · slots, roulette, blackjack', bank: 'Bank', reserve: 'Bank · the island’s main vault', apts: 'Apartments · rooms for sale', gym: 'Gym', pool: 'Indoor pool', dealer: 'Car dealership', kitlab: 'Custom car workshop · build your own car', jail: 'County jail & police', resto: 'Restaurant', clothes: 'Clothing' };
+const BLD_ICO = { hospital: ['🏥', 0xff5a6a], casino: ['🎰', 0xff3ad8], bank: ['🏦', 0x3fbf6a], reserve: ['🏦', 0xffd23a], apts: ['🏢', 0x8aa8ff], gym: ['🏋', 0xff7a3a], pool: ['🏊', 0x3ac8ff], dealer: ['🚗', 0xff4a6a], kitlab: ['🔧', 0x4be08a], jail: ['⛓', 0x9a9aa6], resto: ['🍽', 0xffb23a], clothes: ['👕', 0xd07aff] };
+const BLD_SUB = { hospital: 'Hospital · doctors, the ward, rehab games', casino: 'Casino · slots, roulette, blackjack', bank: 'Bank', reserve: 'Bank · the island’s main vault', apts: 'Apartments · rooms for sale', gym: 'Gym', pool: 'Indoor pool', dealer: 'Car dealership', kitlab: 'Custom car workshop · build your own car', jail: 'County jail & police', resto: 'Restaurant', clothes: 'Clothing' };
 /* generic kinds: name lists, signs */
 const BLD_GEN = {
   office: { names: ['Harbourview House', 'Atlas Building', 'One Market Place', 'Sterling Tower', 'Northgate Plaza', 'Corwin & Vale', 'The Exchange', 'Pinnacle House'], sub: 'Offices', sign: false },
