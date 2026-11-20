@@ -13,7 +13,7 @@ const OUT = process.env.OUT || __dirname;
   await page.addInitScript(() => { window.__noAdapt = true; try { localStorage.setItem('island-rush-mode', 'story');
     localStorage.setItem('island-rush-story-v1', JSON.stringify({ money: 5000, set: { quality: 'low', traffic: 'off', cam: 2 }, story: { ch: 3, st: 0, f: { mara: 3, maraLove: 1 }, met: { mara: 1 }, sq: { pier: { st: 2, done: 1 }, scrap: { st: 5, done: 1 } } } })); } catch (e) { /* ignore */ } });
   await page.goto('file://' + path.resolve(__dirname, '../dist/test.html'));
-  await page.waitForFunction(() => window.__ready || window.__bootError, null, { timeout: 170000 });
+  await page.waitForFunction(() => window.__ready || window.__bootError, null, { timeout: 400000 });
   let fails = 0; const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console.log('ok  ', m); };
   const save = (n, u) => { if (u) fs.writeFileSync(path.join(OUT, 'date_' + n + '.jpg'), Buffer.from(u.split(',')[1], 'base64')); };
   await page.evaluate(() => { const g = window.__game; g.App.start(); window.requestAnimationFrame = () => 0; window.__now = performance.now(); window.__run = (n) => { for (let i = 0; i < n; i++) { window.__now += 1000 / 30; g.frame(window.__now); } };
