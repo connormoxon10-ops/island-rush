@@ -164,6 +164,7 @@ function initMaterials() {
   MAT.pool = new THREE.MeshBasicMaterial({ map: radialTex(64, 'rgba(255,214,150,1)', 'rgba(255,214,150,0)'), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -5, polygonOffsetUnits: -5 });
   MAT.beam = beamTex();
   MAT.glow = radialTex(64, 'rgba(255,255,255,1)', 'rgba(255,255,255,0)');
+  bvInitMats();   /* the other facade styles, neon (04_bvar.js) */
 }
 
 /* ---------------- geometry builder (merged static meshes) ---------------- */
