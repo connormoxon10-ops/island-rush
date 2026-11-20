@@ -151,7 +151,8 @@ Foot.step = function (dt) {
   /* knocked down: ragdoll-lite, then get up */
   if (F.state === 'down' || F.state === 'rise') {
     F.downT += dt; P.t = F.downT;
-    const R = F.state === 'down' ? Foot.rag() : null;
+    let R = F.state === 'down' ? Foot.rag() : null;
+    if (R && Math.hypot((R.p[0].x + R.p[1].x) / 2 - F.x, (R.p[0].z + R.p[1].z) / 2 - F.z) > 6 + Math.hypot(F.vx, F.vz) * 0.5 && F.downT < 0.2) { Foot.ped.hu.rag = null; R = null; }   /* a body that starts somewhere else is not yours: start it again here */
     if (R) {   /* the ragdoll has you: follow it, and get up once it has come to rest */
       R.fr = Math.min(0.22, R.fr0 + F.downT * 0.06);
       F.x = (R.p[0].x + R.p[1].x) / 2; F.z = (R.p[0].z + R.p[1].z) / 2; groundAt(F.x, F.z, _fg); F.y = _fg.h; F.vx = F.vz = 0; P.air = false;

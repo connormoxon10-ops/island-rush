@@ -315,6 +315,7 @@ function pedPose(p, time, dt, hideHead, far) {
   const a = p.app, h = pedHuman(p), b = h.b, s = a.s, st = p.state, sd = p.seed, pers = p.pers, mood = pers ? pers.mood : ''; h.seen = HU.frame; Human.lod(h, far);
   /* knocked down: the ragdoll has the body */
   if (st === 'down') {
+    if (!h.rag) { h.root.position.set(p.x, p.y, p.z); h.root.rotation.set(0, p.yaw || 0, 0); h.gy = p.y; }   /* start the body where the person is (yours may just have been made, at the middle of the map) */
     if (!h.rag) Human.ragStart(h, (p.avatar ? Foot.vx : p.vx) || 0, (p.avatar ? Foot.vy : p.vy) || 2.5, (p.avatar ? Foot.vz : p.vz) || 0, h.gy - 0.02);
     if (p.avatar && h.rag && !h.rag.gf) footRag(h.rag);   /* you: real ground, walls, and a long slide when thrown from a vehicle (07_foot.js) */
     Human.ragStep(h, dt); Human.ragApply(h); const R = h.rag;

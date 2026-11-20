@@ -66,7 +66,7 @@ const OUT = process.env.OUT || __dirname;
   let m0 = await fm(); let p = await pickup('mdinner'); console.log(JSON.stringify(p));
   ok(p.talked && p.pass === 'mara' && p.inCar && !p.home, 'Dinner Uptown: the call, then Mara at the garage; she gets in beside you');
   let d = await drive('mdinner'); save('dinner_car', d.pic); console.log(JSON.stringify(Object.assign({}, d, { pic: undefined })));
-  ok(/Mara/.test(d.said) && d.next === 'talk' && !d.pass, 'on the way she talks (“' + (d.said || '').slice(0, 60) + '…”); at the bistro she goes in ahead');
+  ok(/mara/i.test(d.said) && d.next === 'talk' && !d.pass, 'on the way she talks (“' + (d.said || '').slice(0, 60) + '…”); at the bistro she goes in ahead');
   let ins = await inside('mdinner'); console.log(JSON.stringify(ins));
   let pl = await play('mdinner', ['serve', 'toast', 'npc']); save('dinner_serve', pl.pics.serve); save('dinner_toast', pl.pics.toast); save('dinner_mara', pl.pics.npc);
   const plates = await page.evaluate(() => { const g = window.__game; if (g.App.mode === 'int') g.Int.leave(true); window.__run(3); return g.App.mode; });

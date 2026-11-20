@@ -9627,7 +9627,8 @@ Foot.step = function (dt) {
   /* knocked down: ragdoll-lite, then get up */
   if (F.state === 'down' || F.state === 'rise') {
     F.downT += dt; P.t = F.downT;
-    const R = F.state === 'down' ? Foot.rag() : null;
+    let R = F.state === 'down' ? Foot.rag() : null;
+    if (R && Math.hypot((R.p[0].x + R.p[1].x) / 2 - F.x, (R.p[0].z + R.p[1].z) / 2 - F.z) > 6 + Math.hypot(F.vx, F.vz) * 0.5 && F.downT < 0.2) { Foot.ped.hu.rag = null; R = null; }   /* a body that starts somewhere else is not yours: start it again here */
     if (R) {   /* the ragdoll has you: follow it, and get up once it has come to rest */
       R.fr = Math.min(0.22, R.fr0 + F.downT * 0.06);
       F.x = (R.p[0].x + R.p[1].x) / 2; F.z = (R.p[0].z + R.p[1].z) / 2; groundAt(F.x, F.z, _fg); F.y = _fg.h; F.vx = F.vz = 0; P.air = false;
@@ -10651,6 +10652,7 @@ function pedPose(p, time, dt, hideHead, far) {
   const a = p.app, h = pedHuman(p), b = h.b, s = a.s, st = p.state, sd = p.seed, pers = p.pers, mood = pers ? pers.mood : ''; h.seen = HU.frame; Human.lod(h, far);
   /* knocked down: the ragdoll has the body */
   if (st === 'down') {
+    if (!h.rag) { h.root.position.set(p.x, p.y, p.z); h.root.rotation.set(0, p.yaw || 0, 0); h.gy = p.y; }   /* start the body where the person is (yours may just have been made, at the middle of the map) */
     if (!h.rag) Human.ragStart(h, (p.avatar ? Foot.vx : p.vx) || 0, (p.avatar ? Foot.vy : p.vy) || 2.5, (p.avatar ? Foot.vz : p.vz) || 0, h.gy - 0.02);
     if (p.avatar && h.rag && !h.rag.gf) footRag(h.rag);   /* you: real ground, walls, and a long slide when thrown from a vehicle (07_foot.js) */
     Human.ragStep(h, dt); Human.ragApply(h); const R = h.rag;
