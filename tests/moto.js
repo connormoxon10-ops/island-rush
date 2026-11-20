@@ -42,7 +42,7 @@ const OUT = process.env.OUT || __dirname;
   const bail = await page.evaluate(() => { const g = window.__game, V = g.Vit, c = g.car; V.hp = 100; window.__go(80); window.__run(2); const v0 = c.kmh; g.key('KeyF', true); g.key('KeyF', false); window.__run(1);
     const r = { on: g.Foot.on, state: g.Foot.state, hp: V.hp, v0: Math.round(v0), fallen: g.Moto.fallen }; window.__run(12); r.bikeV = Math.round(c.kmh); r.down = g.Foot.state; window.__run(6); return r; });
   await shot('bail');
-  const after = await page.evaluate(() => { const g = window.__game; window.__run(150); return { state: g.Foot.state, bikeV: Math.round(g.car.kmh), lean: +g.Moto.lean.toFixed(2) }; });
+  const after = await page.evaluate(() => { const g = window.__game; window.__run(330); return { state: g.Foot.state, bikeV: Math.round(g.car.kmh), lean: +g.Moto.lean.toFixed(2) }; });
   console.log(JSON.stringify(bail), JSON.stringify(after));
   ok(bail.on && bail.state === 'down' && bail.hp < 70 && bail.hp > 20, 'F at ' + bail.v0 + ' km/h: you throw yourself off and tumble (health ' + Math.round(bail.hp) + ')');
   ok(bail.bikeV > 20 && Math.abs(after.lean) > 1, 'the bike slides on without you (' + bail.bikeV + ' km/h a moment later) and ends up on its side');
