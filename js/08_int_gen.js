@@ -12,7 +12,7 @@ function intBuy(price, what, fx, line) {
   if (save.money < price) { Int.say('You need ' + money(price)); Snd.beep(200, 0.08); return false; }
   save.money -= price; if (fx) fx(); writeSave(); Snd.beep(660, 0.06); Int.say((line || 'Bought: ' + what) + ' · −' + money(price)); return true;
 }
-const intMeal = () => { intBuzz(5); car.health = Math.min(100, car.health + 25); car.nitro = tune.nitroMax; intSave().meals = (intSave().meals || 0) + 1; };
+const intMeal = () => { Vit.eat(65, 20); intBuzz(5); car.health = Math.min(100, car.health + 25); car.nitro = tune.nitroMax; intSave().meals = (intSave().meals || 0) + 1; };
 function intRunK() { const s = save.int; if (!s) return 1; return 1 + (s.fit || 0) * 0.0015 + ((s.buzz || 0) > App.time ? 0.12 : 0); }
 /* staff in a uniform, customers in their own clothes */
 function intStaff(K, x, z, yaw, col, o) { return K.person(Object.assign({ x, z, yaw, shirt: col, pants: 0x1c1e24, face: true, role: 'staff' }, o || {})); }
@@ -45,7 +45,7 @@ INT_KINDS.office = { name: 'Offices', rooms: {
     K.box(K.x0, 0, K.z1 - 2.6, K.x0 + 4, 3.4, K.z1 - 2.5, 0xd8d6d0, true); K.glass(K.x0 + 4, 0, K.z1 - 2.6, K.x0 + 4.1, 3.4, K.z1); K.col(K.x0 + 4, K.z1 - 2.6, K.x0 + 4.1, K.z1 - 0.9);
     K.table(K.x0 + 2, K.z1 - 1.2, 2.4, 1, 0xe8e4dc); K.plant(K.x1 - 1, K.z1 - 1, 1.2);
     K.counter(K.x1 - 4, K.z1 - 0.7, K.x1 - 1.6, K.z1 - 0.1, 0xd8d2c4); K.box(K.x1 - 3.6, 1.02, K.z1 - 0.6, K.x1 - 3.2, 1.4, K.z1 - 0.2, 0x2a2a2a);
-    K.act(K.x1 - 2.8, K.z1 - 1.2, 1.4, 'A coffee from the office machine (free)', () => { intBuzz(2); Snd.beep(700, 0.05); Int.say('Office coffee. Not good, but free.'); });
+    K.act(K.x1 - 2.8, K.z1 - 1.2, 1.4, 'A coffee from the office machine (free)', () => { intBuzz(2); Vit.eat(0, 12); Snd.beep(700, 0.05); Int.say('Office coffee. Not good, but free.'); });
   } } };
 
 /* ---------- café, bakery ---------- */
@@ -57,7 +57,7 @@ function intCafe(K, rec, r, bake) {
   else { K.box(K.x1 - 5.5, 1.02, cz + 0.2, K.x1 - 4.8, 1.55, cz + 0.6, 0xb0b4b8); K.box(K.x1 - 5.4, 1.4, cz + 0.6, K.x1 - 4.9, 1.45, cz + 0.75, 0x2a2a2a); }
   K.sign(bake ? 'BREAD · PASTRIES · CAKES' : 'ESPRESSO · LATTE · TEA · CAKE', (K.x0 + K.x1 - 3.5) / 2, 2.7, K.z0 + 0.02, Math.min(W - 4, 6), 0.7, 0, { fg: '#f2e8d0', bg: '#1a1410' });
   intStaff(K, K.x0 + 3, cz - 0.7, 0, bake ? 0xf2f2f2 : 0x2a1a14, { sleeve: false });
-  const price = bake ? 5 : 4; K.act(K.x0 + 3, cz + 1.4, 1.8, bake ? 'Buy a pastry' : 'Buy a coffee', () => intBuy(price, bake ? 'a warm pastry' : 'a flat white', () => intBuzz(3), bake ? 'Still warm. You feel ready for anything.' : 'Flat white. You feel wide awake (run faster for a while).'), { cost: price });
+  const price = bake ? 5 : 4; K.act(K.x0 + 3, cz + 1.4, 1.8, bake ? 'Buy a pastry' : 'Buy a coffee', () => intBuy(price, bake ? 'a warm pastry' : 'a flat white', () => { intBuzz(3); if (bake) Vit.eat(22, 0); else Vit.eat(0, 18); }, bake ? 'Still warm. You feel ready for anything.' : 'Flat white. You feel wide awake (run faster for a while).'), { cost: price });
   let n = 0; for (let x = K.x0 + 2.2; x < K.x1 - 1.5; x += 3.6) for (let z = cz + 3.2; z < K.z1 - 2; z += 3.4) { K.table(x, z, 0.8, 0.8, 0x3a2a20, 0.75, true); K.chair(x, z - 0.7, 0); K.chair(x, z + 0.7, Math.PI); if (r() < 0.6 && n++ < 6) intSeat(K, x, z - 0.72, 0, { eat: r() < 0.5 }); }
   K.plant(K.x1 - 1, K.z1 - 1, 1); K.pic(K.x1 - 0.02, 1.8, 0, -Math.PI / 2, 1.2, 0.9, 0x8a6a4a);
 }
@@ -70,7 +70,9 @@ INT_KINDS.store = { name: 'Convenience store', rooms: { main(K, rec, r) {
   const { W, D } = intDims(rec, 16, 14); K.shell({ W, D, floor: 0xd8d8d0, wall: 0xf0f0ec, tiles: 0xc0c0b8, lamp: 0xf0f8ff, lightI: 0.95 });
   const pts = intAisles(K, r, INT_PROD); for (let x = K.x0 + 1; x < K.x1 - 1; x += 1) K.fridge(x + 0.5, K.z0 + 0.4, 0, true);
   K.counter(K.x1 - 4, K.z1 - 3, K.x1 - 1, K.z1 - 2.2, 0x2a6a4a, 0xe8e8e0); K.box(K.x1 - 3.4, 1.02, K.z1 - 2.9, K.x1 - 2.9, 1.3, K.z1 - 2.5, 0x2a2a2a); intStaff(K, K.x1 - 2.5, K.z1 - 3.6, 0, 0x2a8a5a);
-  K.act(K.x1 - 2.5, K.z1 - 1.5, 1.6, 'Buy an energy drink', () => intBuy(6, 'an energy drink', () => intBuzz(4), 'Tastes like a battery. You feel fast.'), { cost: 6, wide: true });
+  K.act(K.x1 - 5.2, K.z1 - 1.5, 1.2, 'Buy a bottle of water', () => intBuy(2, 'a bottle of water', () => Vit.eat(0, 45), 'Cold water. You feel better already.'), { cost: 2 });
+  K.act(K.x1 - 7.4, K.z1 - 1.5, 1.2, 'Buy a sandwich', () => intBuy(6, 'a sandwich', () => Vit.eat(38, 0), 'A cheese and pickle sandwich. It does the job.'), { cost: 6 });
+  K.act(K.x1 - 2.5, K.z1 - 1.5, 1.6, 'Buy an energy drink', () => intBuy(6, 'an energy drink', () => { intBuzz(4); Vit.eat(0, 25, 0, 100); }, 'Tastes like a battery. You feel fast.'), { cost: 6, wide: true });
   intShoppers(K, r, 3, pts);
 } } };
 INT_KINDS.pharmacy = { name: 'Pharmacy', rooms: { main(K, rec, r) {
@@ -133,7 +135,10 @@ INT_KINDS.bar = { name: 'Bar', rooms: { main(K, rec, r) {
   intStaff(K, 0, K.z0 + 1.3, 0, 0x1a1a1a, { sleeve: false });
   for (let z = K.z0 + 6; z < K.z1 - 2; z += 2.6) { K.table(K.x1 - 2, z, 1, 1, 0x3a2416, 0.75); K.box(K.x1 - 0.7, 0, z - 0.6, K.x1 - 0.1, 1.1, z + 0.6, 0x6a1a1a, true); }
   K.tv(K.x0 + 0.05, 2.2, 0, Math.PI / 2, 1.6, 0x3a9a4a); K.glow(-1.5, 2.6, K.z0 + 0.41, 1.5, 3.0, K.z0 + 0.42, 0xff3a6a, 2);
-  K.act(0, K.z0 + 3.2, 1.8, 'Order a soda', () => intBuy(5, 'a soda', () => intBuzz(2), 'A cold soda with lime.'), { cost: 5 });
+  K.act(0, K.z0 + 3.2, 1.2, 'Order a soda', () => intBuy(5, 'a soda', () => { intBuzz(2); Vit.eat(0, 30); }, 'A cold soda with lime.'), { cost: 5 });
+  K.act(-2.3, K.z0 + 3.2, 1.1, 'Order a beer', () => intBuy(6, 'a beer', () => Vit.eat(4, 12, 16), ['A cold one. Cheers.', 'Pint of the local. Not bad.', 'Another? Why not.'][(Vit.drunk / 20) % 3 | 0]), { cost: 6 });
+  K.act(2.3, K.z0 + 3.2, 1.1, 'Order a whiskey', () => intBuy(12, 'a whiskey', () => Vit.eat(0, 0, 28), Vit.drunk > 55 ? '“Last one, pal. You are swaying.”' : 'Neat. It burns the whole way down.'), { cost: 12 });
+  K.act(4.4, K.z0 + 3.2, 1.0, 'Order a cocktail', () => intBuy(10, 'a cocktail', () => Vit.eat(0, 8, 20), 'Something pink with a cherry on it.'), { cost: 10 });
 } } };
 INT_KINDS.diner = { name: 'Diner', rooms: { main(K, rec, r) { intDiner(K, rec, r); } } };
 function intDiner(K, rec, r, th) {
@@ -168,7 +173,7 @@ INT_KINDS.home = { name: 'Home', rooms: { main(K, rec, r) {
   if (who) who.after = (n) => { if (Int.t > 1.5 && Int.t < 4.5) { n.talk = true; Int.say('“Er… can I help you? This is my house.”', 0.2); } else n.talk = false; };
   if (r() < 0.6) K.person({ x: mx + 1, z: K.z0 + 1.1, yaw: 0, kind: 'work' });
   K.act((K.x0 + mx) / 2, -0.4, 1.6, 'Watch their TV', () => Int.say(intNews() + ' · “Do you mind?”', 5));
-  K.act((mx + K.x1) / 2, 0.6, 1.6, 'Ask for a glass of water', () => { intBuzz(1); Snd.beep(600, 0.05); Int.say('“Er… sure. Here. And then you’ll be going?”', 3); });
+  K.act((mx + K.x1) / 2, 0.6, 1.6, 'Ask for a glass of water', () => { intBuzz(1); Vit.eat(0, 30); Snd.beep(600, 0.05); Int.say('“Er… sure. Here. And then you’ll be going?”', 3); });
 } } };
 /* ---------- warehouse, barn ---------- */
 INT_KINDS.warehouse = { name: 'Warehouse', rooms: { main(K, rec, r) {

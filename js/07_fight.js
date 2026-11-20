@@ -34,6 +34,7 @@ Fight.move = function (p, dx, dz) {
 Fight.punch = function () {
   const F = Foot;
   if (!F.on || F.state !== 'walk' || Talk.on || GAR.edit || App.mode !== 'play' || Police.hold || Fight.cool > 0) return;
+  if (Vit.st < VIT.punch) { UI.toast('Too out of breath to fight', 'bad'); return; } Vit.st -= VIT.punch;
   Fight.t = 0; Fight.cool = 0.46; Fight.hand ^= 1; Fight.done = false; Snd.whoosh();
 };
 Fight.update = function (dt) {
@@ -124,7 +125,7 @@ Fight.pedAccuse = function (p, dt) {
 Fight.hitPlayer = function (p, ux, uz) {
   const F = Foot; if (F.state !== 'walk') return;
   Snd.punch(0.9); Cam.shake = Math.max(Cam.shake, 1.0); App.dmg = Math.min(1, App.dmg + 0.4);
-  F.vx += ux * 3.4; F.vz += uz * 3.4; Fight.taken++; Fight.takenT = 7;
+  F.vx += ux * 3.4; F.vz += uz * 3.4; Fight.taken++; Fight.takenT = 7; Vit.hurt(8, 'Beaten up');
   if (Fight.taken >= 3) { Fight.taken = 0; Fight.t = -1; F.knock({ vx: ux * 3, vz: uz * 3 }, 'Knocked out'); }
   else UI.toast('Ouch! ' + (3 - Fight.taken) + ' more and you are down', 'bad');
 };

@@ -147,7 +147,7 @@ INT_KINDS.casino = { name: 'Casino', rooms: { main(K, rec) {
   const bz = K.z0 + 1.0; K.counter(-W * 0.1, bz - 0.4, W * 0.35, bz + 0.4, 0x3a1a20, 0xd8a830); K.glow(-W * 0.1, 1.05, bz - 0.45, W * 0.35, 1.08, bz - 0.4, 0xff3ad8, 1.2);
   for (let k = 0; k < 8; k++) K.cyl(-W * 0.1 + 0.4 + k * 0.5, 1.5, K.z0 + 0.2, 0.06, 0.32, [0x3a8a3a, 0xc8a050, 0x8a2a2a, 0xe8e8f0][k % 4]);
   intStaff(K, W * 0.12, bz - 0.9, 0, 0xf2f2f2, { suit: true });
-  K.act(W * 0.12, bz + 1.0, 1.4, 'Buy a drink ($15)', () => { if (!csTake(15)) return; writeSave(); Snd.beep(900, 0.05); Int.say('Cheers. On the house it was not.', 2.4); }, { wide: true });
+  K.act(W * 0.12, bz + 1.0, 1.4, 'Buy a drink ($15)', () => { if (!csTake(15)) return; Vit.eat(0, 10, 22); writeSave(); Snd.beep(900, 0.05); Int.say('Cheers. On the house it was not.', 2.4); }, { wide: true });
   const cx = K.x1 - 2, cz = K.z1 - 3; K.counter(cx - 1.2, cz - 0.4, cx + 1.2, cz + 0.4, 0x2a2a30, 0xd8a830); for (let k = 0; k < 6; k++) K.box(cx - 1.2 + k * 0.48, 1.0, cz - 0.02, cx - 1.17 + k * 0.48, 2.3, cz + 0.02, 0xd8a830);
   K.sign('CASHIER', cx, 2.6, cz, 1.8, 0.4, Math.PI, { fg: '#ffd84a', bg: '#1a0a10' }); intStaff(K, cx, cz - 0.9, 0, 0x2a2a30);
   K.act(cx, cz + 1.0, 1.4, 'Cashier: your record', () => Casino.cashier(), { wide: true });

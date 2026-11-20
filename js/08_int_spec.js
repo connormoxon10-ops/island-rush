@@ -88,7 +88,7 @@ INT_KINDS.apts = { name: 'Apartments', rooms: {
     K.bed((mx + K.x1) / 2, K.z0 + 1.3, 0, [0x2a4a7a, 0x7a2a3a, 0x3a6a4a][u % 3], true); K.box(K.x1 - 0.7, 0, 0.5, K.x1 - 0.1, 2.1, 2.3, 0x6a4a34, true);
     if (big) { K.wallX(K.z0 + 3.4, mx, K.x1, [[mx + 0.3, mx + 1.2]], wall); K.bed(K.x1 - 1.2, K.z1 - 1.6, Math.PI / 2, 0x6a6a8a, false); }
     K.act((K.x0 + mx) / 2, 0.6, 1.6, 'Watch the news', () => Int.say(intNews(), 6));
-    K.act(K.x0 + 3.2, K.z1 - 1.3, 1.4, 'Raid the fridge', () => { intBuzz(3); Snd.beep(600, 0.05); Int.say('Leftover pizza. You feel ready to go.'); });
+    K.act(K.x0 + 3.2, K.z1 - 1.3, 1.4, 'Raid the fridge', () => { intBuzz(3); Vit.eat(45, 25); Snd.beep(600, 0.05); Int.say('Leftover pizza. You feel ready to go.'); });
     K.act(K.x1 - 1.2, 1.4, 1.5, 'Open the wardrobe (change clothes)', () => intWardrobe(rec, true));
     K.act((mx + K.x1) / 2, K.z0 + 2.6, 1.8, () => (App.tod > 20 || App.tod < 6 ? 'Sleep until morning (saves the game)' : 'Sleep until evening (saves the game)'), () => {
       const night = App.tod > 20 || App.tod < 6; Int.busy = { freeze: true, lock: 'Sleeping…', t: 0, hint: () => '<b>Zzz…</b>', tick(dt) { this.t += dt; if (this.t > 1.6) { Int.busy = null; App.tod = night ? 7.5 : 19.5; car.health = 100; intSave().nights = (intSave().nights || 0) + 1; writeSave(); UI.banner(night ? 'GOOD MORNING' : 'GOOD EVENING', 'Rested · car serviced · game saved'); } } };

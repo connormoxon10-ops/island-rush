@@ -78,7 +78,8 @@ function footBlockedAt(x, z) {
 }
 
 /* ---------- park / board / leave ---------- */
-Foot.parkCar = function (c) { c.thr = 0; c.brk = 0; c.hand = 1; c.nit = false; c.steerIn = 0; c.steer *= 0.9; Cam.back = false; };
+Foot.parkCar = function (c) { const roll = Vit.bailT > 0 && car.wrecked <= 0; c.thr = 0; c.brk = roll ? (isBike(CUR) ? 0.3 : 0.03) : 0; c.hand = roll ? 0 : 1;   /* after a bail-out it rolls on (a bike slides on its side) */
+  c.nit = false; c.steerIn = 0; c.steer *= 0.9; Cam.back = false; };
 Foot.carLocal = function (out) { const dx = Foot.x - car.x, dz = Foot.z - car.z, s = Math.sin(car.yaw), co = Math.cos(car.yaw); out.lz = dx * s + dz * co; out.lx = dx * co - dz * s; return out; };
 const _fl = { lx: 0, lz: 0 };
 Foot.nearCar = function () { const l = Foot.carLocal(_fl); return Math.abs(l.lz) < 3.5 && Math.abs(l.lx) < 2.7; };
@@ -86,7 +87,7 @@ Foot.exit = function () {
   const c = car; if (Foot.on || App.mode !== 'play') return;
   if (Mi) { UI.toast('Finish or abandon the run first', 'bad'); return; }
   if (c.wrecked > 0 || devOn('free')) return;
-  if (Math.abs(c.speed) > 3 || c.air) { UI.toast('Stop the car first', 'bad'); return; }
+  if (Math.abs(c.speed) > 3 || c.air) { Vit.bail(); return; }   /* moving: you throw yourself out and roll (07_vit.js) */
   const s = Math.sin(c.yaw), co = Math.cos(c.yaw); let pos = null;
   for (const [lx, lz] of [[-1.75, 0.2], [1.75, 0.2], [-1.75, -1.6], [1.75, -1.6], [0, -3.6], [0, 3.6]]) { const x = c.x + co * lx + s * lz, z = c.z - s * lx + co * lz; if (!footBlockedAt(x, z)) { pos = { x, z, side: lx }; break; } }
   if (!pos) { UI.toast('No room to get out here', 'bad'); return; }
@@ -97,7 +98,8 @@ Foot.exit = function () {
   Snd.door(); syncPl(); UI.footMode(true); UI.toast(TouchIn.on ? 'On foot · CAR to get back in · PUNCH to fight' : 'On foot · F car · Q punch', 'info');
 };
 Foot.board = function (silent) {
-  if (!Foot.on) return; if (Talk.on) Talk.close(true);
+  if (!Foot.on) return; if (!silent && Foot.state !== 'walk') return;   /* not while you are still rolling on the ground */
+  Moto.fallen = 0; Vit.bailT = 0; if (Talk.on) Talk.close(true);
   Fight.reset(); Foot.on = false; Foot.state = 'walk'; try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) { /* ignore */ }
   Cam.chaseYaw = car.yaw; Cam.ch = car.y + 2; Cam.lookYaw = Cam.lookPitch = 0; Cam.fov = save.set.fov; Foot.fovAdd = 0;
   if (car.wrecked <= 0) car.hand = 0;
@@ -126,12 +128,14 @@ Foot.knock = function (d, why) {
   const F = Foot, P = F.ped; F.state = 'down'; F.downT = 0; F.air = true; F.vy = 3.4; F.vx = (d.vx || 0) * 0.8 + (Math.random() - 0.5); F.vz = (d.vz || 0) * 0.8 + (Math.random() - 0.5);
   P.air = true; P.t = 0; P.tilt = 0; P.spin = (Math.random() < 0.5 ? -1 : 1) * 5.5; F.hitCool = 4;
   Snd.crash(9); Cam.shake = Math.max(Cam.shake, 1.2);
+  Vit.hurt(why ? 14 : 22 + Math.hypot(d.vx || 0, d.vz || 0) * 1.3, why || 'Hit by a car');
   Fight.t = -1; if (!devOn('god')) { const fee = Math.min(why ? 60 : 120, save.money); save.money -= fee; UI.toast((why || 'Hit by a car') + (fee ? ' · hospital ' + money(fee) : ''), 'bad'); } else UI.toast(why || 'Hit by a car', 'bad');
 };
 Foot.step = function (dt) {
   const F = Foot, P = F.ped; if (!F.on) return;
   F.t += dt; F.hitCool -= dt; Fight.update(dt);
-  const frozen = Talk.on || GAR.edit || App.mode !== 'play' || Police.hold || Jack.busy, I = frozen ? { f: 0, r: 0, turn: 0, run: false, jump: false, lx: 0, ly: 0 } : footInput();
+  const frozen = Talk.on || GAR.edit || App.mode !== 'play' || Police.hold || Jack.busy || Vit.dead, I = frozen ? { f: 0, r: 0, turn: 0, run: false, jump: false, lx: 0, ly: 0 } : footInput();
+  if (!frozen) Vit.walk(I);   /* winded: no running; drunk: you wander */
   /* look */
   if (I.turn) F.yaw += I.turn * 2.2 * dt; if (I.lx) F.yaw -= I.lx * 2.6 * dt; if (I.ly) F.pitch = clamp(F.pitch - I.ly * 1.8 * dt, -1.35, 1.2);
   F.yaw = ((F.yaw + Math.PI) % TAU + TAU) % TAU - Math.PI;
@@ -161,13 +165,13 @@ Foot.step = function (dt) {
   /* vertical */
   groundAt(F.x, F.z, _fg); const gh = F.supp > _fg.h ? F.supp : _fg.h, onRoad = _fg.road;
   if (!F.air) {
-    if (I.jump && !frozen) { F.vy = 4.7; F.air = true; Snd.foot(onRoad, 1.6, true); }
+    if (I.jump && !frozen && Vit.st >= VIT.jump) { Vit.st -= VIT.jump; F.vy = 4.7; F.air = true; Snd.foot(onRoad, 1.6, true); }
     else if (gh < F.y - 0.5) { F.air = true; F.vy = 0; }
     else { F.y += (gh - F.y) * Math.min(1, dt * 18); }
   }
   if (F.air) {
     F.vy -= 15 * dt; F.y += F.vy * dt;
-    if (F.vy <= 0 && F.y <= gh) { F.y = gh; F.air = false; const imp = -F.vy; F.dip = Math.min(0.22, 0.04 + imp * 0.02); F.vy = 0; if (imp > 2.5) Snd.foot(onRoad, 1.5 + imp * 0.1, true); }
+    if (F.vy <= 0 && F.y <= gh) { F.y = gh; F.air = false; const imp = -F.vy; F.dip = Math.min(0.22, 0.04 + imp * 0.02); F.vy = 0; if (imp > 2.5) Snd.foot(onRoad, 1.5 + imp * 0.1, true); if (imp > 9) Vit.hurt((imp - 9) * 7, 'A bad fall'); }
   }
   F.dip *= Math.max(0, 1 - dt * 7);
   F.speed = sp;

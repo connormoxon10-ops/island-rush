@@ -824,6 +824,7 @@ function loadSave() {
       if (s.surf && typeof s.surf === 'object') save.surf = { best: +s.surf.best || 0, sessions: s.surf.sessions | 0 };
       if (s.dune && typeof s.dune === 'object') save.dune = { races: s.dune.races | 0, wins: s.dune.wins | 0, best: +s.dune.best || 0 };
       KIT.load(s.kit);
+      if (s.vit && typeof s.vit === 'object') save.vit = { hp: clamp(+s.vit.hp || 100, 0, 100), food: clamp(isFinite(+s.vit.food) ? +s.vit.food : 100, 0, 100), water: clamp(isFinite(+s.vit.water) ? +s.vit.water : 100, 0, 100), drunk: clamp(+s.vit.drunk || 0, 0, 100) };
       if (s.casino && typeof s.casino === 'object') save.casino = { won: Math.max(0, +s.casino.won || 0), lost: Math.max(0, +s.casino.lost || 0), plays: Math.max(0, s.casino.plays | 0), best: Math.max(0, +s.casino.best || 0) };
       save.car = (s.car && (save.owned[s.car] || (save.jack && save.jack.id === s.car))) ? s.car : save.heist.prev && save.owned[save.heist.prev] ? save.heist.prev : 'rook';
       if (s.story && typeof s.story === 'object') { const q = s.story, ob = (o) => (o && typeof o === 'object' && !Array.isArray(o) ? Object.assign({}, o) : {}); save.story = { ch: clamp(q.ch | 0, 0, 99), st: clamp(q.st | 0, 0, 99), base: ob(q.base), fin: q.fin ? 1 : 0, f: ob(q.f), sq: ob(q.sq), met: ob(q.met), track: typeof q.track === 'string' ? q.track : null, said: Array.isArray(q.said) ? q.said.slice(-40).map(String) : [] }; } }
@@ -3462,7 +3463,7 @@ function updateCamera(dt, speedFx) {
   }
   const leanP = c.leanP, leanR = c.leanR;
   b.position.set(c.x, c.y + c.sY * 0.4, c.z);   /* heave: the wheels stay on the ground and the suspension takes it (updateWheels) */
-  b.rotation.set(-(c.pitch + leanP), c.yaw, c.roll + leanR, 'YXZ'); b.updateMatrixWorld(true);
+  b.rotation.set(-(c.pitch + leanP), c.yaw, c.roll + leanR, 'YXZ'); Moto.pose(dt, leanR); b.updateMatrixWorld(true);
   const spd = Math.abs(c.speed);
   const sh = save.set.shake ? Cam.shake : 0;
   if (devOn('free')) {
@@ -3475,7 +3476,7 @@ function updateCamera(dt, speedFx) {
     _eye.copy(EYE); b.localToWorld(_eye); _eye.y += c.sY * 0.6;
     camera.position.set(_eye.x + (Math.random() - 0.5) * sh * 0.05, _eye.y + (Math.random() - 0.5) * sh * 0.05, _eye.z + (Math.random() - 0.5) * sh * 0.05);
     let ly = Cam.back ? Math.PI : Cam.lookYaw;
-    camera.rotation.set(c.pitch * 0.75 + leanP * 0.8 + Cam.lookPitch + (Math.random() - 0.5) * sh * 0.004, c.yaw + Math.PI + ly, (c.roll + leanR) * 0.5 + (Math.random() - 0.5) * sh * 0.004, 'YXZ');
+    camera.rotation.set(c.pitch * 0.75 + leanP * 0.8 + Cam.lookPitch + (Math.random() - 0.5) * sh * 0.004, c.yaw + Math.PI + ly, (isBike(CUR) ? -Moto.lean * 0.7 : (c.roll + leanR) * 0.5) + (Math.random() - 0.5) * sh * 0.004, 'YXZ');
     if (Cam.back) camera.position.y += 0;
   } else if (Cam.view === 1) {
     _eye.set(0, CUR.bumpY, CUR.bumpZ); b.localToWorld(_eye); camera.position.copy(_eye); camera.position.y += c.sY * 0.2;
@@ -3503,7 +3504,7 @@ function updateCamera(dt, speedFx) {
   if (Math.abs(camera.fov - Cam.fov) > 0.05) { camera.fov = Cam.fov; camera.updateProjectionMatrix(); }
   Cam.shake *= Math.max(0, 1 - dt * 5);
   if (Cam.view === 0) { Cockpit.wheel.rotation.z = -c.steer * 2.0; }
-  const fc = devOn('free'); Cockpit.group.visible = Cam.view === 0 && !fc; car.ext.visible = Cam.view !== 0 || fc;
+  const fc = devOn('free'), bk = isBike(CUR); Cockpit.group.visible = Cam.view === 0 && !fc && !bk; car.ext.visible = Cam.view !== 0 || fc || bk;   /* a bike has no cabin: you see the bike under you */
 }
 
 /* ---------------- particles ---------------- */
@@ -5330,7 +5331,15 @@ const CARS = [
     p: { m: 1700, a: 1.5, b: 1.55, Iz: 3200, rw: 0.32, fd: 3.2, gears: [2.5, 1.5, 1.0], idle: 600, red: 4600, track: 1.55, cgh: 0.5, rd: 0.95, rsf: 0.52, cf: 9.2, cr: 10 },
     t: { Tmax: 420, mu: 1.02, cd: 0.58, brk: 0.9, off: 0.6, cl: 0 },
     stats: { spd: 4, acc: 4, hdl: 4, off: 1 },
-    body: { susp: 0.08, sway: { w: 5, z: 0.3, k: 1.5 }, L: 5.4, W: 2.0, H: 0.42, C: 0.45, wr: 0.3, y0: 0.3, tw: 0.2, rim: [0.92, 0.72, 0.3], rimStyle: 'mesh', custom: 'lowrider' } }
+    body: { susp: 0.08, sway: { w: 5, z: 0.3, k: 1.5 }, L: 5.4, W: 2.0, H: 0.42, C: 0.45, wr: 0.3, y0: 0.3, tw: 0.2, rim: [0.92, 0.72, 0.3], rimStyle: 'mesh', custom: 'lowrider' } },
+
+  /* an original design: a naked sport bike. The car physics on a narrow track; drawn on two wheels and leaning into corners (06_moto.js) */
+  { id: 'moto', name: 'Viper 600', cls: 'Motorcycle', price: 2800, paint: 1, dy: 0.47, snd: { f: 1.5, lp: 1.7 }, dial: 280,
+    blurb: 'A naked sport bike: a screaming inline four, a twin-spar frame and next to no weight. It leans into the bends, squeezes through traffic and is the quickest thing off the line on the island. Nothing between you and the road, though: crash it and you go over the bars.',
+    p: { m: 270, a: 0.72, b: 0.72, Iz: 150, rw: 0.31, fd: 7.0, gears: [2.6, 1.9, 1.5, 1.25, 1.08, 0.96], idle: 1300, red: 11800, track: 0.9, cgh: 0.55, rd: 0, rsf: 0.62, cf: 10.5, cr: 11.5 },
+    t: { Tmax: 50, mu: 1.14, cd: 0.3, brk: 1.1, off: 0.7, cl: 0 },
+    stats: { spd: 8, acc: 9, hdl: 7, off: 2 },
+    body: { susp: 0.06, L: 2.1, W: 0.36, H: 0.4, C: 0.5, wr: 0.31, y0: 0.5, tw: 0.13, rim: [0.12, 0.12, 0.13], rimStyle: 'five', tire: 'sport', custom: 'moto' } }
 ];
 const CAR_BY_ID = {}; for (const d of CARS) { CAR_BY_ID[d.id] = d; const b = d.body; d.top = (b.y0 != null ? b.y0 : 0.36) + b.H + 0.1 + b.C; d.hl = b.L / 2; }
 const BASE_N = CARS.length;   /* CARS[0..BASE_N) are the dealership cars; stolen cars are appended at runtime (see 07_jack.js) */
@@ -5347,7 +5356,7 @@ function applyCar(id, rebuildMesh) {
   CIRC[0][0] = hl - 0.45; CIRC[1][0] = 0; CIRC[2][0] = -(hl - 0.45); for (const k of CIRC) k[1] = hw + 0.09;
   car.gear = Math.min(car.gear, CARP.gears.length);
   d.bumpY = (d.body.y0 != null ? d.body.y0 : 0.36) + 0.19; d.bumpZ = hl + 0.2;
-  EYE.y = 1.13 + d.dy; if (Cockpit.group) Cockpit.group.position.y = d.dy;
+  EYE.set(isBike(d) ? 0 : -0.35, 1.13 + d.dy, isBike(d) ? -0.02 : 0.12); if (Cockpit.group) Cockpit.group.position.y = d.dy;   /* on a bike you sit in the middle, over the tank */
   if (Cockpit.hood) { Cockpit.hood.scale.set(d.body.W / 1.82, 1, clamp((hl + 0.43 - 1.18) / 1.4, 0.6, 1.7)); }
   if (Cockpit.theme) Cockpit.theme(d);
   if (rebuildMesh && car.body) {
@@ -6076,6 +6085,77 @@ Human.bake = function (h) {
     col[k * 3] = hm ? g.attributes.aTint2.getX(k) : reg === 4 ? 0.5 : T.getX(k); col[k * 3 + 1] = hm ? g.attributes.aTint2.getY(k) : reg === 4 ? 0.48 : T.getY(k); col[k * 3 + 2] = hm ? g.attributes.aTint2.getZ(k) : reg === 4 ? 0.45 : T.getZ(k);
   }
   const o = new THREE.BufferGeometry(); o.setAttribute('position', new THREE.BufferAttribute(pos, 3)); o.setAttribute('color', new THREE.BufferAttribute(col, 3)); o.setIndex(g.index); o.computeVertexNormals(); const r = o.toNonIndexed(); o.dispose(); return r;
+};
+
+/* ---- js/06_moto.js ---- */
+/* ================= THE MOTORCYCLE =================
+   An original sport-naked bike (the Viper 600) built with the car kit: a twin-spar frame, an inline four with a belly exhaust, a teardrop tank,
+   a split seat and a short tail, an upside-down fork with the headlamp, bars and front mudguard on it (the 'fork' part steers with the front wheel),
+   a swingarm with a monoshock, and a rider in a helmet and leathers (the 'rider' part: hidden from the first-person view and while you are off it).
+   The physics is the car's, on a narrow track with the two wheels of each axle drawn as one; Moto.lean banks the bike into corners as a real one
+   leans (atan of the sideways acceleration over g). */
+const Moto = { lean: 0, fallen: 0 };
+const isBike = (d) => !!(d && d.body && d.body.custom === 'moto');
+function motoBike(S, gP, gG, gT, gD, gLt, tl, lod) {
+  for (const w of S.wheels) w.x = w.side * 0.004;   /* the two wheels of each axle sit together: one tyre */
+  const K = carKit(lod), wf = S.wheels.find((w) => w.front), wr = S.wheels.find((w) => !w.front), zF = wf.z, zR = wr.z, yA = S.wr;
+  const DK = [0.03, 0.03, 0.035], BLK = [0.012, 0.012, 0.015], MET = [0.42, 0.43, 0.46], CHR = [0.78, 0.79, 0.82], GLD = [0.8, 0.58, 0.12], GL = [1, 1, 1];
+  const head = [0, 1.0, zF - 0.24], piv = [0, 0.52, -0.2];
+  /* frame: two spars from the steering head round the engine to the swingarm pivot, a subframe under the seat */
+  for (const sx of [-1, 1]) {
+    K.path(gT, [[sx * 0.05, head[1], head[2]], [sx * 0.15, 0.9, 0.22], [sx * 0.16, 0.74, -0.08], [sx * 0.12, piv[1], piv[2]]], 0.035, MET);
+    K.path(gT, [[sx * 0.1, 0.8, -0.12], [sx * 0.09, 0.86, -0.52], [sx * 0.06, 0.9, zR - 0.02]], 0.016, DK);
+    K.path(gD, [[sx * 0.11, piv[1], piv[2]], [sx * 0.1, yA + 0.02, zR]], 0.03, BLK);            /* swingarm */
+    K.blk(gT, sx * 0.16, 0.36, -0.12, 0.03, 0.03, 0.26, CHR);                                    /* footpegs */
+  }
+  K.tube(gT, [0, 0.58, -0.24], [0, 0.84, -0.42], 0.04, MET); K.tube(gT, [0, 0.62, -0.28], [0, 0.78, -0.39], 0.055, GLD);   /* monoshock */
+  /* engine: crankcase, a row of four cylinders leaning forward with fins, the radiator in front, the belly pipe to a short silencer */
+  K.blk(gT, 0, 0.44, 0.12, 0.34, 0.24, 0.42, DK); K.blk(gT, 0, 0.66, 0.2, 0.3, 0.26, 0.24, MET, 0.25);
+  for (let k = 0; k < 4; k++) K.blk(gT, 0, 0.6 + k * 0.05, 0.22 + k * 0.012, 0.34, 0.012, 0.27, [0.6, 0.61, 0.64], 0.25);
+  K.blk(gD, 0, 0.72, 0.42, 0.38, 0.3, 0.05, BLK, 0.15);
+  K.path(gT, [[0.06, 0.52, 0.34], [0.06, 0.3, 0.3], [0.04, 0.26, -0.05], [0.14, 0.34, -0.3]], 0.035, [0.55, 0.5, 0.45]);
+  K.drum(gT, 0.17, 0.42, -0.46, 0.07, 0.36, [0.25, 0.25, 0.27], 'z'); K.drum(gD, 0.17, 0.42, -0.65, 0.05, 0.03, BLK, 'z'); carExh(0.17, 0.42, -0.66);
+  /* bodywork: tank, seat, tail, belly pan */
+  K.loft(gP, [{ z: 0.42, y: 0.98, a: 0.12, b: 0.07, e: 2.4 }, { z: 0.3, y: 1.02, a: 0.19, b: 0.12, e: 2.6 }, { z: 0.08, y: 1.0, a: 0.2, b: 0.12, e: 2.6 }, { z: -0.08, y: 0.94, a: 0.15, b: 0.08, e: 2.4 }], K.WH, { cap: [1, 1] });
+  K.loft(gD, [{ z: -0.06, y: 0.9, a: 0.14, b: 0.04, e: 3 }, { z: -0.35, y: 0.92, a: 0.15, b: 0.045, e: 3 }, { z: -0.5, y: 0.97, a: 0.1, b: 0.04, e: 3 }], BLK, { cap: [1, 1] });
+  K.loft(gP, [{ z: -0.42, y: 0.92, a: 0.12, b: 0.05, e: 2.4 }, { z: -0.62, y: 0.99, a: 0.09, b: 0.05, e: 2.4 }, { z: zR - 0.1, y: 1.03, a: 0.04, b: 0.025, e: 2.2 }], K.WH, { cap: [1, 1] });
+  K.blk(tl, 0, 1.0, zR - 0.13, 0.08, 0.025, 0.01, GL, 0.3); K.blk(gT, 0, 0.82, zR - 0.08, 0.16, 0.12, 0.01, [0.9, 0.9, 0.86], -0.5);   /* tail lamp, number plate */
+  K.arc(gD, 0, yA, zR, yA + 0.06, 0.12, -0.2 * Math.PI, 0.45 * Math.PI, BLK);                  /* hugger over the rear wheel */
+  for (const sx of [-1, 1]) K.loft(gP, [{ z: 0.36, x: sx * 0.19, y: 0.7, a: 0.03, b: 0.12, e: 2.2 }, { z: 0.15, x: sx * 0.2, y: 0.74, a: 0.035, b: 0.13, e: 2.2 }, { z: 0.02, x: sx * 0.18, y: 0.8, a: 0.02, b: 0.07, e: 2.2 }], K.WH, { cap: [1, 1] });   /* radiator shrouds */
+  /* the front end: it steers about the head */
+  const F = S.part('fork', head);
+  for (const sx of [-1, 1]) { K.tube(F.T, [sx * 0.085, head[1] + 0.04, head[2] + 0.02], [sx * 0.085, 0.62, zF - 0.08], 0.034, GLD); K.tube(F.T, [sx * 0.085, 0.62, zF - 0.08], [sx * 0.085, yA, zF], 0.026, BLK); }
+  K.blk(F.T, 0, head[1] + 0.05, head[2], 0.26, 0.04, 0.1, MET); K.blk(F.T, 0, 0.84, head[2] + 0.06, 0.24, 0.04, 0.09, MET);
+  K.tube(F.D, [-0.34, 1.08, head[2] - 0.06], [0.34, 1.08, head[2] - 0.06], 0.014, BLK); K.tube(F.T, [0, head[1] + 0.06, head[2]], [0, 1.08, head[2] - 0.06], 0.02, MET);
+  for (const sx of [-1, 1]) { K.drum(F.D, sx * 0.3, 1.08, head[2] - 0.06, 0.024, 0.11, BLK, 'x'); K.tube(F.D, [sx * 0.2, 1.1, head[2] - 0.04], [sx * 0.26, 1.24, head[2] - 0.08], 0.008, BLK); K.blk(F.D, sx * 0.28, 1.25, head[2] - 0.09, 0.09, 0.05, 0.012, BLK); }
+  K.loft(F.P, [{ z: head[2] + 0.02, y: 0.98, a: 0.13, b: 0.13, e: 2.2 }, { z: head[2] + 0.16, y: 0.96, a: 0.12, b: 0.12, e: 2.2 }, { z: head[2] + 0.22, y: 0.95, a: 0.09, b: 0.09, e: 2.2 }], K.WH, { cap: [0, 1] });   /* headlamp cowl */
+  K.ball(F.L, 0, 0.95, head[2] + 0.225, 0.075, 0.075, 0.02, GL); K.blk(F.D, 0, 1.11, head[2] + 0.08, 0.16, 0.06, 0.02, BLK, -0.6);   /* lamp; little flyscreen */
+  K.arc(F.P, 0, yA, zF, yA + 0.05, 0.13, 0.15 * Math.PI, 0.62 * Math.PI, K.WH);                 /* front mudguard */
+  K.drum(F.T, 0, yA, zF, 0.15, 0.1, [0.6, 0.6, 0.62], 'x');                                    /* brake discs */
+  /* the rider: helmet, leathers, jeans, boots, gloves on the bars */
+  const R = S.part('rider', [0, 0, 0]), LTH = [0.06, 0.06, 0.07], JN = [0.12, 0.18, 0.32], SK = [0.75, 0.55, 0.42];
+  K.loft(R.D, [{ z: -0.34, y: 1.0, a: 0.17, b: 0.1, e: 2.4 }, { z: -0.22, y: 1.18, a: 0.19, b: 0.12, e: 2.4 }, { z: -0.08, y: 1.36, a: 0.2, b: 0.11, e: 2.4 }, { z: 0.0, y: 1.44, a: 0.16, b: 0.08, e: 2.4 }], LTH, { cap: [1, 1] });   /* torso, leaning on the bars */
+  K.ball(R.D, 0, 1.46, 0.0, 0.07, 0.06, 0.06, SK);
+  K.ball(R.P, 0, 1.6, 0.04, 0.15, 0.15, 0.16, K.WH); K.ball(R.G, 0, 1.6, 0.11, 0.12, 0.08, 0.1, [0.15, 0.15, 0.18]);   /* helmet in the bike's colour, visor */
+  for (const sx of [-1, 1]) {
+    K.path(R.D, [[sx * 0.18, 1.4, -0.04], [sx * 0.24, 1.22, 0.14], [sx * 0.3, 1.1, head[2] - 0.06]], 0.045, LTH); K.ball(R.D, sx * 0.31, 1.09, head[2] - 0.06, 0.05, 0.045, 0.06, BLK);
+    K.path(R.D, [[sx * 0.11, 0.98, -0.32], [sx * 0.19, 0.92, 0.06], [sx * 0.17, 0.42, -0.06]], 0.065, JN);
+    K.blk(R.D, sx * 0.17, 0.4, -0.04, 0.09, 0.1, 0.24, BLK);
+  }
+  K.done();
+  return function (o, sus, cs) {
+    const P = o.userData.parts; if (!P) return;
+    if (P.fork) P.fork.rotation.y = cs ? clamp(cs.delta || 0, -0.6, 0.6) * 0.9 : 0;
+    if (P.rider) P.rider.visible = !(o.userData.wrec && o.userData.wrec.player && (Foot.on || (Cam.view === 0 && App.mode === 'play')));
+  };
+}
+CUSTOM_CARS.moto = motoBike;
+/* banking into corners (called from updateCamera once the body is placed); the car's own outward body roll is taken back out */
+Moto.pose = function (dt, leanR) {
+  if (!car.ext) return;
+  if (!isBike(CUR)) { if (car.ext.rotation.z) car.ext.rotation.z = 0; Moto.lean = 0; return; }
+  const want = Foot.on ? (Moto.fallen ? Moto.fallen * 1.36 : 0.1) : clamp(-Math.atan((car.ayL || 0) / 9.81), -0.8, 0.8) * clamp(Math.abs(car.speed) / 4, 0, 1);
+  Moto.lean += (want - Moto.lean) * Math.min(1, dt * 7); car.ext.rotation.z = Moto.lean - leanR;
 };
 
 /* ---- js/06_plane.js ---- */
@@ -8486,6 +8566,7 @@ Fight.move = function (p, dx, dz) {
 Fight.punch = function () {
   const F = Foot;
   if (!F.on || F.state !== 'walk' || Talk.on || GAR.edit || App.mode !== 'play' || Police.hold || Fight.cool > 0) return;
+  if (Vit.st < VIT.punch) { UI.toast('Too out of breath to fight', 'bad'); return; } Vit.st -= VIT.punch;
   Fight.t = 0; Fight.cool = 0.46; Fight.hand ^= 1; Fight.done = false; Snd.whoosh();
 };
 Fight.update = function (dt) {
@@ -8576,7 +8657,7 @@ Fight.pedAccuse = function (p, dt) {
 Fight.hitPlayer = function (p, ux, uz) {
   const F = Foot; if (F.state !== 'walk') return;
   Snd.punch(0.9); Cam.shake = Math.max(Cam.shake, 1.0); App.dmg = Math.min(1, App.dmg + 0.4);
-  F.vx += ux * 3.4; F.vz += uz * 3.4; Fight.taken++; Fight.takenT = 7;
+  F.vx += ux * 3.4; F.vz += uz * 3.4; Fight.taken++; Fight.takenT = 7; Vit.hurt(8, 'Beaten up');
   if (Fight.taken >= 3) { Fight.taken = 0; Fight.t = -1; F.knock({ vx: ux * 3, vz: uz * 3 }, 'Knocked out'); }
   else UI.toast('Ouch! ' + (3 - Fight.taken) + ' more and you are down', 'bad');
 };
@@ -9115,7 +9196,8 @@ function footBlockedAt(x, z) {
 }
 
 /* ---------- park / board / leave ---------- */
-Foot.parkCar = function (c) { c.thr = 0; c.brk = 0; c.hand = 1; c.nit = false; c.steerIn = 0; c.steer *= 0.9; Cam.back = false; };
+Foot.parkCar = function (c) { const roll = Vit.bailT > 0 && car.wrecked <= 0; c.thr = 0; c.brk = roll ? (isBike(CUR) ? 0.3 : 0.03) : 0; c.hand = roll ? 0 : 1;   /* after a bail-out it rolls on (a bike slides on its side) */
+  c.nit = false; c.steerIn = 0; c.steer *= 0.9; Cam.back = false; };
 Foot.carLocal = function (out) { const dx = Foot.x - car.x, dz = Foot.z - car.z, s = Math.sin(car.yaw), co = Math.cos(car.yaw); out.lz = dx * s + dz * co; out.lx = dx * co - dz * s; return out; };
 const _fl = { lx: 0, lz: 0 };
 Foot.nearCar = function () { const l = Foot.carLocal(_fl); return Math.abs(l.lz) < 3.5 && Math.abs(l.lx) < 2.7; };
@@ -9123,7 +9205,7 @@ Foot.exit = function () {
   const c = car; if (Foot.on || App.mode !== 'play') return;
   if (Mi) { UI.toast('Finish or abandon the run first', 'bad'); return; }
   if (c.wrecked > 0 || devOn('free')) return;
-  if (Math.abs(c.speed) > 3 || c.air) { UI.toast('Stop the car first', 'bad'); return; }
+  if (Math.abs(c.speed) > 3 || c.air) { Vit.bail(); return; }   /* moving: you throw yourself out and roll (07_vit.js) */
   const s = Math.sin(c.yaw), co = Math.cos(c.yaw); let pos = null;
   for (const [lx, lz] of [[-1.75, 0.2], [1.75, 0.2], [-1.75, -1.6], [1.75, -1.6], [0, -3.6], [0, 3.6]]) { const x = c.x + co * lx + s * lz, z = c.z - s * lx + co * lz; if (!footBlockedAt(x, z)) { pos = { x, z, side: lx }; break; } }
   if (!pos) { UI.toast('No room to get out here', 'bad'); return; }
@@ -9134,7 +9216,8 @@ Foot.exit = function () {
   Snd.door(); syncPl(); UI.footMode(true); UI.toast(TouchIn.on ? 'On foot · CAR to get back in · PUNCH to fight' : 'On foot · F car · Q punch', 'info');
 };
 Foot.board = function (silent) {
-  if (!Foot.on) return; if (Talk.on) Talk.close(true);
+  if (!Foot.on) return; if (!silent && Foot.state !== 'walk') return;   /* not while you are still rolling on the ground */
+  Moto.fallen = 0; Vit.bailT = 0; if (Talk.on) Talk.close(true);
   Fight.reset(); Foot.on = false; Foot.state = 'walk'; try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) { /* ignore */ }
   Cam.chaseYaw = car.yaw; Cam.ch = car.y + 2; Cam.lookYaw = Cam.lookPitch = 0; Cam.fov = save.set.fov; Foot.fovAdd = 0;
   if (car.wrecked <= 0) car.hand = 0;
@@ -9163,12 +9246,14 @@ Foot.knock = function (d, why) {
   const F = Foot, P = F.ped; F.state = 'down'; F.downT = 0; F.air = true; F.vy = 3.4; F.vx = (d.vx || 0) * 0.8 + (Math.random() - 0.5); F.vz = (d.vz || 0) * 0.8 + (Math.random() - 0.5);
   P.air = true; P.t = 0; P.tilt = 0; P.spin = (Math.random() < 0.5 ? -1 : 1) * 5.5; F.hitCool = 4;
   Snd.crash(9); Cam.shake = Math.max(Cam.shake, 1.2);
+  Vit.hurt(why ? 14 : 22 + Math.hypot(d.vx || 0, d.vz || 0) * 1.3, why || 'Hit by a car');
   Fight.t = -1; if (!devOn('god')) { const fee = Math.min(why ? 60 : 120, save.money); save.money -= fee; UI.toast((why || 'Hit by a car') + (fee ? ' · hospital ' + money(fee) : ''), 'bad'); } else UI.toast(why || 'Hit by a car', 'bad');
 };
 Foot.step = function (dt) {
   const F = Foot, P = F.ped; if (!F.on) return;
   F.t += dt; F.hitCool -= dt; Fight.update(dt);
-  const frozen = Talk.on || GAR.edit || App.mode !== 'play' || Police.hold || Jack.busy, I = frozen ? { f: 0, r: 0, turn: 0, run: false, jump: false, lx: 0, ly: 0 } : footInput();
+  const frozen = Talk.on || GAR.edit || App.mode !== 'play' || Police.hold || Jack.busy || Vit.dead, I = frozen ? { f: 0, r: 0, turn: 0, run: false, jump: false, lx: 0, ly: 0 } : footInput();
+  if (!frozen) Vit.walk(I);   /* winded: no running; drunk: you wander */
   /* look */
   if (I.turn) F.yaw += I.turn * 2.2 * dt; if (I.lx) F.yaw -= I.lx * 2.6 * dt; if (I.ly) F.pitch = clamp(F.pitch - I.ly * 1.8 * dt, -1.35, 1.2);
   F.yaw = ((F.yaw + Math.PI) % TAU + TAU) % TAU - Math.PI;
@@ -9198,13 +9283,13 @@ Foot.step = function (dt) {
   /* vertical */
   groundAt(F.x, F.z, _fg); const gh = F.supp > _fg.h ? F.supp : _fg.h, onRoad = _fg.road;
   if (!F.air) {
-    if (I.jump && !frozen) { F.vy = 4.7; F.air = true; Snd.foot(onRoad, 1.6, true); }
+    if (I.jump && !frozen && Vit.st >= VIT.jump) { Vit.st -= VIT.jump; F.vy = 4.7; F.air = true; Snd.foot(onRoad, 1.6, true); }
     else if (gh < F.y - 0.5) { F.air = true; F.vy = 0; }
     else { F.y += (gh - F.y) * Math.min(1, dt * 18); }
   }
   if (F.air) {
     F.vy -= 15 * dt; F.y += F.vy * dt;
-    if (F.vy <= 0 && F.y <= gh) { F.y = gh; F.air = false; const imp = -F.vy; F.dip = Math.min(0.22, 0.04 + imp * 0.02); F.vy = 0; if (imp > 2.5) Snd.foot(onRoad, 1.5 + imp * 0.1, true); }
+    if (F.vy <= 0 && F.y <= gh) { F.y = gh; F.air = false; const imp = -F.vy; F.dip = Math.min(0.22, 0.04 + imp * 0.02); F.vy = 0; if (imp > 2.5) Snd.foot(onRoad, 1.5 + imp * 0.1, true); if (imp > 9) Vit.hurt((imp - 9) * 7, 'A bad fall'); }
   }
   F.dip *= Math.max(0, 1 - dt * 7);
   F.speed = sp;
@@ -12574,6 +12659,160 @@ function collideDyn(c) {
   }
 }
 
+/* ---- js/07_vit.js ---- */
+/* ================= VITALS: health, stamina, food, water, intoxication =================
+   You (not the car) have five bars, shown bottom left:
+   - HEALTH: lost by bailing out of a moving vehicle (the faster, the worse), being hit by a car, a fist fight, a bad fall, a hard crash
+     (on a bike a crash throws you off), and by starving or going thirsty. It comes back slowly while you are fed and watered. At zero you
+     black out and wake up patched up at the nearest town's hospital, a little poorer.
+   - STAMINA: running and jumping use it, standing still brings it back. Run it flat and you are winded: no running until you get some back.
+     Hunger and thirst slow the recovery.
+   - FOOD and WATER: they run down as you play (faster when you run). Eat and drink in cafés, diners, restaurants, shops and bars.
+     Low, and you are warned; empty, and your health drains.
+   - INTOXICATION: drinks at the bar (and the casino) put it up, time brings it down. Tipsy, the picture swims a little; drunk, your
+     steering wanders, you walk crooked and you may trip; at the top you pass out.
+   F while moving no longer asks you to stop: you throw yourself out and roll, and the car (or bike) carries on without you. */
+const Vit = { hp: 100, st: 100, food: 100, water: 100, drunk: 0, hurtT: 0, winded: false, dead: false, deadT: 0, el: null, ph: 0, warned: {}, bailT: 0, last: '' };
+const VIT = { food: 2.2, water: 3.4, sober: 0.2, starve: 0.35, regen: 0.45, run: 13, rest: 17, jump: 8, punch: 4 };
+Vit.load = function () {
+  const s = save.vit; if (s && typeof s === 'object') { for (const k of ['hp', 'food', 'water', 'drunk']) if (isFinite(+s[k])) Vit[k] = clamp(+s[k], 0, 100); if (Vit.hp < 5) Vit.hp = 40; }
+  Vit.st = 100; Vit.dead = false; Vit.store();
+};
+Vit.store = function () { const s = save.vit || (save.vit = {}); s.hp = Math.round(Vit.hp * 10) / 10; s.food = Math.round(Vit.food * 10) / 10; s.water = Math.round(Vit.water * 10) / 10; s.drunk = Math.round(Vit.drunk * 10) / 10; };
+
+/* ---------- the panel ---------- */
+const VIT_ROWS = [['hp', 'HEALTH', '#46d17a'], ['st', 'STAMINA', '#f2c94c'], ['food', 'FOOD', '#f2994a'], ['water', 'WATER', '#4ab3f2'], ['drunk', 'DRUNK', '#b06ef2']];
+Vit.init = function () {
+  if (Vit.el) return; const hud = document.getElementById('hud'); if (!hud) return;
+  const css = document.createElement('style');
+  css.textContent = '#vit{left:max(16px,env(safe-area-inset-left,0px));bottom:16px;width:214px;background:var(--panel);padding:8px 14px 10px 16px;display:grid;gap:5px}' +
+    '#vit .vr{display:grid;grid-template-columns:62px 1fr 26px;align-items:center;gap:7px;font-size:10.5px;letter-spacing:.12em;color:var(--dim)}' +
+    '#vit .vr i{height:7px;background:rgba(255,255,255,.12);position:relative;display:block}#vit .vr i b{position:absolute;inset:0 auto 0 0;width:50%;transition:width .15s}' +
+    '#vit .vr em{font-style:normal;text-align:right;font-variant-numeric:tabular-nums;color:var(--fg);font-size:11px;letter-spacing:0}' +
+    '#vit .vr.low{color:#ff6a5a}#vit .vr.low i b{animation:pulse .6s infinite alternate}#vit .vr.off{opacity:.45}' +
+    '#vit.dead{opacity:.4}#vitFx{position:fixed;inset:0;pointer-events:none;z-index:3;opacity:0;transition:opacity .3s;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 45%,rgba(150,0,0,.55) 100%)}' +
+    '#vitBlack{position:fixed;inset:0;pointer-events:none;z-index:40;background:#000;opacity:0;display:grid;place-items:center;color:#d8d8d8;font:700 46px/1 var(--display,sans-serif);letter-spacing:.2em}' +
+    'body.touch #vit{bottom:auto;top:16px;left:50%;transform:translateX(-50%);width:200px;padding:5px 10px 6px;gap:3px}body.touch #vit .vr{grid-template-columns:52px 1fr 22px;font-size:9px}';
+  document.head.appendChild(css);
+  const el = Vit.el = document.createElement('div'); el.id = 'vit'; el.className = 'cham';
+  el.innerHTML = VIT_ROWS.map(([k, n, c]) => '<div class="vr" data-k="' + k + '">' + n + '<i><b style="background:' + c + '"></b></i><em>0</em></div>').join(''); hud.appendChild(el);
+  Vit.rows = {}; for (const r of el.querySelectorAll('.vr')) Vit.rows[r.dataset.k] = { r, b: r.querySelector('b'), n: r.querySelector('em'), v: -1, low: null };
+  const fx = document.createElement('div'); fx.id = 'vitFx'; document.body.appendChild(fx); Vit.fxEl = fx;
+  const bk = document.createElement('div'); bk.id = 'vitBlack'; document.body.appendChild(bk); Vit.black = bk;
+};
+Vit.hud = function () {
+  if (!Vit.el) Vit.init(); if (!Vit.el) return;
+  for (const [k] of VIT_ROWS) {
+    const R = Vit.rows[k], v = Math.round(Vit[k]); if (R.v !== v) { R.v = v; R.b.style.width = v + '%'; R.n.textContent = v; }
+    const low = k === 'drunk' ? Vit.drunk > 60 : k === 'st' ? Vit.winded : v < 20; if (R.low !== low) { R.low = low; R.r.classList.toggle('low', low); }
+    if (k === 'drunk') R.r.classList.toggle('off', v < 1);
+  }
+  const hurt = Vit.dead ? 0 : Vit.hp < 30 ? 0.35 + 0.35 * Math.abs(Math.sin(App.time * 3)) * (1 - Vit.hp / 30) : 0; if (Vit.fxEl) Vit.fxEl.style.opacity = hurt.toFixed(2);
+  const cv = renderer && renderer.domElement, blur = Vit.drunk > 25 ? (Vit.drunk - 25) / 75 * 2.2 : 0, key = blur.toFixed(1);
+  if (cv && cv.__vitBlur !== key) { cv.__vitBlur = key; cv.style.filter = blur > 0.05 ? 'blur(' + key + 'px) saturate(' + (1 + blur * 0.25).toFixed(2) + ')' : ''; }
+};
+
+/* ---------- each step ---------- */
+Vit.update = function (dt) {
+  if (Vit.dead) { Vit.deadStep(dt); Vit.hud(); return; }
+  if (App.mode !== 'play') { Vit.hud(); return; }
+  const god = devOn('god'), m = dt / 60, running = Foot.on && Foot.state === 'walk' && Foot.speed > 3.6;
+  Vit.food = Math.max(0, Vit.food - VIT.food * m * (running ? 1.6 : 1));
+  Vit.water = Math.max(0, Vit.water - VIT.water * m * (running ? 1.8 : 1));
+  Vit.drunk = Math.max(0, Vit.drunk - VIT.sober * dt);
+  /* stamina */
+  if (running) Vit.st = Math.max(0, Vit.st - VIT.run * dt * (1 + Vit.drunk / 200));
+  else Vit.st = Math.min(100, Vit.st + VIT.rest * dt * (Vit.food < 15 || Vit.water < 15 ? 0.45 : 1) * (Foot.on && Foot.speed > 0.5 ? 0.6 : 1));
+  if (Vit.st <= 0.5) { if (!Vit.winded) UI.toast('Out of breath', 'bad'); Vit.winded = true; } else if (Vit.st > 30) Vit.winded = false;
+  /* health */
+  Vit.hurtT -= dt; Vit.bailT -= dt;
+  const empty = (Vit.food <= 0 ? 1 : 0) + (Vit.water <= 0 ? 1 : 0);
+  if (empty && !god) Vit.hurt(VIT.starve * empty * dt, Vit.water <= 0 ? 'Dehydration' : 'Starvation', true);
+  else if (Vit.hurtT <= 0 && Vit.food > 30 && Vit.water > 30 && Vit.hp < 100) Vit.hp = Math.min(100, Vit.hp + VIT.regen * dt);
+  if (god) { Vit.hp = 100; Vit.st = 100; Vit.winded = false; }
+  /* warnings, once each way down */
+  const warn = (k, at, msg, kind) => { const id = k + at; if (Vit[k] < at && !Vit.warned[id]) { Vit.warned[id] = true; UI.toast(msg, kind || 'bad'); } else if (Vit[k] > at + 8) Vit.warned[id] = false; };
+  warn('food', 25, 'You are getting hungry: eat something (cafés, diners, shops)'); warn('food', 8, 'Starving! Eat now or you will start losing health');
+  warn('water', 25, 'You are thirsty: get a drink'); warn('water', 8, 'Parched! Drink something or you will start losing health');
+  if (Vit.drunk > 30 && !Vit.warned.tipsy) { Vit.warned.tipsy = true; UI.toast('You feel tipsy', 'info'); } else if (Vit.drunk < 20) Vit.warned.tipsy = false;
+  if (Vit.drunk > 60 && !Vit.warned.drunk) { Vit.warned.drunk = true; UI.toast('You are drunk: driving now is a very bad idea', 'bad'); } else if (Vit.drunk < 50) Vit.warned.drunk = false;
+  if (Vit.drunk >= 100 && !god) { Vit.drunk = 85; Vit.die('You drank yourself unconscious'); return; }
+  /* drunk on foot: now and then you trip */
+  Vit.ph += dt * (0.8 + Vit.drunk / 120);
+  if (Foot.on && Foot.state === 'walk' && Vit.drunk > 60 && Foot.speed > 2 && Math.random() < dt * 0.12 * (Vit.drunk - 60) / 40) Vit.trip();
+  Vit.store(); Vit.hud();
+};
+/* the drunk wander, for walking (added to the sideways input) and driving (added to the steering) */
+Vit.wander = function () { const d = Vit.drunk / 100; return d < 0.15 ? 0 : (Math.sin(Vit.ph * 1.7) * 0.7 + Math.sin(Vit.ph * 0.53 + 1.3) * 0.5) * (d - 0.1); };
+Vit.drive = function (c) { const w = Vit.wander(); if (w) c.steer = clamp(c.steer + w * 0.18, -1, 1); };
+Vit.walk = function (I) { const w = Vit.wander(); if (w && (I.f || I.r)) I.r = clamp(I.r + w * 0.8, -1, 1); if (Vit.winded) I.run = false; };
+/* the world sways a little when you have had a few (after the camera is placed) */
+Vit.cam = function () {
+  if (Vit.drunk < 10 || Vit.dead) return; const d = (Vit.drunk - 10) / 90, t = App.time;
+  camera.rotation.z += Math.sin(t * 0.9) * 0.05 * d; camera.position.y += Math.sin(t * 1.3) * 0.06 * d; camera.rotateY(Math.sin(t * 0.61 + 1) * 0.03 * d);
+};
+
+/* ---------- getting hurt ---------- */
+Vit.hurt = function (n, why, quiet) {
+  if (Vit.dead || !(n > 0) || devOn('god') || App.mode !== 'play') return 0;
+  Vit.hp = Math.max(0, Vit.hp - n); Vit.hurtT = 8; Vit.last = why || Vit.last;
+  if (!quiet) { App.dmg = Math.min(1, App.dmg + Math.min(0.8, n / 40)); Cam.shake = Math.max(Cam.shake, Math.min(1.6, n / 25)); }
+  if (Vit.hp <= 0) Vit.die(why);
+  return n;
+};
+Vit.eat = function (food, water, drunk, st) {
+  Vit.food = clamp(Vit.food + (food || 0), 0, 100); Vit.water = clamp(Vit.water + (water || 0), 0, 100); Vit.drunk = clamp(Vit.drunk + (drunk || 0), 0, 100);
+  if (st) Vit.st = clamp(Vit.st + st, 0, 100); Vit.store(); Vit.hud();
+};
+/* tripping over your own feet: down for a moment, no harm done */
+Vit.trip = function () {
+  const F = Foot, P = F.ped; F.state = 'down'; F.downT = 1.6; F.air = true; F.vy = 1.6; P.air = true; P.t = 0; P.tilt = 0; P.spin = (Math.random() < 0.5 ? -1 : 1) * 3; F.hitCool = 2; Fight.t = -1;
+  Snd.foot(false, 1.6, true); UI.toast('You tripped over your own feet', 'info');
+};
+
+/* ---------- bailing out of a moving vehicle ---------- */
+Vit.bail = function (impact) {
+  const c = car, sp = Math.max(Math.hypot(c.vx, c.vz), impact || 0), s = Math.sin(c.yaw), co = Math.cos(c.yaw), bike = isBike(CUR), off = bike ? 0.9 : 1.75;
+  let pos = null;
+  for (const lx of [-off, off, -off * 1.6, off * 1.6]) { const x = c.x + co * lx, z = c.z - s * lx; if (!footBlockedAt(x, z)) { pos = { x, z, lx }; break; } }
+  if (!pos) pos = { x: c.x, z: c.z, lx: -off };
+  if (!Foot.ped) Foot.ped = footNewPed(); Foot.ped.app = footApp();
+  const F = Foot, P = F.ped, kick = pos.lx < 0 ? 1 : -1;   /* thrown out to the side you went out of */
+  F.on = true; F.x = pos.x; F.z = pos.z; F.y = c.y + (bike ? 0.9 : 0.6);
+  F.vx = c.vx * 0.85 + co * -kick * 2.2; F.vz = c.vz * 0.85 - s * -kick * 2.2; F.vy = 2 + Math.min(4, sp * 0.06);
+  F.state = 'down'; F.downT = 0; F.air = true; F.speed = 0; F.dip = 0; F.hitCool = 3;
+  P.air = true; P.t = 0; P.tilt = 0; P.spin = (Math.random() < 0.5 ? -1 : 1) * (4 + Math.min(8, sp * 0.15));
+  F.prevView = Cam.view; F.tp = Cam.view === 2; F.yaw = c.yaw; F.body = c.yaw; F.pitch = 0; F.camD = 3.4; Cam.lookYaw = Cam.lookPitch = 0;
+  c.thr = c.brk = 0; c.hand = 0; c.nit = false; c.steerIn = 0; Vit.bailT = 6;   /* the vehicle rolls on by itself (Foot.parkCar) */
+  if (bike) Moto.fallen = kick;
+  const kmh = Math.round(sp * 3.6), dmg = sp < 3 ? 0 : Math.min(96, 4 + sp * 1.55 + (impact ? 10 : 0));
+  Snd.crash(Math.min(10, 2 + sp * 0.3)); Cam.shake = Math.max(Cam.shake, Math.min(2, 0.4 + sp * 0.04));
+  syncPl(); UI.footMode(true);
+  UI.toast((impact ? 'Thrown off at ' : 'You bailed out at ') + kmh + ' km/h' + (dmg ? ' · −' + Math.round(dmg) + ' health' : ''), dmg > 25 ? 'bad' : 'info');
+  if (dmg) Vit.hurt(dmg, impact ? 'Thrown from the bike' : 'Bailed out at ' + kmh + ' km/h');
+};
+
+/* ---------- blacking out, and waking up in hospital ---------- */
+Vit.die = function (why) {
+  if (Vit.dead) return; Vit.dead = true; Vit.deadT = 0; Vit.hp = 0; Vit.why = why || Vit.last || 'You blacked out';
+  Snd.fail(); UI.banner('WASTED', Vit.why); car.thr = 0; car.nit = false;
+  if (Mi && Mi.phase !== 'done') endMission(false, 'WASTED', [Vit.why], 0);
+};
+Vit.deadStep = function (dt) {
+  Vit.deadT += dt; if (Vit.black) Vit.black.style.opacity = clamp((Vit.deadT - 1.2) / 1.2, 0, 1).toFixed(2);
+  if (Vit.deadT > 3.4) Vit.wake();
+};
+Vit.wake = function () {
+  let T = towns[0], bd = 1e18; for (const t of towns) { const d = (t.cx - Pl.x) ** 2 + (t.cz - Pl.z) ** 2; if (d < bd) { bd = d; T = t; } }
+  const fee = Math.min(save.money, 250);
+  if (findNearestRoadPoint(T.cx + T.cell * 0.5, T.cz + T.cell * 0.5, _np2)) { const yaw = Math.atan2(_np2.tx, _np2.tz); loadAround(_np2.x, _np2.z, 12); spawnAt(_np2.x, _np2.z, yaw); }
+  else if (Foot.on) Foot.board(true);
+  if (car.wrecked > 0) { car.wrecked = 0; car.health = Math.max(car.health, 40); }
+  save.money -= fee; Vit.dead = false; Vit.hp = 70; Vit.st = 100; Vit.winded = false; Vit.food = Math.max(Vit.food, 45); Vit.water = Math.max(Vit.water, 45); Vit.drunk = 0; Vit.hurtT = 0; Moto.fallen = 0;
+  if (Vit.black) Vit.black.style.opacity = '0'; Vit.store(); writeSave();
+  UI.toast('You wake up in ' + T.name + ' Hospital, patched up' + (fee ? ' · bill ' + money(fee) : ''), 'info');
+};
+
 /* ---- js/07_wreck.js ---- */
 /* ================= CRASH WRECKS AND PLANE RECOVERY =================
    A crashed aircraft no longer vanishes. It carries its impact velocity into a rigid-body slide and tumble along the ground (a dozen contact
@@ -15143,7 +15382,7 @@ function intBuy(price, what, fx, line) {
   if (save.money < price) { Int.say('You need ' + money(price)); Snd.beep(200, 0.08); return false; }
   save.money -= price; if (fx) fx(); writeSave(); Snd.beep(660, 0.06); Int.say((line || 'Bought: ' + what) + ' · −' + money(price)); return true;
 }
-const intMeal = () => { intBuzz(5); car.health = Math.min(100, car.health + 25); car.nitro = tune.nitroMax; intSave().meals = (intSave().meals || 0) + 1; };
+const intMeal = () => { Vit.eat(65, 20); intBuzz(5); car.health = Math.min(100, car.health + 25); car.nitro = tune.nitroMax; intSave().meals = (intSave().meals || 0) + 1; };
 function intRunK() { const s = save.int; if (!s) return 1; return 1 + (s.fit || 0) * 0.0015 + ((s.buzz || 0) > App.time ? 0.12 : 0); }
 /* staff in a uniform, customers in their own clothes */
 function intStaff(K, x, z, yaw, col, o) { return K.person(Object.assign({ x, z, yaw, shirt: col, pants: 0x1c1e24, face: true, role: 'staff' }, o || {})); }
@@ -15176,7 +15415,7 @@ INT_KINDS.office = { name: 'Offices', rooms: {
     K.box(K.x0, 0, K.z1 - 2.6, K.x0 + 4, 3.4, K.z1 - 2.5, 0xd8d6d0, true); K.glass(K.x0 + 4, 0, K.z1 - 2.6, K.x0 + 4.1, 3.4, K.z1); K.col(K.x0 + 4, K.z1 - 2.6, K.x0 + 4.1, K.z1 - 0.9);
     K.table(K.x0 + 2, K.z1 - 1.2, 2.4, 1, 0xe8e4dc); K.plant(K.x1 - 1, K.z1 - 1, 1.2);
     K.counter(K.x1 - 4, K.z1 - 0.7, K.x1 - 1.6, K.z1 - 0.1, 0xd8d2c4); K.box(K.x1 - 3.6, 1.02, K.z1 - 0.6, K.x1 - 3.2, 1.4, K.z1 - 0.2, 0x2a2a2a);
-    K.act(K.x1 - 2.8, K.z1 - 1.2, 1.4, 'A coffee from the office machine (free)', () => { intBuzz(2); Snd.beep(700, 0.05); Int.say('Office coffee. Not good, but free.'); });
+    K.act(K.x1 - 2.8, K.z1 - 1.2, 1.4, 'A coffee from the office machine (free)', () => { intBuzz(2); Vit.eat(0, 12); Snd.beep(700, 0.05); Int.say('Office coffee. Not good, but free.'); });
   } } };
 
 /* ---------- café, bakery ---------- */
@@ -15188,7 +15427,7 @@ function intCafe(K, rec, r, bake) {
   else { K.box(K.x1 - 5.5, 1.02, cz + 0.2, K.x1 - 4.8, 1.55, cz + 0.6, 0xb0b4b8); K.box(K.x1 - 5.4, 1.4, cz + 0.6, K.x1 - 4.9, 1.45, cz + 0.75, 0x2a2a2a); }
   K.sign(bake ? 'BREAD · PASTRIES · CAKES' : 'ESPRESSO · LATTE · TEA · CAKE', (K.x0 + K.x1 - 3.5) / 2, 2.7, K.z0 + 0.02, Math.min(W - 4, 6), 0.7, 0, { fg: '#f2e8d0', bg: '#1a1410' });
   intStaff(K, K.x0 + 3, cz - 0.7, 0, bake ? 0xf2f2f2 : 0x2a1a14, { sleeve: false });
-  const price = bake ? 5 : 4; K.act(K.x0 + 3, cz + 1.4, 1.8, bake ? 'Buy a pastry' : 'Buy a coffee', () => intBuy(price, bake ? 'a warm pastry' : 'a flat white', () => intBuzz(3), bake ? 'Still warm. You feel ready for anything.' : 'Flat white. You feel wide awake (run faster for a while).'), { cost: price });
+  const price = bake ? 5 : 4; K.act(K.x0 + 3, cz + 1.4, 1.8, bake ? 'Buy a pastry' : 'Buy a coffee', () => intBuy(price, bake ? 'a warm pastry' : 'a flat white', () => { intBuzz(3); if (bake) Vit.eat(22, 0); else Vit.eat(0, 18); }, bake ? 'Still warm. You feel ready for anything.' : 'Flat white. You feel wide awake (run faster for a while).'), { cost: price });
   let n = 0; for (let x = K.x0 + 2.2; x < K.x1 - 1.5; x += 3.6) for (let z = cz + 3.2; z < K.z1 - 2; z += 3.4) { K.table(x, z, 0.8, 0.8, 0x3a2a20, 0.75, true); K.chair(x, z - 0.7, 0); K.chair(x, z + 0.7, Math.PI); if (r() < 0.6 && n++ < 6) intSeat(K, x, z - 0.72, 0, { eat: r() < 0.5 }); }
   K.plant(K.x1 - 1, K.z1 - 1, 1); K.pic(K.x1 - 0.02, 1.8, 0, -Math.PI / 2, 1.2, 0.9, 0x8a6a4a);
 }
@@ -15201,7 +15440,9 @@ INT_KINDS.store = { name: 'Convenience store', rooms: { main(K, rec, r) {
   const { W, D } = intDims(rec, 16, 14); K.shell({ W, D, floor: 0xd8d8d0, wall: 0xf0f0ec, tiles: 0xc0c0b8, lamp: 0xf0f8ff, lightI: 0.95 });
   const pts = intAisles(K, r, INT_PROD); for (let x = K.x0 + 1; x < K.x1 - 1; x += 1) K.fridge(x + 0.5, K.z0 + 0.4, 0, true);
   K.counter(K.x1 - 4, K.z1 - 3, K.x1 - 1, K.z1 - 2.2, 0x2a6a4a, 0xe8e8e0); K.box(K.x1 - 3.4, 1.02, K.z1 - 2.9, K.x1 - 2.9, 1.3, K.z1 - 2.5, 0x2a2a2a); intStaff(K, K.x1 - 2.5, K.z1 - 3.6, 0, 0x2a8a5a);
-  K.act(K.x1 - 2.5, K.z1 - 1.5, 1.6, 'Buy an energy drink', () => intBuy(6, 'an energy drink', () => intBuzz(4), 'Tastes like a battery. You feel fast.'), { cost: 6, wide: true });
+  K.act(K.x1 - 5.2, K.z1 - 1.5, 1.2, 'Buy a bottle of water', () => intBuy(2, 'a bottle of water', () => Vit.eat(0, 45), 'Cold water. You feel better already.'), { cost: 2 });
+  K.act(K.x1 - 7.4, K.z1 - 1.5, 1.2, 'Buy a sandwich', () => intBuy(6, 'a sandwich', () => Vit.eat(38, 0), 'A cheese and pickle sandwich. It does the job.'), { cost: 6 });
+  K.act(K.x1 - 2.5, K.z1 - 1.5, 1.6, 'Buy an energy drink', () => intBuy(6, 'an energy drink', () => { intBuzz(4); Vit.eat(0, 25, 0, 100); }, 'Tastes like a battery. You feel fast.'), { cost: 6, wide: true });
   intShoppers(K, r, 3, pts);
 } } };
 INT_KINDS.pharmacy = { name: 'Pharmacy', rooms: { main(K, rec, r) {
@@ -15264,7 +15505,10 @@ INT_KINDS.bar = { name: 'Bar', rooms: { main(K, rec, r) {
   intStaff(K, 0, K.z0 + 1.3, 0, 0x1a1a1a, { sleeve: false });
   for (let z = K.z0 + 6; z < K.z1 - 2; z += 2.6) { K.table(K.x1 - 2, z, 1, 1, 0x3a2416, 0.75); K.box(K.x1 - 0.7, 0, z - 0.6, K.x1 - 0.1, 1.1, z + 0.6, 0x6a1a1a, true); }
   K.tv(K.x0 + 0.05, 2.2, 0, Math.PI / 2, 1.6, 0x3a9a4a); K.glow(-1.5, 2.6, K.z0 + 0.41, 1.5, 3.0, K.z0 + 0.42, 0xff3a6a, 2);
-  K.act(0, K.z0 + 3.2, 1.8, 'Order a soda', () => intBuy(5, 'a soda', () => intBuzz(2), 'A cold soda with lime.'), { cost: 5 });
+  K.act(0, K.z0 + 3.2, 1.2, 'Order a soda', () => intBuy(5, 'a soda', () => { intBuzz(2); Vit.eat(0, 30); }, 'A cold soda with lime.'), { cost: 5 });
+  K.act(-2.3, K.z0 + 3.2, 1.1, 'Order a beer', () => intBuy(6, 'a beer', () => Vit.eat(4, 12, 16), ['A cold one. Cheers.', 'Pint of the local. Not bad.', 'Another? Why not.'][(Vit.drunk / 20) % 3 | 0]), { cost: 6 });
+  K.act(2.3, K.z0 + 3.2, 1.1, 'Order a whiskey', () => intBuy(12, 'a whiskey', () => Vit.eat(0, 0, 28), Vit.drunk > 55 ? '“Last one, pal. You are swaying.”' : 'Neat. It burns the whole way down.'), { cost: 12 });
+  K.act(4.4, K.z0 + 3.2, 1.0, 'Order a cocktail', () => intBuy(10, 'a cocktail', () => Vit.eat(0, 8, 20), 'Something pink with a cherry on it.'), { cost: 10 });
 } } };
 INT_KINDS.diner = { name: 'Diner', rooms: { main(K, rec, r) { intDiner(K, rec, r); } } };
 function intDiner(K, rec, r, th) {
@@ -15299,7 +15543,7 @@ INT_KINDS.home = { name: 'Home', rooms: { main(K, rec, r) {
   if (who) who.after = (n) => { if (Int.t > 1.5 && Int.t < 4.5) { n.talk = true; Int.say('“Er… can I help you? This is my house.”', 0.2); } else n.talk = false; };
   if (r() < 0.6) K.person({ x: mx + 1, z: K.z0 + 1.1, yaw: 0, kind: 'work' });
   K.act((K.x0 + mx) / 2, -0.4, 1.6, 'Watch their TV', () => Int.say(intNews() + ' · “Do you mind?”', 5));
-  K.act((mx + K.x1) / 2, 0.6, 1.6, 'Ask for a glass of water', () => { intBuzz(1); Snd.beep(600, 0.05); Int.say('“Er… sure. Here. And then you’ll be going?”', 3); });
+  K.act((mx + K.x1) / 2, 0.6, 1.6, 'Ask for a glass of water', () => { intBuzz(1); Vit.eat(0, 30); Snd.beep(600, 0.05); Int.say('“Er… sure. Here. And then you’ll be going?”', 3); });
 } } };
 /* ---------- warehouse, barn ---------- */
 INT_KINDS.warehouse = { name: 'Warehouse', rooms: { main(K, rec, r) {
@@ -15724,7 +15968,7 @@ INT_KINDS.terminal = { name: 'Airport terminal', rooms: { main(K, rec, r) {
   for (let x = 3; x < K.x1 - 2; x += 3.4) for (const z of [-2, 0.5]) for (let k = 0; k < 4; k++) K.chair(x - 1.2 + k * 0.6, z, z < 0 ? 0 : Math.PI, 0x2a5aa8);
   intSeat(K, 3 - 0.6, 0.5, Math.PI, { phone: true }); intSeat(K, 6.4, -2, 0, {}); intSeat(K, 9.8 + 0.6, 0.5, Math.PI, { eat: true });
   K.counter(K.x1 - 6, K.z1 - 3, K.x1 - 1, K.z1 - 2.2, 0x6a4a34, 0xe8e0d0); intStaff(K, K.x1 - 3.5, K.z1 - 1.5, Math.PI, 0x2a1a14); K.sign('CAFÉ', K.x1 - 3.5, 3, K.z1 - 0.04, 2, 0.6, Math.PI, { fg: '#ffcf6a', bg: '#2a1a14' });
-  K.act(K.x1 - 3.5, K.z1 - 3.8, 1.6, 'Buy an airport coffee', () => intBuy(7, 'a coffee', () => intBuzz(3), 'Airport prices. Still, you feel awake.'), { cost: 7 });
+  K.act(K.x1 - 3.5, K.z1 - 3.8, 1.6, 'Buy an airport coffee', () => intBuy(7, 'a coffee', () => { intBuzz(3); Vit.eat(0, 18); }, 'Airport prices. Still, you feel awake.'), { cost: 7 });
   K.shelf(K.x0 + 0.05, K.z0 + 3, K.x0 + 0.5, K.z0 + 9, 2, 4, r, INT_PROD); K.sign('NEWS · TRAVEL', K.x0 + 0.04, 2.5, K.z0 + 6, 2.4, 0.4, Math.PI / 2, { fg: '#fff', bg: '#c8302a' });
   for (let k = 0; k < 2; k++) { const x = -4 + k * 4; K.box(x - 0.5, 0, K.z0 + 6, x - 0.35, 2.2, K.z0 + 7, 0x9a9aa0, true); K.box(x + 0.35, 0, K.z0 + 6, x + 0.5, 2.2, K.z0 + 7, 0x9a9aa0, true); K.box(x - 0.5, 2.2, K.z0 + 6, x + 0.5, 2.4, K.z0 + 7, 0x9a9aa0); K.box(x + 0.7, 0, K.z0 + 5.5, x + 1.4, 0.9, K.z0 + 7.5, 0x3a3c40, true); }
   K.person({ x: -1.5, z: K.z0 + 6.5, yaw: 0, shirt: 0x1a2a4a, pants: 0x1a1c24, face: true, role: 'guard' });
@@ -15771,7 +16015,7 @@ INT_KINDS.venue = { name: 'Venue', rooms: { main(K, rec, r) {
   for (let k = 0; k < 3; k++) { const x = 1 + k * 3; K.table(x, K.z1 - 2.8, 0.8, 0.8, 0x3a2416, 0.75, true); K.chair(x - 0.6, K.z1 - 2.8, -Math.PI / 2 + Math.PI, 0x3a2416); if (r() < 0.6) intSeat(K, x - 0.62, K.z1 - 2.8, Math.PI / 2, { eat: r() < 0.5, talk: true }); }
   K.person({ x: px + 1, z: pz + 1.5, kind: 'walk', path: [[px - 2, pz + 1.6, 3], [px + 3, pz + 1.4, 3]] });
   K.act(px, pz + 2.4, 2.4, 'Play: ' + D.sub.replace(/^[^·]*· ?/, '') + ' (pick your stake)', () => intPlayVenue(rec), { wide: true });
-  K.act(K.x0 + 2.2, 0.5, 1.6, 'Order: ' + D.snack.name, () => intBuy(D.snack.price, D.snack.name, () => { car.health = Math.min(100, car.health + 25); car.nitro = tune.nitroMax; intBuzz(2); }, D.snack.name + '. Your car feels better already.'), { cost: D.snack.price });
+  K.act(K.x0 + 2.2, 0.5, 1.6, 'Order: ' + D.snack.name, () => intBuy(D.snack.price, D.snack.name, () => { car.health = Math.min(100, car.health + 25); car.nitro = tune.nitroMax; intBuzz(2); Vit.eat(40, 15); }, D.snack.name + '. Your car feels better already.'), { cost: D.snack.price });
 } } };
 INT_KINDS.club = { name: 'Club', rooms: { main(K, rec, r) {
   const S = rec.S, D = S.D, col = D.col, W = 22, Dd = 14, show = D.game === 'show';
@@ -15787,7 +16031,7 @@ INT_KINDS.club = { name: 'Club', rooms: { main(K, rec, r) {
   K.counter(K.x1 - 1.3, -3, K.x1 - 0.5, K.z1 - 2, 0x1a1c22, 0x2a2c34, 1.1); K.glow(K.x1 - 1.32, 0.1, -3, K.x1 - 1.3, 0.15, K.z1 - 2, col, 1.4); intStaff(K, K.x1 - 0.2, 0.2, -Math.PI / 2, 0x1a1a1a, { sleeve: false });
   for (let k = 0; k < 2; k++) K.sofa(K.x0 + 1, -1 + k * 3, Math.PI / 2, 2.4, 0x3a1a2a);
   K.act(0, K.z0 + 4.6, 2.6, (show ? 'Watch the show (buy a ticket)' : 'Hit the dance floor (the dance game)'), () => intPlayVenue(rec), { wide: true });
-  K.act(K.x1 - 1.9, 0.2, 1.6, 'Buy a mocktail', () => intBuy(9, 'a mocktail', () => intBuzz(2), 'Something blue with an umbrella in it.'), { cost: 9 });
+  K.act(K.x1 - 1.9, 0.2, 1.6, 'Buy a mocktail', () => intBuy(9, 'a mocktail', () => { intBuzz(2); Vit.eat(0, 30); }, 'Something blue with an umbrella in it.'), { cost: 9 });
   let ph = 0; K.tick((dt) => { ph += dt; });
 } } };
 
@@ -15882,7 +16126,7 @@ INT_KINDS.apts = { name: 'Apartments', rooms: {
     K.bed((mx + K.x1) / 2, K.z0 + 1.3, 0, [0x2a4a7a, 0x7a2a3a, 0x3a6a4a][u % 3], true); K.box(K.x1 - 0.7, 0, 0.5, K.x1 - 0.1, 2.1, 2.3, 0x6a4a34, true);
     if (big) { K.wallX(K.z0 + 3.4, mx, K.x1, [[mx + 0.3, mx + 1.2]], wall); K.bed(K.x1 - 1.2, K.z1 - 1.6, Math.PI / 2, 0x6a6a8a, false); }
     K.act((K.x0 + mx) / 2, 0.6, 1.6, 'Watch the news', () => Int.say(intNews(), 6));
-    K.act(K.x0 + 3.2, K.z1 - 1.3, 1.4, 'Raid the fridge', () => { intBuzz(3); Snd.beep(600, 0.05); Int.say('Leftover pizza. You feel ready to go.'); });
+    K.act(K.x0 + 3.2, K.z1 - 1.3, 1.4, 'Raid the fridge', () => { intBuzz(3); Vit.eat(45, 25); Snd.beep(600, 0.05); Int.say('Leftover pizza. You feel ready to go.'); });
     K.act(K.x1 - 1.2, 1.4, 1.5, 'Open the wardrobe (change clothes)', () => intWardrobe(rec, true));
     K.act((mx + K.x1) / 2, K.z0 + 2.6, 1.8, () => (App.tod > 20 || App.tod < 6 ? 'Sleep until morning (saves the game)' : 'Sleep until evening (saves the game)'), () => {
       const night = App.tod > 20 || App.tod < 6; Int.busy = { freeze: true, lock: 'Sleeping…', t: 0, hint: () => '<b>Zzz…</b>', tick(dt) { this.t += dt; if (this.t > 1.6) { Int.busy = null; App.tod = night ? 7.5 : 19.5; car.health = 100; intSave().nights = (intSave().nights || 0) + 1; writeSave(); UI.banner(night ? 'GOOD MORNING' : 'GOOD EVENING', 'Rested · car serviced · game saved'); } } };
@@ -16247,7 +16491,7 @@ INT_KINDS.casino = { name: 'Casino', rooms: { main(K, rec) {
   const bz = K.z0 + 1.0; K.counter(-W * 0.1, bz - 0.4, W * 0.35, bz + 0.4, 0x3a1a20, 0xd8a830); K.glow(-W * 0.1, 1.05, bz - 0.45, W * 0.35, 1.08, bz - 0.4, 0xff3ad8, 1.2);
   for (let k = 0; k < 8; k++) K.cyl(-W * 0.1 + 0.4 + k * 0.5, 1.5, K.z0 + 0.2, 0.06, 0.32, [0x3a8a3a, 0xc8a050, 0x8a2a2a, 0xe8e8f0][k % 4]);
   intStaff(K, W * 0.12, bz - 0.9, 0, 0xf2f2f2, { suit: true });
-  K.act(W * 0.12, bz + 1.0, 1.4, 'Buy a drink ($15)', () => { if (!csTake(15)) return; writeSave(); Snd.beep(900, 0.05); Int.say('Cheers. On the house it was not.', 2.4); }, { wide: true });
+  K.act(W * 0.12, bz + 1.0, 1.4, 'Buy a drink ($15)', () => { if (!csTake(15)) return; Vit.eat(0, 10, 22); writeSave(); Snd.beep(900, 0.05); Int.say('Cheers. On the house it was not.', 2.4); }, { wide: true });
   const cx = K.x1 - 2, cz = K.z1 - 3; K.counter(cx - 1.2, cz - 0.4, cx + 1.2, cz + 0.4, 0x2a2a30, 0xd8a830); for (let k = 0; k < 6; k++) K.box(cx - 1.2 + k * 0.48, 1.0, cz - 0.02, cx - 1.17 + k * 0.48, 2.3, cz + 0.02, 0xd8a830);
   K.sign('CASHIER', cx, 2.6, cz, 1.8, 0.4, Math.PI, { fg: '#ffd84a', bg: '#1a0a10' }); intStaff(K, cx, cz - 0.9, 0, 0x2a2a30);
   K.act(cx, cz + 1.0, 1.4, 'Cashier: your record', () => Casino.cashier(), { wide: true });
@@ -29654,13 +29898,14 @@ function titleCamera(dt) {
 function step(dt) {
   const c = car;
   syncPl();
-  if (Surf.on) { Foot.parkCar(c); Surf.step(dt); } else if (Fly.on) { Foot.parkCar(c); Fly.step(dt); syncPl(); } else if (Boat.on) { Foot.parkCar(c); Boat.step(dt); syncPl(); } else if (Foot.on) { Foot.parkCar(c); Foot.step(dt); syncPl(); } else readControls(dt);
+  if (Surf.on) { Foot.parkCar(c); Surf.step(dt); } else if (Fly.on) { Foot.parkCar(c); Fly.step(dt); syncPl(); } else if (Boat.on) { Foot.parkCar(c); Boat.step(dt); syncPl(); } else if (Foot.on) { Foot.parkCar(c); Foot.step(dt); syncPl(); } else { readControls(dt); if (Vit.dead) { c.thr = 0; c.brk = 1; } else Vit.drive(c); }
   const n = Math.min(10, Math.ceil(dt / (1 / 120))), h = dt / n;
   c.crashFlag = 0; c.landImpact = 0; Police.ram = false;
   if (Bots.on) Bots.update(dt, Race.refProg());
   if (Heist.ride) Heist.rideStep(dt);   /* in the heist wagon: the train carries the car */
   else for (let i = 0; i < n; i++) { stepCar(h); if (Rally.on) { Rally.sub(c, h); continue; } if (Drag.on) { Drag.sub(c, h); continue; } if (Derby.on) { Derby.sub(c, h); continue; } if (Bots.on) Bots.step(h); if (Dunes.on) Dunes.step(h); Crash.run(c); collideDyn(c); if (Rail.built && !Rally.on && !Drag.on && !Derby.on) Rail.collide(c); }
   c.kmh = Math.abs(c.speed) * 3.6;
+  Vit.update(dt);   /* health, stamina, food, water, intoxication (07_vit.js) */
   /* impacts */
   const v = c.crashFlag;
   if (v > 2.2 && App.time - c.lastImpact > 0.12 && c.wrecked <= 0) {
@@ -29668,10 +29913,11 @@ function step(dt) {
     c.health -= Math.pow(v - 2, 1.35) * 1.3 * tune.dmg * (Police.ram ? 0.55 : 1) * (Race.on ? 0.4 : Rally.on ? 0.3 : Derby.on ? DD.ARMOUR : 1); Dmg.hit(c, v, hpB - c.health);
     Cam.shake = Math.max(Cam.shake, Math.min(2.5, v * 0.12)); App.dmg = Math.min(1, App.dmg + v / 24);
     Snd.crash(v); sparks(c.cx, c.y + 0.6, c.cz, Math.min(34, Math.round(v * 2.2)), 2 + v * 0.45); if (!devOn('god')) onMissionCrash(v);
+    if (!Foot.on && !Race.on && !Rally.on && !Derby.on && !Drag.on) { if (isBike(CUR) && v > 7 && !devOn('god')) Vit.bail(v); else if (v > 6) Vit.hurt((v - 6) * (isBike(CUR) ? 3 : 1.1), 'A hard crash'); }   /* you feel it too; a bike throws you off */
   } else if (v > 0.6 && Math.abs(c.speed) > 6 && c.wrecked <= 0) Dmg.scrape(c);
   if (c.landImpact > 0) {
     const li = c.landImpact; Cam.shake = Math.max(Cam.shake, Math.min(2, li * 0.12)); Snd.crash(li * 0.6); sparks(c.x, c.y + 0.2, c.z, 10, 5);
-    if (li > 11) { c.health -= (li - 11) * 3 * tune.dmg * (Rally.on ? 0.12 : Derby.on ? DD.ARMOUR : 1); App.dmg = Math.min(1, App.dmg + (Rally.on ? 0.1 : 0.3)); }
+    if (li > 11) { c.health -= (li - 11) * 3 * tune.dmg * (Rally.on ? 0.12 : Derby.on ? DD.ARMOUR : 1); App.dmg = Math.min(1, App.dmg + (Rally.on ? 0.1 : 0.3)); if (!Rally.on && !Derby.on) Vit.hurt((li - 11) * (isBike(CUR) ? 2.5 : 1), 'A heavy landing'); }
   }
   if (devOn('god')) c.health = 100; else if ((Race.on || Rally.on || Drag.on) && c.health < 12) c.health = 12;   /* no tow trucks mid-race */
   else if (Derby.on && c.health < 0.5) c.health = 0.5;   /* the derby decides when you are out */
@@ -29738,7 +29984,7 @@ function frame(now) {
   if (save.set.cycle) App.tod = (App.tod + dt * 0.02 * save.set.cycle) % 24;
   App.dmg = Math.max(0, App.dmg - dt * 1.1);
   if (App.mode === 'play') {
-    step(dt * (save.set.dev ? Dev.ts : 1)); Dmg.update(dt); if (Fly.on) Fly.camera(dt); else if (Boat.on) Boat.camera(dt); else if (Surf.on) Surf.camera(dt); else updateCamera(dt, Foot.on ? Foot.fovAdd : 0); if (Foot.on) Foot.camera(dt); if (GAR.edit) Home.camera(dt); Tow.camera(dt); Bust.camera(dt);
+    step(dt * (save.set.dev ? Dev.ts : 1)); Dmg.update(dt); if (Fly.on) Fly.camera(dt); else if (Boat.on) Boat.camera(dt); else if (Surf.on) Surf.camera(dt); else updateCamera(dt, Foot.on ? Foot.fovAdd : 0); if (Foot.on) Foot.camera(dt); if (GAR.edit) Home.camera(dt); Tow.camera(dt); Bust.camera(dt); Vit.cam();
     if (!Cam.dragging) { Cam.lookYaw *= Math.exp(-dt * 4); Cam.lookPitch *= Math.exp(-dt * 4); }
   } else { updateTraffic(dt); updatePeds(dt); Rail.update(dt); if (App.mode === 'cut') Cut.frame(dt); else titleCamera(dt); }
   updateMarkerVis(dt, App.time); Story.visual(dt); Phone.tick(); Shop.visual(dt, App.time); Wk.visual(dt, App.time); Ven.visual(dt, App.time); Col.update(dt, App.time); Dunes.visual(dt); Bots.visual(dt); updateParticles(dt); if (Rally.on) Rally.visual(dt); if (Drag.on) Drag.visual(dt); if (Derby.on) Derby.visual(dt); Home.visual(dt); Fly.visual(dt); Boat.visual(dt); VM.visual(dt);
@@ -29763,7 +30009,7 @@ function frame(now) {
 }
 
 App.start = function () {
-  if (App.mode !== 'title') return;
+  if (App.mode !== 'title') return; Vit.load();
   Police.reset(); Snd.init(); Cam.view = save.set.cam != null ? save.set.cam : (window.innerWidth / window.innerHeight < 1 ? 2 : 0); Cam.chaseYaw = car.yaw; Cam.ch = car.y + 2; Cam.fov = save.set.fov; UI.setMode('play');
   if (Story.on) { Story.begin(); return; }
   setTimeout(() => UI.toast('Follow a colored beam to start a run', 'info'), 600);
@@ -29802,7 +30048,7 @@ async function boot() {
     console.error(err); E.loadmsg.textContent = 'Could not start the 3D view: ' + (err && err.message ? err.message : err); window.__bootError = String(err && err.stack || err);
   }
 }
-window.__game = { get scene() { return scene; }, Wild, WILD_KINDS, Casino, csVal, csSlotPay, csRouletteWin, Cockpit, ckThemeOf, Story, STORY, SIDE, Phone, Cut, PLAY_MODE, endMission, Volc, VOLC, VOL, volcLift, volcLakeY, DEV_PLACES, Int, Bld, INT_KINDS, Jail, intSave, BankJob, KIT, kitDef, kitParts, kitDefault, HEIST_PRIZES, Part, L, Surf, Dunes, Rail, Beach, Heist, Wanted, GAR, terrainHeight, NR, Derby, DD, applyCar, buildCarModel, CAR_BY_ID, Env, get renderer() { return renderer; }, writePeds, Cam, Human, HU, Peds, Foot, Setup, TU, TU_PRESETS, CARS, CARP, tune, Drag, DG, DG_TIERS, Rally, RR, RY, RY_STAGES, RYG, RW, RY_FEATS, WK, Wk, WkF, WKSim, WKG, WKS, WkE, qfromAxes3, Dmg, Mech, RACE_DIFF, Wreck, Jack, JACK_MODELS, Race, Bots, Crash, newCarState, Track, TRK, Col, COLK, Ven, VDEF, CDEF, venSave, VM, VMD, VMK, towns, roads, Dock, MARINA, Boat, Boats, BSPEC, HB, solidHit, TREE, Air, AIR, Fly, Planes, PSPEC, Rel, REL_ROSTER, Shop, COS, Cosm, Biome, Weather, REG, Bust, CR, Fight, Police, Wanted, WANT, footBlockedAt, findNearestRoadPoint, Tow, GAR, Home, GP, Foot, Talk, Fare, Pl, pedHit, getMoney: () => save.money, get save() { return save; }, getLaw: () => save.law, Court, CR, Peds, pedSpawn, Dyn, abortMission, stepSim: step, frame, Env, Wheels, updateWheels, updateCamera, groundAt, buildCarModel, carSpec, TRAFFIC_DEFS, secAt, disposeCar, THREE_: THREE, TREE, GB, addTree, addGrass, terrainHeight, fbm, noise2, sstep, Dev, devReset, CARS, CAR_BY_ID, applyCar, stepCar, CARP, roads, loadAround, carThumb, car, App, UI, Chunks, Post, Cam, Keys, missions, towns, spawnAt, get Mi() { return Mi; }, startMission, applyQuality, get renderer() { return renderer; }, get scene() { return scene; }, get camera() { return camera; }, Snd, WorldMap, MView, Mirror, MAT, Cockpit, Q: () => Q, hasPost: () => hasPost, key(code, down) { Keys[code] = down; if (down) onKey(code); }, tune };
+window.__game = { get scene() { return scene; }, Vit, VIT, Moto, isBike, Wild, WILD_KINDS, Casino, csVal, csSlotPay, csRouletteWin, Cockpit, ckThemeOf, Story, STORY, SIDE, Phone, Cut, PLAY_MODE, endMission, Volc, VOLC, VOL, volcLift, volcLakeY, DEV_PLACES, Int, Bld, INT_KINDS, Jail, intSave, BankJob, KIT, kitDef, kitParts, kitDefault, HEIST_PRIZES, Part, L, Surf, Dunes, Rail, Beach, Heist, Wanted, GAR, terrainHeight, NR, Derby, DD, applyCar, buildCarModel, CAR_BY_ID, Env, get renderer() { return renderer; }, writePeds, Cam, Human, HU, Peds, Foot, Setup, TU, TU_PRESETS, CARS, CARP, tune, Drag, DG, DG_TIERS, Rally, RR, RY, RY_STAGES, RYG, RW, RY_FEATS, WK, Wk, WkF, WKSim, WKG, WKS, WkE, qfromAxes3, Dmg, Mech, RACE_DIFF, Wreck, Jack, JACK_MODELS, Race, Bots, Crash, newCarState, Track, TRK, Col, COLK, Ven, VDEF, CDEF, venSave, VM, VMD, VMK, towns, roads, Dock, MARINA, Boat, Boats, BSPEC, HB, solidHit, TREE, Air, AIR, Fly, Planes, PSPEC, Rel, REL_ROSTER, Shop, COS, Cosm, Biome, Weather, REG, Bust, CR, Fight, Police, Wanted, WANT, footBlockedAt, findNearestRoadPoint, Tow, GAR, Home, GP, Foot, Talk, Fare, Pl, pedHit, getMoney: () => save.money, get save() { return save; }, getLaw: () => save.law, Court, CR, Peds, pedSpawn, Dyn, abortMission, stepSim: step, frame, Env, Wheels, updateWheels, updateCamera, groundAt, buildCarModel, carSpec, TRAFFIC_DEFS, secAt, disposeCar, THREE_: THREE, TREE, GB, addTree, addGrass, terrainHeight, fbm, noise2, sstep, Dev, devReset, CARS, CAR_BY_ID, applyCar, stepCar, CARP, roads, loadAround, carThumb, car, App, UI, Chunks, Post, Cam, Keys, missions, towns, spawnAt, get Mi() { return Mi; }, startMission, applyQuality, get renderer() { return renderer; }, get scene() { return scene; }, get camera() { return camera; }, Snd, WorldMap, MView, Mirror, MAT, Cockpit, Q: () => Q, hasPost: () => hasPost, key(code, down) { Keys[code] = down; if (down) onKey(code); }, tune };
 boot();
 
 })();
