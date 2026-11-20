@@ -176,6 +176,7 @@ Int.frame = function (dt) {
   try { for (const n of Int.npcs) intNpc(n, dt); if (Int.tp && Int.ped && Int.ped.hu) { const P = Int.ped; P.x = Int.x; P.z = Int.z; P.y = Int.y - (sw ? 1.0 : 0); P.yaw = Int.yaw; P.v = sp; P.state = sp > 0.2 ? 'walk' : 'stand'; P.ph += TAU * sp / pedCyc(Math.max(0.4, sp), P.app) * dt; pedPose(P, App.time, dt, false, false); } }
   finally { Pl.x = px; Pl.z = pz; }
   if (Int.ped && Int.ped.hu) Int.ped.hu.root.visible = Int.tp;
+  if (Int.busy && Int.busy.pose) { if (!Int.ped || !Int.ped.hu) Int.mkPed(); Int.busy.pose(Int.ped.hu, dt); }   /* doing something you should see yourself do (a workout: 08_int_zgym.js) */
   /* camera */
   const cam = Int.cam, W = innerWidth, H = innerHeight; cam.aspect = W / H; cam.fov = save.set.fov || 72; cam.updateProjectionMatrix();
   Int.eyeK = (Int.eyeK == null ? 1 : Int.eyeK) + ((Int.sneak ? 0.64 : 1) - (Int.eyeK == null ? 1 : Int.eyeK)) * Math.min(1, dt * 8);
@@ -184,6 +185,7 @@ Int.frame = function (dt) {
     const bx = Int.x - s * 2.6 * cp, bz = Int.z - c * 2.6 * cp, o2 = intResolve(bx, bz, 0.2, Int.cols, Int.bounds);
     cam.position.set(o2.x, eye + 0.3 - Math.sin(Int.pitch) * 1.6, o2.z); cam.lookAt(Int.x, eye - 0.1, Int.z);
   } else { cam.position.set(Int.x, eye, Int.z); _intV.set(Int.x + s * cp, eye + Math.sin(Int.pitch), Int.z + c * cp); cam.lookAt(_intV); }
+  if (Int.busy && Int.busy.cam) Int.busy.cam(cam, dt);
   /* draw */
   const s0 = scene, c0 = camera, e0 = env.exposure; scene = Int.sc; camera = cam; env.exposure = Int.K.expo || Int.expo;
   try { renderFrame(Int.fx, App.time); } finally { env.exposure = e0; scene = s0; camera = c0; }

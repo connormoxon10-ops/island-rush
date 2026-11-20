@@ -154,12 +154,14 @@ INT_KINDS.gym = { name: 'Gym', rooms: { main(K, rec, r) {
   K.counter(K.x1 - 6, K.z1 - 3, K.x1 - 3, K.z1 - 2.3, 0xff6a1a, 0x1a1a1a); intStaff(K, K.x1 - 4.5, K.z1 - 3.6, 0, 0xff6a1a, { sport: 0xff6a1a });
   K.sign(rec.name.toUpperCase(), 0, 3.6, K.z0 + 0.04, Math.min(W - 3, 9), 0.8, 0, { fg: '#ff6a1a' });
   const pass = 50;
-  K.act(K.x0 + 3.4, K.z0 + 3.6, 1.5, 'Bench press', () => intWorkout('Bench press', 0.55, pass), { cost: intSave().gymMem ? 0 : pass });
-  K.act(K.x0 + 6.5, K.z0 + 3.6, 1.5, 'Dumbbell curls', () => intWorkout('Curls', 0.45, pass), { cost: intSave().gymMem ? 0 : pass });
-  K.act(K.x1 - 1.4, K.z0 + 2 + 2 * 2.2 + 1.3, 1.5, 'Run on the treadmill', () => intWorkout('Treadmill', 0.5, pass), { cost: intSave().gymMem ? 0 : pass });
-  K.act(K.x0 + 2, K.z1 - 2.2, 1.5, 'Hit the punch bag', () => intWorkout('Punch bag', 0.5, pass), { cost: intSave().gymMem ? 0 : pass });
+  K.act(K.x0 + 3.4, K.z0 + 3.6, 1.5, 'Bench press', () => Gym.start('press', K.x0 + 2, K.z0 + 3, 0, pass), { cost: intSave().gymMem ? 0 : pass });
+  K.act(K.x0 + 6.5, K.z0 + 3.6, 1.5, 'Dumbbell curls', () => Gym.start('curl', K.x0 + 5, K.z0 + 3.4, 0, pass), { cost: intSave().gymMem ? 0 : pass });
+  K.act(K.x1 - 1.4, K.z0 + 2 + 2 * 2.2 + 1.3, 1.5, 'Run on the treadmill', () => Gym.start('run', K.x1 - 1.4, K.z0 + 2 + 2 * 2.2, Math.PI, pass), { cost: intSave().gymMem ? 0 : pass });
+  K.act(K.x0 + 2, K.z1 - 2.2, 1.5, 'Hit the punch bag', () => Gym.start('bag', K.x0 + 2, K.z1 - 2.2, Math.PI, pass), { cost: intSave().gymMem ? 0 : pass });
+  K.act(K.x0 + 8, K.z0 + 4.4, 1.4, 'Squats under the rack', () => Gym.start('squat', K.x0 + 8, K.z0 + 3.2, 0, pass), { cost: intSave().gymMem ? 0 : pass });
+  K.act(2.9, 2.7, 1.3, 'Ride the exercise bike', () => Gym.start('bike', 2.9, 1.8, Math.PI, pass), { cost: intSave().gymMem ? 0 : pass });   /* (the second bike: the others have riders) */
   K.act(K.x1 - 4.5, K.z1 - 1.6, 1.6, () => (intSave().gymMem ? 'Your gym pass · fitness ' + Math.round(intSave().fit || 0) : 'Buy a gym pass'), () => { if (intSave().gymMem) { Int.say('Fitness ' + Math.round(intSave().fit || 0) + ' / 100 · ' + (intSave().gym || 0) + ' workouts', 3); return; } intBuy(pass, 'a gym pass', () => { intSave().gymMem = 1; }, 'Gym pass. Every gym on the island is yours to use.'); });
-} }, key(code) { if (Int.busy && Int.busy.press && (code === 'Space')) Int.busy.press(); } };
+} }, key(code) { if (Int.busy && Int.busy.key) Int.busy.key(code); else if (Int.busy && Int.busy.press && (code === 'Space')) Int.busy.press(); } };
 
 /* ---------- indoor pool ---------- */
 INT_KINDS.pool = { name: 'Indoor pool', rooms: { main(K, rec, r) {
