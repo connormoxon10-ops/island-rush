@@ -39,14 +39,15 @@ const OUT = process.env.OUT || __dirname;
   console.log(JSON.stringify(lean));
   ok(Math.abs(lean.lean) > 0.2 && Math.sign(lean.lean) === -Math.sign(lean.ay), 'it leans into the corner (' + Math.round(Math.abs(lean.lean) * 57.3) + '°)');
   /* ---- bailing out ---- */
-  const bail = await page.evaluate(() => { const g = window.__game, V = g.Vit, c = g.car; V.hp = 100; window.__go(80); window.__run(2); const v0 = c.kmh; g.key('KeyF', true); g.key('KeyF', false); window.__run(1);
+  const bail = await page.evaluate(() => { const g = window.__game, V = g.Vit, c = g.car; V.hp = 100; window.__go(80); window.__run(2); const v0 = c.kmh; window.__b0 = { x: c.x, z: c.z }; g.key('KeyF', true); g.key('KeyF', false); window.__run(1);
     const r = { on: g.Foot.on, state: g.Foot.state, hp: V.hp, v0: Math.round(v0), fallen: g.Moto.fallen }; window.__run(12); r.bikeV = Math.round(c.kmh); r.down = g.Foot.state; window.__run(6); return r; });
   await shot('bail');
-  const after = await page.evaluate(() => { const g = window.__game; window.__run(330); return { state: g.Foot.state, bikeV: Math.round(g.car.kmh), lean: +g.Moto.lean.toFixed(2) }; });
+  const after = await page.evaluate(() => { const g = window.__game; window.__run(330); return { state: g.Foot.state, bikeV: Math.round(g.car.kmh), lean: +g.Moto.lean.toFixed(2), far: Math.round(Math.hypot(g.Foot.x - window.__b0.x, g.Foot.z - window.__b0.z)), toBike: Math.round(Math.hypot(g.Foot.x - g.car.x, g.Foot.z - g.car.z)) }; });
   console.log(JSON.stringify(bail), JSON.stringify(after));
   ok(bail.on && bail.state === 'down' && bail.hp < 70 && bail.hp > 20, 'F at ' + bail.v0 + ' km/h: you throw yourself off and tumble (health ' + Math.round(bail.hp) + ')');
   ok(bail.bikeV > 20 && Math.abs(after.lean) > 1, 'the bike slides on without you (' + bail.bikeV + ' km/h a moment later) and ends up on its side');
   ok(after.state === 'walk' && after.bikeV < 3, 'you get up; the bike has stopped');
+  ok(after.far > 4 && after.far < 70 && after.toBike < 80, 'you land down the road from where you jumped (' + after.far + ' m on, ' + after.toBike + ' m from the bike), not somewhere else on the map');
   const carBail = await page.evaluate(() => { const g = window.__game, V = g.Vit, c = g.car; g.Foot.board(true); g.applyCar('rook', true); V.hp = 100; window.__go(50); window.__run(2); g.key('KeyF', true); g.key('KeyF', false); window.__run(10);
     const r = { on: g.Foot.on, hp: V.hp, carV: Math.round(c.kmh) }; window.__run(240); r.stopped = c.kmh < 3; return r; });
   console.log(JSON.stringify(carBail));
