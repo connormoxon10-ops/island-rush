@@ -539,6 +539,7 @@ Cut.frameInt = function (dt) {
   const L = LT.L, shot = LT.shot, k = LT.k, t = App.time, n = I.npc, P = Int.ped && Int.ped.hu;
   Story.sitPose(n.h, n.x, 0, n.z, n.yaw, t); Cut.gesture(n.h, L[0] === n.id && Cut.typed < L[1].length + 8, t, 2.1); Human.alive(n.h, dt, t, 2.1);
   if (P) { Story.sitPose(P, I.cx, 0, I.cz - 0.78, 0, t); Cut.gesture(P, L[0] === 'you' && Cut.typed < L[1].length + 8, t, 4.7); Human.alive(P, dt, t, 4.7); }
+  if (I.fx) I.fx(LT, t, dt);   /* a scene's own extras: plates brought, glasses raised (08_story_dates.js) */
   const px = Pl.x, pz = Pl.z; Pl.x = I.cx; Pl.z = I.cz - 0.78; HU.frame = (HU.frame || 0) + 1; try { for (const q of Int.npcs) intNpc(q, dt); } finally { Pl.x = px; Pl.z = pz; }
   const cam = Int.cam; cam.aspect = innerWidth / innerHeight; cam.fov = 46; cam.updateProjectionMatrix();
   const cx = I.cx, cz = I.cz, side = Cut.i % 2 ? 1 : -1, hy = 1.22;
