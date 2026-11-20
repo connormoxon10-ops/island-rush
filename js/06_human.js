@@ -612,14 +612,20 @@ Human.ragStart = function (h, vx, vy, vz, gy) {
   for (const p of R.p) { const rx = p.x - com.x, ry = p.y - com.y, rz = p.z - com.z, wx = ax * om, wz = az * om; R.q.push(new THREE.Vector3(p.x - (vx + (0 * rz - wz * ry) + (Math.random() - 0.5) * 0.6) * dt, p.y - (vy + (wz * rx - wx * rz)) * dt, p.z - (vz + (wx * ry - 0 * rx) + (Math.random() - 0.5) * 0.6) * dt)); }
   h.from = null;
 };
+/* optional, set after ragStart: R.gf(x, z) the ground height under each point (else flat at R.gy), R.fr the ground friction per contact (else 0.22;
+   low lets a body thrown from a vehicle slide and roll on), R.wall(x, z) true inside a wall (the point is stopped there) */
+const _rgG = [];
 Human.ragStep = function (h, dt) {
   const R = h.rag; if (!R) return; dt = Math.min(dt, 1 / 30); const n = 2, hh = dt / n, P = R.p, Q = R.q; R.t += dt; let move = 0;
+  const fr = R.fr != null ? R.fr : 0.22;
+  if (R.gf) { const cx = (P[0].x + P[1].x) / 2, cz = (P[0].z + P[1].z) / 2; R.gy = R.gf(cx, cz); for (let i = 0; i < P.length; i++) _rgG[i] = R.gf(P[i].x, P[i].z); }
+  if (R.wall) for (let i = 0; i < P.length; i++) if (R.wall(P[i].x, P[i].z)) { const p = P[i], q = Q[i]; p.x = q.x - (p.x - q.x) * 0.3; p.z = q.z - (p.z - q.z) * 0.3; q.x = p.x; q.z = p.z; }   /* hit a wall: bounce back a little, stop */
   for (let it = 0; it < n; it++) {
     for (let i = 0; i < P.length; i++) { const p = P[i], q = Q[i], vx = (p.x - q.x) * 0.992, vy = (p.y - q.y) * 0.992, vz = (p.z - q.z) * 0.992; q.copy(p); p.x += vx; p.y += vy - 9.8 * hh * hh; p.z += vz; move += Math.abs(vx) + Math.abs(vy) + Math.abs(vz); }
     for (let k = 0; k < 6; k++) {
       for (let j = 0; j < HU_RAG.sticks.length; j++) { const s = HU_RAG.sticks[j], a = P[s[0]], b = P[s[1]]; _hv.copy(b).sub(a); const d = _hv.length() || 1e-6, f = (d - R.len[j]) / d * 0.5 * s[2]; a.addScaledVector(_hv, f); b.addScaledVector(_hv, -f); }
       for (const m of HU_RAG.mins) { const a = P[m[0]], b = P[m[1]]; _hv.copy(b).sub(a); const d = _hv.length() || 1e-6, mn = m[2] * h.s; if (d < mn) { const f = (d - mn) / d * 0.5; a.addScaledVector(_hv, f); b.addScaledVector(_hv, -f); } }
-      for (let i = 0; i < P.length; i++) { const p = P[i], q = Q[i], g = R.gy + R.r[i]; if (p.y < g) { p.y = g; if (q.y < g) q.y = g + (q.y - g) * 0.3; q.x += (p.x - q.x) * 0.22; q.z += (p.z - q.z) * 0.22; } }
+      for (let i = 0; i < P.length; i++) { const p = P[i], q = Q[i], g = (R.gf ? _rgG[i] : R.gy) + R.r[i]; if (p.y < g) { p.y = g; if (q.y < g) q.y = g + (q.y - g) * 0.3; q.x += (p.x - q.x) * fr; q.z += (p.z - q.z) * fr; } }
     }
   }
   R.still = move / (P.length * n) < 0.0016 ? R.still + dt : 0;

@@ -78,7 +78,7 @@ function footBlockedAt(x, z) {
 }
 
 /* ---------- park / board / leave ---------- */
-Foot.parkCar = function (c) { const roll = Vit.bailT > 0 && car.wrecked <= 0; c.thr = 0; c.brk = roll ? (isBike(CUR) ? 0.3 : 0.03) : 0; c.hand = roll ? 0 : 1;   /* after a bail-out it rolls on (a bike slides on its side) */
+Foot.parkCar = function (c) { const roll = Vit.bailT > 0 && car.wrecked <= 0; c.thr = 0; c.brk = roll ? (isBike(CUR) ? 0.3 : 0.1) : 0; c.hand = roll ? 0 : 1;   /* after a bail-out it rolls on (a bike slides on its side) */
   c.nit = false; c.steerIn = 0; c.steer *= 0.9; Cam.back = false; };
 Foot.carLocal = function (out) { const dx = Foot.x - car.x, dz = Foot.z - car.z, s = Math.sin(car.yaw), co = Math.cos(car.yaw); out.lz = dx * s + dz * co; out.lx = dx * co - dz * s; return out; };
 const _fl = { lx: 0, lz: 0 };
@@ -99,7 +99,7 @@ Foot.exit = function () {
 };
 Foot.board = function (silent) {
   if (!Foot.on) return; if (!silent && Foot.state !== 'walk') return;   /* not while you are still rolling on the ground */
-  Moto.fallen = 0; Vit.bailT = 0; if (Talk.on) Talk.close(true);
+  Moto.fallen = 0; Vit.bailT = 0; Foot.tpWas = null; if (Talk.on) Talk.close(true);
   Fight.reset(); Foot.on = false; Foot.state = 'walk'; try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) { /* ignore */ }
   Cam.chaseYaw = car.yaw; Cam.ch = car.y + 2; Cam.lookYaw = Cam.lookPitch = 0; Cam.fov = save.set.fov; Foot.fovAdd = 0;
   if (car.wrecked <= 0) car.hand = 0;
@@ -124,6 +124,15 @@ Foot.scan = function () {
   }
   F.target = bp;
 };
+/* your ragdoll: the ground under each point, buildings and water stop it, and the ground grips softly at first so a body thrown at speed slides
+   and tumbles on (the grip firms up over a couple of seconds). While it lasts, where you are (and the camera) follows the body */
+const _frg = { h: 0, mu: 1, rr: 0, rough: 0, road: false, water: false };
+function footRag(R) {
+  R.gf = (x, z) => { groundAt(x, z, _frg); return _frg.h; };
+  R.wall = (x, z) => { groundAt(x, z, _frg); const ccx = Math.floor(x / CHUNK), ccz = Math.floor(z / CHUNK), ch = Chunks.get(ccx, ccz); if (!ch) return false; for (const o of ch.cols.b) if (x > o[0] && x < o[2] && z > o[1] && z < o[3] && o[4] > _frg.h + 0.6) return true; for (const o of ch.cols.c) { const ex = x - o[0], ez = z - o[1]; if (ex * ex + ez * ez < o[2] * o[2] && o[4] > _frg.h + 0.6) return true; } return false; };
+  const sp = Math.hypot(Foot.vx, Foot.vz); R.fr0 = sp > 6 ? 0.035 : sp > 3 ? 0.1 : 0.22; R.fr = R.fr0;
+}
+Foot.rag = function () { const P = Foot.ped, h = P && P.hu; return h && h.rag && !h.dead ? h.rag : null; };
 Foot.knock = function (d, why) {
   const F = Foot, P = F.ped; F.state = 'down'; F.downT = 0; F.air = true; F.vy = 3.4; F.vx = (d.vx || 0) * 0.8 + (Math.random() - 0.5); F.vz = (d.vz || 0) * 0.8 + (Math.random() - 0.5);
   P.air = true; P.t = 0; P.tilt = 0; P.spin = (Math.random() < 0.5 ? -1 : 1) * 5.5; F.hitCool = 4;
@@ -142,12 +151,17 @@ Foot.step = function (dt) {
   /* knocked down: ragdoll-lite, then get up */
   if (F.state === 'down' || F.state === 'rise') {
     F.downT += dt; P.t = F.downT;
-    if (F.state === 'down') {
+    const R = F.state === 'down' ? Foot.rag() : null;
+    if (R) {   /* the ragdoll has you: follow it, and get up once it has come to rest */
+      R.fr = Math.min(0.22, R.fr0 + F.downT * 0.06);
+      F.x = (R.p[0].x + R.p[1].x) / 2; F.z = (R.p[0].z + R.p[1].z) / 2; groundAt(F.x, F.z, _fg); F.y = _fg.h; F.vx = F.vz = 0; P.air = false;
+      if ((R.still > 0.5 && F.downT > 1.4) || F.downT > 9) { F.state = 'rise'; F.downT = 0; P.t = 0; }
+    } else if (F.state === 'down') {
       if (P.air) { F.x += F.vx * dt; F.z += F.vz * dt; F.y += F.vy * dt; F.vy -= 9.8 * dt; P.tilt += P.spin * dt; footResolve(); groundAt(F.x, F.z, _fg); if (F.vy < 0 && F.y <= _fg.h + 0.12) { P.air = false; F.y = _fg.h + 0.12; F.vx *= 0.5; F.vz *= 0.5; P.lieT = P.tilt < 0 ? -1.5 : 1.5; P.tilt = P.lieT + Math.round((P.tilt - P.lieT) / TAU) * TAU; } }
       else { const k = Math.exp(-3.2 * dt); F.vx *= k; F.vz *= k; F.x += F.vx * dt; F.z += F.vz * dt; footResolve(); P.tilt += (P.lieT - P.tilt) * Math.min(1, dt * 9); if (F.downT > 3.2) { F.state = 'rise'; F.downT = 0; P.t = 0; } }
     } else {
       P.tilt += (0 - P.tilt) * Math.min(1, dt * 4.5); groundAt(F.x, F.z, _fg); F.y += (_fg.h - F.y) * Math.min(1, dt * 6);
-      if (F.downT > 0.9) { F.state = 'walk'; P.tilt = 0; F.air = false; F.vx = F.vz = 0; }
+      if (F.downT > 0.9) { F.state = 'walk'; P.tilt = 0; F.air = false; F.vx = F.vz = 0; if (F.tpWas != null) { F.tp = F.tpWas; F.tpWas = null; } }   /* back to your own view */
     }
     F.speed = 0; Foot.sync(dt, 0); return;
   }
