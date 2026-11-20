@@ -16567,7 +16567,7 @@ INT_KINDS.gym = { name: 'Gym', rooms: { main(K, rec, r) {
   K.act(K.x0 + 3.4, K.z0 + 3.6, 1.5, 'Bench press', () => Gym.start('press', K.x0 + 2, K.z0 + 3, 0, pass), { cost: intSave().gymMem ? 0 : pass });
   K.act(K.x0 + 6.5, K.z0 + 3.6, 1.5, 'Dumbbell curls', () => Gym.start('curl', K.x0 + 5, K.z0 + 3.4, 0, pass), { cost: intSave().gymMem ? 0 : pass });
   K.act(K.x1 - 1.4, K.z0 + 2 + 2 * 2.2 + 1.3, 1.5, 'Run on the treadmill', () => Gym.start('run', K.x1 - 1.4, K.z0 + 2 + 2 * 2.2, Math.PI, pass), { cost: intSave().gymMem ? 0 : pass });
-  K.act(K.x0 + 2, K.z1 - 2.2, 1.5, 'Hit the punch bag', () => Gym.start('bag', K.x0 + 2, K.z1 - 2.2, Math.PI, pass), { cost: intSave().gymMem ? 0 : pass });
+  K.act(K.x0 + 2, K.z1 - 2.2, 1.5, 'Hit the punch bag', () => Gym.start('bag', K.x0 + 2, K.z1 - 1.85, Math.PI, pass), { cost: intSave().gymMem ? 0 : pass });
   K.act(K.x0 + 8, K.z0 + 4.4, 1.4, 'Squats under the rack', () => Gym.start('squat', K.x0 + 8, K.z0 + 3.2, 0, pass), { cost: intSave().gymMem ? 0 : pass });
   K.act(2.9, 2.7, 1.3, 'Ride the exercise bike', () => Gym.start('bike', 2.9, 1.8, Math.PI, pass), { cost: intSave().gymMem ? 0 : pass });   /* (the second bike: the others have riders) */
   K.act(K.x1 - 4.5, K.z1 - 1.6, 1.6, () => (intSave().gymMem ? 'Your gym pass · fitness ' + Math.round(intSave().fit || 0) : 'Buy a gym pass'), () => { if (intSave().gymMem) { Int.say('Fitness ' + Math.round(intSave().fit || 0) + ' / 100 · ' + (intSave().gym || 0) + ' workouts', 3); return; } intBuy(pass, 'a gym pass', () => { intSave().gymMem = 1; }, 'Gym pass. Every gym on the island is yours to use.'); });
@@ -16992,7 +16992,7 @@ Gym.pose = function (h, dt) {
   } else if (m === 'squat') {
     R.position.set(G.x, 0, G.z); R.rotation.set(0, G.yaw, 0); const k = 1.35 * (1 - u) * (G.rep > 0 || (ev && ev.k === 'mash') ? 1 : 0.25 + 0.1 * Math.sin(t * 2));
     b.hips.position.y = 0.93 - 0.36 * k / 1.35; b.legL.rotation.set(-k, 0, -0.12); b.legR.rotation.set(-k, 0, 0.12); b.knL.rotation.x = k * 1.8; b.knR.rotation.x = k * 1.8; b.footL.rotation.x = -k * 0.8; b.footR.rotation.x = -k * 0.8; b.tor.rotation.x = 0.42 * k / 1.35;
-    b.armL.rotation.set(-2.6, 0, -0.75); b.armR.rotation.set(-2.6, 0, 0.75); b.elL.rotation.x = -1.7; b.elR.rotation.x = -1.7;   /* hands on the bar behind the neck */
+    b.armL.rotation.set(-0.35, 0, -1.25); b.armR.rotation.set(-0.35, 0, 1.25); b.elL.rotation.x = -2.0; b.elR.rotation.x = -2.0;   /* elbows out, hands up by the shoulders on the bar */
   } else if (m === 'bag') {
     R.position.set(G.x, 0, G.z); R.rotation.set(0, G.yaw, 0); b.legL.rotation.set(-0.25, 0, -0.08); b.legR.rotation.set(0.2, 0, 0.08); b.knL.rotation.x = 0.25; b.knR.rotation.x = 0.3; b.tor.rotation.set(0.1, 0, 0);
     b.armL.rotation.set(-1.2, 0, -0.25); b.armR.rotation.set(-1.2, 0, 0.25); b.elL.rotation.x = -1.9; b.elR.rotation.x = -1.9;   /* guard up */
@@ -17009,7 +17009,8 @@ Gym.pose = function (h, dt) {
   Human.alive(h, dt, t, 4.7);
   /* the weights in the hands */
   if (G.prop) { h.root.updateMatrixWorld(true); b.handL.getWorldPosition(_gyA); b.handR.getWorldPosition(_gyB);
-    if (G.M.prop === 'bar') { G.prop.position.copy(_gyA).add(_gyB).multiplyScalar(0.5); G.prop.rotation.set(0, Math.atan2(_gyB.x - _gyA.x, _gyB.z - _gyA.z) - Math.PI / 2, 0); }
+    if (G.M.prop === 'bar' && m === 'squat') { b.neck.getWorldPosition(_gyA); G.prop.position.set(_gyA.x - Math.sin(G.yaw) * 0.12, _gyA.y - 0.02, _gyA.z - Math.cos(G.yaw) * 0.12); G.prop.rotation.set(0, G.yaw, 0); }   /* across the back of the shoulders */
+    else if (G.M.prop === 'bar') { G.prop.position.copy(_gyA).add(_gyB).multiplyScalar(0.5); G.prop.rotation.set(0, Math.atan2(_gyB.x - _gyA.x, _gyB.z - _gyA.z) - Math.PI / 2, 0); }
     else for (const d of G.prop.children) { d.position.copy(d.userData.side < 0 ? _gyA : _gyB); d.rotation.set(0, G.yaw, 0); } }
 };
 /* the camera: round you, closer and lower for the strain */
@@ -17028,7 +17029,7 @@ Gym.hud = function () {
   else if (e && e.k === 'mash') q = '<div class="gq-t gq-hot">' + esc(e.msg || 'MASH') + ' · MASH <kbd>SPACE</kbd></div><div class="gq-bar"><i style="width:' + (e.n / e.need * 100).toFixed(0) + '%"></i></div><div class="gq-time"><i style="width:' + Math.max(0, (1 - G.t / e.T) * 100).toFixed(0) + '%"></i></div>';
   else if (e && e.k === 'key') { const r = Math.max(0, 1 - G.t / e.T); q = '<div class="gq-t">' + esc(e.msg || (G.m === 'bag' ? GYM_PUNCH[e.key].toUpperCase() : 'PRESS')) + '</div><div class="gq-key" style="--r:' + r.toFixed(2) + '"><kbd>' + GYM_KEYN[e.key] + '</kbd></div>'; }
   else if (e && e.k === 'alt') q = '<div class="gq-t">' + esc(e.msg || 'A D A D') + '</div><div class="gq-alt"><kbd class="' + (e.last === 'KeyD' || !e.last ? 'on' : '') + '">A</kbd><kbd class="' + (e.last === 'KeyA' ? 'on' : '') + '">D</kbd></div><div class="gq-bar"><i style="width:' + (e.n / e.need * 100).toFixed(0) + '%"></i></div><div class="gq-time"><i style="width:' + Math.max(0, (1 - G.t / e.T) * 100).toFixed(0) + '%"></i></div>';
-  return '<div class="gq"><small>' + esc(G.M.name) + ' · ' + (G.i + 1) + ' / ' + G.M.ev.length + ' · fitness ' + Math.round(intSave().fit || 0) + '</small>' + q + say + '</div>';
+  return '<div class="gq"><small>' + esc(G.M.name) + ' · ' + Math.min(G.i + 1, G.M.ev.length) + ' / ' + G.M.ev.length + ' · fitness ' + Math.round(intSave().fit || 0) + '</small>' + q + say + '</div>';
 };
 Gym.css = function () {
   if (Gym.cssOn) return; Gym.cssOn = true; const s = document.createElement('style');

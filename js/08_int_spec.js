@@ -157,7 +157,7 @@ INT_KINDS.gym = { name: 'Gym', rooms: { main(K, rec, r) {
   K.act(K.x0 + 3.4, K.z0 + 3.6, 1.5, 'Bench press', () => Gym.start('press', K.x0 + 2, K.z0 + 3, 0, pass), { cost: intSave().gymMem ? 0 : pass });
   K.act(K.x0 + 6.5, K.z0 + 3.6, 1.5, 'Dumbbell curls', () => Gym.start('curl', K.x0 + 5, K.z0 + 3.4, 0, pass), { cost: intSave().gymMem ? 0 : pass });
   K.act(K.x1 - 1.4, K.z0 + 2 + 2 * 2.2 + 1.3, 1.5, 'Run on the treadmill', () => Gym.start('run', K.x1 - 1.4, K.z0 + 2 + 2 * 2.2, Math.PI, pass), { cost: intSave().gymMem ? 0 : pass });
-  K.act(K.x0 + 2, K.z1 - 2.2, 1.5, 'Hit the punch bag', () => Gym.start('bag', K.x0 + 2, K.z1 - 2.2, Math.PI, pass), { cost: intSave().gymMem ? 0 : pass });
+  K.act(K.x0 + 2, K.z1 - 2.2, 1.5, 'Hit the punch bag', () => Gym.start('bag', K.x0 + 2, K.z1 - 1.85, Math.PI, pass), { cost: intSave().gymMem ? 0 : pass });
   K.act(K.x0 + 8, K.z0 + 4.4, 1.4, 'Squats under the rack', () => Gym.start('squat', K.x0 + 8, K.z0 + 3.2, 0, pass), { cost: intSave().gymMem ? 0 : pass });
   K.act(2.9, 2.7, 1.3, 'Ride the exercise bike', () => Gym.start('bike', 2.9, 1.8, Math.PI, pass), { cost: intSave().gymMem ? 0 : pass });   /* (the second bike: the others have riders) */
   K.act(K.x1 - 4.5, K.z1 - 1.6, 1.6, () => (intSave().gymMem ? 'Your gym pass · fitness ' + Math.round(intSave().fit || 0) : 'Buy a gym pass'), () => { if (intSave().gymMem) { Int.say('Fitness ' + Math.round(intSave().fit || 0) + ' / 100 · ' + (intSave().gym || 0) + ' workouts', 3); return; } intBuy(pass, 'a gym pass', () => { intSave().gymMem = 1; }, 'Gym pass. Every gym on the island is yours to use.'); });

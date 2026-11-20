@@ -35,11 +35,14 @@ const OUT = process.env.OUT || __dirname;
     }
     const G = G0.S; out.res = G && G.res; out.ok = G && G.ok; out.miss = G && G.miss; out.hud = document.getElementById('intHud').textContent.slice(0, 80); window.__run(80); out.after = !!G0.S; out.fit = +(((g.save.int || {}).fit || 0) - f0).toFixed(2); return out;
   }, [label, wantPic]);
+  const ONLY = process.env.ONLY ? process.env.ONLY.split(',') : null;
   for (const [label, key] of [['Bench press', 'bench'], ['Dumbbell curls', 'curls'], ['Squats', 'squat'], ['treadmill', 'treadmill'], ['punch bag', 'bag'], ['exercise bike', 'bike']]) {
+    if (ONLY && !ONLY.includes(key)) continue;
     const r = await play(label, true); for (const k in r.pics) save(key + '_' + k, r.pics[k]);
     console.log(label, JSON.stringify(Object.assign({}, r, { pics: Object.keys(r.pics) })));
     ok(r.ok > 0 && r.miss === 0 && r.fit > 0 && !r.after && Object.keys(r.pics).length > 0, label + ': ' + r.kinds.join(' + ') + ' · ' + r.ok + ' good · fitness +' + r.fit + (r.hidden ? ' · the regular stepped off' : ''));
   }
+  if (process.env.ONLY) { await browser.close(); process.exit(fails ? 1 : 0); }
   /* the bench with a failed last rep, and a wrong punch */
   const fail = await page.evaluate(() => {
     const g = window.__game, I = g.Int, Gm = g.Gym, out = {}; let a = I.acts.find((q) => /Bench press/.test(q.label)); a.fn(); window.__run(2); let n = 0;
