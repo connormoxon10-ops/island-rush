@@ -117,7 +117,7 @@ Hosp.frame = function (dt) {
   else if (shot === 'doc') { cam.position.set(bx + 0.4, 1.45, bz + 0.6); _hsV.set(bx - 0.95, 1.55, bz + 0.2); }
   else if (shot === 'nurse') { cam.position.set(bx - 0.2, 1.4, bz + 0.9); _hsV.set(bx + 0.85, 1.5, bz - 0.3); }
   else if (shot === 'monitor') { cam.position.set(bx + 0.55, 1.5, bz + 0.25); _hsV.set(bx + 0.75, 1.5, bz - 0.45); }
-  else { const a = 0.6 + LT.k * 0.3; cam.position.set(bx + Math.cos(a) * 2.6, 2.1, bz + 0.9 + Math.sin(a) * 1.6); _hsV.set(bx, 0.75, bz + 0.1); }
+  else { cam.position.set(bx + 0.5 - 0.4 * LT.k, 1.9, bz + 2.9); _hsV.set(bx, 0.75, bz - 0.1); }   /* from the aisle at the foot of the bed (the curtains are either side) */
   cam.lookAt(_hsV);
   const s0 = scene, c0 = camera, e0 = env.exposure; scene = Int.sc; camera = cam; env.exposure = Int.K.expo || Int.expo;
   try { renderFrame(Int.fx, App.time); } finally { env.exposure = e0; scene = s0; camera = c0; }
