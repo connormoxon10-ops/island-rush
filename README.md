@@ -139,6 +139,7 @@ node tests/story_reset.js   # Story Mode: Reset story (title and quest log) eras
 node tests/casino.js        # the casino: two of them, slots, roulette and blackjack paying the right sums, the bar, the cashier's record
 node tests/volcano.js       # Mount Cinder and the Eruption Escape
 node tests/cockpit.js       # the car cabin: sculpted, one of four looks per car
+node tests/hospital.js     # the hospital: one in every town; die and wake on the ward, the medical scene, physio/reflex/pill games, the bill, your car outside
 node tests/wildlife.js      # wildlife: every kind, the right ones in each region, they scatter, a cow dents the car, an elephant stops it, gulls fly
 node tests/buildings.js     # building variety: facade styles, footprints and heights, tower shapes and crowns, neon/board/plate signs, blade and OPEN signs, night glow
 ```

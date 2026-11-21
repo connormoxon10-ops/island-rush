@@ -30,7 +30,7 @@ const OUT = process.env.OUT || __dirname;
     for (let i = 0; i < 80 && C.on; i++) { const L = C.lines[C.i]; if (!L) break; const s = L[2] || ''; out.shots.push(s); out.lines.push((L[0] ? L[0] + ': ' : '') + L[1].slice(0, 50));
       window.__run(20); if (!out.pics[s]) out.pics[s] = window.__pic(); if (s === 'pov' && !out.blur) out.blur = g.renderer.domElement.style.filter;
       if (C.choosing) C.choose(0); else { C.typed = 1e9; C.next(); } window.__run(1); }
-    window.__run(3); out.panel = (document.getElementById('intPan').textContent || '').slice(0, 200); out.hidden = document.getElementById('intPan').hidden; return out; });
+    window.__run(3); out.panel = (document.getElementById('intPan').textContent || '').slice(0, 900); out.hidden = document.getElementById('intPan').hidden; return out; });
   for (const k in cut.pics) save('cut_' + k, cut.pics[k]);
   console.log(cut.lines.join('\n'));
   ok(['pov', 'doc', 'monitor', 'bed'].every((s) => cut.shots.includes(s)) && /blur/.test(cut.blur || '') && cut.lines.some((l) => /crash/i.test(l)), 'the medical scene: through your blurry eyes, the doctor, the nurse at the heart monitor, and what happened (a crash)');
