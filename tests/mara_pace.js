@@ -14,7 +14,7 @@ const { chromium } = require('playwright'); const path = require('path');
   await page.goto('file://' + path.resolve(__dirname, '../dist/test.html'));
   await page.waitForFunction(() => window.__ready || window.__bootError, null, { timeout: 400000 });
   let fails = 0; const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console.log('ok  ', m); };
-  await page.evaluate(() => { const g = window.__game; g.App.start(); window.requestAnimationFrame = () => 0; window.__now = performance.now(); window.__run = (n) => { for (let i = 0; i < n; i++) { window.__now += 1000 / 30; g.frame(window.__now); } };
+  await page.evaluate(async () => { const g = window.__game; g.App.start(); await new Promise((r) => setTimeout(r, 700)); window.requestAnimationFrame = () => 0; window.__now = performance.now(); window.__run = (n) => { for (let i = 0; i < n; i++) { window.__now += 1000 / 30; g.frame(window.__now); } };
     for (let i = 0; i < 40; i++) window.__run(1); while (g.Cut.on) { g.Cut.key('Escape'); window.__run(2); } });
   const boat = () => page.evaluate(() => !!window.__game.Story.entries().find((e) => e.key === 'sq:mboat'));
   /* days */
